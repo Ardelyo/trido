@@ -4,8 +4,8 @@ import { useStore } from '../store';
 import { useGeminiBrain } from '../hooks/useGeminiBrain';
 import { CreatorTool } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { transcribeAudio } from '../services/aiService';
-import { 
+import { AiServiceError, transcribeAudio } from '../services/aiService';
+import {
   MousePointer2, Pencil, Type, Square, Circle, Trash2, Triangle, PaintBucket,
   Mic, Image as ImageIcon, Send, Layers, ChevronUp, ChevronDown, X,
   Activity, Cpu, MessageSquare, Sun, Moon, Minus, Plus, Maximize, ChevronLeft, ChevronRight, Undo2, Redo2, Sparkles, Network, Star,
@@ -27,7 +27,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const [isListening, setIsListening] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [micPermission, setMicPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
-  
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
+
   const transcriptBufferRef = useRef('');
   const interimBufferRef = useRef('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -37,9 +39,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const [showDemoMenu, setShowDemoMenu] = useState(false);
   const [lastShape, setLastShape] = useState<CreatorTool>('RECTANGLE');
   const [showPageMenu, setShowPageMenu] = useState(false);
-  
-  const { 
-    isThinking, isActing, actionQueue, logs, 
+
+  const {
+    isThinking, isActing, actionQueue, logs,
     lastUploadedImage, setLastUploadedImage, abortTask, zoom, setViewport,
     isCreatorMode, toggleCreatorMode, activeTool, setActiveTool, setBrushColor, brushColor,
     removeDomElement, agentMessage, theme, toggleTheme, undoCanvas, redoCanvas, inputMode, setInputMode,
@@ -58,7 +60,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     if (direction === 'in') newZoom = Math.min(newZoom * 1.1, 20);
     else if (direction === 'out') newZoom = Math.max(newZoom / 1.1, 0.01);
     else newZoom = 1;
-    
+
     if (direction === 'reset') {
       canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
       canvas.setZoom(1);
@@ -68,7 +70,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     setViewport(newZoom, [...canvas.viewportTransform]);
   };
   const { processUserPrompt } = useGeminiBrain();
-  
+
   if (isViewerUrl) {
     return (
       <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
@@ -81,7 +83,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       </div>
     );
   }
-  
+
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -112,14 +114,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       const updateVolume = () => {
         if (!analyserRef.current) return;
         analyserRef.current.getByteFrequencyData(dataArray);
-        
+
         // Boost sensitivity for visualization
         const boostedData = new Uint8Array(dataArray.length);
         for(let i=0; i<dataArray.length; i++) {
           boostedData[i] = Math.min(255, dataArray[i] * 2);
         }
         setAudioData(boostedData);
-        
+
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) {
           sum += dataArray[i];
@@ -183,6 +185,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     });
 
     if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
+      setSpeechSupported(true);
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true; // Use continuous for better experience
@@ -239,7 +242,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
           stopVisualizer();
         }
       };
-      
+
       recognitionRef.current.onend = () => {
         console.log("Speech recognition ended");
         // Don't auto-restart if we are transcribing via Gemini
@@ -253,6 +256,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
           }
         }
       };
+    } else {
+      setSpeechSupported(false);
+      recognitionRef.current = null;
     }
   }, [isListening, isTranscribing]);
 
@@ -276,27 +282,37 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       }
       stopVisualizer();
     } else {
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+        const fallbackMessage = "Browser ini belum mendukung input suara. Gunakan kolom teks di Copilot.";
+        setVoiceNotice(fallbackMessage);
+        useStore.getState().setChatInputText(input || interimInput || '');
+        if (!isAiDrawerOpen) useStore.getState().toggleAiDrawer();
+        return;
+      }
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          audio: { 
-            echoCancellation: true, 
+        setVoiceNotice(null);
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
             noiseSuppression: true,
             autoGainControl: true
-          } 
+          }
         });
         setMicPermission('granted');
-        
+
         setIsListening(true);
         setInput('');
         setInterimInput('');
         transcriptBufferRef.current = '';
         interimBufferRef.current = '';
-        
+
         // Setup MediaRecorder for Gemini transcription
         audioChunksRef.current = [];
-        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        const recorderOptions = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : undefined;
+        const mediaRecorder = new MediaRecorder(stream, recorderOptions);
         mediaRecorderRef.current = mediaRecorder;
-        
+
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
             audioChunksRef.current.push(event.data);
@@ -305,10 +321,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
         mediaRecorder.onstop = async () => {
           let finalLocalTranscript = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
-          
+
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           const hasAudioContent = audioBlob.size > 0;
-          
+
           if (!finalLocalTranscript && hasAudioContent) {
             setIsTranscribing(true);
             try {
@@ -317,7 +333,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 reader.onloadend = () => resolve(reader.result as string);
                 reader.readAsDataURL(audioBlob);
               });
-              
+
               const transcript = await transcribeAudio(base64Audio);
               if (transcript) {
                 finalLocalTranscript = transcript.trim();
@@ -325,22 +341,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
               }
             } catch (err) {
               console.error("Gemini Transcription Error:", err);
+              setVoiceNotice(err instanceof AiServiceError ? err.message : "Transkripsi suara gagal. Gunakan input teks untuk sementara.");
             } finally {
               setIsTranscribing(false);
             }
           }
-          
+
           if (finalLocalTranscript || useStore.getState().lastUploadedImage) {
             handleSubmitInternal(finalLocalTranscript);
           }
-          
+
           transcriptBufferRef.current = '';
           interimBufferRef.current = '';
           setInput('');
           setInterimInput('');
           useStore.getState().setChatInputText('');
           useStore.getState().setInterimInputText('');
-          
+
           // Clean up stream tracks
           stream.getTracks().forEach(track => track.stop());
         };
@@ -351,7 +368,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         if (recognitionRef.current) {
           recognitionRef.current.lang = 'id-ID';
           try { recognitionRef.current.stop(); } catch(e) {}
-          
+
           setTimeout(() => {
             try {
               recognitionRef.current.start();
@@ -360,10 +377,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
               stopVisualizer();
             }
           }, 100);
+        } else {
+          setVoiceNotice("Web Speech API tidak tersedia di browser ini. Rekaman akan ditranskripsi setelah tombol mikrofon ditekan lagi.");
         }
       } catch (err) {
         setMicPermission('denied');
-        alert("Mohon izinkan akses mikrofon untuk menggunakan fitur suara.");
+        setVoiceNotice("Mohon izinkan akses mikrofon, atau gunakan input teks di Copilot.");
+        if (!isAiDrawerOpen) useStore.getState().toggleAiDrawer();
       }
     }
   };
@@ -379,7 +399,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       useStore.getState().setChatInputText('');
       useStore.getState().setInterimInputText('');
     }
-    
+
     if (isListening) {
       setIsListening(false);
       recognitionRef.current?.stop();
@@ -398,12 +418,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
       useStore.getState().addLog(`Gambar dimasukkan ke kanvas: ${file.name}`);
-      
+
       if (canvasRef.current) {
         window.fabric.Image.fromURL(base64, (img: any) => {
           const id = `img_${Date.now()}`;
           img.scaleToWidth(250);
-          img.set({ 
+          img.set({
             left: window.innerWidth/2, top: window.innerHeight/2, originX: 'center', originY: 'center', id: id,
             cornerColor: '#00f0ff', cornerSize: 10, transparentCorners: false
           });
@@ -457,9 +477,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
           if (tool) setActiveTool(tool);
           if (onClick) onClick();
         }}
-        className={`flex items-center justify-center w-[38px] h-[38px] lg:w-[42px] lg:h-[42px] rounded-xl lg:rounded-[1.1rem] transition-colors ${
-          isActive 
-            ? 'text-white bg-blue-600 shadow-[0_8px_16px_rgba(37,99,235,0.25)] ring-4 ring-blue-600/10' 
+        className={`flex items-center justify-center w-9.5 h-9.5 lg:w-10.5 lg:h-10.5 rounded-xl lg:rounded-[1.1rem] transition-colors ${
+          isActive
+            ? 'text-white bg-blue-600 shadow-[0_8px_16px_rgba(37,99,235,0.25)] ring-4 ring-blue-600/10'
             : 'text-slate-500 hover:text-blue-600'
         } ${className}`}
       >
@@ -470,25 +490,25 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
   return (
     <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
-        
+
       {/* Left Toolbar (Vertical) */}
       <AnimatePresence>
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="absolute left-3 lg:left-5 top-1/2 -translate-y-1/2 pointer-events-auto z-50 shadow-[0_15px_40px_rgb(0,0,0,0.06)] bg-white/95 backdrop-blur-xl border border-[#E8ECF4]/80 p-1.5 lg:p-2 rounded-[1.8rem]"
         >
           <div className="flex flex-col items-center gap-1 lg:gap-1.5">
-            
+
             <ToolBtn tool="SELECT" icon={MousePointer2} />
             <ToolBtn tool="PENCIL" icon={Pencil} />
-            
+
             {/* Circle direct tool */}
             <ToolBtn tool="CIRCLE" icon={Circle} />
-            
+
             <ToolBtn tool="TEXT" icon={Type} />
-            
+
             <div className="w-6 h-[1.5px] bg-slate-200/60 my-0.5 lg:my-1 rounded-full" />
 
             <ToolBtn icon={ImageIcon} isAction onClick={() => document.getElementById('canvas-upload')?.click()} />
@@ -496,7 +516,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
             <div className="relative">
               <ToolBtn isAction icon={MoreHorizontal} onClick={() => setShowMoreMenu(!showMoreMenu)} />
-              
+
               <AnimatePresence>
                 {showMoreMenu && (
                   <motion.div
@@ -504,7 +524,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                     animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, x: 10, y: 10 }}
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    className="absolute left-full ml-4 bottom-0 bg-white shadow-[0_20px_70px_rgba(0,0,0,0.15)] bg-white/95 backdrop-blur-2xl border border-[#E8ECF4] p-2 min-w-[220px] rounded-[2rem] z-[60] origin-bottom-left max-h-[85vh] flex flex-col overflow-hidden"
+                    className="absolute left-full ml-4 bottom-0 shadow-[0_20px_70px_rgba(0,0,0,0.15)] bg-white/95 backdrop-blur-2xl border border-[#E8ECF4] p-2 min-w-55 rounded-4xl z-60 origin-bottom-left max-h-[85vh] flex flex-col overflow-hidden"
                   >
                     <div className="px-5 py-4 border-b border-slate-100 mb-1 sticky top-0 bg-white/50 backdrop-blur shrink-0">
                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Alat Tambahan</span>
@@ -521,7 +541,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                         { label: 'Daftar Tugas', icon: CheckSquare, onClick: toggleTodoList },
                         { label: 'Pengaturan Papan', icon: Settings, onClick: toggleBoardSettings },
                       ].map((item, i) => (
-                        <button 
+                        <button
                           key={i}
                           onClick={() => {
                             if (item.onClick) item.onClick();
@@ -545,32 +565,33 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
       {/* ====== BOTTOM CONTROLS ====== */}
       <div className="absolute bottom-4 lg:bottom-6 left-3 lg:left-6 right-3 lg:right-6 pointer-events-none flex flex-col md:flex-row items-center md:items-end md:justify-between z-40 gap-4">
-        
+
         {/* Left: Empty for flex space */}
         <div className="flex-1 hidden md:block"></div>
 
         {/* Center: AI Status & Voice Control */}
         <AnimatePresence>
           {!isAiDrawerOpen && (
-            <motion.div 
+            <motion.div
                initial={{ opacity: 0, y: 20, scale: 0.95 }}
                animate={{ opacity: 1, y: 0, scale: 1 }}
                exit={{ opacity: 0, y: 20, scale: 0.95, pointerEvents: 'none' }}
                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-               className="pointer-events-auto flex items-center gap-4 px-4 py-3 bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 w-full sm:w-auto min-w-[320px] max-w-full origin-bottom"
+               className="pointer-events-auto flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 bg-white/95 backdrop-blur-xl rounded-4xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 w-full sm:w-auto min-w-0 sm:min-w-[320px] max-w-full origin-bottom"
             >
                <div className="flex items-center gap-3 flex-1 overflow-hidden">
                   <div className={`flex items-center justify-center text-blue-600 transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-blue-50/80 border border-blue-100 shadow-sm'}`}>
                      {isListening ? <AudioVisualizer isListening={isListening} audioData={audioData} /> :
-                      isThinking ? <Loader2 size={20} className="animate-spin" /> : 
-                      isTranscribing ? <Activity size={20} className="animate-pulse" /> : 
+                      isThinking ? <Loader2 size={20} className="animate-spin" /> :
+                      isTranscribing ? <Activity size={20} className="animate-pulse" /> :
                       <Sparkles size={20} />}
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                      <span className="text-[13.5px] font-bold text-slate-800 leading-tight truncate">
-                       {isThinking ? "Memproses Data..." : 
-                        isTranscribing ? "Menerjemahkan Suara..." : 
-                        isListening ? (interimInput || input || "Mendengarkan...") : 
+                       {isThinking ? "Memproses Data..." :
+                        isTranscribing ? "Menerjemahkan Suara..." :
+                        isListening ? (interimInput || input || (speechSupported ? "Mendengarkan..." : "Merekam suara...")) :
+                        voiceNotice ? voiceNotice :
                         "Semua Sistem Siap"}
                      </span>
                      <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
@@ -583,7 +604,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                            </div>
                          </span>
-                       ) : "Mode Siaga"}
+                       ) : speechSupported ? "Mode Siaga" : "Suara terbatas: gunakan rekam atau teks"}
                      </span>
                   </div>
                </div>
@@ -592,7 +613,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                   {lastUploadedImage && (
                     <div className="relative mr-2">
                        <img src={lastUploadedImage} alt="Uploaded" className="h-10 w-10 object-cover rounded-[0.85rem] border-2 border-white shadow-sm" />
-                       <button 
+                       <button
                          onClick={() => setLastUploadedImage(null)}
                          className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-md hover:bg-rose-600 active:scale-90 transition-transform"
                        >
@@ -600,22 +621,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                        </button>
                     </div>
                   )}
-                  <FileUploadButton 
-                    className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95" 
-                    icon={<Plus size={22} />} 
+                  <FileUploadButton
+                    className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95"
+                    icon={<Plus size={22} />}
                     title="Unggah Gambar"
                   />
-                  
-                  <button 
+
+                  <button
                     onClick={toggleListening}
                     disabled={isTranscribing || isThinking}
+                    title={speechSupported ? "Mulai input suara" : "Rekam suara untuk transkripsi"}
                     className={`w-12 h-12 flex items-center justify-center rounded-[1.3rem] text-white shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 shadow-red-500/25 animate-pulse scale-105 ring-4 ring-red-500/10' : 'bg-blue-600 shadow-blue-600/30 hover:scale-105 hover:bg-blue-500'} disabled:opacity-50 disabled:pointer-events-none active:scale-95 shrink-0`}
                   >
                     <Mic size={20} />
                   </button>
 
                   {(isThinking || isActing || actionQueue.length > 0) && (
-                    <button 
+                    <button
                       onClick={() => abortTask()}
                       className="w-12 h-12 flex items-center justify-center bg-rose-50 text-red-500 rounded-[1.3rem] hover:bg-red-100 hover:text-red-600 transition-all font-bold group active:scale-95 border border-red-100 shrink-0"
                       title="Batalkan Proses"
@@ -630,22 +652,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
         {/* Right: Zoom Controls */}
         <div className="pointer-events-auto flex-1 hidden md:flex justify-end">
-           <motion.div 
+           <motion.div
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.5, delay: 0.1 }}
-             className="flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80"
+             className="flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-xl rounded-4xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80"
            >
              <button onClick={() => handleZoom('out')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
                <Minus size={18} />
              </button>
-             <span className="text-[13.5px] font-extrabold text-slate-700 min-w-[3.5rem] text-center tracking-tight">
+             <span className="text-[13.5px] font-extrabold text-slate-700 min-w-14 text-center tracking-tight">
                 {Math.round(zoom * 100)}%
              </span>
              <button onClick={() => handleZoom('in')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
                <Plus size={18} />
              </button>
-             <div className="w-[2px] h-5 bg-slate-200/80 mx-1.5 rounded-full" />
+             <div className="w-0.5 h-5 bg-slate-200/80 mx-1.5 rounded-full" />
              <button onClick={() => handleZoom('reset')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95" title="Paskan ke Layar">
                <Maximize size={18} />
              </button>
@@ -656,4 +678,3 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     </div>
   );
 };
-

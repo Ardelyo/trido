@@ -1,16 +1,44 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import fs from "fs";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { aiRouter } from "./server/aiRouter";
+import { CONFIG } from "./constants";
+import { ClientToServerEvents, RoomState, ServerToClientEvents, SocketData, SocketInterServerEvents } from "./types";
+import { createLogger } from "./utils/logger";
+
+const logger = createLogger('server');
+const ROOMS_FILE = path.join(process.cwd(), CONFIG.server.roomsPersistenceFile);
+
+function saveRooms(rooms: Map<string, RoomState>) {
+  try {
+    const data = JSON.stringify(Array.from(rooms.entries()));
+    fs.writeFileSync(ROOMS_FILE, data);
+  } catch (e) {
+    logger.error("Failed to save rooms", e);
+  }
+}
+
+function loadRooms(): Map<string, RoomState> {
+  try {
+    if (fs.existsSync(ROOMS_FILE)) {
+      const data = fs.readFileSync(ROOMS_FILE, 'utf8');
+      return new Map(JSON.parse(data));
+    }
+  } catch (e) {
+    logger.error("Failed to load rooms", e);
+  }
+  return new Map();
+}
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
-  
+  const PORT = Number(process.env.SERVER_PORT || CONFIG.server.defaultPort);
+
   const httpServer = createServer(app);
-  const io = new Server(httpServer, {
+  const io = new Server<ClientToServerEvents, ServerToClientEvents, SocketInterServerEvents, SocketData>(httpServer, {
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
@@ -18,22 +46,18 @@ async function startServer() {
   });
 
   // State management for canvas
-  const rooms = new Map<string, { 
-    state: any[], 
-    viewports: Record<string, any>,
-    lastViewport?: any,
-    domElements?: any
-  }>();
+  const rooms = loadRooms();
 
   io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
+    logger.info("Client connected", { socketId: socket.id });
 
     socket.on("join-room", (roomId: string) => {
       socket.join(roomId);
       if (!rooms.has(roomId)) {
-        rooms.set(roomId, { state: [], viewports: {}, domElements: {}, lastViewport: null } as any);
+        rooms.set(roomId, { state: [], viewports: {}, domElements: {}, lastViewport: null });
+        saveRooms(rooms);
       }
-      
+
       const roomData = rooms.get(roomId);
       // Send current state to newly joined client
       socket.emit("canvas-init", roomData?.state || []);
@@ -43,17 +67,16 @@ async function startServer() {
       if (roomData?.domElements) {
         socket.emit("dom-elements-init", roomData.domElements);
       }
-      
-      console.log(`Socket ${socket.id} joined room ${roomId}`);
+
+      logger.info("Socket joined room", { socketId: socket.id, roomId });
     });
 
     // Receive full or incremental canvas updates
     socket.on("canvas-update", ({ roomId, data }) => {
-      // In a real app we might handle partial updates
-      // Here we might just broadcast to others in the room
       const room = rooms.get(roomId);
       if (room) {
         room.state = data;
+        saveRooms(rooms);
       }
       socket.to(roomId).emit("canvas-update", data);
     });
@@ -64,6 +87,7 @@ async function startServer() {
       if (room) {
         room.viewports[socket.id] = viewport;
         room.lastViewport = viewport;
+        saveRooms(rooms);
       }
       socket.to(roomId).emit("viewport-update", {
         socketId: socket.id,
@@ -75,12 +99,13 @@ async function startServer() {
       const room = rooms.get(roomId);
       if (room) {
         room.domElements = domElements;
+        saveRooms(rooms);
       }
       socket.to(roomId).emit("dom-elements-update", domElements);
     });
 
     socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
+      logger.info("Client disconnected", { socketId: socket.id });
     });
   });
 
@@ -106,8 +131,8 @@ async function startServer() {
     });
   }
 
-  httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  httpServer.listen(PORT, CONFIG.server.host, () => {
+    logger.info(`Server running on http://localhost:${PORT}`);
   });
 }
 

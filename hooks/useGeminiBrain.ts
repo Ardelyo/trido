@@ -1,13 +1,16 @@
 import React, { useCallback } from 'react';
 import { useStore } from '../store';
-import { generateAgentActions } from '../services/aiService';
+import { AiServiceError, generateAgentActions } from '../services/aiService';
 import { CanvasObjectData, AgentAction, Point } from '../types';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('gemini-brain');
 
 export const useGeminiBrain = () => {
   const { setThinking, addAction, addLog, addMessage, setAgentMessage } = useStore();
 
   const processUserPrompt = useCallback(async (
-    prompt: string, 
+    prompt: string,
     canvasRef: React.MutableRefObject<any>
   ) => {
     if (!canvasRef.current) return;
@@ -19,14 +22,14 @@ export const useGeminiBrain = () => {
 
     try {
       // --- 1. VIEWPORT CAPTURE (The "Eye") ---
-      const vpt = [...canvas.viewportTransform]; 
+      const vpt = [...canvas.viewportTransform];
       const width = canvas.width;
       const height = canvas.height;
 
       const invVpt = window.fabric.util.invertTransform(vpt);
       const tl = window.fabric.util.transformPoint({ x: 0, y: 0 }, invVpt);
       const br = window.fabric.util.transformPoint({ x: width, y: height }, invVpt);
-      
+
       const screenToWorld = (screenX: number, screenY: number): Point => {
         const point = window.fabric.util.transformPoint(
           { x: screenX, y: screenY },
@@ -38,7 +41,7 @@ export const useGeminiBrain = () => {
       // --- 2. CONTEXT GATHERING ---
       const dataUrl = canvas.toDataURL({
         format: 'png',
-        multiplier: 1, 
+        multiplier: 1,
         left: tl.x,
         top: tl.y,
         width: br.x - tl.x,
@@ -46,7 +49,7 @@ export const useGeminiBrain = () => {
       });
 
       const rawObjects = canvas.getObjects();
-      
+
       const objectsJson: CanvasObjectData[] = rawObjects
         .map((obj: any) => {
           const inView = obj.left > tl.x - 500 && obj.left < br.x + 500 && obj.top > tl.y - 500 && obj.top < br.y + 500;
@@ -66,7 +69,7 @@ export const useGeminiBrain = () => {
           if (obj.isDomPlaceholder) {
             baseData.htmlContent = storeState.domElements[obj.id]?.html;
           } else if (obj.svgSource) {
-            baseData.svgContent = obj.svgSource; 
+            baseData.svgContent = obj.svgSource;
           } else if (obj.type === 'i-text' || obj.type === 'text') {
             baseData.textContent = obj.text;
           }
@@ -76,10 +79,10 @@ export const useGeminiBrain = () => {
 
       // --- 3. AI REQUEST ---
       const { functionCalls, textResponse, thought } = await generateAgentActions(
-        prompt, 
-        dataUrl, 
-        objectsJson, 
-        { width: br.x - tl.x, height: br.y - tl.y }, 
+        prompt,
+        dataUrl,
+        objectsJson,
+        { width: br.x - tl.x, height: br.y - tl.y },
         storeState.lastUploadedImage,
         storeState.messages.slice(-10), // Send last 10 messages for context
         { current: storeState.currentPageIndex, total: storeState.pages.length },
@@ -89,7 +92,7 @@ export const useGeminiBrain = () => {
       if (thought) {
         addLog(`AI Thoughts: ${thought}`);
       }
-      
+
       // Clear the uploaded image so it's not sent again automatically
       useStore.getState().setLastUploadedImage(null);
 
@@ -98,13 +101,13 @@ export const useGeminiBrain = () => {
       setAgentMessage(msg);
 
       // --- 4. ACTION MAPPING FROM SMALL MODEL TOOLS ---
-      
+
       let lastWorldPos = { x: (tl.x + br.x) / 2, y: (tl.y + br.y) / 2 };
 
       const getPos = (gridPos?: string, relativePos?: string) => {
         const vWidth = br.x - tl.x;
         const vHeight = br.y - tl.y;
-      
+
         if (relativePos) {
            let offset = { x: 0, y: 0 };
            if (relativePos === 'CENTER') offset = { x: 0, y: 0 };
@@ -145,17 +148,17 @@ export const useGeminiBrain = () => {
            if (args.style === 'MAIN_TOPIC') { fill = '#1D4ED8'; width = 250; height = 100; }
            else if (args.style === 'DETAIL') { fill = '#93C5FD'; width = 150; height = 60; }
            else if (args.style === 'HIGHLIGHT') { fill = '#F59E0B'; }
-           
-           payload = { 
-             shapeType: 'RECTANGLE', 
-             x: pos.x, y: pos.y, 
-             text: args.text, 
-             fill, width, height, 
+
+           payload = {
+             shapeType: 'RECTANGLE',
+             x: pos.x, y: pos.y,
+             text: args.text,
+             fill, width, height,
              textColor: '#FFFFFF',
              idAlias: `node_${index}` // to track creation order context
            };
         } else if (call.name === 'connect_nodes') {
-           actionType = 'DRAW_PATH'; 
+           actionType = 'DRAW_PATH';
            payload = {
               fromNodeText: args.fromNodeText,
               toNodeText: args.toNodeText,
@@ -177,148 +180,21 @@ export const useGeminiBrain = () => {
         } else if (call.name === 'add_component') {
            actionType = 'RENDER_HTML';
            const pos = getPos(args.gridPosition, undefined);
-           
+
            // Generate HTML template based on component type and config
            let html = `<div>${args.componentType}</div>`;
-           if (args.configJson) {
-              try {
-                 const cfg = JSON.parse(args.configJson);
-                 if (args.componentType === 'QUIZ_MULTIPLE_CHOICE') {
-                    html = `<div class="p-6 bg-white rounded-xl shadow-xl w-full h-full font-sans border-2 border-indigo-100 flex flex-col justify-center">
-                      <h3 class="text-2xl font-bold mb-6 text-gray-800 text-center">${cfg.question || 'Quiz Question'}</h3>
-                      <div class="space-y-3">
-                        ${(cfg.options || []).map((opt: string, i: number) => 
-                          `<button onclick="this.className='w-full text-left p-4 rounded-xl border border-transparent ${i === cfg.correctIndex ? "bg-green-100 text-green-800 font-bold border-green-500" : "bg-red-100 text-red-800 font-bold border-red-500"}'" class="w-full text-left p-4 rounded-xl border border-gray-200 hover:bg-indigo-50 hover:border-indigo-300 transition-all font-medium text-gray-700 bg-white shadow-sm">${opt}</button>`
-                        ).join('')}
-                      </div>
-                    </div>`;
-                 } else if (args.componentType === 'CALCULATOR') {
-                    html = `<script src="https://cdn.tailwindcss.com"></script><div class="p-6 bg-gray-50 flex flex-col w-full h-full rounded-2xl shadow-xl border border-gray-200">
-                        <div id="calc-display" class="text-4xl font-mono bg-white w-full text-right p-4 border rounded-xl shadow-inner mb-4 overflow-hidden truncate">0</div>
-                        <div class="grid grid-cols-4 gap-3 flex-1">
-                           <button onclick="add('7')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">7</button>
-                           <button onclick="add('8')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">8</button>
-                           <button onclick="add('9')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">9</button>
-                           <button onclick="add('/')" class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">/</button>
-                           <button onclick="add('4')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">4</button>
-                           <button onclick="add('5')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">5</button>
-                           <button onclick="add('6')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">6</button>
-                           <button onclick="add('*')" class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">*</button>
-                           <button onclick="add('1')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">1</button>
-                           <button onclick="add('2')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">2</button>
-                           <button onclick="add('3')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">3</button>
-                           <button onclick="add('-')" class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">-</button>
-                           <button onclick="clearCalc()" class="bg-red-500 hover:bg-red-600 outline-none focus:ring-4 focus:ring-red-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">C</button>
-                           <button onclick="add('0')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">0</button>
-                           <button onclick="add('.')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">.</button>
-                           <button onclick="add('+')" class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">+</button>
-                           <button onclick="calc()" class="col-span-4 bg-indigo-600 hover:bg-indigo-700 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white mt-auto py-3">=</button>
-                        </div>
-                        <script>
-                          let current = '';
-                          function add(val) { current += val; document.getElementById('calc-display').innerText = current; }
-                          function calc() { try { current = eval(current).toString(); document.getElementById('calc-display').innerText = current; } catch(e) { document.getElementById('calc-display').innerText = 'Error'; current=''; } }
-                          function clearCalc() { current = ''; document.getElementById('calc-display').innerText = '0'; }
-                        </script>
-                    </div>`;
-                 } else if (args.componentType === 'FLASHCARD') {
-                    html = `<div class="w-full h-full perspective-1000">
-                      <div class="relative w-full h-full transition-transform duration-500 transform-style-preserve-3d cursor-pointer hover:rotate-y-180" onclick="this.classList.toggle('rotate-y-180')">
-                        <div class="absolute w-full h-full backface-hidden bg-white border-2 border-indigo-200 rounded-2xl shadow-lg flex items-center justify-center p-8">
-                          <h2 class="text-3xl font-bold text-indigo-900 text-center">${cfg.front || 'Front of Card'}</h2>
-                        </div>
-                        <div class="absolute w-full h-full backface-hidden bg-indigo-50 border-2 border-indigo-300 rounded-2xl shadow-lg flex items-center justify-center p-8 rotate-y-180">
-                          <p class="text-xl text-indigo-800 text-center leading-relaxed">${cfg.back || 'Back of Card'}!</p>
-                        </div>
-                      </div>
-                      <style>
-                        .perspective-1000 { perspective: 1000px; }
-                        .transform-style-preserve-3d { transform-style: preserve-3d; }
-                        .backface-hidden { backface-visibility: hidden; }
-                        .rotate-y-180 { transform: rotateY(180deg); }
-                      </style>
-                    </div>`;
-                 } else if (args.componentType === 'TIMER') {
-                    const time = cfg.seconds || 60;
-                    const mins = Math.floor(time / 60).toString().padStart(2, '0');
-                    const secs = (time % 60).toString().padStart(2, '0');
-                    html = `<script src="https://cdn.tailwindcss.com"></script><div class="p-8 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl w-full h-full flex flex-col items-center justify-center border border-gray-700">
-                      <div class="text-6xl font-mono text-white mb-8 tracking-wider font-bold drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" id="timer-display">${mins}:${secs}</div>
-                      <div class="flex gap-4">
-                        <button onclick="resetTimer()" class="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-red-500/30">Reset</button>
-                        <button id="start-btn" onclick="startTimer(this)" class="px-8 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-green-500/30">Start</button>
-                      </div>
-                      <script>
-                        let time = ${time};
-                        let initialTime = ${time};
-                        let interval = null;
-                        function updateDisplay() {
-                          let m = Math.floor(time / 60).toString().padStart(2, '0');
-                          let s = (time % 60).toString().padStart(2, '0');
-                          document.getElementById('timer-display').innerText = m + ':' + s;
-                        }
-                        function startTimer(btn) {
-                          if (interval) {
-                            clearInterval(interval);
-                            interval = null;
-                            btn.innerText = 'Start';
-                            btn.className = btn.className.replace('bg-yellow-500', 'bg-green-500').replace('hover:bg-yellow-600', 'hover:bg-green-600');
-                          } else {
-                            interval = setInterval(() => {
-                              if (time > 0) {
-                                time--;
-                                updateDisplay();
-                              } else {
-                                clearInterval(interval);
-                                interval = null;
-                                btn.innerText = 'Start';
-                                btn.className = btn.className.replace('bg-yellow-500', 'bg-green-500').replace('hover:bg-yellow-600', 'hover:bg-green-600');
-                              }
-                            }, 1000);
-                            btn.innerText = 'Pause';
-                            btn.className = btn.className.replace('bg-green-500', 'bg-yellow-500').replace('hover:bg-green-600', 'hover:bg-yellow-600');
-                          }
-                        }
-                        function resetTimer() {
-                          if (interval) clearInterval(interval);
-                          interval = null;
-                          time = initialTime;
-                          updateDisplay();
-                          const btn = document.getElementById('start-btn');
-                          btn.innerText = 'Start';
-                          btn.className = btn.className.replace('bg-yellow-500', 'bg-green-500').replace('hover:bg-yellow-600', 'hover:bg-green-600');
-                        }
-                      </script>
-                    </div>`;
-                 } else if (args.componentType === 'CHECKLIST') {
-                    html = `<div class="p-6 bg-white rounded-2xl shadow-xl w-full h-full border border-gray-100 flex flex-col">
-                      <h3 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">${cfg.title || 'Checklist'}</h3>
-                      <div class="flex-1 overflow-y-auto space-y-3">
-                        ${(cfg.items || ['Item 1', 'Item 2']).map((item: string) => `
-                          <label class="flex items-center p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 cursor-pointer transition-colors group">
-                            <div class="relative flex items-center justify-center w-6 h-6 mr-4 border-2 border-gray-300 rounded focus-within:border-blue-500 transition-colors bg-white">
-                              <input type="checkbox" class="peer absolute opacity-0 w-full h-full cursor-pointer" onchange="this.nextElementSibling.classList.toggle('hidden', !this.checked); this.parentElement.nextElementSibling.classList.toggle('line-through', this.checked); this.parentElement.nextElementSibling.classList.toggle('text-gray-400', this.checked);" />
-                              <svg class="hidden w-4 h-4 text-blue-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-                            </div>
-                            <span class="text-lg font-medium text-gray-700 transition-colors">${item}</span>
-                          </label>
-                        `).join('')}
-                      </div>
-                    </div>`;
-                 } else {
-                    html = `<div class="p-4 bg-white rounded shadow text-lg w-full h-full">${JSON.stringify(cfg)}</div>`;
-                 }
-              } catch(e) {}
-           }
            let configObj = undefined;
            let pWidth = 450;
            let pHeight = 400;
+
            if (args.configJson) {
-              try { configObj = JSON.parse(args.configJson); } catch(e) {}
-              if (args.componentType === 'DOCUMENT_PAGE' || args.componentType === 'MARKDOWN_NOTE') {
-                 pWidth = 650;
-                 pHeight = 800;
-              }
+              try {
+                 configObj = JSON.parse(args.configJson);
+                 if (args.componentType === 'DOCUMENT_PAGE' || args.componentType === 'MARKDOWN_NOTE') {
+                    pWidth = 650;
+                    pHeight = 800;
+                 }
+              } catch(e) {}
            }
            payload = { html, x: pos.x, y: pos.y, width: pWidth, height: pHeight, componentType: args.componentType, config: configObj };
         } else if (call.name === 'pan_camera') {
@@ -344,17 +220,17 @@ export const useGeminiBrain = () => {
         } else if (call.name === 'add_interactive_app') {
            actionType = 'RENDER_HTML';
            const pos = getPos(args.gridPosition, undefined);
-           payload = { 
-             html: '', 
-             x: pos.x, y: pos.y, 
-             width: 800, height: 600, 
-             componentType: 'INTERACTIVE_APP', 
-             config: { 
-               html: args.html || '', 
-               css: args.css || '', 
-               js: args.js || '', 
-               title: args.title || 'Interactive App' 
-             } 
+           payload = {
+             html: '',
+             x: pos.x, y: pos.y,
+             width: 800, height: 600,
+             componentType: 'INTERACTIVE_APP',
+             config: {
+               html: args.html || '',
+               css: args.css || '',
+               js: args.js || '',
+               title: args.title || 'Interactive App'
+             }
            };
         } else if (call.name === 'add_image') {
            actionType = 'CREATE_IMAGE';
@@ -372,10 +248,14 @@ export const useGeminiBrain = () => {
         });
       });
 
-    } catch (error) {
-      console.error(error);
-      const errorMsg = "Sinkronisasi kognitif gagal.";
+    } catch (error: any) {
+      logger.error('Failed to process prompt', error);
+      const errorMsg = error instanceof AiServiceError
+        ? error.message
+        : "Sinkronisasi kognitif gagal. Coba lagi atau periksa koneksi AI.";
+
       addMessage({ role: 'model', text: errorMsg });
+      addLog(`AI error: ${errorMsg}`);
       setAgentMessage(errorMsg);
     } finally {
       setThinking(false);

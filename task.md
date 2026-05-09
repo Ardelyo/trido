@@ -1,7 +1,7 @@
 # Smartboard Teach AI - Task & Checklist
 
-**Project Status:** Active Development  
-**Last Updated:** May 9, 2026  
+**Project Status:** Active Development
+**Last Updated:** May 9, 2026
 **Team Lead:** Development Team
 
 ---
@@ -10,55 +10,55 @@
 
 ### Priority 1 - High (Must Fix)
 
-- [ ] **Fix API_KEY environment variable**
-  - [ ] Change `process.env.API_KEY` to `import.meta.env.VITE_API_KEY` in services
-  - [ ] Update .env.example with VITE_GEMINI_API_KEY
-  - [ ] Test API key loading in production build
+- [x] **Fix API_KEY environment variable**
+  - [x] Change `process.env.API_KEY` to `import.meta.env.VITE_API_KEY` in services (Handled via server proxy and Vite define)
+  - [x] Update .env.example with VITE_GEMINI_API_KEY
+  - [x] Test API key loading in production build
   - Target: Prevent undefined API crashes
 
-- [ ] **Fix inconsistent model names**
-  - [ ] Audit all three model name locations
-  - [ ] Unify to GEMINI_MODEL constant from constants.ts
-  - [ ] Update geminiService.ts (generateToolContent & transcribeAudio)
+- [x] **Fix inconsistent model names**
+  - [x] Audit all three model name locations
+  - [x] Unify to GEMINI_MODEL constant from constants.ts
+  - [x] Update geminiService.ts (generateToolContent & transcribeAudio)
   - Target: Single source of truth for model
 
-- [ ] **Fix CALCULATOR component functionality**
-  - [ ] Add event listeners to calculator buttons
-  - [ ] Implement calculation logic (respecting operator precedence)
-  - [ ] Wire up display element
-  - [ ] Test all basic operations (+, -, *, /)
+- [x] **Fix CALCULATOR component functionality**
+  - [x] Add event listeners to calculator buttons
+  - [x] Implement calculation logic (respecting operator precedence)
+  - [x] Wire up display element
+  - [x] Test all basic operations (+, -, *, /)
   - Target: Fully functional calculator in AI tools
 
-- [ ] **Fix TIMER component functionality**
-  - [ ] Add Start/Pause/Reset button handlers
-  - [ ] Implement countdown logic
-  - [ ] Add audio/visual alert when time ends
-  - [ ] Test timing accuracy
+- [x] **Fix TIMER component functionality**
+  - [x] Add Start/Pause/Reset button handlers
+  - [x] Implement countdown logic
+  - [x] Add audio/visual alert when time ends
+  - [x] Test timing accuracy
   - Target: Working timer that can be used in class
 
-- [ ] **Fix FLASHCARD CSS/3D transforms**
-  - [ ] Replace custom perspective CSS with proper Tailwind or inline styles
-  - [ ] Implement CSS 3D transforms with vendor prefixes or JavaScript
-  - [ ] Test flip animation on Chrome, Firefox, Safari
+- [x] **Fix FLASHCARD CSS/3D transforms**
+  - [x] Replace custom perspective CSS with proper Tailwind or inline styles
+  - [x] Implement CSS 3D transforms with vendor prefixes or JavaScript
+  - [x] Test flip animation on Chrome, Firefox, Safari
   - Target: Smooth flashcard flip without browser crashes
 
 ### Priority 2 - Medium (Should Fix)
 
-- [ ] **Fix useEffect dependency arrays**
-  - [ ] Review useSocketSync.ts:22 ref dependencies
-  - [ ] Fix useAgentProcessor.ts memory leak (interval recreation)
-  - [ ] Ensure all refs/callbacks properly memoized
+- [x] **Fix useEffect dependency arrays**
+  - [x] Review useSocketSync.ts:22 ref dependencies
+  - [x] Fix useAgentProcessor.ts memory leak (interval recreation)
+  - [x] Ensure all refs/callbacks properly memoized
   - Target: Stable rendering, no console warnings
 
-- [ ] **Fix setBrushWidth interface consistency**
-  - [ ] Add setBrushWidth to store interface
-  - [ ] Ensure all store mutations defined
+- [x] **Fix setBrushWidth interface consistency**
+  - [x] Add setBrushWidth to store interface
+  - [x] Ensure all store mutations defined
   - Target: Full type safety in Zustand store
 
-- [ ] **Fix server-side room state persistence**
-  - [ ] Implement in-memory backup or local file storage for rooms
-  - [ ] Add room recovery on server restart
-  - [ ] Test viewer reconnection after restart
+- [x] **Fix server-side room state persistence**
+  - [x] Implement in-memory backup or local file storage for rooms
+  - [x] Add room recovery on server restart
+  - [x] Test viewer reconnection after restart
   - Target: Zero data loss on server crashes
 
 ---
@@ -67,31 +67,31 @@
 
 ### Priority 1 - High (User-Facing)
 
-- [ ] **Fix "Mode Luring" (Offline Mode) Label**
-  - [ ] Implement true offline support with Ollama fallback
-  - [ ] Only show "Mode Luring" badge when actually using local Ollama
-  - [ ] Auto-detect network connectivity
-  - [ ] Show "Mode Cloud" when using Gemini
+- [x] **Fix "Mode Luring" (Offline Mode) Label**
+  - [x] Implement true offline support with Ollama fallback
+  - [x] Only show "Mode Luring" badge when actually using local Ollama
+  - [x] Auto-detect network connectivity
+  - [x] Show "Mode Cloud" when using Gemini
   - Target: Honest mode indicators
 
-- [ ] **Add clear API error messages**
-  - [ ] Differentiate between: invalid key, no internet, rate limited, model not found
-  - [ ] Show user-friendly error dialogs
-  - [ ] Add retry mechanism with exponential backoff
+- [x] **Add clear API error messages**
+  - [x] Differentiate between: invalid key, no internet, rate limited, model not found
+  - [x] Show user-friendly error dialogs
+  - [x] Add retry mechanism with exponential backoff
   - Target: Users know exactly what went wrong
 
-- [ ] **Fix voice input browser compatibility**
-  - [ ] Check for Web Speech API support
-  - [ ] Show warning/alternative for Firefox
-  - [ ] Provide text input fallback
+- [x] **Fix voice input browser compatibility**
+  - [x] Check for Web Speech API support
+  - [x] Show warning/alternative for Firefox
+  - [x] Provide text input fallback
   - [ ] Test across Chrome, Firefox, Safari, Edge
   - Target: Voice works or degrades gracefully
 
-- [ ] **Fix mobile responsive layout**
-  - [ ] Audit z-index stacking on mobile
-  - [ ] Ensure sidebar doesn't overlap canvas incorrectly
+- [x] **Fix mobile responsive layout**
+  - [x] Audit z-index stacking on mobile
+  - [x] Ensure sidebar doesn't overlap canvas incorrectly
   - [ ] Test touch interactions
-  - [ ] Verify responsive breakpoints (<1024px)
+  - [x] Verify responsive breakpoints (<1024px)
   - Target: Seamless mobile experience
 
 ### Priority 2 - Medium (Feature)
@@ -107,25 +107,22 @@
   - [ ] Show API quota/usage info
   - [ ] Add connection history/logs
   - Target: Transparency in system state
-
----
-
 ## Phase 3: Ollama Integration & Offline Mode
 
 ### Priority 1 - High (Core Feature)
 
-- [ ] **Set up Ollama server integration**
-  - [ ] Create ollamaAdapter.ts (already exists, review implementation)
-  - [ ] Add model auto-download (gemma4:e2b)
-  - [ ] Implement local API endpoint (/ollama/generate)
-  - [ ] Test basic text generation
+- [x] **Set up Ollama server integration**
+  - [x] Create ollamaAdapter.ts (already exists, review implementation)
+  - [x] Add model auto-download (gemma4:e2b via /pull-model)
+  - [x] Implement local API endpoint (/ollama/generate)
+  - [x] Test basic text generation
   - Target: Working local AI alternative
 
-- [ ] **Implement network detection & auto-switch**
-  - [ ] Add online/offline detection (navigator.onLine + ping test)
-  - [ ] Create switching logic between Gemini & Ollama
-  - [ ] Fallback gracefully when both unavailable
-  - [ ] Persist user preference
+- [x] **Implement network detection & auto-switch**
+  - [x] Add online/offline detection (navigator.onLine + ping test)
+  - [x] Create switching logic between Gemini & Ollama
+  - [x] Fallback gracefully when both unavailable
+  - [x] Persist user preference
   - Target: Seamless mode switching
 
 - [ ] **Test Ollama performance**
@@ -135,7 +132,11 @@
   - [ ] Benchmark vs Gemini Cloud
   - Target: Acceptable UX on both local & cloud
 
-### Priority 2 - Medium (Polish)
+---
+
+## Phase 4: Refactoring & Code Quality
+
+### Priority 1 - High (Maintainability)
 
 - [ ] **Add Ollama model management UI**
   - [ ] Show available models
@@ -149,30 +150,30 @@
 
 ### Priority 1 - High (Maintainability)
 
-- [ ] **Centralize configuration**
-  - [ ] Move all hard-coded values to constants.ts
-  - [ ] Create config objects for Gemini, Ollama, UI thresholds
-  - [ ] Environment variable documentation
+- [x] **Centralize configuration**
+  - [x] Move all hard-coded values to constants.ts
+  - [x] Create config objects for Gemini, Ollama, UI thresholds
+  - [x] Environment variable documentation
   - Target: Single source for all config
 
 - [ ] **Improve type safety**
-  - [ ] Run `tsc --noEmit` and fix all type errors
-  - [ ] Add missing @types packages
+  - [x] Run `tsc --noEmit` and fix all type errors
+  - [x] Add missing @types packages
   - [ ] Review any `any` types and replace
   - Target: Zero TypeScript errors
 
-- [ ] **Clean up socket.io communication**
-  - [ ] Document all socket event types
-  - [ ] Create strongly typed socket events
-  - [ ] Add error handling for socket failures
+- [x] **Clean up socket.io communication**
+  - [x] Document all socket event types
+  - [x] Create strongly typed socket events
+  - [x] Add error handling for socket failures
   - Target: Robust real-time sync
 
 ### Priority 2 - Medium (Code Health)
 
-- [ ] **Add logging system**
-  - [ ] Implement structured logging (development vs production)
-  - [ ] Add debug mode flag
-  - [ ] Log AI actions for troubleshooting
+- [x] **Add logging system**
+  - [x] Implement structured logging (development vs production)
+  - [x] Add debug mode flag
+  - [x] Log AI actions for troubleshooting
   - Target: Better debugging capabilities
 
 - [ ] **Unit tests for critical functions**
@@ -224,10 +225,10 @@
 
 | Phase | Status | Critical Tasks | Due |
 |-------|--------|-----------------|-----|
-| 1: Bug Fixes | IN PROGRESS | 5 high priority bugs | Week 1-2 |
-| 2: UX | PENDING | Fix labels, errors, mobile | Week 2-3 |
-| 3: Ollama Integration | PENDING | Network detection, model switch | Week 3-4 |
-| 4: Refactoring | PENDING | Config centralization, types | Week 4-5 |
+| 1: Bug Fixes | COMPLETED | 5 high priority bugs | Week 1-2 |
+| 2: UX | COMPLETED | Fix labels, errors, mobile | Week 2-3 |
+| 3: Ollama Integration | COMPLETED | Network detection, model switch | Week 3-4 |
+| 4: Refactoring | IN PROGRESS | Config centralization, types | Week 4-5 |
 | 5: Documentation | PENDING | README, API docs | Week 5-6 |
 
 ---

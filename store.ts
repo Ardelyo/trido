@@ -1,6 +1,7 @@
 
 import { create } from 'zustand';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession } from './types';
+import { CONFIG } from './constants';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, AiPreference } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 
 interface AppStore extends AgentState {
@@ -54,6 +55,9 @@ interface AppStore extends AgentState {
 
   language: 'id' | 'en';
   setLanguage: (lang: 'id' | 'en') => void;
+
+  aiPreference: AiPreference;
+  setAiPreference: (pref: AiPreference) => void;
   
   isViewerUrl: boolean;
   setIsViewerUrl: (v: boolean) => void;
@@ -95,6 +99,7 @@ interface AppStore extends AgentState {
   toggleCreatorMode: () => void;
   setActiveTool: (tool: CreatorTool) => void;
   setBrushColor: (color: string) => void;
+  setBrushWidth: (width: number) => void;
   
   // Pages
   pages: Array<{ canvas: object, dom: Record<string, DomElementState>, previewDataUrl?: string }>;
@@ -131,7 +136,12 @@ interface AppStore extends AgentState {
   deleteSession: (id: string) => Promise<void>;
 }
 
-let autoSaveTimeout: any;
+let autoSaveTimeout: ReturnType<typeof setTimeout>;
+
+const getInitialAiPreference = (): AiPreference => {
+  const saved = localStorage.getItem('ai_preference');
+  return saved === 'gemini' || saved === 'ollama' || saved === 'auto' ? saved : 'auto';
+};
 
 export const useStore = create<AppStore>((set, get) => ({
   currentSessionId: null,
@@ -264,8 +274,15 @@ export const useStore = create<AppStore>((set, get) => ({
   
   language: 'id',
   setLanguage: (lang) => set({ language: lang }),
-  
+
+  aiPreference: getInitialAiPreference(),
+  setAiPreference: (pref) => {
+    localStorage.setItem('ai_preference', pref);
+    set({ aiPreference: pref });
+  },
+
   isViewerUrl: false,
+
   setIsViewerUrl: (v) => set({ isViewerUrl: v }),
   
   chatInputText: '',
@@ -305,7 +322,7 @@ export const useStore = create<AppStore>((set, get) => ({
       clearTimeout(autoSaveTimeout);
       autoSaveTimeout = setTimeout(() => {
          get().saveCurrentSession();
-      }, 3000); // 3 second debounce
+      }, CONFIG.ui.autoSaveDebounceMs);
     }
     
     return { pages: newPages };
@@ -342,6 +359,7 @@ export const useStore = create<AppStore>((set, get) => ({
   setFontFamily: (font) => set({ fontFamily: font }),
   setFontSize: (size) => set({ fontSize: size }),
   setBrushColor: (color) => set({ brushColor: color }),
+  setBrushWidth: (width) => set({ brushWidth: width }),
   
   addAction: (action) => set((state) => ({ actionQueue: [...state.actionQueue, action] })),
   

@@ -1,8 +1,10 @@
 import { CanvasObjectData } from "../types";
 import { tools, buildSystemInstruction, validateFunctionCalls, ViewportBounds } from "./aiTools";
-import { OLLAMA_MODEL } from "../constants";
+import { CONFIG } from "../constants";
+import { createLogger } from "../utils/logger";
 
-const getOllamaUrl = () => process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const logger = createLogger('ollama-adapter');
+const getOllamaUrl = () => process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
 
 export const generateAgentActionsOllama = async (
   prompt: string,
@@ -42,12 +44,12 @@ export const generateAgentActionsOllama = async (
   }
 
   const payload = {
-    model: OLLAMA_MODEL || "gemma4:e2b",
+    model: process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model,
     messages: messages,
     tools: mappedTools,
     stream: false,
     options: {
-      num_ctx: 4096
+      num_ctx: CONFIG.ai.ollama.numCtx
     }
   };
 
@@ -65,27 +67,40 @@ export const generateAgentActionsOllama = async (
 
   if (data.message) {
     textResponse = data.message.content || "";
-    if (data.message.tool_calls) {
+    console.log(`[Ollama Raw Response]: ${textResponse}`);
+
+    if (data.message.tool_calls && data.message.tool_calls.length > 0) {
       functionCalls = data.message.tool_calls.map((tc: any) => ({
         name: tc.function.name,
         args: tc.function.arguments
       }));
     } else {
+      // Fallback: Manual JSON extraction from text
       try {
-        const jsonMatch = textResponse.match(/```json\\n(.*)\\n```/s);
-        if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[1]);
-            if (Array.isArray(parsed.calls)) {
-                functionCalls = parsed.calls;
+        const jsonPatterns = [
+            /```json\s*([\s\S]*?)\s*```/g,
+            /({[\s\S]*})/g,
+            /(\[[\s\S]*\])/g
+        ];
+
+        for (const pattern of jsonPatterns) {
+            const matches = textResponse.matchAll(pattern);
+            for (const match of matches) {
+                try {
+                    const parsed = JSON.parse(match[1]);
+                    if (Array.isArray(parsed.calls)) {
+                        functionCalls = [...functionCalls, ...parsed.calls];
+                    } else if (parsed.name && parsed.args) {
+                        functionCalls.push(parsed);
+                    } else if (Array.isArray(parsed) && parsed.every(p => p.name)) {
+                        functionCalls = [...functionCalls, ...parsed];
+                    }
+                } catch (e) {}
             }
-        } else {
-            const parsed = JSON.parse(textResponse);
-            if (Array.isArray(parsed.calls)) {
-                functionCalls = parsed.calls;
-            }
+            if (functionCalls.length > 0) break;
         }
       } catch (e) {
-          // ignore
+          console.warn("[Ollama Adapter] Manual JSON extraction failed", e);
       }
     }
   }
@@ -107,25 +122,25 @@ export const generateToolContentOllama = async (toolId: string, prompt: string):
   let promptText = "";
   if (toolId === 'mindmap') {
     promptText = `Generate a JSON array of mindmap nodes for the topic: "${prompt}". 
-    Each node must have: text (string), style (MAIN_TOPIC, SUBTOPIC, DETAIL), and relativePosition (CENTER for the first one, then RIGHT_OF_LAST, BELOW_LAST, etc.).
+    Each node must have EXACTLY these fields: text (string), style (MAIN_TOPIC, SUBTOPIC, DETAIL), and relativePosition (CENTER for the first one, then RIGHT_OF_LAST, BELOW_LAST, etc.).
     Example: [{"text": "AI", "style": "MAIN_TOPIC", "relativePosition": "CENTER"}, {"text": "Machine Learning", "style": "SUBTOPIC", "relativePosition": "RIGHT_OF_LAST"}]
-    RETURN ONLY RAW VALID JSON ARRAY without markdown formatting.`;
+    RETURN ONLY THE JSON ARRAY. NO PREAMBLE. NO MARKDOWN. JUST [ ... ]`;
   } else if (toolId === 'quiz') {
     promptText = `Generate a JSON object for a multiple choice quiz about: "${prompt}".
-    Format: {"question": "string", "options": ["string", "string", "string"], "correctIndex": number}
-    RETURN ONLY RAW VALID JSON without markdown formatting.`;
+    Format EXACTLY: {"question": "string", "options": ["string", "string", "string"], "correctIndex": number}
+    RETURN ONLY THE JSON OBJECT. NO PREAMBLE. NO MARKDOWN. JUST { ... }`;
   } else if (toolId === 'website') {
     promptText = `Generate a JSON object for a single-page interactive web app about: "${prompt}".
-    Format: { "html": "<div ...>...</div>", "title": "string" }
-    Use Tailwind CSS classes. Make it beautiful and functional. Include inline script if needed.
-    RETURN ONLY RAW VALID JSON without markdown formatting.`;
+    Format EXACTLY: { "html": "<div ...>...</div>", "title": "string" }
+    Use Tailwind CSS classes.
+    RETURN ONLY THE JSON OBJECT. NO PREAMBLE. NO MARKDOWN. JUST { ... }`;
   } else if (toolId === 'summary') {
     promptText = `Summarize the following text clearly and concisely, suitable for presentation notes.
     Format your response in Markdown. Text: "${prompt}"`;
   }
 
   const payload = {
-    model: OLLAMA_MODEL || "gemma4:e2b",
+    model: process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model,
     messages: [{ role: "user", content: promptText }],
     stream: false
   };
@@ -144,12 +159,12 @@ export const generateToolContentOllama = async (toolId: string, prompt: string):
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(jsonStr);
   } catch (e) {
-    console.error("Failed to parse tool JSON", e);
+    logger.error("Failed to parse tool JSON", e);
     return null;
   }
 };
 
 export const transcribeAudioOllama = async (base64Audio: string): Promise<string> => {
-  console.warn("Audio transcription via Ollama is not fully supported with gemma4:e2b yet.");
+  logger.warn(`Audio transcription via Ollama is not fully supported with ${CONFIG.ai.ollama.model} yet.`);
   return "Fitur voice command belum tersedia di mode lokal penuh.";
 };

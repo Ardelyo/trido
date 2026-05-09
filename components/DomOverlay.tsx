@@ -10,6 +10,7 @@ import { DocumentBlock } from './DocumentBlock';
 import { TimerTool } from './TimerTool';
 import { CalculatorTool } from './CalculatorTool';
 import { AppBuilderTool } from './AppBuilderTool';
+import { FlashcardTool } from './FlashcardTool';
 
 export const DomOverlay: React.FC = () => {
   const domElements = useStore(state => state.domElements);
@@ -47,6 +48,8 @@ export const DomOverlay: React.FC = () => {
           return <TimerTool config={el.config} />;
         case 'CALCULATOR':
           return <CalculatorTool />;
+        case 'FLASHCARD':
+          return <FlashcardTool config={el.config} />;
         case 'INTERACTIVE_APP':
           return <AppBuilderTool config={el.config} />;
         // More sophisticated components can be added as raw items here

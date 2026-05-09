@@ -1,5 +1,8 @@
 import { Type, FunctionDeclaration } from "@google/genai";
 import { CanvasObjectData } from "../types";
+import { createLogger } from "../utils/logger";
+
+const logger = createLogger('ai-tools');
 
 export interface ViewportBounds {
   width: number;
@@ -375,7 +378,7 @@ export const extractThinking = (response: any): string => {
     const thoughtPart = parts.find((p: any) => p.thought === true || p.type === "thinking");
     if (thoughtPart?.text) return thoughtPart.text;
   } catch (e) {
-    console.warn("Failed to extract structured thinking:", e);
+    logger.warn("Failed to extract structured thinking", e);
   }
   
   const text = response.text || "";

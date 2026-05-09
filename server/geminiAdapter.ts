@@ -1,9 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { CanvasObjectData } from "../types";
 import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, ViewportBounds } from "./aiTools";
-import { GEMINI_MODEL } from "../constants";
+import { CONFIG } from "../constants";
+import { createLogger } from "../utils/logger";
 
 const getAiClient = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY || "dummy" });
+const logger = createLogger('gemini-adapter');
 
 export const generateAgentActionsGemini = async (
   prompt: string,
@@ -37,14 +39,14 @@ export const generateAgentActionsGemini = async (
 
   const ai = getAiClient();
   const response = await ai.models.generateContent({
-    model: GEMINI_MODEL,
+    model: CONFIG.ai.gemini.model,
     contents: contents,
     config: {
       tools: [{ functionDeclarations: tools }],
       toolConfig: { includeServerSideToolInvocations: true },
       systemInstruction: systemInstruction,
-      temperature: 0.3,
-      maxOutputTokens: 2048
+      temperature: CONFIG.ai.gemini.generation.temperature,
+      maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens
     }
   });
 
@@ -66,7 +68,7 @@ export const generateAgentActionsGemini = async (
 };
 
 export const generateToolContentGemini = async (toolId: string, prompt: string): Promise<any> => {
-  const model = GEMINI_MODEL;
+  const model = CONFIG.ai.gemini.model;
   let promptText = "";
   
   if (toolId === 'mindmap') {
@@ -92,7 +94,7 @@ export const generateToolContentGemini = async (toolId: string, prompt: string):
   const response = await ai.models.generateContent({
     model,
     contents: [{ role: 'user', parts: [{ text: promptText }] }],
-    config: { temperature: 0.3 }
+    config: { temperature: CONFIG.ai.gemini.generation.temperature }
   });
 
   const text = response.text || "";
@@ -102,7 +104,7 @@ export const generateToolContentGemini = async (toolId: string, prompt: string):
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(jsonStr);
   } catch (e) {
-    console.error("Failed to parse tool JSON", e);
+    logger.error("Failed to parse tool JSON", e);
     return null;
   }
 };
@@ -110,7 +112,7 @@ export const generateToolContentGemini = async (toolId: string, prompt: string):
 export const transcribeAudioGemini = async (base64Audio: string): Promise<string> => {
   const ai = getAiClient();
   const response = await ai.models.generateContent({
-    model: GEMINI_MODEL,
+    model: CONFIG.ai.gemini.model,
     contents: [
       {
         parts: [
@@ -126,7 +128,7 @@ export const transcribeAudioGemini = async (base64Audio: string): Promise<string
         ],
       },
     ],
-    config: { temperature: 0.1 },
+    config: { temperature: CONFIG.ai.gemini.transcription.temperature },
   });
 
   return response.text?.trim() || "";

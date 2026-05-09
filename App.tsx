@@ -13,8 +13,8 @@ import { SaveMenu } from './components/SaveMenu';
 import { useSocketSync } from './hooks/useSocketSync';
 import { useAiStatus } from './hooks/useAiStatus';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Share2, Users, LayoutDashboard, Home, Square, Layers, FileText, 
+import {
+  Share2, Users, LayoutDashboard, Home, Square, Layers, FileText,
   Image as ImageIcon, File, History, Settings, Mic, Monitor, Share, Download, Sparkles,
   CheckCircle2, ChevronDown, Keyboard, Menu,
   Clock, CheckSquare, PencilRuler, ShieldCheck, HelpCircle, User,
@@ -27,20 +27,23 @@ const App: React.FC = () => {
   const [, setReady] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
-  
+
   // Responsive sidebar detection
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
+
   const { roomId, isViewer } = useSocketSync(canvasRef);
   const { loadSessions } = useStore();
-  
+
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
-  
+
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1024) {
+      const mobile = window.innerWidth < 1024;
+      setIsMobileLayout(mobile);
+      if (mobile) {
         setIsSidebarOpen(false);
       } else {
         setIsSidebarOpen(true);
@@ -51,21 +54,66 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const { 
-    logs, inputMode, setInputMode, messages, isAiDrawerOpen, toggleAiDrawer, 
-    language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage 
+  const {
+    logs, inputMode, setInputMode, messages, isAiDrawerOpen, toggleAiDrawer,
+    language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage
   } = useStore();
   const { processUserPrompt } = useGeminiBrain();
   const aiStatus = useAiStatus();
 
   const getStatusConfig = () => {
     if (aiStatus.mode === 'gemini') {
-      return { text: 'Daring (Gemini)', color: 'text-blue-700 bg-blue-100/80 border-blue-200/50', dot: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]', statusColor: 'text-blue-600' };
+      return {
+        text: 'Mode Cloud',
+        detail: `Gemini: ${aiStatus.model}`,
+        color: 'text-blue-700 bg-blue-100/80 border-blue-200/50',
+        dot: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]',
+        statusColor: 'text-blue-600',
+        action: null
+      };
     }
     if (aiStatus.mode === 'ollama') {
-      return { text: 'Lokal (Ollama)', color: 'text-emerald-700 bg-emerald-100/80 border-emerald-200/50', dot: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]', statusColor: 'text-emerald-600' };
+      return {
+        text: 'Mode Luring',
+        detail: `Ollama lokal: ${aiStatus.model}`,
+        color: 'text-emerald-700 bg-emerald-100/80 border-emerald-200/50',
+        dot: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]',
+        statusColor: 'text-emerald-600',
+        action: null
+      };
     }
-    return { text: 'Terputus', color: 'text-amber-700 bg-amber-100/80 border-amber-200/50', dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]', statusColor: 'text-amber-600' };
+
+    // Unavailable cases
+    if (aiStatus.ollamaStatus?.online && !aiStatus.ollamaStatus?.hasModel) {
+      return {
+        text: 'Model Lokal Hilang',
+        detail: 'Ollama aktif tapi model belum diunduh',
+        color: 'text-amber-700 bg-amber-100/80 border-amber-200/50',
+        dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse',
+        statusColor: 'text-amber-600',
+        action: 'PULL_MODEL'
+      };
+    }
+
+    return {
+      text: 'AI Tidak Tersedia',
+      detail: aiStatus.reason === 'invalid_key' ? 'Kunci Gemini perlu diperiksa' : 'Gemini/Ollama belum terhubung',
+      color: 'text-amber-700 bg-amber-100/80 border-amber-200/50',
+      dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]',
+      statusColor: 'text-amber-600',
+      action: null
+    };
+  };
+
+  const pullOllamaModel = async () => {
+    try {
+      const res = await fetch('/api/ai/pull-model', { method: 'POST' });
+      if (res.ok) {
+        alert('Proses pengunduhan model dimulai di latar belakang. Silakan tunggu beberapa menit.');
+      }
+    } catch (e) {
+      alert('Gagal memulai pengunduhan model.');
+    }
   };
 
   const statusConfig = getStatusConfig();
@@ -76,7 +124,7 @@ const App: React.FC = () => {
   };
 
   const SidebarItem = ({ icon: Icon, label, active = false, onClick }: { icon: any, label: string, active?: boolean, onClick?: () => void }) => (
-    <motion.button 
+    <motion.button
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
@@ -101,7 +149,7 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden bg-[#e2e8f0] font-sans text-slate-900 selection:bg-blue-200">
-      
+
       {/* VIEWER MODE (CINEMA MODE) */}
       {isViewer ? (
         <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc] relative overflow-hidden">
@@ -134,11 +182,11 @@ const App: React.FC = () => {
 
           <AnimatePresence>
             {!canvasRef.current && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#f8fafc] z-[60]"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#f8fafc] z-60"
               >
                 <div className="relative w-12 h-12">
                   <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
@@ -153,7 +201,7 @@ const App: React.FC = () => {
         /* TEACHER MODE (FULL SUITE) */
         <>
           {/* 1. TOP BAR (HEADER) */}
-          <motion.header 
+          <motion.header
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -173,15 +221,30 @@ const App: React.FC = () => {
 
             {/* Mode Indicator (Center) */}
             <div className="flex-none hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className={`flex items-center gap-2 text-[13px] font-bold ${statusConfig.color} backdrop-blur px-5 py-2 rounded-[1.25rem] border shadow-sm transition-colors`}>
+              <div className={`flex items-center gap-3 ${statusConfig.color} backdrop-blur px-5 py-2 rounded-[1.25rem] border shadow-sm transition-colors group relative`}>
                 <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
-                {statusConfig.text}
+                <div className="flex flex-col">
+                  <span className="font-bold leading-tight">{statusConfig.text}</span>
+                  <span className="text-[10px] opacity-70 font-medium leading-tight">{statusConfig.detail}</span>
+                </div>
+
+                {statusConfig.action === 'PULL_MODEL' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      pullOllamaModel();
+                    }}
+                    className="ml-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all active:scale-95"
+                  >
+                    Unduh Model
+                  </button>
+                )}
               </div>
             </div>
 
             <div className="flex flex-1 justify-end items-center gap-2 lg:gap-3">
               {/* Actions (Right) */}
-              <motion.button 
+              <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={toggleAiDrawer}
@@ -189,13 +252,13 @@ const App: React.FC = () => {
               >
                 <Sparkles size={16} /> <span className="hidden sm:inline">Copilot Trido</span>
               </motion.button>
-              
+
               <div className="hidden sm:block w-px h-6 bg-slate-300/50 mx-1" />
 
               <button onClick={() => setIsShareOpen(true)} className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 border border-white bg-white/60 hover:bg-white backdrop-blur rounded-[1.25rem] transition-colors shadow-sm active:scale-95">
                 <Share2 size={16} /> <span className="hidden md:inline">Bagikan</span>
               </button>
-              
+
               <SaveMenu onExportClick={() => setIsExportOpen(true)} />
 
               <button className="w-10 h-10 rounded-[1.25rem] overflow-hidden border-[2.5px] border-white hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-[#e2e8f0] transition-all ml-1 shadow-sm shrink-0" title="User Menu">
@@ -206,16 +269,16 @@ const App: React.FC = () => {
 
           {/* LOWER SECTION */}
           <div className="flex-1 flex min-h-0 relative bg-transparent p-2 lg:p-4 pt-0 gap-4 overflow-hidden">
-            
+
             {/* Modals & Overlays */}
             <ShareDialog isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} roomId={roomId} />
             <ExportDialog isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} canvasRef={canvasRef} />
             <ToolOverlay />
-            
+
             {/* Mobile Sidebar Overlay */}
             <AnimatePresence>
-              {isSidebarOpen && window.innerWidth < 1024 && (
-                <motion.div 
+              {isSidebarOpen && isMobileLayout && (
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -228,14 +291,14 @@ const App: React.FC = () => {
             {/* 2. LEFT SIDEBAR (NAVIGATION) */}
             <AnimatePresence initial={false}>
               {isSidebarOpen && (
-                <motion.aside 
+                <motion.aside
                   initial={{ width: 0, opacity: 0, x: -20 }}
                   animate={{ width: 260, opacity: 1, x: 0 }}
                   exit={{ width: 0, opacity: 0, x: -20 }}
                   transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute lg:relative left-2 top-0 bottom-2 lg:left-0 lg:bottom-0 bg-white/95 backdrop-blur-xl rounded-[2rem] flex flex-col z-40 lg:z-10 shrink-0 border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden"
+                  className="absolute lg:relative left-2 top-0 bottom-2 lg:left-0 lg:bottom-0 max-h-full bg-white/95 backdrop-blur-xl rounded-4xl flex flex-col z-40 lg:z-10 shrink-0 border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden"
                 >
-                  <div className="w-[260px] h-full flex flex-col">
+                  <div className="w-65 h-full flex flex-col">
                     <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 custom-scrollbar">
                       <SidebarItem icon={Square} label="Papan Tulis" active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen} onClick={() => { if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); }} />
                       <SidebarItem icon={Layers} label="Templat" active={isTemplatesOpen} onClick={toggleTemplates} />
@@ -256,8 +319,10 @@ const App: React.FC = () => {
                       <div className="p-4 rounded-3xl bg-white border border-slate-200/60 shadow-sm">
                         <div className="text-[13px] font-bold text-slate-800 mb-1.5">Status AI</div>
                         <div className={`text-[12px] ${statusConfig.statusColor} font-semibold flex items-center gap-1.5`}>
+                            <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
                             {statusConfig.text}
                         </div>
+                        <div className="mt-1 text-[11px] text-slate-500 font-medium leading-snug">{statusConfig.detail}</div>
                       </div>
                     </div>
                   </div>
@@ -266,10 +331,10 @@ const App: React.FC = () => {
             </AnimatePresence>
 
             {/* 3 & 4. CANVAS AREA & VERTICAL TOOLBAR */}
-            <main className="flex-1 min-w-0 relative h-full bg-[#f8fafc] rounded-[2rem] lg:rounded-[2.5rem] border-[4px] border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col">
-               
+            <main className="flex-1 min-w-0 relative h-full bg-[#f8fafc] rounded-4xl lg:rounded-[2.5rem] border-4 border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col">
+
                {/* Dot Grid Background */}
-               <div 
+               <div
                  className="absolute inset-0 pointer-events-none opacity-50 z-0"
                  style={{
                    backgroundImage: 'radial-gradient(#94a3b8 1.5px, transparent 1.5px)',
@@ -278,10 +343,10 @@ const App: React.FC = () => {
                />
 
                {/* Canvas Container */}
-               <div className="absolute inset-0 z-0 flex rounded-[2rem] overflow-hidden">
+               <div className="absolute inset-0 z-0 flex rounded-4xl overflow-hidden">
                    <CanvasManager onCanvasReady={handleCanvasReady} />
                </div>
-               
+
                {/* UI Overlay for Toolbar/Controls (mapped in ChatInterface) */}
                {canvasRef.current && (
                  <ChatInterface canvasRef={canvasRef} />
@@ -304,13 +369,13 @@ const App: React.FC = () => {
                    <HistoryView onClose={toggleHistory} />
                  )}
                </AnimatePresence>
-               
+
                {/* Loading State */}
                <AnimatePresence>
                  {!canvasRef.current && (
-                   <motion.div 
-                     initial={{ opacity: 0 }} 
-                     animate={{ opacity: 1 }} 
+                   <motion.div
+                     initial={{ opacity: 0 }}
+                     animate={{ opacity: 1 }}
                      exit={{ opacity: 0 }}
                      className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#f8fafc]/80 backdrop-blur-sm z-10"
                    >
@@ -327,12 +392,12 @@ const App: React.FC = () => {
             {/* AI Assistant Sidebar (Right) */}
             <AnimatePresence>
               {isAiDrawerOpen && (
-                <motion.aside 
+                <motion.aside
                   initial={{ x: '100%', opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: '100%', opacity: 0 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className={`absolute right-4 lg:right-8 top-4 lg:top-8 bottom-4 lg:bottom-8 w-[calc(100%-2rem)] sm:w-[380px] bg-white/95 backdrop-blur-2xl rounded-[2rem] border border-white flex flex-col z-50 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden`}
+                  className={`absolute right-4 lg:right-8 top-4 lg:top-8 bottom-4 lg:bottom-8 w-[calc(100%-2rem)] sm:w-95 bg-white/95 backdrop-blur-2xl rounded-4xl border border-white flex flex-col z-50 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden`}
                 >
                   {/* Header */}
                   <div className="h-16 lg:h-20 border-b border-slate-100/80 flex items-center justify-between px-6 font-sans bg-white/50">
@@ -345,7 +410,7 @@ const App: React.FC = () => {
                           <div className="text-[12px] text-blue-600 font-bold">Asisten AI Cerdas</div>
                         </div>
                     </div>
-                    <button onClick={toggleAiDrawer} className="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2.5 rounded-[1rem] transition-colors active:scale-95">
+                    <button onClick={toggleAiDrawer} className="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2.5 rounded-2xl transition-colors active:scale-95">
                         <X size={18} strokeWidth={2.5} />
                     </button>
                   </div>
@@ -354,22 +419,22 @@ const App: React.FC = () => {
                   <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 custom-scrollbar scroll-smooth">
                     {messages.length === 0 && (
                       <div className="h-full flex flex-col items-center justify-center text-center opacity-50 px-4">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-slate-100 flex items-center justify-center mb-4">
+                        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
                            <Sparkles size={28} className="text-slate-400" />
                         </div>
                         <p className="text-[15px] font-medium text-slate-500">Tanyakan apapun atau unggah gambar untuk memulai percakapan dengan AI.</p>
                       </div>
                     )}
                     {messages.map((msg, i) => (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        key={i} 
+                        key={i}
                         className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                       >
-                          <div className={`p-4 rounded-[1.5rem] max-w-[90%] text-[14.5px] font-medium leading-relaxed ${
-                            msg.role === 'user' 
-                              ? 'bg-blue-600 text-white rounded-tr-sm shadow-md shadow-blue-600/10' 
+                          <div className={`p-4 rounded-3xl max-w-[90%] text-[14.5px] font-medium leading-relaxed ${
+                            msg.role === 'user'
+                              ? 'bg-blue-600 text-white rounded-tr-sm shadow-md shadow-blue-600/10'
                               : 'bg-white text-slate-800 border border-slate-200/60 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-tl-sm'
                           }`}>
                             {msg.text}
@@ -380,7 +445,7 @@ const App: React.FC = () => {
 
                   {/* Input Bar */}
                   <div className="p-4 lg:p-5 border-t border-slate-100 bg-white/90 backdrop-blur-xl shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10 font-sans relative shrink-0">
-                    <form 
+                    <form
                       onSubmit={async (e) => {
                         e.preventDefault();
                         if(!chatInputText.trim() && !lastUploadedImage) return;
@@ -389,37 +454,37 @@ const App: React.FC = () => {
                         useStore.getState().addMessage({ role: 'user', text });
                         await processUserPrompt(text, canvasRef);
                       }}
-                      className="flex items-center gap-2 w-full border-[1.5px] border-slate-200 rounded-[1.5rem] p-1.5 bg-slate-50/50 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-inner"
+                      className="flex items-center gap-2 w-full border-[1.5px] border-slate-200 rounded-3xl p-1.5 bg-slate-50/50 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-inner"
                     >
-                        <FileUploadButton 
+                        <FileUploadButton
                           className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 ml-0.5 active:scale-95"
-                          icon={<Plus size={20} />} 
+                          icon={<Plus size={20} />}
                           title="Unggah file / gambar"
                         />
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => {
                             useStore.getState().toggleAiDrawer();
                             setTimeout(() => window.dispatchEvent(new Event('start-mic')), 300);
-                          }} 
-                          className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 active:scale-95" 
+                          }}
+                          className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 active:scale-95"
                           title="Beralih ke mode suara"
                         >
                           <Mic size={20} />
                         </button>
-                        <input 
+                        <input
                           type="text"
                           value={chatInputText}
                           onChange={(e) => setChatInputText(e.target.value)}
                           placeholder="Tanya sesuatu..."
                           className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-slate-800 placeholder-slate-400 h-10 px-2"
                         />
-                        <button 
+                        <button
                           type="submit"
                           disabled={!chatInputText.trim() && !lastUploadedImage}
                           className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${chatInputText.trim() || lastUploadedImage ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none'}`}
                         >
-                          <Share size={18} className={chatInputText.trim() || lastUploadedImage ? '' : 'translate-x-[-1px]'} />
+                          <Share size={18} className={chatInputText.trim() || lastUploadedImage ? '' : '-translate-x-px'} />
                         </button>
                     </form>
                   </div>

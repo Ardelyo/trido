@@ -16,6 +16,10 @@ export enum ShapeType {
 export type FontFamily = 'Inter' | 'Source Serif 4' | 'JetBrains Mono' | 'Bricolage Grotesque' | 'Playfair Display';
 
 export type CreatorTool = 'SELECT' | 'PENCIL' | 'TEXT' | 'RECTANGLE' | 'CIRCLE' | 'TRIANGLE' | 'STAR' | 'POLYGON' | 'LINE';
+export type AiPreference = 'auto' | 'gemini' | 'ollama';
+export type AiRuntimeMode = 'gemini' | 'ollama' | 'unavailable';
+export type CanvasJson = Record<string, unknown> | unknown[];
+export type ViewportTransform = number[];
 
 export interface CanvasObjectData {
   id: string;
@@ -83,6 +87,44 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
 }
+
+export interface RoomState {
+  state: CanvasJson;
+  viewports: Record<string, ViewportTransform>;
+  lastViewport?: ViewportTransform | null;
+  domElements: Record<string, DomElementState>;
+}
+
+// Socket.IO contract for board collaboration. Hosts emit updates; viewers receive
+// current canvas, viewport, and DOM overlay state for the joined room.
+export interface ClientToServerEvents {
+  // Join or create a collaboration room.
+  'join-room': (roomId: string) => void;
+  // Replace the room canvas snapshot after a host-side canvas mutation.
+  'canvas-update': (payload: { roomId: string; data: CanvasJson }) => void;
+  // Broadcast camera movement from the host to viewers.
+  'viewport-update': (payload: { roomId: string; viewport: ViewportTransform }) => void;
+  // Broadcast interactive DOM overlay state from the host to viewers.
+  'dom-elements-update': (payload: { roomId: string; domElements: Record<string, DomElementState> }) => void;
+}
+
+export interface ServerToClientEvents {
+  // Initial room canvas snapshot sent after joining.
+  'canvas-init': (data: CanvasJson) => void;
+  // Incremental canvas snapshot broadcast to viewers.
+  'canvas-update': (data: CanvasJson) => void;
+  // Camera transform broadcast; socketId identifies the emitting host/client.
+  'viewport-update': (payload: { socketId: string; viewport: ViewportTransform }) => void;
+  // Initial DOM overlay state sent after joining.
+  'dom-elements-init': (data: Record<string, DomElementState>) => void;
+  // DOM overlay updates broadcast to viewers.
+  'dom-elements-update': (data: Record<string, DomElementState>) => void;
+  // Reserved for server-side sync validation/reporting failures.
+  'sync-error': (payload: { message: string }) => void;
+}
+
+export interface SocketInterServerEvents {}
+export interface SocketData {}
 
 // Global window extension for Fabric
 declare global {
