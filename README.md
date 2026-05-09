@@ -1,53 +1,262 @@
 # Smartboard Teach AI
 
-A next-generation interactive whiteboard platform powered by AI, designed for educators to create, teach, and engage students through voice-controlled, intelligent canvas automation.
+A voice-controlled interactive whiteboard for educators, powered by local or cloud AI. Built for teachers who need accessibility and don't want to fight with complicated interfaces.
 
-## Overview
+## What It Does
 
-Smartboard Teach AI combines agentic artificial intelligence with an infinite digital whiteboard to help teachers (especially those with accessibility needs) deliver engaging, interactive lessons. The platform uses vision, voice, and intelligent action execution to transform verbal instructions into visual learning content.
+You talk. The AI listens. Your whiteboard fills itself with organized diagrams, flashcards, quiz questions, timers, calculators—whatever you need. Perfect for lesson planning that doesn't require a mouse and keyboard constantly.
 
-## Key Features
+### Core Features
 
-### Core Capabilities
+- **Voice-first interface**: Speak commands naturally; the AI executes them on a canvas
+- **Infinite whiteboard**: Zoom, pan, infinite pages using Fabric.js
+- **Dual AI backend**: Use Google Gemini (cloud) or local Ollama (offline) seamlessly
+- **Real-time collaboration**: Students see the board live via Socket.IO
+- **Teaching tools built-in**: Mind maps, quizzes, flashcards, timers, calculators, periodic table, unit converters, attendance tracking
+- **Offline capable**: Run locally with Ollama for zero internet dependency
+- **Accessibility-focused**: Designed for teachers with motor disabilities; fully voice-controllable
 
-- **Interactive Infinite Whiteboard**: Fabric.js-powered canvas with zoom, pan, and multiple page support
-- **Voice-First Interface**: Natural language commands via Web Speech API
-- **Agentic AI Actions**: Visual agent cursor that executes teaching tools automatically
-- **Real-Time Collaboration**: Multi-viewer support via Socket.IO for student access
-- **Dual-Mode AI**: Cloud-based Gemini API or local Ollama for offline teaching
-- **Accessibility-First Design**: Fully voice-controllable for teachers with motor disabilities
+## Quick Start
 
-### Teaching Tools
+### Prerequisites
 
-- **Mind Map Generator**: Automatically create concept maps with AI-drawn nodes and connections
-- **Quiz Generator**: Generate multiple-choice, essay, true/false, and matching questions
-- **Calculator**: Interactive calculation tool with visual display
-- **Timer**: Classroom timer with visual countdown
-- **Flashcard System**: Automated study card creation
-- **Periodic Table**: Interactive chemistry reference
-- **Unit Converter**: Real-time unit conversion
-- **Note Taking**: Sticky notes and structured notes
-- **Attendance Tracker**: Student presence management
-- **Custom App Builder**: Generate HTML/CSS/JS widgets on-the-fly
+- Node.js 18+ and npm
+- (Optional) Ollama running locally for offline mode: https://ollama.ai
+- (Required for cloud mode) Google Gemini API key: https://aistudio.google.com/apikey
 
-### Intelligent Features
+### Installation
 
-- **Canvas Understanding**: AI analyzes current board state through vision
-- **Function Calling**: Execute precise actions through agentic tool use
-- **Context Awareness**: Agent understands spatial layout and element relationships
-- **Animated Execution**: Smooth Bezier-eased agent cursor movements
-- **Session Persistence**: Auto-save to IndexedDB browser storage
+```bash
+git clone <repo>
+cd smartboard-teach-ai
+npm install
+cp .env.example .env.local
+```
 
-## System Architecture
+### Configuration
+
+Edit `.env.local`:
 
 ```
-Frontend (React + Vite)
-  ├─ Canvas Layer (Fabric.js)
-  ├─ AI Brain (Gemini/Ollama)
-  ├─ Voice Input (Web Speech API)
-  └─ Components (Teaching Tools)
-        ↓ HTTP/WebSocket ↓
-Backend Server (Express + Socket.IO)
+# For cloud mode (Google Gemini)
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+
+# For offline mode (Ollama)
+OLLAMA_URL=http://localhost:11434
+```
+
+### Running Locally
+
+**Development mode** (with hot reload):
+```bash
+npm run dev
+```
+The frontend starts at `http://localhost:5173` and the backend at `http://localhost:3000`.
+
+**Production mode**:
+```bash
+npm run build
+npm run preview
+```
+
+### First Run
+
+1. Open `http://localhost:5173` in your browser
+2. Grant microphone permission
+3. Try saying: *"Create a mind map about photosynthesis with chlorophyll as the main topic"*
+
+The AI should draw a mind map node and label it. Once that works, you've got the basics running.
+
+## Project Structure
+
+```
+smartboard-teach-ai/
+├── components/           # React UI components
+│   ├── CanvasManager.tsx # Main canvas state & Fabric.js integration
+│   ├── ChatInterface.tsx # Voice input & chat display
+│   ├── AgentCursor.tsx   # Visual agent cursor animation
+│   ├── [Tools]Tool.tsx   # Individual teaching tools
+│   └── quiz/             # Quiz-specific components
+├── hooks/                # Custom React hooks
+│   ├── useGeminiBrain.ts # AI processing logic
+│   ├── useAgentProcessor.ts # Agent action execution
+│   └── useSocketSync.ts  # Real-time collaboration
+├── server/               # Backend Express + Socket.IO
+│   ├── aiRouter.ts       # API routes for AI requests
+│   ├── geminiAdapter.ts  # Gemini API client
+│   ├── ollamaAdapter.ts  # Ollama local API client
+│   └── aiTools.ts        # AI function definitions
+├── services/
+│   ├── aiService.ts      # AI orchestration (Gemini/Ollama switching)
+│   └── db.ts             # IndexedDB persistence
+├── constants.ts          # Centralized config (models, timeouts, etc.)
+├── types.ts              # TypeScript interfaces
+├── store.ts              # Zustand global state
+└── server.ts             # Express server initialization
+
+```
+
+## How It Works
+
+### Voice Input → AI Processing → Canvas Execution
+
+1. **User speaks**: Web Speech API captures audio
+2. **Server receives**: Text sent to either Gemini API or local Ollama
+3. **AI responds with function calls**: The AI decides what actions to take (draw shape, create text, move object)
+4. **Agent executor**: Canvas updates happen via function execution
+5. **Broadcast**: Updates sync to all connected viewers via Socket.IO
+
+### Example: "Create a timeline of the Industrial Revolution"
+
+The AI receives this command and might:
+- Call `add_text_label` to write "Industrial Revolution" as title
+- Call `add_mindmap_node` multiple times for each era: "1760-1840", "Steam Power", "Factory System", etc.
+- Call `connect_nodes` to draw arrows showing progression
+- The agent cursor animates across the canvas showing each action
+
+## Configuration Reference
+
+All hardcoded values live in `constants.ts`. Key settings:
+
+```typescript
+// AI Model Selection
+GEMINI_MODEL = 'gemini-2.0-flash'      // Cloud model
+OLLAMA_MODEL = 'gemma:2b'              // Local model (2B params, ~1.5GB)
+
+// Timeout settings
+CONFIG.ai.gemini.probeTimeoutMs = 3000 // Cloud API timeout
+CONFIG.ai.ollama.probeTimeoutMs = 1500 // Local API timeout
+
+// Server
+CONFIG.server.defaultPort = 3000
+
+// UI
+CONFIG.ui.mobileBreakpointPx = 1024    // Mobile layout trigger
+CONFIG.ui.aiStatusPollIntervalMs = 5000 // How often to check AI availability
+```
+
+To use a different Ollama model, edit `constants.ts`:
+```typescript
+OLLAMA_MODEL = 'mistral' // or 'neural-chat', 'orca-mini', etc.
+```
+
+## Deployment
+
+See [DEPLOYMENT.md](./docs/DEPLOYMENT.md) for containerization and cloud deployment.
+
+### Environment Variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `VITE_GEMINI_API_KEY` | If using cloud mode | Google Gemini API key |
+| `OLLAMA_URL` | Optional | Local Ollama endpoint (defaults to `http://localhost:11434`) |
+| `SERVER_PORT` | Optional | Backend port (defaults to 3000) |
+
+## Troubleshooting
+
+### "API Key Undefined" Error
+
+- Ensure `.env.local` exists in the project root
+- File must have: `VITE_GEMINI_API_KEY=your_key_here`
+- Restart dev server after changing `.env.local`
+- Check browser DevTools → Application → check `VITE_GEMINI_API_KEY` in window object
+
+### Voice Input Not Working
+
+- Chrome/Edge: Fully supported
+- Firefox: Fallback to text input (Web Speech API limited support)
+- Safari: May require user gesture (click microphone button first)
+- Check browser console for errors; grant microphone permission
+
+### "Connection Refused" to Ollama
+
+- Verify Ollama is running: `curl http://localhost:11434/api/tags`
+- If not installed: Download from https://ollama.ai
+- Check `OLLAMA_URL` in `.env.local` matches your Ollama instance
+- On non-localhost Ollama: Verify CORS headers are set (may need Ollama environment config)
+
+### AI Generating Slowly
+
+- **Gemini (Cloud)**: Check API quota at https://aistudio.google.com/app/apikeys
+- **Ollama (Local)**: System RAM/VRAM may be bottleneck
+  - Monitor with `nvidia-smi` (GPU) or `top` (CPU/RAM)
+  - Try smaller model: `OLLAMA_MODEL = 'orca-mini'` in `constants.ts`
+  - Ensure no other heavy apps running
+
+### Canvas State Not Persisting
+
+- Browser data cleared? State is auto-saved to IndexedDB at `smartboard-teach-ai` database
+- Check DevTools → Application → IndexedDB to verify
+- Manual export: Use SaveMenu component to export as JSON
+- Server-side state persists to `rooms_persistence.json`
+
+## Development
+
+### Type Checking
+
+```bash
+npm run lint  # Run TypeScript compiler without emitting
+```
+
+Fix all errors before committing; the CI/CD pipeline requires `tsc --noEmit` to pass.
+
+### Available Commands
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Start dev server with hot reload |
+| `npm run build` | Production build to `dist/` |
+| `npm run preview` | Test production build locally |
+| `npm run lint` | TypeScript type check |
+| `npm start` | Run server only (for production) |
+
+### Key Files to Understand
+
+- **services/aiService.ts**: How Gemini/Ollama are selected and called
+- **hooks/useGeminiBrain.ts**: AI function calling and response handling
+- **components/CanvasManager.tsx**: Canvas state machine and Fabric.js integration
+- **server/aiRouter.ts**: Backend AI request handling and retry logic
+- **constants.ts**: All configuration and model names
+
+### Testing Locally Without Gemini
+
+1. Start Ollama: `ollama serve`
+2. Download model: `ollama pull gemma:2b` (or `ollama pull orca-mini`)
+3. Comment out/remove `VITE_GEMINI_API_KEY` from `.env.local`
+4. Start dev server: `npm run dev`
+5. The app will auto-detect no Gemini key and use Ollama
+
+## Browser Support
+
+| Browser | Voice | Canvas | Notes |
+|---------|-------|--------|-------|
+| Chrome 90+ | ✓ | ✓ | Full support |
+| Edge 90+ | ✓ | ✓ | Full support |
+| Firefox 88+ | Partial | ✓ | Text input fallback for voice |
+| Safari 14+ | Partial | ✓ | Requires user gesture first |
+
+Mobile: Tested on iPad and Android tablets; responsive layout at <1024px breakpoint.
+
+## Performance Notes
+
+- **Canvas rendering**: Optimized for ~500 shapes before noticeable lag
+- **Agent execution**: Average 2-3 second delay between command and execution (includes AI latency)
+- **Memory**: IndexedDB storage limit ~50MB per origin (browser-dependent)
+- **Network**: Recommend minimum 2 Mbps for cloud Gemini mode; local Ollama has no network requirement
+
+## Contributing
+
+See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for development guidelines, code style, and PR process.
+
+## License
+
+MIT
+
+---
+
+**For educators:** See [TEACHER_GUIDE.md](./docs/TEACHER_GUIDE.md) for lesson plans, teaching workflows, and tips.
+
+**For developers:** See [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md) for Socket.IO events and AI tool schemas, or [DEPLOYMENT.md](./docs/DEPLOYMENT.md) for deployment instructions
   ├─ API Routes (Gemini proxy, Ollama proxy)
   ├─ Socket Room Management
   ├─ Session Sync
