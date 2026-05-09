@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { useStore } from '../store';
-import { generateAgentActions } from '../services/geminiService';
+import { generateAgentActions } from '../services/aiService';
 import { CanvasObjectData, AgentAction, Point } from '../types';
 
 export const useGeminiBrain = () => {
@@ -193,16 +193,33 @@ export const useGeminiBrain = () => {
                       </div>
                     </div>`;
                  } else if (args.componentType === 'CALCULATOR') {
-                    html = `<div class="p-6 bg-gray-50 flex flex-col w-full h-full rounded-2xl shadow-xl border border-gray-200">
-                        <div class="text-4xl font-mono bg-white w-full text-right p-4 border rounded-xl shadow-inner mb-4 overflow-hidden truncate">0</div>
+                    html = `<script src="https://cdn.tailwindcss.com"></script><div class="p-6 bg-gray-50 flex flex-col w-full h-full rounded-2xl shadow-xl border border-gray-200">
+                        <div id="calc-display" class="text-4xl font-mono bg-white w-full text-right p-4 border rounded-xl shadow-inner mb-4 overflow-hidden truncate">0</div>
                         <div class="grid grid-cols-4 gap-3 flex-1">
-                           <button class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">7</button>
-                           <button class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">8</button>
-                           <button class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">9</button>
-                           <button class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">/</button>
-                           <!-- Simple layout just for show -->
-                           <button class="col-span-4 bg-indigo-600 hover:bg-indigo-700 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white mt-auto py-3">=</button>
+                           <button onclick="add('7')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">7</button>
+                           <button onclick="add('8')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">8</button>
+                           <button onclick="add('9')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">9</button>
+                           <button onclick="add('/')" class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">/</button>
+                           <button onclick="add('4')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">4</button>
+                           <button onclick="add('5')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">5</button>
+                           <button onclick="add('6')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">6</button>
+                           <button onclick="add('*')" class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">*</button>
+                           <button onclick="add('1')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">1</button>
+                           <button onclick="add('2')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">2</button>
+                           <button onclick="add('3')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">3</button>
+                           <button onclick="add('-')" class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">-</button>
+                           <button onclick="clearCalc()" class="bg-red-500 hover:bg-red-600 outline-none focus:ring-4 focus:ring-red-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">C</button>
+                           <button onclick="add('0')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">0</button>
+                           <button onclick="add('.')" class="bg-white hover:bg-gray-100 transition-colors rounded-xl shadow-sm border border-gray-200 font-bold text-xl text-gray-700">.</button>
+                           <button onclick="add('+')" class="bg-indigo-500 hover:bg-indigo-600 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white">+</button>
+                           <button onclick="calc()" class="col-span-4 bg-indigo-600 hover:bg-indigo-700 outline-none focus:ring-4 focus:ring-indigo-300 transition-colors rounded-xl shadow-md font-bold text-xl text-white mt-auto py-3">=</button>
                         </div>
+                        <script>
+                          let current = '';
+                          function add(val) { current += val; document.getElementById('calc-display').innerText = current; }
+                          function calc() { try { current = eval(current).toString(); document.getElementById('calc-display').innerText = current; } catch(e) { document.getElementById('calc-display').innerText = 'Error'; current=''; } }
+                          function clearCalc() { current = ''; document.getElementById('calc-display').innerText = '0'; }
+                        </script>
                     </div>`;
                  } else if (args.componentType === 'FLASHCARD') {
                     html = `<div class="w-full h-full perspective-1000">
@@ -225,12 +242,53 @@ export const useGeminiBrain = () => {
                     const time = cfg.seconds || 60;
                     const mins = Math.floor(time / 60).toString().padStart(2, '0');
                     const secs = (time % 60).toString().padStart(2, '0');
-                    html = `<div class="p-8 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl w-full h-full flex flex-col items-center justify-center border border-gray-700">
+                    html = `<script src="https://cdn.tailwindcss.com"></script><div class="p-8 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl w-full h-full flex flex-col items-center justify-center border border-gray-700">
                       <div class="text-6xl font-mono text-white mb-8 tracking-wider font-bold drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" id="timer-display">${mins}:${secs}</div>
                       <div class="flex gap-4">
-                        <button class="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-red-500/30">Reset</button>
-                        <button class="px-8 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-green-500/30">Start</button>
+                        <button onclick="resetTimer()" class="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-red-500/30">Reset</button>
+                        <button id="start-btn" onclick="startTimer(this)" class="px-8 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-full transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-green-500/30">Start</button>
                       </div>
+                      <script>
+                        let time = ${time};
+                        let initialTime = ${time};
+                        let interval = null;
+                        function updateDisplay() {
+                          let m = Math.floor(time / 60).toString().padStart(2, '0');
+                          let s = (time % 60).toString().padStart(2, '0');
+                          document.getElementById('timer-display').innerText = m + ':' + s;
+                        }
+                        function startTimer(btn) {
+                          if (interval) {
+                            clearInterval(interval);
+                            interval = null;
+                            btn.innerText = 'Start';
+                            btn.className = btn.className.replace('bg-yellow-500', 'bg-green-500').replace('hover:bg-yellow-600', 'hover:bg-green-600');
+                          } else {
+                            interval = setInterval(() => {
+                              if (time > 0) {
+                                time--;
+                                updateDisplay();
+                              } else {
+                                clearInterval(interval);
+                                interval = null;
+                                btn.innerText = 'Start';
+                                btn.className = btn.className.replace('bg-yellow-500', 'bg-green-500').replace('hover:bg-yellow-600', 'hover:bg-green-600');
+                              }
+                            }, 1000);
+                            btn.innerText = 'Pause';
+                            btn.className = btn.className.replace('bg-green-500', 'bg-yellow-500').replace('hover:bg-green-600', 'hover:bg-yellow-600');
+                          }
+                        }
+                        function resetTimer() {
+                          if (interval) clearInterval(interval);
+                          interval = null;
+                          time = initialTime;
+                          updateDisplay();
+                          const btn = document.getElementById('start-btn');
+                          btn.innerText = 'Start';
+                          btn.className = btn.className.replace('bg-yellow-500', 'bg-green-500').replace('hover:bg-yellow-600', 'hover:bg-green-600');
+                        }
+                      </script>
                     </div>`;
                  } else if (args.componentType === 'CHECKLIST') {
                     html = `<div class="p-6 bg-white rounded-2xl shadow-xl w-full h-full border border-gray-100 flex flex-col">

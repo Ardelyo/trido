@@ -11,6 +11,7 @@ import { AiToolsView } from './components/AiToolsView';
 import { HistoryView } from './components/HistoryView';
 import { SaveMenu } from './components/SaveMenu';
 import { useSocketSync } from './hooks/useSocketSync';
+import { useAiStatus } from './hooks/useAiStatus';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Share2, Users, LayoutDashboard, Home, Square, Layers, FileText, 
@@ -55,6 +56,19 @@ const App: React.FC = () => {
     language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage 
   } = useStore();
   const { processUserPrompt } = useGeminiBrain();
+  const aiStatus = useAiStatus();
+
+  const getStatusConfig = () => {
+    if (aiStatus.mode === 'gemini') {
+      return { text: 'Daring (Gemini)', color: 'text-blue-700 bg-blue-100/80 border-blue-200/50', dot: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]', statusColor: 'text-blue-600' };
+    }
+    if (aiStatus.mode === 'ollama') {
+      return { text: 'Lokal (Ollama)', color: 'text-emerald-700 bg-emerald-100/80 border-emerald-200/50', dot: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]', statusColor: 'text-emerald-600' };
+    }
+    return { text: 'Terputus', color: 'text-amber-700 bg-amber-100/80 border-amber-200/50', dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]', statusColor: 'text-amber-600' };
+  };
+
+  const statusConfig = getStatusConfig();
 
   const handleCanvasReady = (ref: any) => {
     canvasRef.current = ref.current;
@@ -159,9 +173,9 @@ const App: React.FC = () => {
 
             {/* Mode Indicator (Center) */}
             <div className="flex-none hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className="flex items-center gap-2 text-[13px] font-bold text-emerald-700 bg-emerald-100/80 backdrop-blur px-5 py-2 rounded-[1.25rem] border border-emerald-200/50 shadow-sm">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                Mode Luring
+              <div className={`flex items-center gap-2 text-[13px] font-bold ${statusConfig.color} backdrop-blur px-5 py-2 rounded-[1.25rem] border shadow-sm transition-colors`}>
+                <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
+                {statusConfig.text}
               </div>
             </div>
 
@@ -240,9 +254,9 @@ const App: React.FC = () => {
                       </div>
 
                       <div className="p-4 rounded-3xl bg-white border border-slate-200/60 shadow-sm">
-                        <div className="text-[13px] font-bold text-slate-800 mb-1.5">Sistem Siap</div>
-                        <div className="text-[12px] text-emerald-600 font-semibold flex items-center gap-1.5">
-                            Anda dalam mode luring
+                        <div className="text-[13px] font-bold text-slate-800 mb-1.5">Status AI</div>
+                        <div className={`text-[12px] ${statusConfig.statusColor} font-semibold flex items-center gap-1.5`}>
+                            {statusConfig.text}
                         </div>
                       </div>
                     </div>

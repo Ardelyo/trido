@@ -9,17 +9,23 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
   
   const initialDataRef = useRef<any>(null);
   
-  // Apply initial data if canvas becomes available
   useEffect(() => {
-    if (isViewer && canvasRef.current && initialDataRef.current) {
+    if (!isViewer) return;
+    
+    const interval = setInterval(() => {
+      if (canvasRef.current && initialDataRef.current) {
         try {
             canvasRef.current.loadFromJSON(initialDataRef.current, () => {
                 canvasRef.current.renderAll();
             });
             initialDataRef.current = null;
+            clearInterval(interval);
         } catch(e) {}
-    }
-  }, [canvasRef.current, isViewer]);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isViewer]);
   
   useEffect(() => {
     // Check if we are in a room from URL

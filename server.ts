@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { aiRouter } from "./server/aiRouter";
 
 async function startServer() {
   const app = express();
@@ -87,6 +88,8 @@ async function startServer() {
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
   });
+
+  app.use("/api/ai", aiRouter);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

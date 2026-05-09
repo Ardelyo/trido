@@ -111,8 +111,10 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     setSpatialTarget(null);
   };
 
+  const runRef = useRef<() => Promise<void>>();
+
   useEffect(() => {
-    const run = async () => {
+    runRef.current = async () => {
       if (processingRef.current || actionQueue.length === 0) return;
       
       processingRef.current = true;
@@ -510,8 +512,12 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
       setActing(false);
       setCurrentAction(null);
     };
-
-    const timer = setInterval(run, 100);
-    return () => clearInterval(timer);
   }, [actionQueue, canvasRef]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (runRef.current) runRef.current();
+    }, 100);
+    return () => clearInterval(timer);
+  }, []);
 };

@@ -1,4 +1,4 @@
-import { generateAgentActions } from '../services/geminiService';
+import { generateAgentActions } from '../services/aiService';
 import { CanvasObjectData } from '../types';
 
 interface TestResult {

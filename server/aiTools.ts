@@ -1,11 +1,13 @@
-import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
+import { Type, FunctionDeclaration } from "@google/genai";
 import { CanvasObjectData } from "../types";
-import { GEMINI_MODEL, AGENT_THINKING_BUDGET } from "../constants";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+export interface ViewportBounds {
+  width: number;
+  height: number;
+}
 
 // OPTIMIZED TOOL DEFINITIONS (Small Model Friendly)
-const tools: FunctionDeclaration[] = [
+export const tools: FunctionDeclaration[] = [
   {
     name: "add_mindmap_node",
     description: "Add a labeled shape to canvas. Backend handles positioning.",
@@ -195,8 +197,7 @@ const tools: FunctionDeclaration[] = [
   }
 ];
 
-// SIMPLIFIED SYSTEM INSTRUCTION (Small Model Optimized)
-const buildSystemInstruction = (
+export const buildSystemInstruction = (
   canvasObjects: CanvasObjectData[],
   viewport: ViewportBounds,
   pageContext?: { current: number; total: number },
@@ -317,14 +318,13 @@ Text: "Membuat dokumen rangkuman fisika"
 ${canvasContext}`;
 };
 
-// VALIDATION LAYER
-interface ValidationResult {
+export interface ValidationResult {
   isValid: boolean;
   errors: string[];
   fixedCalls: any[];
 }
 
-const validateFunctionCalls = (
+export const validateFunctionCalls = (
   calls: any[],
   canvasObjects: CanvasObjectData[]
 ): ValidationResult => {
@@ -348,7 +348,7 @@ const validateFunctionCalls = (
     // Validate required parameters
     const toolDef = tools.find(t => t.name === call.name);
     if (toolDef) {
-      const missing = toolDef.parameters.required?.filter(
+      const missing = toolDef.parameters?.required?.filter(
         req => !(req in call.args)
       );
       if (missing && missing.length > 0) {
@@ -367,12 +367,9 @@ const validateFunctionCalls = (
   };
 };
 
-// THINKING EXTRACTION (Robust Multi-Method)
-const extractThinking = (response: any): string => {
-  // Method 1: Native API thinking
+export const extractThinking = (response: any): string => {
   if (response.thought) return response.thought;
   
-  // Method 2: Structured response part
   try {
     const parts = response.candidates?.[0]?.content?.parts || [];
     const thoughtPart = parts.find((p: any) => p.thought === true || p.type === "thinking");
@@ -381,7 +378,6 @@ const extractThinking = (response: any): string => {
     console.warn("Failed to extract structured thinking:", e);
   }
   
-  // Method 3: Parse from text
   const text = response.text || "";
   const patterns = [
     /<thought>(.*?)<\/thought>/s,
@@ -395,146 +391,4 @@ const extractThinking = (response: any): string => {
   }
   
   return "";
-};
-
-// MAIN FUNCTION
-export interface ViewportBounds {
-  width: number;
-  height: number;
-}
-
-export const generateAgentActions = async (
-  prompt: string,
-  canvasImageBase64: string,
-  canvasObjects: CanvasObjectData[],
-  viewport: ViewportBounds,
-  highResInputImage?: string | null,
-  history: { role: 'user' | 'model'; text: string }[] = [],
-  pageContext?: { current: number; total: number },
-  domElements: Record<string, any> = {}
-) => {
-  // Clean base64 data
-  const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-  const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-
-  // Build optimized system instruction
-  const systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements);
-
-  // Construct history-aware contents
-  const contents = [
-    ...history.map(h => ({
-      role: h.role,
-      parts: [{ text: h.text }]
-    })),
-    {
-      role: "user" as const,
-      parts: [
-        { inlineData: { mimeType: "image/png", data: cleanCanvasBase64 } },
-        ...(cleanInputImage ? [{ inlineData: { mimeType: "image/png", data: cleanInputImage } }] : []),
-        { text: `User request: ${prompt}\n\nRemember: Use function calls, not descriptions. Batch all actions together.` }
-      ]
-    }
-  ];
-
-  // Call AI model
-  const response = await ai.models.generateContent({
-    model: GEMINI_MODEL,
-    contents: contents,
-    config: {
-      tools: [{ functionDeclarations: tools }],
-      toolConfig: { includeServerSideToolInvocations: true },
-      systemInstruction: systemInstruction,
-      temperature: 0.3,
-      maxOutputTokens: 2048
-    }
-  });
-
-  // Extract results
-  let functionCalls = response.functionCalls || [];
-  const textResponse = response.text || "";
-  const thought = extractThinking(response);
-
-  // Validate function calls
-  const validation = validateFunctionCalls(functionCalls, canvasObjects);
-  
-  if (!validation.isValid) {
-    console.warn("Function call validation failed:", validation.errors);
-    functionCalls = validation.fixedCalls; // Use auto-fixed calls
-  }
-
-  return { 
-    functionCalls, 
-    textResponse, 
-    thought,
-    validationErrors: validation.errors // Include for debugging
-  };
-};
-
-export const generateToolContent = async (toolId: string, prompt: string): Promise<any> => {
-  const model = "gemini-3.1-flash-preview"; // using smaller model for speed
-  let promptText = "";
-  
-  if (toolId === 'mindmap') {
-    promptText = `Generate a JSON array of mindmap nodes for the topic: "${prompt}". 
-    Each node must have: text (string), style (MAIN_TOPIC, SUBTOPIC, DETAIL), and relativePosition (CENTER for the first one, then RIGHT_OF_LAST, BELOW_LAST, etc.).
-    Example: [{"text": "AI", "style": "MAIN_TOPIC", "relativePosition": "CENTER"}, {"text": "Machine Learning", "style": "SUBTOPIC", "relativePosition": "RIGHT_OF_LAST"}]
-    RETURN ONLY RAW VALID JSON ARRAY without markdown formatting.`;
-  } else if (toolId === 'quiz') {
-    promptText = `Generate a JSON object for a multiple choice quiz about: "${prompt}".
-    Format: {"question": "string", "options": ["string", "string", "string"], "correctIndex": number}
-    RETURN ONLY RAW VALID JSON without markdown formatting.`;
-  } else if (toolId === 'website') {
-    promptText = `Generate a JSON object for a single-page interactive web app about: "${prompt}".
-    Format: { "html": "<div ...>...</div>", "title": "string" }
-    Use Tailwind CSS classes. Make it beautiful and functional. Include inline script if needed.
-    RETURN ONLY RAW VALID JSON without markdown formatting.`;
-  } else if (toolId === 'summary') {
-    promptText = `Summarize the following text clearly and concisely, suitable for presentation notes.
-    Format your response in Markdown. Text: "${prompt}"`;
-  }
-
-  const response = await ai.models.generateContent({
-    model,
-    contents: [{ role: 'user', parts: [{ text: promptText }] }],
-    config: { temperature: 0.3 }
-  });
-
-  const text = response.text || "";
-  
-  if (toolId === 'summary') return text;
-  
-  try {
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(jsonStr);
-  } catch (e) {
-    console.error("Failed to parse tool JSON", e);
-    return null;
-  }
-};
-
-export const transcribeAudio = async (base64Audio: string): Promise<string> => {
-
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: [
-      {
-        parts: [
-          {
-            inlineData: {
-              mimeType: "audio/webm",
-              data: base64Audio.replace(/^data:audio\/(webm|ogg|wav);base64,/, ""),
-            },
-          },
-          {
-            text: "Transkripsikan audio ini ke teks Bahasa Indonesia. Jangan menambahkan komentar, penjelasan, atau tanda baca tambahan jika tidak perlu. Kembalikan hanya teks hasil transkripsinya saja. Jika tidak ada suara manusia, kembalikan string kosong.",
-          },
-        ],
-      },
-    ],
-    config: {
-      temperature: 0.1,
-    },
-  });
-
-  return response.text?.trim() || "";
 };

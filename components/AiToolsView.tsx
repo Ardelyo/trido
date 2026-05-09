@@ -7,7 +7,7 @@ import {
   ArrowLeft, Loader2, Send
 } from 'lucide-react';
 import { useStore } from '../store';
-import { generateToolContent } from '../services/geminiService';
+import { generateToolContent } from '../services/aiService';
 
 interface AiToolDef {
   id: string;
