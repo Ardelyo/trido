@@ -183,7 +183,7 @@ export const useGeminiBrain = () => {
            const pos = getPos(args.gridPosition, undefined);
 
            // Generate HTML template based on component type and config
-           let html = `<div>\${args.componentType}</div>`;
+           let html = `<div>${args.componentType}</div>`;
            let configObj: any = undefined;
            let pWidth = 450;
            let pHeight = 400;
@@ -253,7 +253,7 @@ export const useGeminiBrain = () => {
         if (!actionType) return;
 
         addAction({
-          id: \`action_\${Date.now()}_\${index}\`,
+          id: `action_${Date.now()}_${index}`,
           type: actionType,
           payload,
           status: 'PENDING'

@@ -53,6 +53,9 @@ interface AppStore extends AgentState {
   isHistoryOpen: boolean;
   toggleHistory: () => void;
 
+  userName: string;
+  setUserName: (name: string) => void;
+
   language: 'id' | 'en';
   setLanguage: (lang: 'id' | 'en') => void;
 
@@ -141,6 +144,10 @@ let autoSaveTimeout: ReturnType<typeof setTimeout>;
 const getInitialAiPreference = (): AiPreference => {
   const saved = localStorage.getItem('ai_preference');
   return saved === 'gemini' || saved === 'ollama' || saved === 'auto' ? saved : 'auto';
+};
+
+const getInitialUserName = (): string => {
+  return localStorage.getItem('trido_user_name') || 'Guru';
 };
 
 export const useStore = create<AppStore>((set, get) => ({
@@ -272,6 +279,13 @@ export const useStore = create<AppStore>((set, get) => ({
   isHistoryOpen: false,
   toggleHistory: () => set((state) => ({ isHistoryOpen: !state.isHistoryOpen })),
   
+  userName: getInitialUserName(),
+  setUserName: (name) => {
+    const trimmed = name.trim() || 'Guru';
+    localStorage.setItem('trido_user_name', trimmed);
+    set({ userName: trimmed });
+  },
+
   language: 'id',
   setLanguage: (lang) => set({ language: lang }),
 

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Play, Pause, RotateCcw, Clock, Timer as TimerIcon, StopCircle, Bell } from 'lucide-react';
+import { toast } from '../utils/toast';
 
 interface TimerToolProps {
   config: any;
@@ -28,12 +29,16 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
       
-      // Check Alarm
+      // Check Alarm — use < 2 to be robust against browser event loop lag
       if (mode === 'ALARM' && isAlarmActive && alarmTime) {
         const now = new Date();
         const [hours, minutes] = alarmTime.split(':').map(Number);
-        if (now.getHours() === hours && now.getMinutes() === minutes && now.getSeconds() === 0) {
-          alert('ALARM: Waktunya telah tiba!');
+        if (
+          now.getHours() === hours &&
+          now.getMinutes() === minutes &&
+          now.getSeconds() < 2
+        ) {
+          toast.warning('⏰ Alarm berbunyi! Waktunya telah tiba!');
           setIsAlarmActive(false);
         }
       }
