@@ -529,4 +529,4 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
       }
     };
   }, []);
-},
+};

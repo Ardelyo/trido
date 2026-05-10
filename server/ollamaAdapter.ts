@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CanvasObjectData } from "../types";
-import { tools, buildSystemInstruction, validateFunctionCalls, ViewportBounds } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, ViewportBounds, extractThinking } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 
@@ -67,10 +67,14 @@ export const generateAgentActionsOllama = async (
     throw new Error(`Ollama Error: ${data.error}`);
   }
 
+  let textResponse = "";
+  let functionCalls: any[] = [];
+  let thought = "";
+
   // --- Schema Definitions for Tool Calls ---
   const ToolCallSchema = z.object({
     name: z.string(),
-    args: z.record(z.any())
+    args: z.record(z.string(), z.any())
   });
 
   const LegacyResponseSchema = z.object({
@@ -79,6 +83,7 @@ export const generateAgentActionsOllama = async (
 
   if (data.message) {
     textResponse = data.message.content || "";
+    thought = extractThinking(data.message);
     logger.info(`[Ollama Raw Response]: ${textResponse}`);
 
     if (data.message.tool_calls && data.message.tool_calls.length > 0) {

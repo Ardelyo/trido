@@ -18,17 +18,21 @@ import {
   Image as ImageIcon, File, History, Settings, Mic, Monitor, Share, Download, Sparkles,
   CheckCircle2, ChevronDown, Keyboard, Menu,
   Clock, CheckSquare, PencilRuler, ShieldCheck, HelpCircle, User,
-  MoreHorizontal, Plus, X
+  MoreHorizontal, Plus, X, Check, Pencil, Send
 } from 'lucide-react';
 import { SidebarItem } from './components/SidebarItem';
 import { AiStatusBadge } from './components/AiStatusBadge';
 import { useStore } from './store';
+import { toast } from './utils/toast';
+import { ToastContainer } from './components/Toast';
 
 const App: React.FC = () => {
   const canvasRef = useRef<any>(null);
   const [, setReady] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState('');
 
   // Responsive sidebar detection
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -58,7 +62,8 @@ const App: React.FC = () => {
 
   const {
     logs, inputMode, setInputMode, messages, isAiDrawerOpen, toggleAiDrawer,
-    language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage
+    language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage,
+    userName, setUserName
   } = useStore();
   const { processUserPrompt } = useGeminiBrain();
   const aiStatus = useAiStatus();
@@ -111,10 +116,12 @@ const App: React.FC = () => {
     try {
       const res = await fetch('/api/ai/pull-model', { method: 'POST' });
       if (res.ok) {
-        alert('Proses pengunduhan model dimulai di latar belakang. Silakan tunggu beberapa menit.');
+        toast.info('Proses pengunduhan model dimulai di latar belakang. Silakan tunggu beberapa menit.');
+      } else {
+        toast.error('Gagal memulai pengunduhan model.');
       }
     } catch (e) {
-      alert('Gagal memulai pengunduhan model.');
+      toast.error('Gagal memulai pengunduhan model.');
     }
   };
 
@@ -145,10 +152,10 @@ const App: React.FC = () => {
         <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc] relative overflow-hidden">
           {/* Minimal Viewer Header */}
           <div className="absolute top-6 left-6 z-50 flex items-center gap-3">
-             <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl shadow-slate-200/50 border border-white">
+              <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl shadow-slate-200/50 border border-white">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <span className="text-[12px] font-black text-slate-800 tracking-tight">Sesi Live Pak Lio</span>
-             </div>
+                <span className="text-[12px] font-black text-slate-800 tracking-tight">Sesi Live {userName}</span>
+              </div>
              <div className="flex items-center gap-1 bg-blue-600 px-3 py-2 rounded-2xl shadow-lg shadow-blue-600/20 text-white border border-blue-500">
                 <Users size={14} />
                 <span className="text-[11px] font-bold tracking-tight">Cek Sesi: {roomId}</span>
@@ -167,7 +174,7 @@ const App: React.FC = () => {
              <div className="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-white">
                <Square size={18} fill="white" />
              </div>
-             <span className="text-xl font-black text-slate-900 tracking-tighter">Trido ++</span>
+             <span className="text-xl font-black text-slate-900 tracking-tighter">Trido</span>
           </div>
 
           <AnimatePresence>
@@ -182,7 +189,7 @@ const App: React.FC = () => {
                   <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
                   <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
                 </div>
-                <div className="text-[12px] font-black tracking-[0.2em] text-slate-400 uppercase">Menghubungkan ke Papan Pak Lio...</div>
+                <div className="text-[12px] font-black tracking-[0.2em] text-slate-400 uppercase">Menghubungkan ke Papan {userName}...</div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -204,7 +211,6 @@ const App: React.FC = () => {
               {/* Logo & Product Name */}
               <div className="flex items-center gap-1 bg-white/60 backdrop-blur-md px-4 py-2 lg:py-2.5 rounded-[1.25rem] shadow-sm border border-white">
                 <span className="font-extrabold text-xl text-[#0f172a] tracking-tight">Trido</span>
-                <span className="font-extrabold text-xl text-blue-600 tracking-tighter">++</span>
                 <span className="hidden md:inline ml-3 font-medium text-[15px] pl-4 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
               </div>
             </div>
@@ -222,7 +228,7 @@ const App: React.FC = () => {
                 onClick={toggleAiDrawer}
                 className={`flex items-center gap-2 px-4 py-2 lg:py-2.5 text-sm font-bold rounded-[1.25rem] transition-colors shadow-sm ${isAiDrawerOpen ? 'bg-blue-600 text-white shadow-blue-600/30 ring-4 ring-blue-600/10' : 'text-blue-700 bg-white hover:bg-blue-50 border border-white'}`}
               >
-                <Sparkles size={16} /> <span className="hidden sm:inline">Copilot Trido</span>
+                <Sparkles size={16} /> <span className="hidden sm:inline">Trido AI</span>
               </motion.button>
 
               <div className="hidden sm:block w-px h-6 bg-slate-300/50 mx-1" />
@@ -233,8 +239,10 @@ const App: React.FC = () => {
 
               <SaveMenu onExportClick={() => setIsExportOpen(true)} />
 
-              <button className="w-10 h-10 rounded-[1.25rem] overflow-hidden border-[2.5px] border-white hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-[#e2e8f0] transition-all ml-1 shadow-sm shrink-0" title="User Menu">
-                <img src="https://i.pravatar.cc/100?img=11" alt="User Avatar" className="w-full h-full object-cover" />
+              <button className="w-10 h-10 rounded-[1.25rem] overflow-hidden border-[2.5px] border-white hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-[#e2e8f0] transition-all ml-1 shadow-sm shrink-0" title="User Menu" onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}>
+                <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
               </button>
             </div>
           </motion.header>
@@ -280,10 +288,35 @@ const App: React.FC = () => {
                     </nav>
 
                     <div className="p-5 border-t border-slate-100/80 space-y-4 bg-slate-50/50">
-                      <div className="flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-white hover:shadow-sm transition-all cursor-pointer">
-                        <img src="https://i.pravatar.cc/100?img=11" alt="User" className="w-11 h-11 rounded-[1.1rem] shadow-sm" />
+                      <div className="flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-white hover:shadow-sm transition-all cursor-pointer group">
+                        <div className="w-11 h-11 rounded-[1.1rem] shadow-sm bg-blue-600 flex items-center justify-center text-white font-black text-lg shrink-0">
+                          {userName.charAt(0).toUpperCase()}
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[14px] font-bold text-slate-900 truncate">Pak Lio, Guru Indo</div>
+                          {isEditingName ? (
+                            <form 
+                              onSubmit={(e) => { 
+                                e.preventDefault(); 
+                                if (editNameValue.trim()) setUserName(editNameValue); 
+                                setIsEditingName(false); 
+                              }}
+                              className="flex items-center gap-1"
+                            >
+                              <input
+                                autoFocus
+                                value={editNameValue}
+                                onChange={(e) => setEditNameValue(e.target.value)}
+                                className="text-[14px] font-bold text-slate-900 border-b border-blue-400 outline-none bg-transparent w-full"
+                                onBlur={() => { if (editNameValue.trim()) setUserName(editNameValue); setIsEditingName(false); }}
+                              />
+                              <button type="submit" className="text-blue-600"><Check size={14} /></button>
+                            </form>
+                          ) : (
+                            <div className="flex items-center gap-1.5" onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}>
+                              <div className="text-[14px] font-bold text-slate-900 truncate">{userName}</div>
+                              <Pencil size={12} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          )}
                           <div className="text-[12px] text-slate-500 font-medium">Guru</div>
                         </div>
                       </div>
@@ -378,8 +411,8 @@ const App: React.FC = () => {
                           <Sparkles size={20} />
                         </div>
                         <div>
-                          <div className="font-extrabold text-slate-900 text-[16px]">Copilot Trido</div>
-                          <div className="text-[12px] text-blue-600 font-bold">Asisten AI Cerdas</div>
+                          <div className="font-extrabold text-slate-900 text-[16px]">Trido AI</div>
+                          <div className="text-[12px] text-blue-600 font-bold">Asisten AI Digital</div>
                         </div>
                     </div>
                     <button onClick={toggleAiDrawer} className="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2.5 rounded-2xl transition-colors active:scale-95">
@@ -451,13 +484,13 @@ const App: React.FC = () => {
                           placeholder="Tanya sesuatu..."
                           className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-slate-800 placeholder-slate-400 h-10 px-2"
                         />
-                        <button
-                          type="submit"
-                          disabled={!chatInputText.trim() && !lastUploadedImage}
-                          className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${chatInputText.trim() || lastUploadedImage ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none'}`}
-                        >
-                          <Share size={18} className={chatInputText.trim() || lastUploadedImage ? '' : '-translate-x-px'} />
-                        </button>
+                         <button
+                           type="submit"
+                           disabled={!chatInputText.trim() && !lastUploadedImage}
+                           className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${chatInputText.trim() || lastUploadedImage ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none'}`}
+                         >
+                           <Send size={18} />
+                         </button>
                     </form>
                   </div>
                 </motion.aside>
@@ -470,4 +503,13 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
+const Layout: React.FC = () => {
+  return (
+    <>
+      <App />
+      <ToastContainer />
+    </>
+  );
+};
+
+export default Layout;
