@@ -66,6 +66,7 @@ interface AppStore extends AgentState {
   setIsViewerUrl: (v: boolean) => void;
   
   // Voice & Text Input
+  inputMode: 'voice' | 'text';
   chatInputText: string;
   setChatInputText: (txt: string) => void;
   interimInputText: string;
@@ -79,8 +80,6 @@ interface AppStore extends AgentState {
   brushWidth: number;
   fontFamily: FontFamily;
   fontSize: number;
-  
-  inputMode: 'voice' | 'text';
   
   // Actions
   setInputMode: (mode: 'voice' | 'text') => void;

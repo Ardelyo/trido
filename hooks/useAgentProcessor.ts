@@ -511,10 +511,22 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     setCurrentAction(null);
   };
 
+  const pollRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (runRef.current) runRef.current();
-    }, 100);
-    return () => clearInterval(timer);
+    const poll = async () => {
+      if (runRef.current) {
+        await runRef.current();
+      }
+      pollRef.current = setTimeout(poll, 100);
+    };
+
+    poll();
+
+    return () => {
+      if (pollRef.current) {
+        clearTimeout(pollRef.current);
+      }
+    };
   }, []);
-};
+},

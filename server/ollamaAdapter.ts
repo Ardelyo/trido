@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { CanvasObjectData } from "../types";
 import { tools, buildSystemInstruction, validateFunctionCalls, ViewportBounds } from "./aiTools";
 import { CONFIG } from "../constants";
@@ -66,19 +67,28 @@ export const generateAgentActionsOllama = async (
     throw new Error(`Ollama Error: ${data.error}`);
   }
 
-  let functionCalls: any[] = [];
-  let textResponse = "";
-  let thought = "";
+  // --- Schema Definitions for Tool Calls ---
+  const ToolCallSchema = z.object({
+    name: z.string(),
+    args: z.record(z.any())
+  });
+
+  const LegacyResponseSchema = z.object({
+    calls: z.array(ToolCallSchema)
+  });
 
   if (data.message) {
     textResponse = data.message.content || "";
-    console.log(`[Ollama Raw Response]: ${textResponse}`);
+    logger.info(`[Ollama Raw Response]: ${textResponse}`);
 
     if (data.message.tool_calls && data.message.tool_calls.length > 0) {
-      functionCalls = data.message.tool_calls.map((tc: any) => ({
-        name: tc.function.name,
-        args: tc.function.arguments
-      }));
+      functionCalls = data.message.tool_calls.map((tc: any) => {
+        const parsed = ToolCallSchema.safeParse({
+          name: tc.function.name,
+          args: typeof tc.function.arguments === 'string' ? JSON.parse(tc.function.arguments) : tc.function.arguments
+        });
+        return parsed.success ? parsed.data : null;
+      }).filter(Boolean);
     } else {
       // Fallback: Manual JSON extraction from text
       try {
@@ -92,20 +102,34 @@ export const generateAgentActionsOllama = async (
             const matches = textResponse.matchAll(pattern);
             for (const match of matches) {
                 try {
-                    const parsed = JSON.parse(match[1]);
-                    if (Array.isArray(parsed.calls)) {
-                        functionCalls = [...functionCalls, ...parsed.calls];
-                    } else if (parsed.name && parsed.args) {
-                        functionCalls.push(parsed);
-                    } else if (Array.isArray(parsed) && parsed.every(p => p.name)) {
-                        functionCalls = [...functionCalls, ...parsed];
+                    const rawJson = JSON.parse(match[1]);
+                    
+                    // Case 1: { "calls": [...] }
+                    const legacyResult = LegacyResponseSchema.safeParse(rawJson);
+                    if (legacyResult.success) {
+                        functionCalls = [...functionCalls, ...legacyResult.data.calls];
+                        continue;
+                    }
+
+                    // Case 2: { "name": "...", "args": {...} }
+                    const singleResult = ToolCallSchema.safeParse(rawJson);
+                    if (singleResult.success) {
+                        functionCalls.push(singleResult.data);
+                        continue;
+                    }
+
+                    // Case 3: [ { "name": "...", "args": {...} }, ... ]
+                    const arrayResult = z.array(ToolCallSchema).safeParse(rawJson);
+                    if (arrayResult.success) {
+                        functionCalls = [...functionCalls, ...arrayResult.data];
+                        continue;
                     }
                 } catch (e) {}
             }
             if (functionCalls.length > 0) break;
         }
       } catch (e) {
-          console.warn("[Ollama Adapter] Manual JSON extraction failed", e);
+          logger.warn("[Ollama Adapter] Manual JSON extraction failed", e);
       }
     }
   }

@@ -20,6 +20,8 @@ import {
   Clock, CheckSquare, PencilRuler, ShieldCheck, HelpCircle, User,
   MoreHorizontal, Plus, X
 } from 'lucide-react';
+import { SidebarItem } from './components/SidebarItem';
+import { AiStatusBadge } from './components/AiStatusBadge';
 import { useStore } from './store';
 
 const App: React.FC = () => {
@@ -123,19 +125,7 @@ const App: React.FC = () => {
     setReady(true);
   };
 
-  const SidebarItem = ({ icon: Icon, label, active = false, onClick }: { icon: any, label: string, active?: boolean, onClick?: () => void }) => (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition-colors duration-200 cursor-pointer ${
-        active ? 'bg-blue-600 text-white font-medium shadow-lg shadow-blue-600/20' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-      }`}
-    >
-      <Icon size={20} className={active ? 'text-white' : 'text-slate-400'} />
-      <span className="text-[14px] font-medium">{label}</span>
-    </motion.button>
-  );
+  // Removed local SidebarItem definition as it's now an external component
 
   const {
     isTimerOpen, toggleTimer,
@@ -215,31 +205,13 @@ const App: React.FC = () => {
               <div className="flex items-center gap-1 bg-white/60 backdrop-blur-md px-4 py-2 lg:py-2.5 rounded-[1.25rem] shadow-sm border border-white">
                 <span className="font-extrabold text-xl text-[#0f172a] tracking-tight">Trido</span>
                 <span className="font-extrabold text-xl text-blue-600 tracking-tighter">++</span>
-                <span className="hidden md:inline ml-3 font-medium text-[15px] pl-4 border-l border-slate-300 text-slate-700">Smartboard <span className="font-medium text-slate-500">Teach AI</span></span>
+                <span className="hidden md:inline ml-3 font-medium text-[15px] pl-4 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
               </div>
             </div>
 
             {/* Mode Indicator (Center) */}
             <div className="flex-none hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <div className={`flex items-center gap-3 ${statusConfig.color} backdrop-blur px-5 py-2 rounded-[1.25rem] border shadow-sm transition-colors group relative`}>
-                <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
-                <div className="flex flex-col">
-                  <span className="font-bold leading-tight">{statusConfig.text}</span>
-                  <span className="text-[10px] opacity-70 font-medium leading-tight">{statusConfig.detail}</span>
-                </div>
-
-                {statusConfig.action === 'PULL_MODEL' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      pullOllamaModel();
-                    }}
-                    className="ml-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all active:scale-95"
-                  >
-                    Unduh Model
-                  </button>
-                )}
-              </div>
+              <AiStatusBadge status={statusConfig} onPullModel={pullOllamaModel} />
             </div>
 
             <div className="flex flex-1 justify-end items-center gap-2 lg:gap-3">

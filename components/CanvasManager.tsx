@@ -335,6 +335,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       const obj = canvas.getObjects().find((o: any) => o.id === id);
       if (obj) {
         canvas.remove(obj);
+        removeDomElement(id);
         canvas.requestRenderAll();
       }
     };
