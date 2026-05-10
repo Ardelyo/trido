@@ -61,6 +61,11 @@ export const generateAgentActionsOllama = async (
 
   const data = await response.json();
   
+  if (data.error) {
+    logger.error("Ollama API Error", { error: data.error });
+    throw new Error(`Ollama Error: ${data.error}`);
+  }
+
   let functionCalls: any[] = [];
   let textResponse = "";
   let thought = "";
@@ -152,6 +157,12 @@ export const generateToolContentOllama = async (toolId: string, prompt: string):
   });
 
   const data = await response.json();
+  
+  if (data.error) {
+    logger.error("Ollama Tool Content Error", { error: data.error });
+    throw new Error(`Ollama Error: ${data.error}`);
+  }
+
   const text = data.message?.content || "";
   if (toolId === 'summary') return text;
   

@@ -1,5 +1,5 @@
 export const GEMINI_MODEL = 'gemini-2.0-flash';
-export const OLLAMA_MODEL = 'gemma:2b';
+export const OLLAMA_MODEL = 'gemma4:e2b';
 export const OLLAMA_THINKING_MODE = 'nothink';
 export const DEFAULT_CANVAS_COLOR = 'transparent';
 export const AGENT_THINKING_BUDGET = 2000;
@@ -23,7 +23,7 @@ export const CONFIG = {
       thinkingMode: OLLAMA_THINKING_MODE,
       defaultBaseUrl: 'http://localhost:11434',
       probeTimeoutMs: 1500,
-      numCtx: 4096,
+      numCtx: 1024,
     },
     request: {
       retryCount: 2,

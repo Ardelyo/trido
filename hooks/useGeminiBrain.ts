@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { useStore } from '../store';
 import { AiServiceError, generateAgentActions } from '../services/aiService';
 import { CanvasObjectData, AgentAction, Point } from '../types';
+import { CALCULATOR_TEMPLATE, TIMER_TEMPLATE } from '../services/componentTemplates';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('gemini-brain');
@@ -182,8 +183,8 @@ export const useGeminiBrain = () => {
            const pos = getPos(args.gridPosition, undefined);
 
            // Generate HTML template based on component type and config
-           let html = `<div>${args.componentType}</div>`;
-           let configObj = undefined;
+           let html = `<div>\${args.componentType}</div>`;
+           let configObj: any = undefined;
            let pWidth = 450;
            let pHeight = 400;
 
@@ -196,6 +197,17 @@ export const useGeminiBrain = () => {
                  }
               } catch(e) {}
            }
+
+           if (args.componentType === 'CALCULATOR') {
+              html = CALCULATOR_TEMPLATE;
+              pWidth = 350;
+              pHeight = 500;
+           } else if (args.componentType === 'TIMER') {
+              html = TIMER_TEMPLATE(configObj?.seconds || 300);
+              pWidth = 300;
+              pHeight = 250;
+           }
+
            payload = { html, x: pos.x, y: pos.y, width: pWidth, height: pHeight, componentType: args.componentType, config: configObj };
         } else if (call.name === 'pan_camera') {
            actionType = 'PAN_CAMERA';
@@ -241,7 +253,7 @@ export const useGeminiBrain = () => {
         if (!actionType) return;
 
         addAction({
-          id: `action_${Date.now()}_${index}`,
+          id: \`action_\${Date.now()}_\${index}\`,
           type: actionType,
           payload,
           status: 'PENDING'
@@ -250,9 +262,17 @@ export const useGeminiBrain = () => {
 
     } catch (error: any) {
       logger.error('Failed to process prompt', error);
-      const errorMsg = error instanceof AiServiceError
-        ? error.message
-        : "Sinkronisasi kognitif gagal. Coba lagi atau periksa koneksi AI.";
+      
+      let errorMsg = "Sinkronisasi kognitif gagal. Coba lagi atau periksa koneksi AI.";
+      
+      if (error instanceof AiServiceError) {
+        errorMsg = error.message;
+      } else if (error.message && error.message.includes("Ollama Error")) {
+        errorMsg = `Kesalahan AI Lokal: ${error.message.replace("Ollama Error: ", "")}`;
+        if (error.message.includes("memory")) {
+          errorMsg += " (Sistem kehabisan RAM untuk menjalankan model ini)";
+        }
+      }
 
       addMessage({ role: 'model', text: errorMsg });
       addLog(`AI error: ${errorMsg}`);

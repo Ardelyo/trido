@@ -1,4 +1,5 @@
 
+import "dotenv/config";
 import { generateAgentActionsOllama, generateToolContentOllama } from '../server/ollamaAdapter';
 import { ViewportBounds } from '../server/aiTools';
 
