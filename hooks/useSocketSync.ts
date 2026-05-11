@@ -16,8 +16,10 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
 
   const initialDataRef = useRef<CanvasJson | null>(null);
 
+  const isViewerRef = useRef(false);
+
   useEffect(() => {
-    if (!isViewer) return;
+    if (!isViewerRef.current) return;
 
     const interval = setInterval(() => {
       if (canvasRef.current && initialDataRef.current) {
@@ -34,7 +36,7 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isViewer]);
+  }, []); // Only run once
 
   useEffect(() => {
     // Check if we are in a room from URL
@@ -46,6 +48,7 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
 
     if (currentRoomId) {
        isCurrentlyViewer = true;
+       isViewerRef.current = true;
        setIsViewer(true);
        setRoomId(currentRoomId);
        useStore.getState().setIsViewerUrl(true);

@@ -43,7 +43,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadSessions();
-  }, [loadSessions]);
+  }, []); // Only run once on mount
 
   useEffect(() => {
     const handleResize = () => {
