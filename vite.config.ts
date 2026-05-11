@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => {
       server: {
         port: Number(env.SERVER_PORT || CONFIG.server.defaultPort),
         host: CONFIG.server.host,
+        watch: {
+          ignored: ['**/rooms_persistence.json'],
+        },
       },
       plugins: [
         react(),

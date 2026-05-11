@@ -27,6 +27,7 @@ import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
 
 const App: React.FC = () => {
+  console.log("App render");
   const canvasRef = useRef<any>(null);
   const [, setReady] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
