@@ -7,6 +7,7 @@ import { createLogger } from '../utils/logger';
 import { isPreviewSession } from '../lib/demo-mode/session-manager';
 import { findScriptedMatch } from '../lib/demo-mode/scripted-prompts';
 import { ProgressState } from '../lib/demo-mode/response-handler';
+import { sounds } from '../utils/sounds';
 
 const logger = createLogger('gemini-brain');
 
@@ -22,6 +23,7 @@ export const useGeminiBrain = () => {
     const storeState = useStore.getState();
 
     setThinking(true);
+    sounds.play('thinking');
     addLog(`Pemindaian neural dimulai...`);
 
     // --- 0. DEMO MODE INTERCEPTION ---
@@ -352,6 +354,7 @@ export const useGeminiBrain = () => {
       setAgentMessage(errorMsg);
     } finally {
       setThinking(false);
+      sounds.stop('thinking');
     }
   }, [setThinking, addAction, addLog, addMessage, setAgentMessage]);
 

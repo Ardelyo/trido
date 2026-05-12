@@ -357,6 +357,31 @@ const App: React.FC = () => {
                    <CanvasManager onCanvasReady={handleCanvasReady} />
                </div>
 
+               {/* Page Navigation Indicator */}
+               <div className="absolute bottom-6 left-6 z-10 flex items-center gap-1.5 p-1.5 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/50">
+                {pages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => switchPage(idx)}
+                    className={`min-w-[32px] h-8 rounded-xl text-[13px] font-black transition-all ${
+                      currentPageIndex === idx 
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                        : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                    }`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+                <div className="w-px h-4 bg-slate-200 mx-1" />
+                <button 
+                  onClick={() => addPage()}
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-blue-600 transition-all"
+                  title="Tambah Halaman Baru"
+                >
+                  <Plus size={16} strokeWidth={3} />
+                </button>
+              </div>
+
                {/* UI Overlay for Toolbar/Controls (mapped in ChatInterface) */}
                {canvasRef.current && (
                  <ChatInterface canvasRef={canvasRef} />

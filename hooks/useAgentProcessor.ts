@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { Point } from '../types';
+import { sounds } from '../utils/sounds';
 
 // CONFIG: Human Behavior Emulation
 const MIN_REACTION_TIME = 300; 
@@ -520,6 +521,11 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     processingRef.current = false;
     setActing(false);
     setCurrentAction(null);
+
+    // Play success sound when queue is finished
+    if (useStore.getState().actionQueue.length === 0) {
+      sounds.play('success');
+    }
   };
 
   const pollRef = useRef<NodeJS.Timeout | null>(null);
