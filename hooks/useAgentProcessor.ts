@@ -475,13 +475,24 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
            const target = canvas.getObjects().find((o: any) => o.id === objectId);
            if (target) {
               await execute(target.left, target.top, `Updating...`, () => {
-                 if (property === 'text' && target.isType('group')) {
+                  if (property === 'text' && target.isType('group')) {
                     target.getObjects().forEach((o: any) => {
                        if (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') o.set('text', value);
                     });
                     canvas.requestRenderAll();
                  } else if (property === 'text') {
                     target.set('text', value);
+                    canvas.requestRenderAll();
+                 } else if (property === 'fill') {
+                    if (target.isType('group')) {
+                      // Find the shape in the group (usually the first object)
+                      const shape = target.getObjects().find((o: any) => 
+                        o.type === 'rect' || o.type === 'circle' || o.type === 'triangle'
+                      );
+                      if (shape) shape.set('fill', value);
+                    } else {
+                      target.set('fill', value);
+                    }
                     canvas.requestRenderAll();
                  }
               });

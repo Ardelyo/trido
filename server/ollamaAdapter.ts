@@ -54,9 +54,14 @@ export const generateAgentActionsOllama = async (
     }
   };
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (process.env.OLLAMA_API_KEY) {
+    headers["Authorization"] = `Bearer ${process.env.OLLAMA_API_KEY}`;
+  }
+
   const response = await fetch(`${getOllamaUrl()}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(payload)
   });
 
@@ -179,9 +184,14 @@ export const generateToolContentOllama = async (toolId: string, prompt: string):
     stream: false
   };
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (process.env.OLLAMA_API_KEY) {
+    headers["Authorization"] = `Bearer ${process.env.OLLAMA_API_KEY}`;
+  }
+
   const response = await fetch(`${getOllamaUrl()}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(payload)
   });
 

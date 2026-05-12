@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from '../../utils/toast';
 
 interface QuizMultipleChoiceProps {
   config: {
@@ -15,8 +16,19 @@ export const QuizMultipleChoice: React.FC<QuizMultipleChoiceProps> = ({ config }
   const isCorrect = selected === config.correctIndex;
 
   return (
-    <div className="flex w-full h-full flex-col bg-white p-6 font-sans">
-      <h3 className="mb-6 text-xl font-bold text-slate-800 leading-snug">
+    <div className="flex w-full h-full flex-col bg-white p-6 font-sans relative">
+      <button 
+        onClick={() => {
+          const text = `${config.question}\n\n${config.options.map((o, i) => `${String.fromCharCode(65+i)}. ${o}`).join('\n')}`;
+          navigator.clipboard.writeText(text);
+          toast.success('Soal berhasil disalin!');
+        }}
+        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+        title="Salin Teks Soal"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+      </button>
+      <h3 className="mb-6 text-xl font-bold text-slate-800 leading-snug pr-8">
         {config?.question || 'Question?'}
       </h3>
       <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
