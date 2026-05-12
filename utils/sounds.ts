@@ -1,36 +1,107 @@
 
 // utils/sounds.ts
 class SoundManager {
-  private sounds: Record<string, HTMLAudioElement> = {};
+  private context: AudioContext | null = null;
   private enabled: boolean = true;
+  private activeOscillators: Set<OscillatorNode> = new Set();
 
-  constructor() {
-    if (typeof window !== 'undefined') {
-      // Using public CDN sounds for demo purposes
-      this.sounds = {
-        'mic_on': new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'),
-        'mic_off': new Audio('https://assets.mixkit.co/active_storage/sfx/2567/2567-preview.mp3'),
-        'success': new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'),
-        'thinking': new Audio('https://assets.mixkit.co/active_storage/sfx/2053/2053-preview.mp3'),
-        'pop': new Audio('https://assets.mixkit.co/active_storage/sfx/2045/2045-preview.mp3'),
-      };
-
-      // Set volumes
-      Object.values(this.sounds).forEach(s => { s.volume = 0.3; });
-      if (this.sounds['thinking']) this.sounds['thinking'].loop = true;
+  private initContext() {
+    if (!this.context) {
+      this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (this.context.state === 'suspended') {
+      this.context.resume();
     }
   }
 
   play(name: string) {
-    if (!this.enabled || !this.sounds[name]) return;
-    this.sounds[name].currentTime = 0;
-    this.sounds[name].play().catch(() => {});
+    if (!this.enabled) return;
+    this.initContext();
+    const ctx = this.context!;
+
+    switch (name) {
+      case 'mic_on':
+        this.playTone(440, 0.1, 'sine', 0.1);
+        this.playTone(880, 0.1, 'sine', 0.1, 0.1);
+        break;
+      case 'mic_off':
+        this.playTone(880, 0.1, 'sine', 0.1);
+        this.playTone(440, 0.1, 'sine', 0.1, 0.1);
+        break;
+      case 'success':
+        this.playTone(523.25, 0.1, 'sine', 0.1); // C5
+        this.playTone(659.25, 0.1, 'sine', 0.1, 0.1); // E5
+        this.playTone(783.99, 0.2, 'sine', 0.1, 0.2); // G5
+        break;
+      case 'pop':
+        this.playTone(600, 0.05, 'sine', 0.1);
+        break;
+      case 'thinking':
+        this.startThinking();
+        break;
+    }
+  }
+
+  private playTone(freq: number, duration: number, type: OscillatorType, volume: number, delay: number = 0) {
+    const ctx = this.context!;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+    
+    gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+    gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + delay + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + duration);
+  }
+
+  private thinkingOsc: OscillatorNode | null = null;
+  private thinkingGain: GainNode | null = null;
+
+  private startThinking() {
+    if (this.thinkingOsc) return;
+    const ctx = this.context!;
+    
+    this.thinkingOsc = ctx.createOscillator();
+    this.thinkingGain = ctx.createGain();
+
+    this.thinkingOsc.type = 'sine';
+    this.thinkingOsc.frequency.setValueAtTime(110, ctx.currentTime); // Low hum
+    
+    // Add subtle frequency modulation
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    lfo.frequency.value = 2;
+    lfoGain.gain.value = 5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(this.thinkingOsc.frequency);
+    lfo.start();
+
+    this.thinkingGain.gain.setValueAtTime(0, ctx.currentTime);
+    this.thinkingGain.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.5);
+
+    this.thinkingOsc.connect(this.thinkingGain);
+    this.thinkingGain.connect(ctx.destination);
+
+    this.thinkingOsc.start();
   }
 
   stop(name: string) {
-    if (!this.sounds[name]) return;
-    this.sounds[name].pause();
-    this.sounds[name].currentTime = 0;
+    if (name === 'thinking' && this.thinkingOsc) {
+      const ctx = this.context!;
+      this.thinkingGain?.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+      setTimeout(() => {
+        this.thinkingOsc?.stop();
+        this.thinkingOsc = null;
+        this.thinkingGain = null;
+      }, 600);
+    }
   }
 
   toggle(enabled: boolean) {

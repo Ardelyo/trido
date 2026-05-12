@@ -121,11 +121,12 @@ const getAvailableMode = async (): Promise<{
   const preferredMode = configuredMode === 'auto' ? getPreferredAutoMode() : configuredMode;
 
   if (preferredMode === 'gemini') {
-    if (gemini.online) {
-      return { mode: 'gemini', model: CONFIG.ai.gemini.model, online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
+    const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    if (gemini.online || key) {
+      return { mode: 'gemini', model: CONFIG.ai.gemini.model, online: gemini.online, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
     }
     if (ollama.online && ollama.hasRequiredModel) {
-      return { mode: 'ollama', model: getOllamaModel(), online: true, reason: 'cloud_unavailable_using_local', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
+      return { mode: 'ollama', model: getOllamaModel(), online: true, reason: 'cloud_key_missing_using_local', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
     }
     return { mode: 'unavailable', model: CONFIG.ai.gemini.model, online: false, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
   }
@@ -199,18 +200,9 @@ aiRouter.get("/status", async (req, res) => {
 aiRouter.post("/generate", async (req, res) => {
   try {
     const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference } = req.body;
-
     const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode();
-
-    let mode = status.mode;
-    if (configuredMode === 'gemini') {
-      const gemini = await probeGemini();
-      mode = gemini.online ? 'gemini' : 'unavailable';
-    } else if (configuredMode === 'ollama') {
-      const ollama = await probeOllama();
-      mode = (ollama.online && ollama.hasRequiredModel) ? 'ollama' : 'unavailable';
-    }
+    const mode = status.mode;
 
     if (mode === 'unavailable') {
       const reason = configuredMode === 'gemini' ? status.geminiStatus?.reason : (status.ollamaStatus?.online ? 'model_missing' : 'local_unavailable');
@@ -222,7 +214,6 @@ aiRouter.post("/generate", async (req, res) => {
     }
 
     let result;
-
     if (mode === 'gemini') {
       try {
         result = await generateAgentActionsGemini(
@@ -259,23 +250,14 @@ aiRouter.post("/generate", async (req, res) => {
 aiRouter.post("/tool-content", async (req, res) => {
   try {
     const { toolId, prompt, aiPreference } = req.body;
-    const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode();
-
-    let mode = status.mode;
-    if (configuredMode === 'gemini') {
-      const gemini = await probeGemini();
-      mode = gemini.online ? 'gemini' : 'unavailable';
-    } else if (configuredMode === 'ollama') {
-      const ollama = await probeOllama();
-      mode = (ollama.online && ollama.hasRequiredModel) ? 'ollama' : 'unavailable';
-    }
+    const mode = status.mode;
 
     if (mode === 'unavailable') {
       return res.status(503).json({ error: 'Layanan AI belum tersedia.', code: 'no_internet', retryable: true });
     }
+    
     let result;
-
     if (mode === 'gemini') {
       result = await generateToolContentGemini(toolId, prompt);
     } else {
@@ -292,23 +274,14 @@ aiRouter.post("/tool-content", async (req, res) => {
 aiRouter.post("/transcribe", async (req, res) => {
   try {
     const { base64Audio, aiPreference } = req.body;
-    const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode();
-
-    let mode = status.mode;
-    if (configuredMode === 'gemini') {
-      const gemini = await probeGemini();
-      mode = gemini.online ? 'gemini' : 'unavailable';
-    } else if (configuredMode === 'ollama') {
-      const ollama = await probeOllama();
-      mode = (ollama.online && ollama.hasRequiredModel) ? 'ollama' : 'unavailable';
-    }
+    const mode = status.mode;
 
     if (mode === 'unavailable') {
       return res.status(503).json({ error: 'Transkripsi suara membutuhkan Gemini atau layanan lokal yang tersedia.', code: 'no_internet', retryable: true });
     }
+    
     let text;
-
     if (mode === 'gemini') {
       text = await transcribeAudioGemini(base64Audio);
     } else {
