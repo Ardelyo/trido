@@ -68,7 +68,8 @@ const App: React.FC = () => {
   const {
     logs, inputMode, setInputMode, messages, isAiDrawerOpen, toggleAiDrawer,
     language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage,
-    userName, setUserName
+    userName, setUserName,
+    pages, currentPageIndex, switchPage, addPage
   } = useStore();
   const { processUserPrompt } = useGeminiBrain();
   const aiStatus = useAiStatus();
