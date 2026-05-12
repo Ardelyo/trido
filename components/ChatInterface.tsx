@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import { useGeminiBrain } from '../hooks/useGeminiBrain';
 import { CreatorTool } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { isPreviewSession } from '../lib/demo-mode/session-manager';
 import { AiServiceError, transcribeAudio } from '../services/aiService';
 import {
   MousePointer2, Pencil, Type, Square, Circle, Trash2, Triangle, PaintBucket,
@@ -341,7 +342,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
               }
             } catch (err) {
               console.error("Gemini Transcription Error:", err);
-              setVoiceNotice(err instanceof AiServiceError ? err.message : "Transkripsi suara gagal. Gunakan input teks untuk sementara.");
+              // In demo mode, if we already have a local transcript from Web Speech API,
+              // we ignore the Gemini transcription error to keep the flow smooth.
+              if (!isPreviewSession() || !finalLocalTranscript) {
+                setVoiceNotice(err instanceof AiServiceError ? err.message : "Transkripsi suara gagal. Gunakan input teks untuk sementara.");
+              }
             } finally {
               setIsTranscribing(false);
             }
