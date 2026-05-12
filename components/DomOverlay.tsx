@@ -13,6 +13,8 @@ import { AppBuilderTool } from './AppBuilderTool';
 import { FlashcardTool } from './FlashcardTool';
 import { DiagramRenderer } from './demo/DiagramRenderer';
 import { WorksheetRenderer } from './demo/WorksheetRenderer';
+import { QuizApp } from './quiz/QuizApp';
+import { Printer } from 'lucide-react';
 
 export const DomOverlay: React.FC = () => {
   const domElements = useStore(state => state.domElements);
@@ -30,6 +32,49 @@ export const DomOverlay: React.FC = () => {
     removeDomElement(id);
     const event = new CustomEvent('removeCanvasObject', { detail: { id } });
     window.dispatchEvent(event);
+  };
+
+  const handlePrint = (el: DomElementState, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const elementNode = document.getElementById(`widget-${el.id}`);
+    if (!elementNode) return;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${el.componentType || 'Trido Document'}</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" />
+          <style>
+            @media print {
+              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              /* Hide interactive buttons during print */
+              button { display: none !important; }
+            }
+            body { padding: 40px; font-family: 'Inter', sans-serif; }
+            .print-container { max-width: 800px; margin: 0 auto; }
+          </style>
+        </head>
+        <body>
+          <div class="print-container">
+            ${elementNode.innerHTML}
+          </div>
+          <script>
+            // Wait for Tailwind, KaTeX and images to render
+            setTimeout(() => {
+              window.print();
+              window.close();
+            }, 1000);
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const renderContent = (el: DomElementState) => {
@@ -60,6 +105,8 @@ export const DomOverlay: React.FC = () => {
           return <WorksheetRenderer content={el.config.content} type="worksheet" />;
         case 'DEMO_QUIZ':
           return <WorksheetRenderer content={el.config.content} type="quiz" />;
+        case 'QUIZ_APP':
+          return <QuizApp config={el.config} />;
         // More sophisticated components can be added as raw items here
       }
     }
@@ -111,18 +158,28 @@ export const DomOverlay: React.FC = () => {
                      {el.componentType ? el.componentType.split('_').join(' ') : 'WEB APP'}
                    </div>
                 </div>
-                <button 
-                  onMouseDown={(e) => e.stopPropagation()} 
-                  onClick={(e) => handleDelete(el.id, e)}
-                  className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                  title="Close"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onMouseDown={(e) => e.stopPropagation()} 
+                    onClick={(e) => handlePrint(el, e)}
+                    className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
+                    title="Cetak / Unduh PDF"
+                  >
+                    <Printer size={14} />
+                  </button>
+                  <button 
+                    onMouseDown={(e) => e.stopPropagation()} 
+                    onClick={(e) => handleDelete(el.id, e)}
+                    className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                    title="Close"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
               </div>
 
               {/* Application Content */}
-              <div className="flex-1 bg-white relative overflow-auto pointer-events-auto">
+              <div id={`widget-${el.id}`} className="flex-1 bg-white relative overflow-auto pointer-events-auto">
                 {renderContent(el)}
                 
                 {isActing && (

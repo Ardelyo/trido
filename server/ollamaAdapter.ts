@@ -165,8 +165,15 @@ export const generateToolContentOllama = async (toolId: string, prompt: string):
     Example: [{"text": "AI", "style": "MAIN_TOPIC", "relativePosition": "CENTER"}, {"text": "Machine Learning", "style": "SUBTOPIC", "relativePosition": "RIGHT_OF_LAST"}]
     RETURN ONLY THE JSON ARRAY. NO PREAMBLE. NO MARKDOWN. JUST [ ... ]`;
   } else if (toolId === 'quiz') {
-    promptText = `Generate a JSON object for a multiple choice quiz about: "${prompt}".
-    Format EXACTLY: {"question": "string", "options": ["string", "string", "string"], "correctIndex": number}
+    promptText = `Generate a JSON object for a comprehensive quiz about: "${prompt}".
+    Format EXACTLY: {
+      "title": "string",
+      "questions": [
+        { "type": "multiple_choice", "question": "string", "options": ["string", "string", "string", "string"], "correctIndex": number },
+        { "type": "essay", "question": "string", "expectedAnswer": "string" }
+      ]
+    }
+    Include at least 2 multiple choice questions and 1 essay question.
     RETURN ONLY THE JSON OBJECT. NO PREAMBLE. NO MARKDOWN. JUST { ... }`;
   } else if (toolId === 'website') {
     promptText = `Generate a JSON object for a single-page interactive web app about: "${prompt}".

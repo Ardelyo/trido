@@ -77,8 +77,15 @@ export const generateToolContentGemini = async (toolId: string, prompt: string):
     Example: [{"text": "AI", "style": "MAIN_TOPIC", "relativePosition": "CENTER"}, {"text": "Machine Learning", "style": "SUBTOPIC", "relativePosition": "RIGHT_OF_LAST"}]
     RETURN ONLY RAW VALID JSON ARRAY without markdown formatting.`;
   } else if (toolId === 'quiz') {
-    promptText = `Generate a JSON object for a multiple choice quiz about: "${prompt}".
-    Format: {"question": "string", "options": ["string", "string", "string"], "correctIndex": number}
+    promptText = `Generate a JSON object for a comprehensive quiz about: "${prompt}".
+    Format EXACTLY: {
+      "title": "string",
+      "questions": [
+        { "type": "multiple_choice", "question": "string", "options": ["string", "string", "string", "string"], "correctIndex": number },
+        { "type": "essay", "question": "string", "expectedAnswer": "string" }
+      ]
+    }
+    Include at least 2 multiple choice questions and 1 essay question.
     RETURN ONLY RAW VALID JSON without markdown formatting.`;
   } else if (toolId === 'website') {
     promptText = `Generate a JSON object for a single-page interactive web app about: "${prompt}".

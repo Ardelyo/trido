@@ -116,19 +116,10 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
            });
         });
       } else if (activeTool.id === 'quiz') {
-         const html = `<script src="https://cdn.tailwindcss.com"></script><div class="p-6 bg-white rounded-xl shadow-xl w-full h-full font-sans border-2 border-indigo-100 flex flex-col justify-center">
-           <h3 class="text-2xl font-bold mb-6 text-gray-800 text-center">${result.question || 'Quiz'}</h3>
-           <div class="space-y-3">
-             ${(result.options || []).map((opt: string, i: number) =>
-               `<button onclick="this.className='w-full text-left p-4 rounded-xl border border-transparent ${i === result.correctIndex ? "bg-green-100 text-green-800 font-bold border-green-500" : "bg-red-100 text-red-800 font-bold border-red-500"}'" class="w-full text-left p-4 rounded-xl border border-gray-200 hover:bg-indigo-50 hover:border-indigo-300 transition-all font-medium text-gray-700 bg-white shadow-sm">${opt}</button>`
-             ).join('')}
-           </div>
-         </div>`;
-
          addAction({
            id: `action_${Date.now()}`,
            type: 'RENDER_HTML',
-           payload: { html, x: centerX, y: centerY, width: 450, height: 400, componentType: 'HTML_WIDGET' },
+           payload: { html: '', config: result, x: centerX, y: centerY, width: 500, height: 600, componentType: 'QUIZ_APP' },
            status: 'PENDING'
          });
       } else if (activeTool.id === 'website') {
