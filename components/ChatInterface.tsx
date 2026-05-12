@@ -588,7 +588,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                      <span className="text-[13.5px] font-bold text-slate-800 leading-tight truncate">
-                       {isThinking ? "Memproses Data..." :
+                       {isThinking ? "Memproses dengan Gemma 4..." :
                         isTranscribing ? "Menerjemahkan Suara..." :
                         isListening ? (interimInput || input || (speechSupported ? "Mendengarkan..." : "Merekam suara...")) :
                         voiceNotice ? voiceNotice :

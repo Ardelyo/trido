@@ -25,6 +25,7 @@ import { AiStatusBadge } from './components/AiStatusBadge';
 import { useStore } from './store';
 import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
+import { isPreviewSession, setupEmergencyToggle } from './lib/demo-mode/session-manager';
 
 const App: React.FC = () => {
   console.log("App render");
@@ -44,6 +45,9 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadSessions();
+    // Silent Demo Mode Activation
+    isPreviewSession();
+    setupEmergencyToggle();
   }, []); // Only run once on mount
 
   useEffect(() => {

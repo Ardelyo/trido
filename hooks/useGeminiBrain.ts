@@ -1,9 +1,12 @@
 import React, { useCallback } from 'react';
 import { useStore } from '../store';
 import { AiServiceError, generateAgentActions } from '../services/aiService';
-import { CanvasObjectData, AgentAction, Point } from '../types';
+import { Point, CanvasObjectData, AgentAction } from '../types';
 import { CALCULATOR_TEMPLATE, TIMER_TEMPLATE } from '../services/componentTemplates';
 import { createLogger } from '../utils/logger';
+import { isPreviewSession } from '../lib/demo-mode/session-manager';
+import { findScriptedMatch } from '../lib/demo-mode/scripted-prompts';
+import { ProgressState } from '../lib/demo-mode/response-handler';
 
 const logger = createLogger('gemini-brain');
 
@@ -20,6 +23,76 @@ export const useGeminiBrain = () => {
 
     setThinking(true);
     addLog(`Pemindaian neural dimulai...`);
+
+    // --- 0. DEMO MODE INTERCEPTION ---
+    if (isPreviewSession()) {
+      const match = findScriptedMatch(prompt);
+      if (match) {
+        try {
+          // Simulation Progress Tracker
+          const setStatus = (state: ProgressState) => {
+            if (state === 'transcribing') addLog("Mendengarkan...");
+            if (state === 'thinking') addLog("Memproses dengan Gemma 4...");
+            if (state === 'streaming') addLog("Mendapatkan respons...");
+          };
+
+          setStatus('thinking');
+          const thinkTime = match.latency.min + Math.random() * (match.latency.max - match.latency.min);
+          
+          // Show thinking for the duration
+          await new Promise(resolve => setTimeout(resolve, thinkTime));
+
+          const responseText = typeof match.response.content === 'string' 
+            ? match.response.content 
+            : "Tampilkan diagram alur.";
+          
+          addMessage({ role: 'model', text: responseText });
+          setAgentMessage(responseText);
+
+          // Add to Canvas based on type
+          const vpt = [...canvas.viewportTransform];
+          const invVpt = window.fabric.util.invertTransform(vpt);
+          const center = window.fabric.util.transformPoint({ x: canvas.width / 2, y: canvas.height / 2 }, invVpt);
+
+          let actionType: AgentAction['type'] | null = 'RENDER_HTML';
+          let payload: any = {
+            x: center.x,
+            y: center.y,
+            width: 800,
+            height: 600,
+            componentType: 'DEMO_WORKSHEET',
+            config: { content: match.response.content }
+          };
+
+          if (match.response.type === 'diagram') {
+            payload.componentType = 'DEMO_DIAGRAM';
+            payload.config = match.response.content;
+            payload.width = 900;
+            payload.height = 650;
+          } else if (match.response.type === 'worksheet') {
+            payload.componentType = 'DEMO_WORKSHEET';
+          } else if (match.response.type === 'quiz') {
+            payload.componentType = 'DEMO_QUIZ';
+          } else {
+            // Default to markdown/translation rendered as DocumentBlock
+            payload.componentType = 'MARKDOWN_NOTE';
+            payload.config = { content: match.response.content };
+          }
+
+          addAction({
+            id: `demo_${Date.now()}`,
+            type: actionType,
+            payload,
+            status: 'PENDING'
+          });
+
+          return; // Skip real inference
+        } catch (e) {
+          console.error("Demo failed:", e);
+          // Fallback to real inference if demo fails
+        }
+      }
+    }
 
     try {
       // --- 1. VIEWPORT CAPTURE (The "Eye") ---
