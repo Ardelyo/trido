@@ -66,15 +66,15 @@ export const generateAgentActionsOllama = async (
   });
 
   const data = await response.json();
-  
-  if (data.error) {
-    logger.error("Ollama API Error", { error: data.error });
-    throw new Error(`Ollama Error: ${data.error}`);
-  }
 
   let textResponse = "";
   let functionCalls: any[] = [];
   let thought = "";
+
+  if (data.error) {
+    logger.error("Ollama API Error", { error: data.error });
+    throw new Error(`Ollama Error: ${data.error}`);
+  }
 
   // --- Schema Definitions for Tool Calls ---
   const ToolCallSchema = z.object({
@@ -113,7 +113,7 @@ export const generateAgentActionsOllama = async (
             for (const match of matches) {
                 try {
                     const rawJson = JSON.parse(match[1]);
-                    
+
                     // Case 1: { "calls": [...] }
                     const legacyResult = LegacyResponseSchema.safeParse(rawJson);
                     if (legacyResult.success) {
@@ -149,9 +149,9 @@ export const generateAgentActionsOllama = async (
     functionCalls = validation.fixedCalls;
   }
 
-  return { 
-    functionCalls, 
-    textResponse, 
+  return {
+    functionCalls,
+    textResponse,
     thought,
     validationErrors: validation.errors
   };

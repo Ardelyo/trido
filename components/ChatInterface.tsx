@@ -1,10 +1,8 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../store';
 import { useGeminiBrain } from '../hooks/useGeminiBrain';
 import { CreatorTool } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { isPreviewSession } from '../lib/demo-mode/session-manager';
 import { AiServiceError, transcribeAudio } from '../services/aiService';
 import {
   MousePointer2, Pencil, Type, Square, Circle, Trash2, Triangle, PaintBucket,
@@ -344,18 +342,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 transcriptBufferRef.current = finalLocalTranscript;
               }
             } catch (err) {
-              if (!isPreviewSession() || !finalLocalTranscript) {
-                // FAIL-SAFE for demo: if it's a preview session and transcription fails, 
-                // we return a default trigger to keep the demo moving
-                if (isPreviewSession() && audioBlob.size > 5000) {
-                  finalLocalTranscript = "tampilkan analisis kata binatang jalang di puisi aku";
-                  transcriptBufferRef.current = finalLocalTranscript;
-                  console.log("Fail-safe transcription activated for demo.");
-                } else {
-                  setVoiceNotice(err instanceof AiServiceError ? err.message : "Transkripsi suara gagal. Gunakan input teks untuk sementara.");
-                }
-              }
-            } finally {
+                setVoiceNotice(err instanceof AiServiceError ? err.message : "Transkripsi suara gagal. Gunakan input teks untuk sementara.");
+              } finally {
               setIsTranscribing(false);
             }
           }

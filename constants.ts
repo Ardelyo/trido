@@ -23,7 +23,7 @@ export const CONFIG = {
       thinkingMode: OLLAMA_THINKING_MODE,
       defaultBaseUrl: 'http://localhost:11434',
       probeTimeoutMs: 1500,
-      numCtx: 1024,
+      numCtx: 8192,
     },
     request: {
       retryCount: 2,

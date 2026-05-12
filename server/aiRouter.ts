@@ -222,8 +222,8 @@ aiRouter.post("/generate", async (req, res) => {
       } catch (e) {
         if (configuredMode === 'auto') {
           logger.warn("Gemini failed, falling back to Ollama", e);
-          const ollama = await probeOllama();
-          if (ollama.online && ollama.hasRequiredModel) {
+          // Reuse status already fetched above — avoid second probe round-trip
+          if (status.ollamaStatus?.online && status.ollamaStatus?.hasModel) {
             result = await generateAgentActionsOllama(
               prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
             );
