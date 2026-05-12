@@ -1,6 +1,6 @@
 import { findScriptedMatch, ScriptedPrompt } from './scripted-prompts';
 import { isPreviewSession } from './session-manager';
-import { generateAgentActions } from '../services/aiService';
+import { generateAgentActions } from '../../services/aiService';
 
 export type ProgressState = 'transcribing' | 'thinking' | 'streaming';
 
