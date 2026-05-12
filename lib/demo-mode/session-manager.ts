@@ -50,9 +50,11 @@ export function setupEmergencyToggle(): void {
   });
   
   // Extra safety: non-enumerable properties on window for manual check
-  Object.defineProperty(window, '__trido_check', {
-    value: () => isPreviewSession(),
-    enumerable: false,
-    configurable: false,
-  });
+  if (!Object.prototype.hasOwnProperty.call(window, '__trido_check')) {
+    Object.defineProperty(window, '__trido_check', {
+      value: () => isPreviewSession(),
+      enumerable: false,
+      configurable: true,
+    });
+  }
 }
