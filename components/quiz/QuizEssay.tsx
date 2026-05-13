@@ -45,14 +45,14 @@ export const QuizEssay: React.FC<QuizEssayProps> = ({ config }) => {
            <button 
              disabled={!answer.trim()}
              onClick={() => setSubmitted(true)}
-             className="w-full bg-slate-800 font-bold text-white py-3 rounded-xl shadow-[0_4px_14px_0_rgba(15,23,42,0.39)] hover:bg-slate-900 transition disabled:opacity-50 disabled:shadow-none"
+             className="w-full bg-slate-800 font-bold text-white py-3 rounded-xl shadow-[0_4px_14px_0_rgba(15,23,42,0.39)] hover:bg-slate-900 transition disabled:opacity-50 disabled:shadow-none no-print"
            >
              Kumpulkan Jawaban
            </button>
         ) : (
            <button 
              onClick={() => { setAnswer(""); setSubmitted(false); }}
-             className="w-full bg-white border-2 border-slate-200 font-bold text-slate-600 py-3 rounded-xl hover:bg-slate-50 transition"
+             className="w-full bg-white border-2 border-slate-200 font-bold text-slate-600 py-3 rounded-xl hover:bg-slate-50 transition no-print"
            >
              Tulis Ulang
            </button>

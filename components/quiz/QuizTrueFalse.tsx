@@ -31,7 +31,7 @@ export const QuizTrueFalse: React.FC<QuizTrueFalseProps> = ({ config }) => {
       <div className="flex-1 flex flex-col justify-center items-center text-center">
         <span className="text-xs font-bold tracking-wider text-indigo-500 uppercase mb-4 bg-indigo-50 px-3 py-1 rounded-full">Benar atau Salah</span>
         <h3 className="mb-8 text-2xl font-bold text-slate-700 leading-relaxed max-w-sm">
-          "{config?.statement || 'Pernyataan ini adalah...'}"
+          {config?.statement || 'Pernyataan ini adalah...'}
         </h3>
         
         <div className="flex gap-4 w-full px-4">
@@ -62,7 +62,7 @@ export const QuizTrueFalse: React.FC<QuizTrueFalseProps> = ({ config }) => {
            <button 
              disabled={selected === null}
              onClick={() => setSubmitted(true)}
-             className="w-full bg-indigo-600 font-bold text-white py-3.5 rounded-xl shadow-[0_8px_20px_-4px_rgba(79,70,229,0.3)] hover:bg-indigo-700 focus:ring-4 ring-indigo-200 transition-all disabled:opacity-50 disabled:shadow-none uppercase tracking-widest text-xs"
+             className="w-full bg-indigo-600 font-bold text-white py-3.5 rounded-xl shadow-[0_8px_20px_-4px_rgba(79,70,229,0.3)] hover:bg-indigo-700 focus:ring-4 ring-indigo-200 transition-all disabled:opacity-50 disabled:shadow-none uppercase tracking-widest text-xs no-print"
            >
              Periksa
            </button>
@@ -71,7 +71,7 @@ export const QuizTrueFalse: React.FC<QuizTrueFalseProps> = ({ config }) => {
              <div className="flex gap-2">
                <button 
                  onClick={() => { setSelected(null); setSubmitted(false); }}
-                 className="flex-1 bg-white border border-slate-200 font-bold text-slate-600 py-3 rounded-xl hover:bg-slate-50 transition text-xs uppercase tracking-widest"
+                 className="flex-1 bg-white border border-slate-200 font-bold text-slate-600 py-3 rounded-xl hover:bg-slate-50 transition text-xs uppercase tracking-widest no-print"
                >
                  Ulangi
                </button>

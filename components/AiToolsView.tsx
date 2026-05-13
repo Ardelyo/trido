@@ -59,15 +59,11 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
     try {
       if (activeTool.id === 'image') {
         const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(toolInput)}`;
-
-        // Coba konversi ke base64 untuk konsistensi, atau jika store mendukung url, pakai url
-        // Dalam implementasi ini kita pura-pura pakai addAction karena gemini image action butuh base64, kita akan buat object HTML saja biar simple
-
         addAction({
           id: `action_${Date.now()}`,
           type: 'RENDER_HTML',
           payload: {
-            html: `<img src="${imageUrl}" className="w-full h-full object-cover rounded-xl" />`,
+            html: `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f8fafc"><img src="${imageUrl}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:12px" /></div>`,
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
             width: 400, height: 400,
@@ -75,7 +71,6 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
           },
           status: 'PENDING'
         });
-
         onClose();
         return;
       }
@@ -85,6 +80,9 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
       let centerX = window.innerWidth / 2 || 400;
       let centerY = window.innerHeight / 2 || 300;
 
+      let lastX = centerX;
+      let lastY = centerY;
+
       if (activeTool.id === 'mindmap' && Array.isArray(result)) {
         result.forEach((node: any, idx: number) => {
            let fill = '#3B82F6';
@@ -93,21 +91,25 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
            if (node.style === 'MAIN_TOPIC') { fill = '#1D4ED8'; width = 250; height = 100; }
            else if (node.style === 'DETAIL') { fill = '#93C5FD'; width = 150; height = 60; }
 
-           let xOffset = 0;
-           let yOffset = 0;
-           if (node.relativePosition === 'RIGHT_OF_LAST') xOffset = 300;
-           if (node.relativePosition === 'BELOW_LAST') yOffset = 150;
-
-           // Very simplified layout for demo
-           centerX += xOffset;
-           centerY += yOffset;
+           if (node.relativePosition === 'CENTER') {
+             lastX = centerX;
+             lastY = centerY;
+           } else if (node.relativePosition === 'RIGHT_OF_LAST') {
+             lastX += width + 60;
+           } else if (node.relativePosition === 'BELOW_LAST') {
+             lastY += height + 40;
+           } else if (node.relativePosition === 'LEFT_OF_LAST') {
+             lastX -= width + 60;
+           } else if (node.relativePosition === 'ABOVE_LAST') {
+             lastY -= height + 40;
+           }
 
            addAction({
              id: `action_${Date.now()}_${idx}`,
              type: 'CREATE_SHAPE',
              payload: {
                shapeType: 'RECTANGLE',
-               x: centerX, y: centerY,
+               x: lastX, y: lastY,
                text: node.text,
                fill, width, height,
                textColor: '#FFFFFF'
@@ -119,14 +121,26 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
          addAction({
            id: `action_${Date.now()}`,
            type: 'RENDER_HTML',
-           payload: { html: '', config: result, x: centerX, y: centerY, width: 500, height: 600, componentType: 'QUIZ_APP' },
+           payload: { html: '', config: result, x: centerX, y: centerY, width: 520, height: 640, componentType: 'QUIZ_APP' },
            status: 'PENDING'
          });
       } else if (activeTool.id === 'website') {
+         const webConfig = result || {};
          addAction({
            id: `action_${Date.now()}`,
            type: 'RENDER_HTML',
-           payload: { html: `<script src="https://cdn.tailwindcss.com"></script>${result.html || ''}`, x: centerX, y: centerY, width: 600, height: 500, componentType: 'HTML_WIDGET' },
+           payload: {
+             html: '',
+             x: centerX, y: centerY,
+             width: 700, height: 520,
+             componentType: 'INTERACTIVE_APP',
+             config: {
+               html: webConfig.html || `<div class="p-8 text-center text-gray-500">App loaded</div>`,
+               css: webConfig.css || '',
+               js: webConfig.js || '',
+               title: webConfig.title || toolInput
+             }
+           },
            status: 'PENDING'
          });
       } else if (activeTool.id === 'summary') {
@@ -134,8 +148,14 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
            id: `action_${Date.now()}`,
            type: 'RENDER_HTML',
            payload: {
-             html: `<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"><div class="p-8 bg-amber-50 prose prose-amber w-full h-full rounded-xl overflow-y-auto">${result}</div>`,
-             x: centerX, y: centerY, width: 500, height: 600, componentType: 'HTML_WIDGET'
+             html: '',
+             x: centerX, y: centerY,
+             width: 600, height: 700,
+             componentType: 'DOCUMENT_PAGE',
+             config: {
+               title: `Ringkasan: ${toolInput.slice(0, 40)}...`,
+               markdown: typeof result === 'string' ? result : ''
+             }
            },
            status: 'PENDING'
          });

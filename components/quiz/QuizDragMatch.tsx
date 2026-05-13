@@ -122,14 +122,14 @@ export const QuizDragMatch: React.FC<QuizDragMatchProps> = ({ config }) => {
            <button 
              disabled={!isAllMatched}
              onClick={() => setSubmitted(true)}
-             className="w-full bg-slate-800 font-bold text-white py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(15,23,42,0.39)] hover:bg-slate-900 transition disabled:opacity-50 disabled:shadow-none"
+             className="w-full bg-slate-800 font-bold text-white py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(15,23,42,0.39)] hover:bg-slate-900 transition disabled:opacity-50 disabled:shadow-none no-print"
            >
              Cek Jawaban
            </button>
         ) : (
            <button 
              onClick={() => { setMatches({}); setSubmitted(false); setSelectedLeft(null); }}
-             className="w-full bg-white border border-slate-200 font-bold text-slate-600 py-3 block text-center rounded-xl hover:bg-slate-50 transition drop-shadow-sm"
+             className="w-full bg-white border border-slate-200 font-bold text-slate-600 py-3 block text-center rounded-xl hover:bg-slate-50 transition drop-shadow-sm no-print"
            >
              Ulangi
            </button>

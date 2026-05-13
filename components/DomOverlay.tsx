@@ -53,8 +53,12 @@ export const DomOverlay: React.FC = () => {
           <style>
             @media print {
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              /* Hide interactive buttons during print */
-              button { display: none !important; }
+              /* Hide elements with no-print class */
+              .no-print { display: none !important; }
+              /* Ensure the content spans full width without weird scrollbars */
+              .print-container { overflow: visible !important; height: auto !important; }
+              /* Remove rounded corners and shadows for cleaner print */
+              * { box-shadow: none !important; border-radius: 0 !important; }
             }
             body { padding: 40px; font-family: 'Inter', sans-serif; }
             .print-container { max-width: 800px; margin: 0 auto; }
@@ -107,6 +111,27 @@ export const DomOverlay: React.FC = () => {
           return <WorksheetRenderer content={el.config.content} type="quiz" />;
         case 'QUIZ_APP':
           return <QuizApp config={el.config} />;
+        case 'IMAGE_URL':
+          // Raw image URL rendered in an iframe for isolation
+          return (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#f8fafc',
+                padding: '12px'
+              }}
+            >
+              <img
+                src={el.html?.match(/src="([^"]+)"/)?.[1] || ''}
+                alt="AI Generated"
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '10px' }}
+              />
+            </div>
+          );
         // More sophisticated components can be added as raw items here
       }
     }
@@ -158,7 +183,7 @@ export const DomOverlay: React.FC = () => {
                      {el.componentType ? el.componentType.split('_').join(' ') : 'WEB APP'}
                    </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 no-print">
                   <button 
                     onMouseDown={(e) => e.stopPropagation()} 
                     onClick={(e) => handlePrint(el, e)}

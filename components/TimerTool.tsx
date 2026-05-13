@@ -92,7 +92,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
             key={m}
             onClick={() => setMode(m)}
             className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
-              mode === m ? 'text-primary bg-white border-b-2 border-primary' : 'text-slate-400 hover:text-slate-600'
+              mode === m ? 'text-indigo-600 bg-white border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             {m}
@@ -155,17 +155,17 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
 
             {mode === 'ALARM' && (
               <div className="flex flex-col items-center w-full max-w-[200px]">
-                <Bell size={40} className={`mb-4 ${isAlarmActive ? 'text-primary animate-bounce' : 'text-slate-300'}`} />
+                <Bell size={40} className={`mb-4 ${isAlarmActive ? 'text-indigo-600 animate-bounce' : 'text-slate-300'}`} />
                 <input
                   type="time"
                   value={alarmTime}
                   onChange={(e) => setAlarmTime(e.target.value)}
-                  className="w-full text-2xl font-black text-center border-b-2 border-slate-200 focus:border-primary outline-none py-2 bg-transparent text-slate-800"
+                  className="w-full text-2xl font-black text-center border-b-2 border-slate-200 focus:border-indigo-500 outline-none py-2 bg-transparent text-slate-800"
                 />
                 <button
                   onClick={() => setIsAlarmActive(!isAlarmActive)}
                   className={`mt-6 w-full py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 ${
-                    isAlarmActive ? 'bg-rose-500 text-white' : 'bg-primary text-white'
+                    isAlarmActive ? 'bg-rose-500 text-white' : 'bg-indigo-600 text-white'
                   }`}
                 >
                   {isAlarmActive ? 'BATALKAN ALARM' : 'SETEL ALARM'}

@@ -19,7 +19,7 @@ export const FlashcardTool: React.FC<FlashcardToolProps> = ({ config }) => {
       style={{ perspective: '1000px' }}
     >
       <motion.div
-        className="relative w-full h-full w-64 h-80"
+        className="relative w-full h-full"
         initial={false}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
