@@ -27,6 +27,23 @@ export const BoardSettingsTool: React.FC = () => {
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Penyedia AI</h4>
+        <select 
+          value={useStore.getState().aiPreference}
+          onChange={(e) => useStore.getState().setAiPreference(e.target.value as any)}
+          className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-3 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+        >
+          <option value="auto">Otomatis (Rekomendasi)</option>
+          <option value="gemini">Google Gemini API</option>
+          <option value="vertex">Google Vertex AI</option>
+          <option value="ollama">Ollama (Lokal)</option>
+        </select>
+        <p className="mt-2 text-[10px] text-slate-400 font-medium leading-relaxed">
+          Pilih Vertex AI untuk performa enterprise atau Ollama untuk privasi total tanpa internet.
+        </p>
+      </div>
+
+      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Izin Murid (Viewer)</h4>
         <div className="space-y-3">
           <label className="flex items-center justify-between cursor-pointer group">

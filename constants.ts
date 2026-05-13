@@ -25,6 +25,15 @@ export const CONFIG = {
       probeTimeoutMs: 1500,
       numCtx: 8192,
     },
+    vertex: {
+      model: 'gemini-1.5-flash',
+      location: 'us-central1',
+      probeTimeoutMs: 3000,
+      generation: {
+        temperature: 0.3,
+        maxOutputTokens: 2048,
+      },
+    },
     request: {
       retryCount: 2,
       retryBaseDelayMs: 400,

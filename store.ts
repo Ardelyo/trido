@@ -142,7 +142,9 @@ let autoSaveTimeout: ReturnType<typeof setTimeout>;
 
 const getInitialAiPreference = (): AiPreference => {
   const saved = localStorage.getItem('ai_preference');
-  return saved === 'gemini' || saved === 'ollama' || saved === 'auto' ? saved : 'auto';
+  return (saved === 'gemini' || saved === 'ollama' || saved === 'vertex' || saved === 'auto') 
+    ? (saved as AiPreference) 
+    : 'auto';
 };
 
 const getInitialUserName = (): string => {

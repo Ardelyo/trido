@@ -11,6 +11,7 @@
     "start": "tsx server.ts"
   },
   "dependencies": {
+    "@google-cloud/vertexai": "^1.12.0",
     "@google/genai": "^1.34.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.2",

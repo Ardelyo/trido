@@ -80,6 +80,16 @@ const App: React.FC = () => {
         action: null
       };
     }
+    if (aiStatus.mode === 'vertex') {
+      return {
+        text: 'Mode Cloud (Vertex)',
+        detail: `Vertex: ${aiStatus.model}`,
+        color: 'text-purple-700 bg-purple-100/80 border-purple-200/50',
+        dot: 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]',
+        statusColor: 'text-purple-600',
+        action: null
+      };
+    }
     if (aiStatus.mode === 'ollama') {
       return {
         text: 'Mode Luring',
@@ -105,7 +115,7 @@ const App: React.FC = () => {
 
     return {
       text: 'AI Tidak Tersedia',
-      detail: aiStatus.reason === 'invalid_key' ? 'Kunci Gemini perlu diperiksa' : 'Gemini/Ollama belum terhubung',
+      detail: aiStatus.reason === 'invalid_key' ? 'Kunci API perlu diperiksa' : aiStatus.reason === 'missing_project' ? 'Project ID Vertex belum diatur' : 'Gemini/Ollama/Vertex belum terhubung',
       color: 'text-amber-700 bg-amber-100/80 border-amber-200/50',
       dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]',
       statusColor: 'text-amber-600',

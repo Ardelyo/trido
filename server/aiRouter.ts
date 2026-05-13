@@ -11,6 +11,11 @@ import {
   generateToolContentOllama,
   transcribeAudioOllama
 } from "./ollamaAdapter";
+import {
+  generateAgentActionsVertex,
+  generateToolContentVertex,
+  transcribeAudioVertex
+} from "./vertexAdapter";
 import { CONFIG } from "../constants";
 import { AiPreference } from "../types";
 import { createLogger } from "../utils/logger";
@@ -20,18 +25,20 @@ const logger = createLogger('ai-router');
 
 aiRouter.use(express.json({ limit: CONFIG.ai.request.bodyLimit }));
 
-type AiMode = 'gemini' | 'ollama';
+type AiMode = 'gemini' | 'ollama' | 'vertex';
 type AiErrorCode = 'invalid_key' | 'no_internet' | 'rate_limited' | 'model_not_found' | 'local_unavailable' | 'server_error';
 
 const isAiPreference = (value: unknown): value is AiPreference => (
-  value === 'auto' || value === 'gemini' || value === 'ollama'
+  value === 'auto' || value === 'gemini' || value === 'ollama' || value === 'vertex'
 );
 
 const getConfiguredMode = (): AiPreference => {
   const AI_MODE = isAiPreference(process.env.AI_MODE) ? process.env.AI_MODE : 'auto';
   const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  const VERTEX_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID;
 
   if (AI_MODE === 'gemini' && !GEMINI_KEY) return 'auto';
+  if (AI_MODE === 'vertex' && !VERTEX_PROJECT) return 'auto';
   return AI_MODE;
 };
 
@@ -39,9 +46,10 @@ const getRuntimePreference = (preference?: unknown): AiPreference => (
   isAiPreference(preference) ? preference : getConfiguredMode()
 );
 
-const getPreferredAutoMode = (): AiMode => (
-  process.env.GEMINI_API_KEY || process.env.API_KEY ? 'gemini' : 'ollama'
-);
+const getPreferredAutoMode = (): AiMode => {
+  if (process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID) return 'vertex';
+  return process.env.GEMINI_API_KEY || process.env.API_KEY ? 'gemini' : 'ollama';
+};
 
 const getOllamaUrl = () => process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
 const getOllamaModel = () => process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
@@ -77,6 +85,16 @@ const probeGemini = async () => {
   }
 };
 
+const probeVertex = async () => {
+  const project = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID;
+  if (!project) {
+    return { online: false, reason: 'missing_project' };
+  }
+  // Vertex AI SDK doesn't have a simple probe, we just check if config is present
+  // A real probe would involve a small request, but for now we assume online if configured
+  return { online: true, reason: 'configured' };
+};
+
 const probeOllama = async () => {
   const url = getOllamaUrl();
   try {
@@ -110,29 +128,36 @@ const getAvailableMode = async (): Promise<{
   reason: string;
   ollamaStatus?: { online: boolean; hasModel: boolean; models: string[] };
   geminiStatus?: { online: boolean; reason: string };
+  vertexStatus?: { online: boolean; reason: string };
 }> => {
   const configuredMode = getConfiguredMode();
   const gemini = await probeGemini();
   const ollama = await probeOllama();
+  const vertex = await probeVertex();
 
   const geminiInfo = { online: gemini.online, reason: gemini.reason };
   const ollamaInfo = { online: ollama.online, hasModel: !!ollama.hasRequiredModel, models: ollama.models };
+  const vertexInfo = { online: vertex.online, reason: vertex.reason };
 
   const preferredMode = configuredMode === 'auto' ? getPreferredAutoMode() : configuredMode;
+
+  if (preferredMode === 'vertex' && vertex.online) {
+    return { mode: 'vertex', model: CONFIG.ai.vertex.model, online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
+  }
 
   if (preferredMode === 'gemini') {
     const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (gemini.online || key) {
-      return { mode: 'gemini', model: CONFIG.ai.gemini.model, online: gemini.online, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
+      return { mode: 'gemini', model: CONFIG.ai.gemini.model, online: gemini.online, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
     }
     if (ollama.online && ollama.hasRequiredModel) {
-      return { mode: 'ollama', model: getOllamaModel(), online: true, reason: 'cloud_key_missing_using_local', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
+      return { mode: 'ollama', model: getOllamaModel(), online: true, reason: 'cloud_key_missing_using_local', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
     }
-    return { mode: 'unavailable', model: CONFIG.ai.gemini.model, online: false, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
+    return { mode: 'unavailable', model: CONFIG.ai.gemini.model, online: false, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
   }
 
   if (ollama.online && ollama.hasRequiredModel) {
-    return { mode: 'ollama', model: getOllamaModel(), online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo };
+    return { mode: 'ollama', model: getOllamaModel(), online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
   }
   return {
     mode: 'unavailable',
@@ -140,7 +165,8 @@ const getAvailableMode = async (): Promise<{
     online: false,
     reason: ollama.online ? 'model_missing' : ollama.reason,
     geminiStatus: geminiInfo,
-    ollamaStatus: ollamaInfo
+    ollamaStatus: ollamaInfo,
+    vertexStatus: vertexInfo
   };
 };
 
@@ -205,16 +231,33 @@ aiRouter.post("/generate", async (req, res) => {
     const mode = status.mode;
 
     if (mode === 'unavailable') {
-      const reason = configuredMode === 'gemini' ? status.geminiStatus?.reason : (status.ollamaStatus?.online ? 'model_missing' : 'local_unavailable');
+      let reason = 'no_internet';
+      let serviceName = 'AI';
+
+      if (configuredMode === 'gemini') {
+        reason = status.geminiStatus?.reason || 'no_internet';
+        serviceName = 'Gemini';
+      } else if (configuredMode === 'vertex') {
+        reason = status.vertexStatus?.reason || 'no_internet';
+        serviceName = 'Vertex AI';
+      } else {
+        reason = status.ollamaStatus?.online ? 'model_missing' : 'local_unavailable';
+        serviceName = 'Ollama';
+      }
+
       return res.status(503).json({
-        error: configuredMode === 'gemini' ? 'Layanan Gemini tidak tersedia.' : 'Layanan Ollama tidak tersedia.',
-        code: reason === 'invalid_key' ? 'invalid_key' : 'no_internet',
+        error: `Layanan ${serviceName} tidak tersedia.`,
+        code: reason === 'invalid_key' || reason === 'missing_project' ? 'invalid_key' : 'no_internet',
         retryable: true
       });
     }
 
     let result;
-    if (mode === 'gemini') {
+    if (mode === 'vertex') {
+      result = await generateAgentActionsVertex(
+        prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
+      );
+    } else if (mode === 'gemini') {
       try {
         result = await generateAgentActionsGemini(
           prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
@@ -258,7 +301,9 @@ aiRouter.post("/tool-content", async (req, res) => {
     }
     
     let result;
-    if (mode === 'gemini') {
+    if (mode === 'vertex') {
+      result = await generateToolContentVertex(toolId, prompt);
+    } else if (mode === 'gemini') {
       result = await generateToolContentGemini(toolId, prompt);
     } else {
       result = await generateToolContentOllama(toolId, prompt);
@@ -282,7 +327,9 @@ aiRouter.post("/transcribe", async (req, res) => {
     }
     
     let text;
-    if (mode === 'gemini') {
+    if (mode === 'vertex') {
+      text = await transcribeAudioVertex(base64Audio);
+    } else if (mode === 'gemini') {
       text = await transcribeAudioGemini(base64Audio);
     } else {
       text = await transcribeAudioOllama(base64Audio);

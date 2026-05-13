@@ -26,7 +26,7 @@ export class AiServiceError extends Error {
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const friendlyMessageForStatus = (status: number, fallback?: string) => {
-  if (status === 401 || status === 403) return 'Kunci API Gemini tidak valid atau belum diberi izin.';
+  if (status === 401 || status === 403) return 'Kunci API atau izin layanan AI tidak valid.';
   if (status === 404) return 'Model AI yang dipilih tidak ditemukan.';
   if (status === 429) return 'Kuota AI sedang tercapai. Coba lagi sebentar.';
   if (status >= 500) return fallback || 'Layanan AI sedang bermasalah.';
