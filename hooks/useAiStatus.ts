@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { CONFIG } from '../constants';
 
 export interface AiStatus {
-  mode: 'gemini' | 'ollama' | 'unavailable';
+  mode: 'gemini' | 'ollama' | 'vertex' | 'unavailable';
   model: string;
   online: boolean;
   reason?: string;
   checkedAt?: number;
   ollamaStatus?: { online: boolean; hasModel: boolean; models: string[] };
   geminiStatus?: { online: boolean; reason: string };
+  vertexStatus?: { online: boolean; reason: string };
 }
 
 export const useAiStatus = () => {
