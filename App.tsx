@@ -9,6 +9,7 @@ import { ToolOverlay } from './components/ToolOverlay';
 import { TemplatesView } from './components/TemplatesView';
 import { AiToolsView } from './components/AiToolsView';
 import { HistoryView } from './components/HistoryView';
+import { SettingsView } from './components/SettingsView';
 import { SaveMenu } from './components/SaveMenu';
 import { useSocketSync } from './hooks/useSocketSync';
 import { useAiStatus } from './hooks/useAiStatus';
@@ -31,6 +32,7 @@ const App: React.FC = () => {
   const [, setReady] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
 
@@ -291,11 +293,12 @@ const App: React.FC = () => {
                 >
                   <div className="w-65 h-full flex flex-col">
                     <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 custom-scrollbar">
-                      <SidebarItem icon={Square} label="Papan Tulis" active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen} onClick={() => { if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); }} />
-                      <SidebarItem icon={Layers} label="Templat" active={isTemplatesOpen} onClick={toggleTemplates} />
+                      <SidebarItem icon={Square} label="Papan Tulis" active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen} onClick={() => { if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); setIsSettingsOpen(false); }} />
+                      <SidebarItem icon={Layers} label="Templat" active={isTemplatesOpen} onClick={() => { toggleTemplates(); setIsSettingsOpen(false); }} />
                       <div className="h-5" />
-                      <SidebarItem icon={Sparkles} label="Alat AI Agentic" active={isAiToolsOpen} onClick={toggleAiTools} />
-                      <SidebarItem icon={History} label="Riwayat" active={isHistoryOpen} onClick={toggleHistory} />
+                      <SidebarItem icon={Sparkles} label="Alat AI Agentic" active={isAiToolsOpen} onClick={() => { toggleAiTools(); setIsSettingsOpen(false); }} />
+                      <SidebarItem icon={History} label="Riwayat" active={isHistoryOpen} onClick={() => { toggleHistory(); setIsSettingsOpen(false); }} />
+                      <SidebarItem icon={Settings} label="Pengaturan" active={isSettingsOpen} onClick={() => { setIsSettingsOpen(v => !v); if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); }} />
                     </nav>
 
                     <div className="p-5 border-t border-slate-100/80 space-y-4 bg-slate-50/50">
@@ -395,7 +398,13 @@ const App: React.FC = () => {
 
                <AnimatePresence>
                  {isTemplatesOpen && (
-                   <TemplatesView onClose={toggleTemplates} />
+                   <TemplatesView
+                     onClose={toggleTemplates}
+                     onApplyTemplate={async (prompt) => {
+                       toggleTemplates();
+                       await processUserPrompt(prompt, canvasRef);
+                     }}
+                   />
                  )}
                </AnimatePresence>
 
@@ -408,6 +417,12 @@ const App: React.FC = () => {
                <AnimatePresence>
                  {isHistoryOpen && (
                    <HistoryView onClose={toggleHistory} />
+                 )}
+               </AnimatePresence>
+
+               <AnimatePresence>
+                 {isSettingsOpen && (
+                   <SettingsView onClose={() => setIsSettingsOpen(false)} />
                  )}
                </AnimatePresence>
 
