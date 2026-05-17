@@ -11,8 +11,6 @@ import { TimerTool } from './TimerTool';
 import { CalculatorTool } from './CalculatorTool';
 import { AppBuilderTool } from './AppBuilderTool';
 import { FlashcardTool } from './FlashcardTool';
-import { DiagramRenderer } from './demo/DiagramRenderer';
-import { WorksheetRenderer } from './demo/WorksheetRenderer';
 import { QuizApp } from './quiz/QuizApp';
 import { Printer } from 'lucide-react';
 
@@ -103,12 +101,6 @@ export const DomOverlay: React.FC = () => {
           return <FlashcardTool config={el.config} />;
         case 'INTERACTIVE_APP':
           return <AppBuilderTool config={el.config} />;
-        case 'DEMO_DIAGRAM':
-          return <DiagramRenderer data={el.config} />;
-        case 'DEMO_WORKSHEET':
-          return <WorksheetRenderer content={el.config.content} type="worksheet" />;
-        case 'DEMO_QUIZ':
-          return <WorksheetRenderer content={el.config.content} type="quiz" />;
         case 'QUIZ_APP':
           return <QuizApp config={el.config} />;
         case 'IMAGE_URL':

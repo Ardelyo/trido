@@ -36,7 +36,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const audioChunksRef = useRef<Blob[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showShapeMenu, setShowShapeMenu] = useState(false);
-  const [showDemoMenu, setShowDemoMenu] = useState(false);
   const [lastShape, setLastShape] = useState<CreatorTool>('RECTANGLE');
   const [showPageMenu, setShowPageMenu] = useState(false);
 
