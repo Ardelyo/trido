@@ -528,22 +528,22 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     }
   };
 
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
-
+  // Event-driven processing: subscribe to actionQueue changes instead of polling.
+  // This fires immediately when a new action is enqueued, with no blind 100ms delay.
   useEffect(() => {
-    const poll = async () => {
-      if (runRef.current) {
-        await runRef.current();
-      }
-      pollRef.current = setTimeout(poll, 100);
-    };
+    // Run immediately in case there are already items in the queue
+    runRef.current();
 
-    poll();
-
-    return () => {
-      if (pollRef.current) {
-        clearTimeout(pollRef.current);
+    // Subscribe to queue length changes — trigger on every new addition
+    const unsub = useStore.subscribe(
+      () => {
+        const length = useStore.getState().actionQueue.length;
+        if (!processingRef.current && length > 0) {
+          runRef.current();
+        }
       }
-    };
+    );
+
+    return () => unsub();
   }, []);
 };

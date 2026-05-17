@@ -40,9 +40,10 @@ export const generateAgentActionsGemini = async (
 
   const ai = getAiClient(customKey);
 
-  // Timeout controller
+  // Use a dedicated generate timeout — 90s is enough for complex multi-tool requests
+  const generateTimeoutMs = (CONFIG.ai.gemini as any).generateTimeoutMs ?? 90_000;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), CONFIG.ai.gemini.probeTimeoutMs * 10);
+  const timeoutId = setTimeout(() => controller.abort(), generateTimeoutMs);
 
   let response;
   try {

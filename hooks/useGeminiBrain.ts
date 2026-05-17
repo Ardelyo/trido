@@ -42,9 +42,10 @@ export const useGeminiBrain = () => {
       };
 
       // --- 2. CONTEXT GATHERING ---
+      // Snapshot at half resolution — reduces payload by ~75%, sufficient for AI vision
       const dataUrl = canvas.toDataURL({
         format: 'png',
-        multiplier: 1,
+        multiplier: 0.5,
         left: tl.x,
         top: tl.y,
         width: br.x - tl.x,
@@ -87,7 +88,8 @@ export const useGeminiBrain = () => {
         objectsJson,
         { width: br.x - tl.x, height: br.y - tl.y },
         storeState.lastUploadedImage,
-        storeState.messages.slice(-10), // Send last 10 messages for context
+        // Send last 8 messages — enough for context, avoids bloating the prompt
+        storeState.messages.slice(-8).map(m => ({ role: m.role, text: m.text })),
         { current: storeState.currentPageIndex, total: storeState.pages.length },
         storeState.domElements
       );
@@ -105,6 +107,10 @@ export const useGeminiBrain = () => {
 
       // --- 4. ACTION MAPPING FROM SMALL MODEL TOOLS ---
 
+      // Deduplication guard — prevents AI looping by enqueuing duplicate calls
+      // e.g. AI sends add_mindmap_node('X', CENTER) twice in one batch
+      const seenCallSigs = new Set<string>();
+
       let lastWorldPos = { x: (tl.x + br.x) / 2, y: (tl.y + br.y) / 2 };
 
       const getPos = (gridPos?: string, relativePos?: string) => {
@@ -113,7 +119,11 @@ export const useGeminiBrain = () => {
 
         if (relativePos) {
            let offset = { x: 0, y: 0 };
-           if (relativePos === 'CENTER') offset = { x: 0, y: 0 };
+           if (relativePos === 'CENTER') {
+             // Reset to viewport center — don't accumulate from lastWorldPos
+             lastWorldPos = { x: (tl.x + br.x) / 2, y: (tl.y + br.y) / 2 };
+             return lastWorldPos;
+           }
            else if (relativePos === 'RIGHT_OF_LAST') offset = { x: 350, y: 0 };
            else if (relativePos === 'BELOW_LAST') offset = { x: 0, y: 200 };
            else if (relativePos === 'LEFT_OF_LAST') offset = { x: -350, y: 0 };
@@ -248,13 +258,17 @@ export const useGeminiBrain = () => {
                title: args.title || 'Interactive App'
              }
            };
-        } else if (call.name === 'add_image') {
-           actionType = 'CREATE_IMAGE';
-           const pos = getPos(args.gridPosition);
-           payload = { base64: args.base64Data, x: pos.x, y: pos.y, width: 300 };
         }
 
         if (!actionType) return;
+
+        // Deduplication: build a signature from tool name + key args
+        const sig = `${call.name}:${args.text || ''}:${args.gridPosition || ''}:${args.relativePosition || ''}:${args.objectId || ''}`;
+        if (seenCallSigs.has(sig)) {
+          logger.warn(`[Dedup] Duplicate tool call skipped: ${sig}`);
+          return;
+        }
+        seenCallSigs.add(sig);
 
         addAction({
           id: `action_${Date.now()}_${index}`,
