@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { AiServiceError, generateToolContent } from '../services/aiService';
+import { layoutMindmap, NODE_STYLE_CONFIG, MindmapInputNode } from '../utils/mindmapLayout';
 
 interface AiToolDef {
   id: string;
@@ -82,57 +83,43 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
 
 
       if (activeTool.id === 'mindmap') {
-        // Support both old flat-array format and new { nodes, connections } format
-        const nodes: any[] = Array.isArray(result) ? result : (result?.nodes || []);
-        const connections: any[] = Array.isArray(result) ? [] : (result?.connections || []);
+        // Support both new { nodes[] with parentNodeText } format
+        // and legacy { nodes[], connections[] with relativePosition } format
+        const rawNodes: any[] = Array.isArray(result) ? result : (result?.nodes || []);
+        const legacyConnections: any[] = Array.isArray(result) ? [] : (result?.connections || []);
 
-        // Node style config (matches useGeminiBrain)
-        const STYLE: Record<string, { fill: string; width: number; height: number }> = {
-          MAIN_TOPIC: { fill: '#4F46E5', width: 260, height: 100 },
-          SUBTOPIC:   { fill: '#0EA5E9', width: 210, height: 80  },
-          DETAIL:     { fill: '#475569', width: 170, height: 60  },
-          HIGHLIGHT:  { fill: '#F59E0B', width: 210, height: 80  },
-        };
-        const GAP_X = 60, GAP_Y = 44;
+        // Normalise to MindmapInputNode format
+        const inputNodes: MindmapInputNode[] = rawNodes.map((n: any) => ({
+          text: n.text,
+          style: (n.style || 'SUBTOPIC') as MindmapInputNode['style'],
+          // Accept parentNodeText (new) or derive from legacy connections
+          parentNodeText: n.parentNodeText ||
+            legacyConnections.find((c: any) => c.to === n.text)?.from ||
+            null,
+        }));
 
-        let lastX = centerX, lastY = centerY;
-        let lastW = 210, lastH = 80;
+        // Run radial layout engine
+        const laid = layoutMindmap(inputNodes, centerX, centerY);
 
-        nodes.forEach((node: any, idx: number) => {
-          const s = STYLE[node.style] || STYLE.SUBTOPIC;
-
-          if (node.relativePosition === 'CENTER') {
-            lastX = centerX; lastY = centerY;
-          } else if (node.relativePosition === 'RIGHT_OF_LAST') {
-            lastX += lastW + GAP_X;
-          } else if (node.relativePosition === 'BELOW_LAST') {
-            lastY += lastH + GAP_Y;
-          } else if (node.relativePosition === 'LEFT_OF_LAST') {
-            lastX -= lastW + GAP_X;
-          } else if (node.relativePosition === 'ABOVE_LAST') {
-            lastY -= lastH + GAP_Y;
-          }
-
-          lastW = s.width; lastH = s.height;
-
+        // Enqueue shape creations first
+        laid.forEach((node, idx) => {
+          const s = NODE_STYLE_CONFIG[node.style] || NODE_STYLE_CONFIG.SUBTOPIC;
           addAction({
-            id: `action_${Date.now()}_${idx}`,
+            id: `action_mm_${Date.now()}_${idx}`,
             type: 'CREATE_SHAPE',
-            payload: { shapeType: 'RECTANGLE', x: lastX, y: lastY, text: node.text, fill: s.fill, width: s.width, height: s.height, textColor: '#FFFFFF' },
+            payload: { shapeType: 'RECTANGLE', x: node.x, y: node.y, text: node.text, fill: s.fill, width: s.width, height: s.height, textColor: '#FFFFFF' },
             status: 'PENDING'
           });
         });
 
-        // Enqueue connection drawing after all nodes
-        connections.forEach((conn: any, idx: number) => {
-          if (conn.from && conn.to) {
-            addAction({
-              id: `action_conn_${Date.now()}_${idx}`,
-              type: 'DRAW_PATH',
-              payload: { fromNodeText: conn.from, toNodeText: conn.to, lineStyle: 'ARROW_STRAIGHT' },
-              status: 'PENDING'
-            });
-          }
+        // Then enqueue connections (auto from parentNodeText)
+        laid.filter(n => n.parentNodeText).forEach((node, idx) => {
+          addAction({
+            id: `action_conn_${Date.now()}_${idx}`,
+            type: 'DRAW_PATH',
+            payload: { fromNodeText: node.parentNodeText!, toNodeText: node.text, lineStyle: 'ARROW_STRAIGHT' },
+            status: 'PENDING'
+          });
         });
       } else if (activeTool.id === 'quiz') {
          addAction({

@@ -17,7 +17,7 @@ export interface ViewportBounds {
 export const tools: FunctionDeclaration[] = [
   {
     name: "add_mindmap_node",
-    description: "Add a labeled shape/node to the canvas for mind maps, concept maps, or any diagram.",
+    description: "Add a node to a mind map or concept diagram. Connections are generated automatically from parentNodeText — do NOT call connect_nodes for mind maps.",
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -25,18 +25,17 @@ export const tools: FunctionDeclaration[] = [
           type: Type.STRING,
           description: "Label text shown inside the node"
         },
-        relativePosition: {
-          type: Type.STRING,
-          enum: ["CENTER", "RIGHT_OF_LAST", "BELOW_LAST", "LEFT_OF_LAST", "ABOVE_LAST"],
-          description: "Position relative to the previously placed node. Use CENTER for the first node."
-        },
         style: {
           type: Type.STRING,
           enum: ["MAIN_TOPIC", "SUBTOPIC", "DETAIL", "HIGHLIGHT"],
-          description: "Visual style preset — controls size and color. MAIN_TOPIC is largest."
+          description: "Visual style. MAIN_TOPIC = central concept (use exactly once). SUBTOPIC = main branches. DETAIL = leaf nodes."
+        },
+        parentNodeText: {
+          type: Type.STRING,
+          description: "Exact text of the parent node. Omit or set null for the root (MAIN_TOPIC) node only."
         }
       },
-      required: ["text", "relativePosition"]
+      required: ["text", "style"]
     }
   },
   {
@@ -259,6 +258,9 @@ Respond in the SAME language the user writes in.
 
 ## YOUR CAPABILITIES
 - add_mindmap_node + connect_nodes → mind maps, concept maps, flow diagrams, trees
+  **IMPORTANT**: For add_mindmap_node, use parentNodeText to declare the tree hierarchy.
+  Connections between nodes are AUTO-GENERATED — do NOT call connect_nodes for mind maps.
+  connect_nodes is only for freeform flowcharts NOT using add_mindmap_node.
 - add_text_label → titles, headings, annotations, labels
 - add_component → structured educational widgets: quizzes (4 types), documents with math, timers, calculators, flashcards
 - update_component → update existing widgets (next question, edit content, etc.)
@@ -287,11 +289,11 @@ Before calling tools, silently reason:
 10. DO NOT describe what you're doing — just do it with tools.
 
 ## HARD LIMITS — ALWAYS ENFORCE
-- MAX TOOL CALLS: Never return more than 20 tool calls per response.
+- MAX TOOL CALLS: Never return more than 15 tool calls per response.
 - MINDMAP NODE CAP: Maximum 8 nodes per mind map (1 MAIN_TOPIC + up to 5 SUBTOPIC + up to 2 DETAIL).
-- MINDMAP LABELS: The EXACT text string in add_mindmap_node MUST be reused verbatim in connect_nodes.fromNodeText/toNodeText. Never paraphrase or shorten.
+- MINDMAP LABELS: The parentNodeText MUST be the EXACT text string of an existing node in this batch.
 - ONE WIDGET PER RESPONSE: Do not add more than 1 DOCUMENT_PAGE, QUIZ, or INTERACTIVE_APP per request.
-- connect_nodes ONLY after ALL add_mindmap_node calls in the same batch.
+- MINDMAP: Never call connect_nodes when using add_mindmap_node — connections auto-generated.
 
 ## POSITIONING GRID
 Never compute pixel coordinates. Use named grid zones:
@@ -324,14 +326,14 @@ DOCUMENT_PAGE / MARKDOWN_NOTE support KaTeX rendering:
 ### Mind Map (Bahasa Indonesia)
 User: "Buat mind map tentang revolusi industri"
 → Calls:
-  add_mindmap_node(text="Revolusi Industri", relativePosition="CENTER", style="MAIN_TOPIC")
-  add_mindmap_node(text="1760–1840", relativePosition="RIGHT_OF_LAST", style="SUBTOPIC")
-  add_mindmap_node(text="Mesin Uap", relativePosition="BELOW_LAST", style="SUBTOPIC")
-  add_mindmap_node(text="Sistem Pabrik", relativePosition="BELOW_LAST", style="SUBTOPIC")
-  connect_nodes(fromNodeText="Revolusi Industri", toNodeText="1760–1840")
-  connect_nodes(fromNodeText="Revolusi Industri", toNodeText="Mesin Uap")
-  connect_nodes(fromNodeText="Revolusi Industri", toNodeText="Sistem Pabrik")
+  add_mindmap_node(text="Revolusi Industri", style="MAIN_TOPIC")
+  add_mindmap_node(text="Mesin Uap", style="SUBTOPIC", parentNodeText="Revolusi Industri")
+  add_mindmap_node(text="Sistem Pabrik", style="SUBTOPIC", parentNodeText="Revolusi Industri")
+  add_mindmap_node(text="Dampak Sosial", style="SUBTOPIC", parentNodeText="Revolusi Industri")
+  add_mindmap_node(text="1760–1840", style="DETAIL", parentNodeText="Revolusi Industri")
+  add_mindmap_node(text="James Watt", style="DETAIL", parentNodeText="Mesin Uap")
 → Text: "Peta pikiran revolusi industri selesai."
+→ NOTE: Do NOT call connect_nodes — connections are drawn automatically.
 
 ### Quiz + Next Question
 User: "Buat soal pilihan ganda hukum Newton"

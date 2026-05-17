@@ -5,6 +5,7 @@ import { Point, CanvasObjectData, AgentAction } from '../types';
 import { CALCULATOR_TEMPLATE, TIMER_TEMPLATE } from '../services/componentTemplates';
 import { createLogger } from '../utils/logger';
 import { sounds } from '../utils/sounds';
+import { layoutMindmap, NODE_STYLE_CONFIG, MindmapInputNode } from '../utils/mindmapLayout';
 
 const logger = createLogger('gemini-brain');
 
@@ -24,7 +25,7 @@ export const useGeminiBrain = () => {
     addLog(`Pemindaian neural dimulai...`);
 
     try {
-      // --- 1. VIEWPORT CAPTURE (The "Eye") ---
+      // --- 1. VIEWPORT CAPTURE ---
       const vpt = [...canvas.viewportTransform];
       const width = canvas.width;
       const height = canvas.height;
@@ -34,26 +35,20 @@ export const useGeminiBrain = () => {
       const br = window.fabric.util.transformPoint({ x: width, y: height }, invVpt);
 
       const screenToWorld = (screenX: number, screenY: number): Point => {
-        const point = window.fabric.util.transformPoint(
-          { x: screenX, y: screenY },
-          invVpt
-        );
+        const point = window.fabric.util.transformPoint({ x: screenX, y: screenY }, invVpt);
         return { x: point.x, y: point.y };
       };
 
       // --- 2. CONTEXT GATHERING ---
-      // Snapshot at half resolution — reduces payload by ~75%, sufficient for AI vision
+      // 0.3x resolution — 40% fewer image tokens vs 0.5x, still sufficient for shape/text
       const dataUrl = canvas.toDataURL({
         format: 'png',
-        multiplier: 0.5,
-        left: tl.x,
-        top: tl.y,
-        width: br.x - tl.x,
-        height: br.y - tl.y
+        multiplier: 0.3,
+        left: tl.x, top: tl.y,
+        width: br.x - tl.x, height: br.y - tl.y
       });
 
       const rawObjects = canvas.getObjects();
-
       const objectsJson: CanvasObjectData[] = rawObjects
         .map((obj: any) => {
           const inView = obj.left > tl.x - 500 && obj.left < br.x + 500 && obj.top > tl.y - 500 && obj.top < br.y + 500;
@@ -88,7 +83,6 @@ export const useGeminiBrain = () => {
         objectsJson,
         { width: br.x - tl.x, height: br.y - tl.y },
         storeState.lastUploadedImage,
-        // Send last 8 messages — enough for context, avoids bloating the prompt
         storeState.messages.slice(-8).map(m => ({ role: m.role, text: m.text })),
         { current: storeState.currentPageIndex, total: storeState.pages.length },
         storeState.domElements
@@ -96,231 +90,195 @@ export const useGeminiBrain = () => {
       let functionCalls = _aiResult.functionCalls;
       const { textResponse, thought } = _aiResult;
 
-      if (thought) {
-        addLog(`AI Thoughts: ${thought}`);
-      }
-
-      // Clear the uploaded image so it's not sent again automatically
+      if (thought) addLog(`AI Thoughts: ${thought}`);
       useStore.getState().setLastUploadedImage(null);
 
-      const msg = textResponse || (functionCalls.length > 0 ? "Menjalankan tindakan." : "Menunggu perintah.");
+      const msg = textResponse || (functionCalls.length > 0 ? 'Menjalankan tindakan.' : 'Menunggu perintah.');
       addMessage({ role: 'model', text: msg });
       setAgentMessage(msg);
 
-      // --- 4. ACTION MAPPING FROM SMALL MODEL TOOLS ---
+      // --- 4. POST-PROCESSING PIPELINE ---
 
-      // Safety cap — prevent the small model from flooding the queue with 30+ calls
-      const MAX_CALLS = 20;
+      // Stage 1: Hard cap on total calls
+      const MAX_CALLS = 15;
       if (functionCalls.length > MAX_CALLS) {
-        logger.warn(`[Cap] Clamping ${functionCalls.length} function calls to ${MAX_CALLS}`);
+        logger.warn(`[Cap] Clamping ${functionCalls.length} calls to ${MAX_CALLS}`);
         functionCalls = functionCalls.slice(0, MAX_CALLS);
       }
 
-      // Deduplication guard — prevents AI looping by enqueuing duplicate calls
-      // e.g. AI sends add_mindmap_node('X', CENTER) twice in one batch
-      const seenCallSigs = new Set<string>();
+      // Stage 2: Deduplication
+      const seenSigs = new Set<string>();
+      functionCalls = functionCalls.filter(call => {
+        const args = call.args || {};
+        const sig = [call.name, args.text || '', args.gridPosition || '', args.parentNodeText || '', args.objectId || '', args.fromNodeText || '', args.toNodeText || ''].join(':');
+        if (seenSigs.has(sig)) { logger.warn(`[Dedup] Skipped: ${sig}`); return false; }
+        seenSigs.add(sig);
+        return true;
+      });
 
-      let lastWorldPos = { x: (tl.x + br.x) / 2, y: (tl.y + br.y) / 2 };
-      // Track last node size for accurate relative positioning
-      let lastNodeW = 210;
-      let lastNodeH = 80;
+      // Stage 3: Separate mindmap nodes from other calls
+      const mindmapCalls = functionCalls.filter(c => c.name === 'add_mindmap_node');
+      const otherCalls = functionCalls.filter(c => c.name !== 'add_mindmap_node' && c.name !== 'connect_nodes');
+      // connect_nodes is only used for non-mindmap diagrams
+      const connectCalls = functionCalls.filter(c => c.name === 'connect_nodes');
 
-      // Style config: dimensions and fill colors
-      const NODE_STYLE: Record<string, { fill: string; width: number; height: number }> = {
-        MAIN_TOPIC: { fill: '#4F46E5', width: 260, height: 100 },
-        SUBTOPIC:   { fill: '#0EA5E9', width: 210, height: 80  },
-        DETAIL:     { fill: '#475569', width: 170, height: 60  },
-        HIGHLIGHT:  { fill: '#F59E0B', width: 210, height: 80  },
-      };
-      const GAP_X = 60;
-      const GAP_Y = 44;
+      // ── Viewport center (world coords) ─────────────────────────────────────
+      const centerX = (tl.x + br.x) / 2;
+      const centerY = (tl.y + br.y) / 2;
+      let lastWorldPos = { x: centerX, y: centerY };
 
-      const getPos = (gridPos?: string, relativePos?: string) => {
+      const getGridPos = (gridPos?: string) => {
+        if (!gridPos) return lastWorldPos;
         const vWidth = br.x - tl.x;
         const vHeight = br.y - tl.y;
-
-        if (relativePos) {
-           let offset = { x: 0, y: 0 };
-           if (relativePos === 'CENTER') {
-             // Reset to viewport center
-             lastWorldPos = { x: (tl.x + br.x) / 2, y: (tl.y + br.y) / 2 };
-             return lastWorldPos;
-           }
-           else if (relativePos === 'RIGHT_OF_LAST') offset = { x: lastNodeW + GAP_X, y: 0 };
-           else if (relativePos === 'BELOW_LAST')  offset = { x: 0, y: lastNodeH + GAP_Y };
-           else if (relativePos === 'LEFT_OF_LAST') offset = { x: -(lastNodeW + GAP_X), y: 0 };
-           else if (relativePos === 'ABOVE_LAST')  offset = { x: 0, y: -(lastNodeH + GAP_Y) };
-           lastWorldPos = { x: lastWorldPos.x + offset.x, y: lastWorldPos.y + offset.y };
-           return lastWorldPos;
-        }
-
-        if (gridPos) {
-          const gw = vWidth / 3;
-          const gh = vHeight / 3;
-          let pt = { x: tl.x + vWidth/2, y: tl.y + vHeight/2 };
-          if (gridPos.includes('TOP')) pt.y = tl.y + gh/2;
-          if (gridPos.includes('BOTTOM')) pt.y = tl.y + vHeight - gh/2;
-          if (gridPos.includes('LEFT')) pt.x = tl.x + gw/2;
-          if (gridPos.includes('RIGHT')) pt.x = tl.x + vWidth - gw/2;
-          lastWorldPos = pt;
-          return pt;
-        }
-
-        return lastWorldPos;
+        const gw = vWidth / 3, gh = vHeight / 3;
+        let pt = { x: tl.x + vWidth / 2, y: tl.y + vHeight / 2 };
+        if (gridPos.includes('TOP')) pt.y = tl.y + gh / 2;
+        if (gridPos.includes('BOTTOM')) pt.y = tl.y + vHeight - gh / 2;
+        if (gridPos.includes('LEFT')) pt.x = tl.x + gw / 2;
+        if (gridPos.includes('RIGHT')) pt.x = tl.x + vWidth - gw / 2;
+        lastWorldPos = pt;
+        return pt;
       };
 
-      functionCalls.forEach((call, index) => {
-        const args = (call.args || {}) as Record<string, any>;
-        let actionType: AgentAction['type'] | null = null;
-        let payload: any = {};
+      // ── ACTION QUEUES (nodes first, then connections, then everything else) ──
+      const shapeActions: AgentAction[] = [];
+      const pathActions: AgentAction[] = [];
+      const otherActions: AgentAction[] = [];
 
-        if (call.name === 'add_mindmap_node') {
-           actionType = 'CREATE_SHAPE';
-           const styleKey = (args.style as string) || 'SUBTOPIC';
-           const styleConf = NODE_STYLE[styleKey] || NODE_STYLE.SUBTOPIC;
-           const pos = getPos(undefined, args.relativePosition);
-           // Update tracked size AFTER getPos so next node uses this node's dimensions
-           lastNodeW = styleConf.width;
-           lastNodeH = styleConf.height;
+      // ── Mind map via layout engine ──────────────────────────────────────────
+      if (mindmapCalls.length > 0) {
+        const inputNodes: MindmapInputNode[] = mindmapCalls.map(c => ({
+          text: c.args.text,
+          style: (c.args.style || 'SUBTOPIC') as MindmapInputNode['style'],
+          parentNodeText: c.args.parentNodeText || null,
+        }));
 
-           payload = {
-             shapeType: 'RECTANGLE',
-             x: pos.x, y: pos.y,
-             text: args.text,
-             fill: styleConf.fill,
-             width: styleConf.width,
-             height: styleConf.height,
-             textColor: '#FFFFFF',
-             idAlias: `node_${index}`
-           };
-        } else if (call.name === 'connect_nodes') {
-           actionType = 'DRAW_PATH';
-           payload = {
-              fromNodeText: args.fromNodeText,
-              toNodeText: args.toNodeText,
-              lineStyle: args.lineStyle
-           };
-        } else if (call.name === 'add_text_label') {
-           actionType = 'WRITE_TEXT';
-           const pos = getPos(args.gridPosition, undefined);
-           let fontSize = 24;
-           if(args.size === 'TITLE') fontSize = 48;
-           if(args.size === 'SUBTITLE') fontSize = 32;
-           payload = { text: args.text, x: pos.x, y: pos.y, fontSize, color: '#000000' };
-        } else if (call.name === 'update_component') {
-           actionType = 'EDIT_HTML';
-           let parsedUpdateConfig = {};
-           try { parsedUpdateConfig = JSON.parse(args.configJson); } catch (_) {}
-           payload = {
-             objectId: args.objectId,
-             config: parsedUpdateConfig
-           };
-        } else if (call.name === 'add_component') {
-           actionType = 'RENDER_HTML';
-           const pos = getPos(args.gridPosition, undefined);
+        const laid = layoutMindmap(inputNodes, centerX, centerY);
 
-           // Generate HTML template based on component type and config
-           let html = `<div>${args.componentType}</div>`;
-           let configObj: any = undefined;
-           let pWidth = 450;
-           let pHeight = 400;
+        laid.forEach((node, idx) => {
+          const s = NODE_STYLE_CONFIG[node.style] || NODE_STYLE_CONFIG.SUBTOPIC;
+          shapeActions.push({
+            id: `action_mm_${Date.now()}_${idx}`,
+            type: 'CREATE_SHAPE',
+            payload: {
+              shapeType: 'RECTANGLE',
+              x: node.x, y: node.y,
+              text: node.text,
+              fill: s.fill, width: s.width, height: s.height,
+              textColor: '#FFFFFF',
+            },
+            status: 'PENDING'
+          });
 
-           if (args.configJson) {
-              try {
-                 configObj = JSON.parse(args.configJson);
-                 if (args.componentType === 'DOCUMENT_PAGE' || args.componentType === 'MARKDOWN_NOTE') {
-                    pWidth = 650;
-                    pHeight = 800;
-                 }
-              } catch(e) {}
-           }
+          // Auto-generate connection from parent → this node
+          if (node.parentNodeText) {
+            pathActions.push({
+              id: `action_conn_${Date.now()}_${idx}`,
+              type: 'DRAW_PATH',
+              payload: { fromNodeText: node.parentNodeText, toNodeText: node.text, lineStyle: 'ARROW_STRAIGHT' },
+              status: 'PENDING'
+            });
+          }
+        });
 
-           if (args.componentType === 'CALCULATOR') {
-              html = CALCULATOR_TEMPLATE;
-              pWidth = 350;
-              pHeight = 500;
-           } else if (args.componentType === 'TIMER') {
-              html = TIMER_TEMPLATE(configObj?.seconds || 300);
-              pWidth = 300;
-              pHeight = 250;
-           }
+        logger.info(`[MindMap] Layout engine placed ${laid.length} nodes, ${pathActions.length} connections`);
+      }
 
-           payload = { html, x: pos.x, y: pos.y, width: pWidth, height: pHeight, componentType: args.componentType, config: configObj };
-        } else if (call.name === 'pan_camera') {
-           actionType = 'PAN_CAMERA';
-           payload = {
-             objectId: args.targetObjectId,
-             direction: args.direction
-           };
-        } else if (call.name === 'modify_object') {
-           if (args.action === 'MOVE_TO_GRID') {
-              actionType = 'DRAG_OBJECT';
-              const pos = getPos(args.value);
-              payload = { objectId: args.objectId, toX: pos.x, toY: pos.y };
-           } else if (args.action === 'DELETE') {
-              actionType = 'DELETE_OBJECT';
-              payload = { objectId: args.objectId };
-           } else if (args.action === 'UPDATE_TEXT') {
-              actionType = 'MODIFY_PROPERTY';
-              payload = { objectId: args.objectId, property: 'text', value: args.value };
-           } else {
-              actionType = 'RESIZE_OBJECT'; // Custom/ignored
-           }
-        } else if (call.name === 'add_interactive_app') {
-           actionType = 'RENDER_HTML';
-           const pos = getPos(args.gridPosition, undefined);
-           payload = {
-             html: '',
-             x: pos.x, y: pos.y,
-             width: 800, height: 600,
-             componentType: 'INTERACTIVE_APP',
-             config: {
-               html: args.html || '',
-               css: args.css || '',
-               js: args.js || '',
-               title: args.title || 'Interactive App'
-             }
-           };
-        }
-
-        if (!actionType) return;
-
-        // Deduplication: build a signature from tool name + key args
-        const sig = [
-          call.name,
-          args.text || '',
-          args.gridPosition || '',
-          args.relativePosition || '',
-          args.objectId || '',
-          args.fromNodeText || '',
-          args.toNodeText || ''
-        ].join(':');
-        if (seenCallSigs.has(sig)) {
-          logger.warn(`[Dedup] Duplicate tool call skipped: ${sig}`);
-          return;
-        }
-        seenCallSigs.add(sig);
-
-        addAction({
-          id: `action_${Date.now()}_${index}`,
-          type: actionType,
-          payload,
+      // ── Freeform connect_nodes (non-mindmap) ───────────────────────────────
+      connectCalls.forEach((call, idx) => {
+        pathActions.push({
+          id: `action_conn_free_${Date.now()}_${idx}`,
+          type: 'DRAW_PATH',
+          payload: { fromNodeText: call.args.fromNodeText, toNodeText: call.args.toNodeText, lineStyle: call.args.lineStyle },
           status: 'PENDING'
         });
       });
 
+      // ── All other tool calls ────────────────────────────────────────────────
+      otherCalls.forEach((call, index) => {
+        const args = (call.args || {}) as Record<string, any>;
+        let actionType: AgentAction['type'] | null = null;
+        let payload: any = {};
+
+        if (call.name === 'add_text_label') {
+          actionType = 'WRITE_TEXT';
+          const pos = getGridPos(args.gridPosition);
+          let fontSize = 24;
+          if (args.size === 'TITLE') fontSize = 48;
+          if (args.size === 'SUBTITLE') fontSize = 32;
+          payload = { text: args.text, x: pos.x, y: pos.y, fontSize, color: '#000000' };
+
+        } else if (call.name === 'update_component') {
+          actionType = 'EDIT_HTML';
+          let parsedUpdateConfig = {};
+          try { parsedUpdateConfig = JSON.parse(args.configJson); } catch (_) {}
+          payload = { objectId: args.objectId, config: parsedUpdateConfig };
+
+        } else if (call.name === 'add_component') {
+          actionType = 'RENDER_HTML';
+          const pos = getGridPos(args.gridPosition);
+          let html = `<div>${args.componentType}</div>`;
+          let configObj: any = undefined;
+          let pWidth = 450, pHeight = 400;
+
+          if (args.configJson) {
+            try {
+              configObj = JSON.parse(args.configJson);
+              if (args.componentType === 'DOCUMENT_PAGE' || args.componentType === 'MARKDOWN_NOTE') { pWidth = 650; pHeight = 800; }
+            } catch (e) {}
+          }
+
+          if (args.componentType === 'CALCULATOR') { html = CALCULATOR_TEMPLATE; pWidth = 350; pHeight = 500; }
+          else if (args.componentType === 'TIMER') { html = TIMER_TEMPLATE(configObj?.seconds || 300); pWidth = 300; pHeight = 250; }
+
+          payload = { html, x: pos.x, y: pos.y, width: pWidth, height: pHeight, componentType: args.componentType, config: configObj };
+
+        } else if (call.name === 'pan_camera') {
+          actionType = 'PAN_CAMERA';
+          payload = { objectId: args.targetObjectId, direction: args.direction };
+
+        } else if (call.name === 'modify_object') {
+          if (args.action === 'MOVE_TO_GRID') {
+            actionType = 'DRAG_OBJECT';
+            const pos = getGridPos(args.value);
+            payload = { objectId: args.objectId, toX: pos.x, toY: pos.y };
+          } else if (args.action === 'DELETE') {
+            actionType = 'DELETE_OBJECT';
+            payload = { objectId: args.objectId };
+          } else if (args.action === 'UPDATE_TEXT') {
+            actionType = 'MODIFY_PROPERTY';
+            payload = { objectId: args.objectId, property: 'text', value: args.value };
+          } else {
+            actionType = 'RESIZE_OBJECT';
+          }
+
+        } else if (call.name === 'add_interactive_app') {
+          actionType = 'RENDER_HTML';
+          const pos = getGridPos(args.gridPosition);
+          payload = {
+            html: '', x: pos.x, y: pos.y, width: 800, height: 600,
+            componentType: 'INTERACTIVE_APP',
+            config: { html: args.html || '', css: args.css || '', js: args.js || '', title: args.title || 'Interactive App' }
+          };
+        }
+
+        if (!actionType) return;
+        otherActions.push({ id: `action_${Date.now()}_${index}`, type: actionType, payload, status: 'PENDING' });
+      });
+
+      // Stage 4: Enqueue in correct order — shapes first, then connections, then everything else
+      [...shapeActions, ...pathActions, ...otherActions].forEach(a => addAction(a));
+
     } catch (error: any) {
       logger.error('Failed to process prompt', error);
-      
-      let errorMsg = "Sinkronisasi kognitif gagal. Coba lagi atau periksa koneksi AI.";
-      
+
+      let errorMsg = 'Sinkronisasi kognitif gagal. Coba lagi atau periksa koneksi AI.';
       if (error instanceof AiServiceError) {
         errorMsg = error.message;
-      } else if (error.message && error.message.includes("Ollama Error")) {
-        errorMsg = `Kesalahan AI Lokal: ${error.message.replace("Ollama Error: ", "")}`;
-        if (error.message.includes("memory")) {
-          errorMsg += " (Sistem kehabisan RAM untuk menjalankan model ini)";
-        }
+      } else if (error.message?.includes('Ollama Error')) {
+        errorMsg = `Kesalahan AI Lokal: ${error.message.replace('Ollama Error: ', '')}`;
+        if (error.message.includes('memory')) errorMsg += ' (Sistem kehabisan RAM)';
       }
 
       addMessage({ role: 'model', text: errorMsg });

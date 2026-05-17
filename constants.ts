@@ -11,7 +11,7 @@ export const CONFIG = {
       apiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
       probeTimeoutMs: 3000,
       generation: {
-        temperature: 0.3,
+        temperature: 0.15,
         maxOutputTokens: 4096,
       },
       transcription: {

@@ -61,14 +61,17 @@ export const generateAgentActionsGemini = async (
     clearTimeout(timeoutId);
   }
 
-  // Extract text from parts directly — avoids SDK warning when response has only functionCall parts
+  // Extract text AND function calls from raw parts — avoids SDK .text getter warning
   const _candidate = (response as any).candidates?.[0];
   const _parts: any[] = _candidate?.content?.parts || [];
   const textResponse = _parts
     .filter((p: any) => p.text && !p.thought)
     .map((p: any) => p.text)
     .join('') || '';
-  let functionCalls: any[] = (response.functionCalls as any[]) || [];
+  // Extract function calls from parts directly (bypasses SDK getter that triggers the warning)
+  let functionCalls: any[] = _parts
+    .filter((p: any) => p.functionCall)
+    .map((p: any) => ({ name: p.functionCall.name, args: p.functionCall.args || {} }));
   const thought = extractThinking(response);
 
   const validation = validateFunctionCalls(functionCalls, canvasObjects, domElements);
@@ -91,20 +94,16 @@ export const generateToolContentGemini = async (toolId: string, prompt: string, 
   
   if (toolId === 'mindmap') {
     promptText = `Generate a JSON object for a mind map about: "${prompt}".
-Format EXACTLY:
+Return EXACTLY this format:
 {
   "nodes": [
-    {"text": "string", "style": "MAIN_TOPIC|SUBTOPIC|DETAIL", "relativePosition": "CENTER|RIGHT_OF_LAST|BELOW_LAST|LEFT_OF_LAST|ABOVE_LAST"}
-  ],
-  "connections": [
-    {"from": "exact node text", "to": "exact node text"}
+    {"text": "string", "style": "MAIN_TOPIC|SUBTOPIC|DETAIL", "parentNodeText": null_or_string}
   ]
 }
 Rules:
-- Maximum 8 nodes total (1 MAIN_TOPIC + 4-5 SUBTOPIC + 0-2 DETAIL)
-- First node must use relativePosition CENTER
-- "from" and "to" in connections MUST use the EXACT text string from nodes[].text
-- RETURN ONLY RAW VALID JSON, no markdown, no explanation.`;
+- Maximum 8 nodes: exactly 1 MAIN_TOPIC (root, parentNodeText=null), 4-5 SUBTOPIC, 0-2 DETAIL
+- parentNodeText MUST be the EXACT text of an existing node in this list
+- RETURN ONLY RAW VALID JSON. NO MARKDOWN. NO EXPLANATION.`;
   } else if (toolId === 'quiz') {
     promptText = `Generate a JSON object for a comprehensive quiz about: "${prompt}".
     Format EXACTLY: {
