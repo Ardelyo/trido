@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 import { FileUploadButton } from './FileUploadButton';
+import { DrawingToolbar } from './DrawingToolbar';
 import { sounds } from '../utils/sounds';
 
 interface ChatInterfaceProps {
@@ -35,9 +36,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [showShapeMenu, setShowShapeMenu] = useState(false);
   const [lastShape, setLastShape] = useState<CreatorTool>('RECTANGLE');
-  const [showPageMenu, setShowPageMenu] = useState(false);
 
   const {
     isThinking, isActing, actionQueue, logs,
@@ -491,77 +490,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   return (
     <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
 
-      {/* Left Toolbar (Vertical) */}
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute left-3 lg:left-5 top-1/2 -translate-y-1/2 pointer-events-auto z-50 shadow-[0_15px_40px_rgb(0,0,0,0.06)] bg-white/95 backdrop-blur-xl border border-[#E8ECF4]/80 p-1.5 lg:p-2 rounded-[1.8rem]"
-        >
-          <div className="flex flex-col items-center gap-1 lg:gap-1.5">
-
-            <ToolBtn tool="SELECT" icon={MousePointer2} />
-            <ToolBtn tool="PENCIL" icon={Pencil} />
-
-            {/* Circle direct tool */}
-            <ToolBtn tool="CIRCLE" icon={Circle} />
-
-            <ToolBtn tool="TEXT" icon={Type} />
-
-            <div className="w-6 h-[1.5px] bg-slate-200/60 my-0.5 lg:my-1 rounded-full" />
-
-            <ToolBtn icon={ImageIcon} isAction onClick={() => document.getElementById('canvas-upload')?.click()} />
-            <input id="canvas-upload" type="file" className="hidden" accept="image/*" onChange={handleCanvasImageUpload} />
-
-            <div className="relative">
-              <ToolBtn isAction icon={MoreHorizontal} onClick={() => setShowMoreMenu(!showMoreMenu)} />
-
-              <AnimatePresence>
-                {showMoreMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9, x: 10, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, x: 10, y: 10 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    className="absolute left-full ml-4 bottom-0 shadow-[0_20px_70px_rgba(0,0,0,0.15)] bg-white/95 backdrop-blur-2xl border border-[#E8ECF4] p-2 min-w-55 rounded-4xl z-60 origin-bottom-left max-h-[85vh] flex flex-col overflow-hidden"
-                  >
-                    <div className="px-5 py-4 border-b border-slate-100 mb-1 sticky top-0 bg-white/50 backdrop-blur shrink-0">
-                       <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Alat Tambahan</span>
-                    </div>
-                    <div className="overflow-y-auto p-1 custom-scrollbar flex-1">
-                      {[
-                        { label: 'Kalkulator', icon: PencilRuler, onClick: toggleCalculator },
-                        { label: 'Timer & Waktu', icon: Clock, onClick: toggleTimer },
-                        { label: 'Catatan Cepat', icon: FileText, onClick: toggleNotes },
-                        { label: 'Kuis AI', icon: HelpCircle, onClick: toggleQuiz },
-                        { label: 'Konversi Satuan', icon: Activity, onClick: toggleUnitConverter },
-                        { label: 'Tabel Periodik', icon: Network, onClick: togglePeriodicTable },
-                        { label: 'Pencatat Kehadiran', icon: Users, onClick: toggleAttendance },
-                        { label: 'Daftar Tugas', icon: CheckSquare, onClick: toggleTodoList },
-                        { label: 'Pengaturan Papan', icon: Settings, onClick: toggleBoardSettings },
-                      ].map((item, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            if (item.onClick) item.onClick();
-                            setShowMoreMenu(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-2xl transition-all group mb-0.5"
-                        >
-                           <item.icon size={18} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
-                           <span className="text-[14px] font-bold">{item.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-          </div>
-        </motion.div>
-      </AnimatePresence>
+      {/* Left Drawing Toolbar */}
+      <DrawingToolbar
+        canvasRef={canvasRef}
+        onImageUpload={() => document.getElementById('canvas-upload')?.click()}
+        onDeleteSelection={handleDeleteSelection}
+        onZoom={handleZoom}
+      />
+      <input id="canvas-upload" type="file" className="hidden" accept="image/*" onChange={handleCanvasImageUpload} />
 
       {/* ====== BOTTOM CONTROLS ====== */}
       <div className="absolute bottom-4 lg:bottom-6 left-3 lg:left-6 right-3 lg:right-6 pointer-events-none flex flex-col md:flex-row items-center md:items-end md:justify-between z-40 gap-4">
@@ -650,8 +586,40 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
           )}
         </AnimatePresence>
 
-        {/* Right: Zoom Controls */}
-        <div className="pointer-events-auto flex-1 hidden md:flex justify-end">
+        {/* Right: Zoom Controls & History Controls */}
+        <div className="pointer-events-auto flex-1 hidden md:flex justify-end gap-3">
+           {/* Sleek History & Action Card */}
+           <motion.div
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.5, delay: 0.05 }}
+             className="flex items-center gap-1 px-2.5 py-1.5 bg-white/95 backdrop-blur-xl rounded-full border border-slate-200/80 shadow-[0_20px_40px_rgb(0,0,0,0.08)]"
+           >
+             <button
+               onClick={() => undoCanvas()}
+               title="Batal (Undo)"
+               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
+             >
+               <Undo2 size={16} />
+             </button>
+             <button
+               onClick={() => redoCanvas()}
+               title="Ulangi (Redo)"
+               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
+             >
+               <Redo2 size={16} />
+             </button>
+             <div className="w-px h-5 bg-slate-200/80 mx-1.5" />
+             <button
+               onClick={handleDeleteSelection}
+               title="Hapus Elemen Terpilih"
+               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors active:scale-90"
+             >
+               <Trash2 size={16} />
+             </button>
+           </motion.div>
+
+           {/* Zoom Controls Card */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
@@ -673,6 +641,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
              </button>
            </motion.div>
         </div>
+
 
       </div>
     </div>

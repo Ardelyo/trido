@@ -533,7 +533,18 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       return;
     }
 
-    if (activeTool === 'PENCIL') {
+    if (activeTool === 'ERASER') {
+      canvas.isDrawingMode = true;
+      canvas.selection = false;
+      canvas.defaultCursor = 'cell';
+      canvas.freeDrawingBrush = new window.fabric.PencilBrush(canvas);
+      // Eraser uses white/background color at large width
+      canvas.freeDrawingBrush.color = '#ffffff';
+      canvas.freeDrawingBrush.width = Math.max(brushWidth * 4, 20);
+      canvas.discardActiveObject();
+      canvas.getObjects().forEach((o: any) => { o.selectable = false; o.evented = false; });
+      canvas.requestRenderAll();
+    } else if (activeTool === 'PENCIL') {
       canvas.isDrawingMode = true;
       canvas.selection = false;
       canvas.defaultCursor = 'crosshair';
@@ -678,7 +689,54 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
        canvas.setActiveObject(poly);
        canvas.requestRenderAll();
        setActiveTool('SELECT');
-    }
+     } else if (activeTool === 'ARROW') {
+       const center = canvas.getVpCenter();
+       const arrowLine = new window.fabric.Line([center.x - 80, center.y, center.x + 80, center.y], {
+         stroke: brushColor, strokeWidth: brushWidth, selectable: false, evented: false,
+       });
+       const arrowHead = new window.fabric.Polygon([{ x: 0, y: -10 }, { x: 18, y: 0 }, { x: 0, y: 10 }], {
+         fill: brushColor, left: center.x + 80, top: center.y, originX: 'center', originY: 'center', selectable: false, evented: false,
+       });
+       const arrowGrp = new window.fabric.Group([arrowLine, arrowHead], { left: center.x, top: center.y, originX: 'center', originY: 'center', id: `arrow_${Date.now()}` });
+       canvas.add(arrowGrp); canvas.setActiveObject(arrowGrp); canvas.requestRenderAll(); setActiveTool('SELECT');
+     } else if (activeTool === 'DIAMOND') {
+       const center = canvas.getVpCenter();
+       const diamond = new window.fabric.Polygon([{ x: 0, y: -60 }, { x: 60, y: 0 }, { x: 0, y: 60 }, { x: -60, y: 0 }], {
+         left: center.x, top: center.y, fill: isShapeFilled ? brushColor : 'transparent',
+         stroke: brushColor, strokeWidth: brushWidth, shadow: new window.fabric.Shadow({ color: brushColor, blur: 20 }),
+         originX: 'center', originY: 'center', id: `diamond_${Date.now()}`
+       });
+       canvas.add(diamond); canvas.setActiveObject(diamond); canvas.requestRenderAll(); setActiveTool('SELECT');
+     } else if (activeTool === 'SPEECH_BUBBLE') {
+       const center = canvas.getVpCenter();
+       const bubble = new window.fabric.Path('M -70 -40 Q -70 -70 -40 -70 L 40 -70 Q 70 -70 70 -40 L 70 15 Q 70 45 40 45 L -10 45 L -30 70 L -20 45 L -40 45 Q -70 45 -70 15 Z', {
+         left: center.x, top: center.y, fill: isShapeFilled ? brushColor : '#fffde7',
+         stroke: brushColor, strokeWidth: brushWidth, shadow: new window.fabric.Shadow({ color: brushColor, blur: 20 }),
+         originX: 'center', originY: 'center', id: `speech_${Date.now()}`
+       });
+       canvas.add(bubble); canvas.setActiveObject(bubble); canvas.requestRenderAll(); setActiveTool('SELECT');
+     } else if (activeTool === 'HEART') {
+       const center = canvas.getVpCenter();
+       const heart = new window.fabric.Path('M 0 25 C -5 20 -50 -5 -50 -25 C -50 -45 -25 -55 0 -30 C 25 -55 50 -45 50 -25 C 50 -5 5 20 0 25 Z', {
+         left: center.x, top: center.y, fill: isShapeFilled ? brushColor : 'transparent',
+         stroke: brushColor, strokeWidth: brushWidth, shadow: new window.fabric.Shadow({ color: brushColor, blur: 20 }),
+         originX: 'center', originY: 'center', id: `heart_${Date.now()}`
+       });
+       canvas.add(heart); canvas.setActiveObject(heart); canvas.requestRenderAll(); setActiveTool('SELECT');
+     } else if (activeTool === 'PENTAGON') {
+       const center = canvas.getVpCenter();
+       const r = 55;
+       const pentPts = [];
+       for (let i = 0; i < 5; i++) {
+         pentPts.push({ x: r * Math.cos(Math.PI * 2 * i / 5 - Math.PI / 2), y: r * Math.sin(Math.PI * 2 * i / 5 - Math.PI / 2) });
+       }
+       const pent = new window.fabric.Polygon(pentPts, {
+         left: center.x, top: center.y, fill: isShapeFilled ? brushColor : 'transparent',
+         stroke: brushColor, strokeWidth: brushWidth, shadow: new window.fabric.Shadow({ color: brushColor, blur: 20 }),
+         originX: 'center', originY: 'center', id: `pentagon_${Date.now()}`
+       });
+       canvas.add(pent); canvas.setActiveObject(pent); canvas.requestRenderAll(); setActiveTool('SELECT');
+     }
 
   }, [activeTool, isShapeFilled, brushColor, brushWidth, fontFamily, fontSize, setActiveTool, isViewerUrl]);
 

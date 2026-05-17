@@ -15,7 +15,8 @@ export enum ShapeType {
 
 export type FontFamily = 'Inter' | 'Source Serif 4' | 'JetBrains Mono' | 'Bricolage Grotesque' | 'Playfair Display';
 
-export type CreatorTool = 'SELECT' | 'PENCIL' | 'TEXT' | 'RECTANGLE' | 'CIRCLE' | 'TRIANGLE' | 'STAR' | 'POLYGON' | 'LINE';
+export type CreatorTool = 'SELECT' | 'PENCIL' | 'ERASER' | 'TEXT' | 'RECTANGLE' | 'CIRCLE' | 'TRIANGLE' | 'STAR' | 'POLYGON' | 'LINE' | 'ARROW' | 'DIAMOND' | 'SPEECH_BUBBLE' | 'HEART' | 'PENTAGON';
+
 export type AiPreference = 'auto' | 'gemini' | 'ollama' | 'vertex';
 export type AiRuntimeMode = 'gemini' | 'ollama' | 'vertex' | 'unavailable';
 export type CanvasJson = Record<string, unknown> | unknown[];
