@@ -24,11 +24,13 @@ export const useAiStatus = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch('/api/ai/status', {
+        const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+        const res = await fetch(`${apiUrl}/api/ai/status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ geminiApiKey, ollamaBaseUrl })
         });
+
         if (res.ok) {
           const data = await res.json();
           setStatus({ ...data, checkedAt: Date.now() });

@@ -3,7 +3,7 @@ import { useStore } from '../store';
 import { useGeminiBrain } from '../hooks/useGeminiBrain';
 import { CreatorTool } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { AiServiceError, transcribeAudio } from '../services/aiService';
+import { AiServiceError } from '../services/aiService';
 import {
   MousePointer2, Pencil, Type, Square, Circle, Trash2, Triangle, PaintBucket,
   Mic, Image as ImageIcon, Send, Layers, ChevronUp, ChevronDown, X,

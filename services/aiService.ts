@@ -90,7 +90,8 @@ export const generateAgentActions = async (
   domElements: Record<string, any> = {}
 ) => {
   const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
-  return requestJson<any>('/api/ai/generate', {
+  const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+  return requestJson<any>(`${apiUrl}/api/ai/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -111,7 +112,8 @@ export const generateAgentActions = async (
 
 export const generateToolContent = async (toolId: string, prompt: string): Promise<any> => {
   const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
-  const data = await requestJson<{ result: any }>('/api/ai/tool-content', {
+  const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+  const data = await requestJson<{ result: any }>(`${apiUrl}/api/ai/tool-content`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl })
@@ -120,13 +122,3 @@ export const generateToolContent = async (toolId: string, prompt: string): Promi
   return data.result;
 };
 
-export const transcribeAudio = async (base64Audio: string): Promise<string> => {
-  const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
-  const data = await requestJson<{ text: string }>('/api/ai/transcribe', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl })
-  });
-
-  return data.text;
-};

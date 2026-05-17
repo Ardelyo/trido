@@ -58,9 +58,11 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
        setRoomId(currentRoomId);
     }
 
-    const socket: BoardSocket = io(window.location.origin, {
+    const socketUrl = (import.meta as any).env.VITE_API_URL || window.location.origin;
+    const socket: BoardSocket = io(socketUrl, {
       path: '/socket.io'
     });
+
 
     socketRef.current = socket;
 

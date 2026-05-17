@@ -150,7 +150,37 @@ This starts both the app and Ollama; app will automatically detect Ollama at `ht
 
 ## Cloud Deployment
 
+### Vercel Frontend + PaaS Backend (Recommended for Production)
+
+When deploying Trido to public cloud providers, **you must separate the static frontend from the Express/WebSocket backend**. 
+
+#### ⚠️ Crucial Architectural Clarification: Why Vercel Alone Fails
+If you deploy this repository directly to Vercel without a dedicated backend server, you will see the following browser console errors:
+```
+GET https://trido.vercel.app/socket.io/?EIO=4&transport=polling... 404 (Not Found)
+POST https://trido.vercel.app/api/ai/status 404 (Not Found)
+```
+**Reason:** Vercel is a *serverless* platform. It excels at serving static React/Vite assets, but it **cannot maintain persistent WebSocket connections** or run long-lived Node.js Express servers (`server.ts`). When the Vercel frontend attempts to poll `/socket.io` or reach `/api/ai/*`, Vercel returns 404 because no Node.js daemon is listening.
+
+#### How to Configure for Production
+
+To deploy successfully:
+1. **Host the Backend on a persistent PaaS** (such as [Railway](https://railway.app), [Render](https://render.com), or Heroku). 
+   - Deploy this repository to your PaaS provider.
+   - Set the build command to `npm run build:server` and start command to `npm start`.
+   - The PaaS will allocate a public domain (e.g., `https://trido-backend.up.railway.app`).
+
+2. **Host the Frontend on Vercel**.
+   - In your Vercel project settings, configure an environment variable pointing to your PaaS backend:
+     ```
+     VITE_API_URL=https://trido-backend.up.railway.app
+     ```
+   - When `VITE_API_URL` is set, the frontend automatically routes all Socket.IO connections and AI API calls to your persistent backend daemon instead of attempting to reach Vercel serverless routes.
+
+---
+
 ### Azure App Service
+
 
 #### Option 1: Deploy from Docker Image
 
