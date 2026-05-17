@@ -10,8 +10,9 @@
     "build:all": "npm run build && npm run build:server",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "start": "node dist-server/server.js",
+    "start": "NODE_ENV=production tsx server.ts",
     "start:dev": "NODE_ENV=production tsx server.ts"
+
   },
   "dependencies": {
     "@google-cloud/vertexai": "^1.12.0",

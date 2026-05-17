@@ -88,8 +88,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 EXPOSE 3000
 ENV NODE_ENV=production
-CMD ["node", "--loader", "tsx", "server.ts"]
+CMD ["npm", "start"]
 ```
+
 
 ### Build Docker Image
 
