@@ -1,4 +1,15 @@
 import "dotenv/config";
+
+// Suppress @google/genai SDK internal warning about non-text function-call parts.
+// The SDK logs this unconditionally at response construction — we extract parts
+// directly from candidates[0].content.parts so this warning is a false positive.
+const _consoleWarn = console.warn.bind(console);
+console.warn = (...args: any[]) => {
+  const msg = typeof args[0] === 'string' ? args[0] : '';
+  if (msg.includes('non-text parts') && msg.includes('functionCall')) return;
+  _consoleWarn(...args);
+};
+
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
