@@ -161,6 +161,11 @@ const getInitialOllamaBaseUrl = (): string => {
   return localStorage.getItem('ollama_base_url') || '';
 };
 
+const getInitialLanguage = (): 'id' | 'en' => {
+  const saved = localStorage.getItem('trido_language');
+  return (saved === 'id' || saved === 'en') ? saved : 'id';
+};
+
 const getInitialUserName = (): string => {
   return localStorage.getItem('trido_user_name') || 'Guru';
 };
@@ -301,8 +306,11 @@ export const useStore = create<AppStore>((set, get) => ({
     set({ userName: trimmed });
   },
 
-  language: 'id',
-  setLanguage: (lang) => set({ language: lang }),
+  language: getInitialLanguage(),
+  setLanguage: (lang) => {
+    localStorage.setItem('trido_language', lang);
+    set({ language: lang });
+  },
 
   aiPreference: getInitialAiPreference(),
   setAiPreference: (pref) => {

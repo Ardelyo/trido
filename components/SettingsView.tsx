@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { toast } from '../utils/toast';
+import { useTranslation } from '../utils/translations';
 
 interface SettingsViewProps {
   onClose: () => void;
@@ -33,6 +34,7 @@ const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode 
 const inputCls = "w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all";
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const {
     aiPreference, setAiPreference,
     geminiApiKey, setGeminiApiKey,
@@ -82,14 +84,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     localStorage.setItem('ai_preference', localAiPref);
     localStorage.setItem('trido_sound', soundEnabled ? 'on' : 'off');
     setSaved(true);
-    toast.success('Pengaturan tersimpan!');
+    toast.success(t('saved', 'Tersimpan') + '!');
     setTimeout(() => setSaved(false), 2000);
   };
 
   const handleClearAllData = () => {
-    if (!window.confirm('Hapus semua data lokal termasuk sesi tersimpan dan kunci API? Tindakan ini tidak bisa dibatalkan.')) return;
+    if (!window.confirm(t('clearDataConfirm', 'Hapus semua data lokal termasuk sesi tersimpan dan kunci API? Tindakan ini tidak bisa dibatalkan.'))) return;
     localStorage.clear();
-    toast.success('Semua data lokal telah dihapus. Memuat ulang...');
+    toast.success(t('clearDataSuccess', 'Semua data lokal telah dihapus. Memuat ulang...'));
     setTimeout(() => window.location.reload(), 1500);
   };
 
@@ -107,8 +109,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
       {/* Header */}
       <div className="h-20 lg:h-24 px-8 lg:px-12 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Pengaturan</h2>
-          <p className="text-sm font-semibold text-slate-400 mt-0.5">Konfigurasi AI, tampilan, dan akun Anda</p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('settingsTitle', 'Pengaturan')}</h2>
+          <p className="text-sm font-semibold text-slate-400 mt-0.5">{t('settingsSubtitle', 'Konfigurasi AI, tampilan, dan akun Anda')}</p>
         </div>
         <div className="flex items-center gap-3">
           <motion.button
@@ -119,11 +121,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
             <AnimatePresence mode="wait">
               {saved ? (
                 <motion.span key="saved" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
-                  <CheckCircle2 size={16} /> Tersimpan
+                  <CheckCircle2 size={16} /> {t('saved', 'Tersimpan')}
                 </motion.span>
               ) : (
                 <motion.span key="save" className="flex items-center gap-2">
-                  <Save size={16} /> Simpan
+                  <Save size={16} /> {t('save', 'Simpan')}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -142,20 +144,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
         <div className="max-w-2xl mx-auto space-y-6">
 
           {/* Profile */}
-          <Section title="Profil Pengguna" subtitle="Nama ditampilkan di sudut papan tulis">
-            <Field label="Nama Anda">
+          <Section title={t('userProfile', 'Profil Pengguna')} subtitle={t('userProfileSubtitle', 'Nama ditampilkan di sudut papan tulis')}>
+            <Field label={t('yourName', 'Nama Anda')}>
               <div className="relative">
                 <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={localName}
                   onChange={e => setLocalName(e.target.value)}
-                  placeholder="Nama Guru / Fasilitator"
+                  placeholder={t('teacherFacilitator', 'Nama Guru / Fasilitator')}
                   className={`${inputCls} pl-10`}
                 />
               </div>
             </Field>
-            <Field label="Bahasa Antarmuka">
+            <Field label={t('interfaceLanguage', 'Bahasa Antarmuka')}>
               <select
                 value={localLang}
                 onChange={e => setLocalLang(e.target.value as 'id' | 'en')}
@@ -168,14 +170,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
           </Section>
 
           {/* AI Provider */}
-          <Section title="Konfigurasi AI" subtitle="Pilih dan konfigurasi penyedia model AI">
-            <Field label="Mode AI">
+          <Section title={t('aiConfig', 'Konfigurasi AI')} subtitle={t('aiConfigSubtitle', 'Pilih dan konfigurasi penyedia model AI')}>
+            <Field label={t('aiMode', 'Mode AI')}>
               <div className="grid grid-cols-2 gap-2">
                 {([
-                  { val: 'auto', label: '⚡ Otomatis', desc: 'Pilih terbaik yang tersedia' },
-                  { val: 'gemini', label: '✨ Gemini', desc: 'Google AI (Cloud)' },
-                  { val: 'ollama', label: '🏠 Ollama', desc: 'Lokal & privat' },
-                  { val: 'vertex', label: '🌐 Vertex AI', desc: 'Google Cloud Enterprise' },
+                  { val: 'auto', label: t('aiModeAuto', '⚡ Otomatis'), desc: t('aiModeAutoDesc', 'Pilih terbaik yang tersedia') },
+                  { val: 'gemini', label: t('aiModeGemini', '✨ Gemini'), desc: t('aiModeGeminiDesc', 'Google AI (Cloud)') },
+                  { val: 'ollama', label: t('aiModeOllama', '🏠 Ollama'), desc: t('aiModeOllamaDesc', 'Lokal & privat') },
+                  { val: 'vertex', label: t('aiModeVertex', '🌐 Vertex AI'), desc: t('aiModeVertexDesc', 'Google Cloud Enterprise') },
                 ] as const).map(opt => (
                   <button
                     key={opt.val}
@@ -198,8 +200,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
             {/* Gemini Key */}
             {isGeminiMode && (
               <Field
-                label="Kunci API Gemini"
-                hint={`Kunci disimpan di browser Anda saja — tidak pernah dikirim ke server kami. Model: gemma-4-31b-it`}
+                label={t('geminiApiKey', 'Kunci API Gemini')}
+                hint={t('geminiApiKeyHint', 'Kunci disimpan di browser Anda saja — tidak pernah dikirim ke server kami. Model: gemma-4-31b-it')}
               >
                 <div className="relative">
                   <Key size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -223,7 +225,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:underline mt-1"
                 >
-                  <ExternalLink size={11} /> Dapatkan kunci API gratis di Google AI Studio
+                  <ExternalLink size={11} /> {t('getFreeApiKey', 'Dapatkan kunci API gratis di Google AI Studio')}
                 </a>
               </Field>
             )}
@@ -231,8 +233,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
             {/* Ollama URL */}
             {isOllamaMode && (
               <Field
-                label="URL Ollama Lokal"
-                hint="Pastikan Ollama berjalan dan model gemma4:e2b sudah diunduh (ollama pull gemma4:e2b)"
+                label={t('localOllamaUrl', 'URL Ollama Lokal')}
+                hint={t('ollamaUrlHint', 'Pastikan Ollama berjalan dan model gemma4:e2b sudah diunduh (ollama pull gemma4:e2b)')}
               >
                 <div className="relative">
                   <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -264,68 +266,74 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 ) : (
                   <Wifi size={16} />
                 )}
-                {aiStatus === 'checking' ? 'Mengecek...' : aiStatus === 'online' ? 'Terhubung ✓' : aiStatus === 'offline' ? 'Tidak terhubung' : 'Test Koneksi AI'}
+                {aiStatus === 'checking'
+                  ? t('checking', 'Mengecek...')
+                  : aiStatus === 'online'
+                  ? t('connected', 'Terhubung ✓')
+                  : aiStatus === 'offline'
+                  ? t('notConnectedStatus', 'Tidak terhubung')
+                  : t('testConnection', 'Test Koneksi AI')}
               </button>
             </div>
           </Section>
 
           {/* Appearance */}
-          <Section title="Tampilan" subtitle="Tema dan preferensi visual papan tulis">
-            <Field label="Tema">
+          <Section title={t('appearance', 'Tampilan')} subtitle={t('appearanceSubtitle', 'Tema dan preferensi visual papan tulis')}>
+            <Field label={t('theme', 'Tema')}>
               <div className="flex bg-slate-50 p-1.5 rounded-2xl gap-1">
                 <button
                   onClick={() => theme === 'dark' && toggleTheme()}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'light' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  <Sun size={16} /> Terang
+                  <Sun size={16} /> {t('light', 'Terang')}
                 </button>
                 <button
                   onClick={() => theme === 'light' && toggleTheme()}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'dark' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  <Moon size={16} /> Gelap
+                  <Moon size={16} /> {t('dark', 'Gelap')}
                 </button>
               </div>
             </Field>
-            <Field label="Suara Efek AI">
+            <Field label={t('aiSoundEffects', 'Suara Efek AI')}>
               <button
                 onClick={() => setSoundEnabled(v => !v)}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 font-bold text-sm transition-all w-full ${soundEnabled ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-500'}`}
               >
                 {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                {soundEnabled ? 'Suara Aktif' : 'Suara Nonaktif'}
+                {soundEnabled ? t('soundEnabled', 'Suara Aktif') : t('soundDisabled', 'Suara Nonaktif')}
               </button>
             </Field>
           </Section>
 
           {/* About */}
-          <Section title="Tentang Trido">
+          <Section title={t('aboutTrido', 'Tentang Trido')}>
             <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-2xl">
               <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
               <p className="text-xs font-semibold text-blue-700 leading-relaxed">
-                Trido adalah papan tulis AI untuk guru Indonesia yang dirancang bersama Pak Damar — guru Bahasa Indonesia dengan disabilitas fisik di Bandung. Teknologi ini bukan hanya tentang kecerdasan buatan; tapi tentang inklusivitas.
+                {t('aboutTridoDesc', 'Trido adalah papan tulis AI untuk guru Indonesia yang dirancang bersama Pak Damar — guru Bahasa Indonesia dengan disabilitas fisik di Bandung. Teknologi ini bukan hanya tentang kecerdasan buatan; tapi tentang inklusivitas.')}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500">
               <div className="bg-slate-50 rounded-xl p-3">
                 <div className="text-slate-800 font-black text-base">v1.0.0</div>
-                <div>Versi Aplikasi</div>
+                <div>{t('appVersion', 'Versi Aplikasi')}</div>
               </div>
               <div className="bg-slate-50 rounded-xl p-3">
                 <div className="text-slate-800 font-black text-base">gemma-4-31b-it</div>
-                <div>Model AI</div>
+                <div>{t('aiModel', 'Model AI')}</div>
               </div>
             </div>
           </Section>
 
           {/* Danger Zone */}
           <div className="bg-rose-50 border border-rose-200 border-dashed rounded-3xl p-5 space-y-3">
-            <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">Zona Berbahaya</h3>
+            <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">{t('dangerZone', 'Zona Berbahaya')}</h3>
             <button
               onClick={handleClearAllData}
               className="flex items-center gap-2 w-full px-4 py-3 bg-white text-rose-600 font-bold text-sm rounded-2xl border border-rose-200 hover:bg-rose-600 hover:text-white transition-all"
             >
-              <Trash2 size={16} /> Hapus Semua Data Lokal
+              <Trash2 size={16} /> {t('clearAllLocalData', 'Hapus Semua Data Lokal')}
             </button>
           </div>
 

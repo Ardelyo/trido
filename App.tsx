@@ -26,8 +26,10 @@ import { AiStatusBadge } from './components/AiStatusBadge';
 import { useStore } from './store';
 import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
+import { useTranslation } from './utils/translations';
 
 const App: React.FC = () => {
+  const { t } = useTranslation();
   const canvasRef = useRef<any>(null);
   const [, setReady] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -74,7 +76,7 @@ const App: React.FC = () => {
   const getStatusConfig = () => {
     if (aiStatus.mode === 'gemini') {
       return {
-        text: 'Mode Cloud',
+        text: t('modeCloud', 'Mode Cloud'),
         detail: `Gemini: ${aiStatus.model}`,
         color: 'text-blue-700 bg-blue-100/80 border-blue-200/50',
         dot: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]',
@@ -84,7 +86,7 @@ const App: React.FC = () => {
     }
     if (aiStatus.mode === 'vertex') {
       return {
-        text: 'Mode Cloud (Vertex)',
+        text: t('modeCloudVertex', 'Mode Cloud (Vertex)'),
         detail: `Vertex: ${aiStatus.model}`,
         color: 'text-purple-700 bg-purple-100/80 border-purple-200/50',
         dot: 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]',
@@ -94,7 +96,7 @@ const App: React.FC = () => {
     }
     if (aiStatus.mode === 'ollama') {
       return {
-        text: 'Mode Luring',
+        text: t('modeLuring', 'Mode Luring'),
         detail: `Ollama lokal: ${aiStatus.model}`,
         color: 'text-emerald-700 bg-emerald-100/80 border-emerald-200/50',
         dot: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]',
@@ -106,8 +108,8 @@ const App: React.FC = () => {
     // Unavailable cases
     if (aiStatus.ollamaStatus?.online && !aiStatus.ollamaStatus?.hasModel) {
       return {
-        text: 'Model Lokal Hilang',
-        detail: 'Ollama aktif tapi model belum diunduh',
+        text: t('localModelMissing', 'Model Lokal Hilang'),
+        detail: t('localModelMissingDetail', 'Ollama aktif tapi model belum diunduh'),
         color: 'text-amber-700 bg-amber-100/80 border-amber-200/50',
         dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse',
         statusColor: 'text-amber-600',
@@ -116,8 +118,8 @@ const App: React.FC = () => {
     }
 
     return {
-      text: 'AI Tidak Tersedia',
-      detail: aiStatus.reason === 'invalid_key' ? 'Kunci API perlu diperiksa' : aiStatus.reason === 'missing_project' ? 'Project ID Vertex belum diatur' : 'Gemini/Ollama/Vertex belum terhubung',
+      text: t('aiUnavailable', 'AI Tidak Tersedia'),
+      detail: aiStatus.reason === 'invalid_key' ? t('invalidApiKey', 'Kunci API perlu diperiksa') : aiStatus.reason === 'missing_project' ? t('missingProject', 'Project ID Vertex belum diatur') : t('notConnected', 'Gemini/Ollama/Vertex belum terhubung'),
       color: 'text-amber-700 bg-amber-100/80 border-amber-200/50',
       dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]',
       statusColor: 'text-amber-600',
@@ -129,12 +131,12 @@ const App: React.FC = () => {
     try {
       const res = await fetch('/api/ai/pull-model', { method: 'POST' });
       if (res.ok) {
-        toast.info('Proses pengunduhan model dimulai di latar belakang. Silakan tunggu beberapa menit.');
+        toast.info(t('downloadingBackground', 'Proses pengunduhan model dimulai di latar belakang. Silakan tunggu beberapa menit.'));
       } else {
-        toast.error('Gagal memulai pengunduhan model.');
+        toast.error(t('failedDownload', 'Gagal memulai pengunduhan model.'));
       }
     } catch (e) {
-      toast.error('Gagal memulai pengunduhan model.');
+      toast.error(t('failedDownload', 'Gagal memulai pengunduhan model.'));
     }
   };
 
@@ -144,8 +146,6 @@ const App: React.FC = () => {
     canvasRef.current = ref.current;
     setReady(true);
   };
-
-  // Removed local SidebarItem definition as it's now an external component
 
   const {
     isTimerOpen, toggleTimer,
@@ -167,11 +167,11 @@ const App: React.FC = () => {
           <div className="absolute top-6 left-6 z-50 flex items-center gap-3">
               <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl shadow-slate-200/50 border border-white">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <span className="text-[12px] font-black text-slate-800 tracking-tight">Sesi Live {userName}</span>
+                <span className="text-[12px] font-black text-slate-800 tracking-tight">{t('liveSession', 'Sesi Live')} {userName}</span>
               </div>
              <div className="flex items-center gap-1 bg-blue-600 px-3 py-2 rounded-2xl shadow-lg shadow-blue-600/20 text-white border border-blue-500">
                 <Users size={14} />
-                <span className="text-[11px] font-bold tracking-tight">Cek Sesi: {roomId}</span>
+                <span className="text-[11px] font-bold tracking-tight">{t('checkSession', 'Cek Sesi')}: {roomId}</span>
              </div>
           </div>
 
@@ -201,7 +201,7 @@ const App: React.FC = () => {
                   <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
                   <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
                 </div>
-                <div className="text-[12px] font-black tracking-[0.2em] text-slate-400 uppercase">Menghubungkan ke Papan {userName}...</div>
+                <div className="text-[12px] font-black tracking-[0.2em] text-slate-400 uppercase">{t('connectingToBoard', 'Menghubungkan ke Papan')} {userName}...</div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -248,12 +248,12 @@ const App: React.FC = () => {
               <div className="hidden sm:block w-px h-6 bg-slate-300/50 mx-1" />
 
               <button onClick={() => setIsShareOpen(true)} className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 border border-white bg-white/60 hover:bg-white backdrop-blur rounded-[1.25rem] transition-colors shadow-sm active:scale-95">
-                <Share2 size={16} /> <span className="hidden md:inline">Bagikan</span>
+                <Share2 size={16} /> <span className="hidden md:inline">{t('share', 'Bagikan')}</span>
               </button>
 
               <SaveMenu onExportClick={() => setIsExportOpen(true)} />
 
-              <button className="w-10 h-10 rounded-[1.25rem] overflow-hidden border-[2.5px] border-white hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-[#e2e8f0] transition-all ml-1 shadow-sm shrink-0" title="User Menu" onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}>
+              <button className="w-10 h-10 rounded-[1.25rem] overflow-hidden border-[2.5px] border-white hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-[#e2e8f0] transition-all ml-1 shadow-sm shrink-0" title={t('userMenu', 'Menu Pengguna')} onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}>
                 <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">
                   {userName.charAt(0).toUpperCase()}
                 </div>
@@ -294,12 +294,12 @@ const App: React.FC = () => {
                 >
                   <div className="w-65 h-full flex flex-col">
                     <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 custom-scrollbar">
-                      <SidebarItem icon={Square} label="Papan Tulis" active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen} onClick={() => { if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); setIsSettingsOpen(false); }} />
-                      <SidebarItem icon={Layers} label="Templat" active={isTemplatesOpen} onClick={() => { toggleTemplates(); setIsSettingsOpen(false); }} />
+                      <SidebarItem icon={Square} label={t('whiteboard', 'Papan Tulis')} active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen} onClick={() => { if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); setIsSettingsOpen(false); }} />
+                      <SidebarItem icon={Layers} label={t('templates', 'Templat')} active={isTemplatesOpen} onClick={() => { toggleTemplates(); setIsSettingsOpen(false); }} />
                       <div className="h-5" />
-                      <SidebarItem icon={Sparkles} label="Alat AI Agentic" active={isAiToolsOpen} onClick={() => { toggleAiTools(); setIsSettingsOpen(false); }} />
-                      <SidebarItem icon={History} label="Riwayat" active={isHistoryOpen} onClick={() => { toggleHistory(); setIsSettingsOpen(false); }} />
-                      <SidebarItem icon={Settings} label="Pengaturan" active={isSettingsOpen} onClick={() => { setIsSettingsOpen(v => !v); if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); }} />
+                      <SidebarItem icon={Sparkles} label={t('agenticAiTools', 'Alat AI Agentic')} active={isAiToolsOpen} onClick={() => { toggleAiTools(); setIsSettingsOpen(false); }} />
+                      <SidebarItem icon={History} label={t('history', 'Riwayat')} active={isHistoryOpen} onClick={() => { toggleHistory(); setIsSettingsOpen(false); }} />
+                      <SidebarItem icon={Settings} label={t('settings', 'Pengaturan')} active={isSettingsOpen} onClick={() => { setIsSettingsOpen(v => !v); if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); }} />
                     </nav>
 
                     <div className="p-5 border-t border-slate-100/80 space-y-4 bg-slate-50/50">
@@ -332,12 +332,12 @@ const App: React.FC = () => {
                               <Pencil size={12} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                           )}
-                          <div className="text-[12px] text-slate-500 font-medium">Guru</div>
+                          <div className="text-[12px] text-slate-500 font-medium">{t('teacher', 'Guru')}</div>
                         </div>
                       </div>
 
                       <div className="p-4 rounded-3xl bg-white border border-slate-200/60 shadow-sm">
-                        <div className="text-[13px] font-bold text-slate-800 mb-1.5">Status AI</div>
+                        <div className="text-[13px] font-bold text-slate-800 mb-1.5">{t('aiStatus', 'Status AI')}</div>
                         <div className={`text-[12px] ${statusConfig.statusColor} font-semibold flex items-center gap-1.5`}>
                             <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
                             {statusConfig.text}
@@ -440,7 +440,7 @@ const App: React.FC = () => {
                        <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
                        <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
                      </div>
-                     <div className="text-[13px] font-bold tracking-[0.2em] text-slate-600 uppercase">Memuat Kanvas...</div>
+                     <div className="text-[13px] font-bold tracking-[0.2em] text-slate-600 uppercase">{t('loadingCanvas', 'Memuat Kanvas...')}</div>
                    </motion.div>
                  )}
                </AnimatePresence>
@@ -464,7 +464,7 @@ const App: React.FC = () => {
                         </div>
                         <div>
                           <div className="font-extrabold text-slate-900 text-[16px]">Trido AI</div>
-                          <div className="text-[12px] text-blue-600 font-bold">Asisten AI Digital</div>
+                          <div className="text-[12px] text-blue-600 font-bold">{t('digitalAiAssistant', 'Asisten AI Digital')}</div>
                         </div>
                     </div>
                     <button onClick={toggleAiDrawer} className="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2.5 rounded-2xl transition-colors active:scale-95">
@@ -479,7 +479,7 @@ const App: React.FC = () => {
                         <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
                            <Sparkles size={28} className="text-slate-400" />
                         </div>
-                        <p className="text-[15px] font-medium text-slate-500">Tanyakan apapun atau unggah gambar untuk memulai percakapan dengan AI.</p>
+                        <p className="text-[15px] font-medium text-slate-500">{t('emptyChatPrompt', 'Tanyakan apapun atau unggah gambar untuk memulai percakapan dengan AI.')}</p>
                       </div>
                     )}
                     {messages.map((msg, i) => (
@@ -506,7 +506,7 @@ const App: React.FC = () => {
                       onSubmit={async (e) => {
                         e.preventDefault();
                         if(!chatInputText.trim() && !lastUploadedImage) return;
-                        const text = chatInputText.trim() || 'Tolong analisa gambar ini.';
+                        const text = chatInputText.trim() || t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.');
                         setChatInputText('');
                         useStore.getState().addMessage({ role: 'user', text });
                         await processUserPrompt(text, canvasRef);
@@ -516,7 +516,7 @@ const App: React.FC = () => {
                         <FileUploadButton
                           className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 ml-0.5 active:scale-95"
                           icon={<Plus size={20} />}
-                          title="Unggah file / gambar"
+                          title={t('uploadFileOrImage', 'Unggah file / gambar')}
                         />
                         <button
                           type="button"
@@ -525,7 +525,7 @@ const App: React.FC = () => {
                             setTimeout(() => window.dispatchEvent(new Event('start-mic')), 300);
                           }}
                           className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 active:scale-95"
-                          title="Beralih ke mode suara"
+                          title={t('switchToVoice', 'Beralih ke mode suara')}
                         >
                           <Mic size={20} />
                         </button>
@@ -533,7 +533,7 @@ const App: React.FC = () => {
                           type="text"
                           value={chatInputText}
                           onChange={(e) => setChatInputText(e.target.value)}
-                          placeholder="Tanya sesuatu..."
+                          placeholder={t('askSomething', 'Tanya sesuatu...')}
                           className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-slate-800 placeholder-slate-400 h-10 px-2"
                         />
                          <button

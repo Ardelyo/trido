@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { Cloud, CloudLightning, Pencil, Download, Settings, FilePlus, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from '../utils/translations';
 
 interface SaveMenuProps {
   onExportClick: () => void;
 }
 
 export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
+  const { t } = useTranslation();
   const { currentSessionId, sessions, saveCurrentSession, createNewSession } = useStore();
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -19,11 +21,11 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
   useEffect(() => {
     if (currentSessionId) {
       const session = sessions.find(s => s.id === currentSessionId);
-      setTitle(session?.title || 'Papan Tanpa Judul');
+      setTitle(session?.title || t('untitledBoard', 'Papan Tanpa Judul'));
     } else {
-      setTitle('Papan Tanpa Judul');
+      setTitle(t('untitledBoard', 'Papan Tanpa Judul'));
     }
-  }, [currentSessionId, sessions, isOpen]);
+  }, [currentSessionId, sessions, isOpen, t]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,7 +68,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
         className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 border border-white bg-white/60 hover:bg-white backdrop-blur rounded-[1.25rem] transition-colors shadow-sm active:scale-95"
       >
         <Cloud size={16} className={isSaving ? "animate-pulse text-blue-500" : ""} /> 
-        <span className="hidden md:inline">Simpan</span>
+        <span className="hidden md:inline">{t('save', 'Simpan')}</span>
         <ChevronDown size={14} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
@@ -88,14 +90,14 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
             className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden"
           >
             <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Nama Papan</label>
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">{t('boardName', 'Nama Papan')}</label>
               <div className="flex items-center bg-white border border-slate-200 rounded-xl px-3 py-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                 <input
                   ref={titleInputRef}
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Judul Papan..."
+                  placeholder={t('boardTitlePlaceholder', 'Judul Papan...')}
                   className="w-full text-sm font-bold text-slate-800 outline-none bg-transparent"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSave();
@@ -112,9 +114,9 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
               >
                 <div className="flex items-center gap-3">
                   {isSaving ? <CloudLightning size={16} className="text-blue-500" /> : isSavedDone ? <Check size={16} className="text-emerald-500" /> : <Cloud size={16} />}
-                  <span>Simpan Sekarang</span>
+                  <span>{t('saveNow', 'Simpan Sekarang')}</span>
                 </div>
-                {isSavedDone && <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-md">Tersimpan</span>}
+                {isSavedDone && <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-md">{t('saved', 'Tersimpan')}</span>}
               </button>
               
               <button 
@@ -122,7 +124,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 <FilePlus size={16} />
-                Papan Baru
+                {t('newBoard', 'Papan Baru')}
               </button>
 
               <div className="h-px w-full bg-slate-100 my-1" />
@@ -132,7 +134,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 <Download size={16} />
-                Ekspor Papan
+                {t('exportBoard', 'Ekspor Papan')}
               </button>
 
               <button 
@@ -140,7 +142,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 <Settings size={16} />
-                Pengaturan
+                {t('settings', 'Pengaturan')}
               </button>
             </div>
           </motion.div>

@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Play, Pause, RotateCcw, Clock, Timer as TimerIcon, StopCircle, Bell } from 'lucide-react';
 import { toast } from '../utils/toast';
+import { useTranslation } from '../utils/translations';
 
 interface TimerToolProps {
   config: any;
@@ -11,6 +11,7 @@ interface TimerToolProps {
 type Mode = 'TIMER' | 'STOPWATCH' | 'CLOCK' | 'ALARM';
 
 export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
+  const { t, language } = useTranslation();
   const parsedConfig = typeof config === 'string' ? JSON.parse(config) : config;
   const [mode, setMode] = useState<Mode>(parsedConfig.mode || 'TIMER');
   
@@ -38,13 +39,13 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
           now.getMinutes() === minutes &&
           now.getSeconds() < 2
         ) {
-          toast.warning('⏰ Alarm berbunyi! Waktunya telah tiba!');
+          toast.warning(t('timerAlarmRinging', '⏰ Alarm berbunyi! Waktunya telah tiba!'));
           setIsAlarmActive(false);
         }
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [mode, isAlarmActive, alarmTime]);
+  }, [mode, isAlarmActive, alarmTime, t]);
 
   // Timer Logic
   useEffect(() => {
@@ -113,10 +114,10 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
             {mode === 'CLOCK' && (
               <div className="text-center">
                 <div className="text-5xl font-black text-slate-800 tracking-tighter font-mono">
-                  {currentTime.toLocaleTimeString('id-ID', { hour12: false })}
+                  {currentTime.toLocaleTimeString(language === 'en' ? 'en-US' : 'id-ID', { hour12: false })}
                 </div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">
-                  {currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {currentTime.toLocaleDateString(language === 'en' ? 'en-US' : 'id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </div>
               </div>
             )}
@@ -168,7 +169,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
                     isAlarmActive ? 'bg-rose-500 text-white' : 'bg-indigo-600 text-white'
                   }`}
                 >
-                  {isAlarmActive ? 'BATALKAN ALARM' : 'SETEL ALARM'}
+                  {isAlarmActive ? t('cancelAlarm', 'BATALKAN ALARM') : t('setAlarm', 'SETEL ALARM')}
                 </button>
               </div>
             )}

@@ -17,12 +17,14 @@ import { AudioVisualizer } from './AudioVisualizer';
 import { FileUploadButton } from './FileUploadButton';
 import { DrawingToolbar } from './DrawingToolbar';
 import { sounds } from '../utils/sounds';
+import { useTranslation } from '../utils/translations';
 
 interface ChatInterfaceProps {
   canvasRef: React.MutableRefObject<any>;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
+  const { t, language } = useTranslation();
   const [input, setInput] = useState('');
   const [interimInput, setInterimInput] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -75,7 +77,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         <div className="absolute bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-40">
            <div className="bg-slate-900/80 backdrop-blur-md text-white text-[13px] font-medium px-4 py-2.5 rounded-2xl shadow-lg border border-white/10 flex items-center gap-3">
              <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-             <span className="tracking-wide">Anda sedang menonton layar guru</span>
+             <span className="tracking-wide">{t('watchingTeacher', 'Anda sedang menonton layar guru')}</span>
            </div>
         </div>
       </div>
@@ -188,7 +190,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true; // Use continuous for better experience
       recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'id-ID';
+      recognitionRef.current.lang = language === 'en' ? 'en-US' : 'id-ID';
 
       recognitionRef.current.onresult = (event: any) => {
         let finalTranscript = '';
@@ -258,7 +260,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       setSpeechSupported(false);
       recognitionRef.current = null;
     }
-  }, [isListening, isTranscribing]);
+  }, [isListening, isTranscribing, language]);
 
   useEffect(() => {
     const handleStartMic = () => {
@@ -282,7 +284,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       stopVisualizer();
     } else {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-        const fallbackMessage = "Browser ini belum mendukung input suara. Gunakan kolom teks di Copilot.";
+        const fallbackMessage = t('voiceUnsupported', 'Browser ini belum mendukung input suara. Gunakan kolom teks di Copilot.');
         setVoiceNotice(fallbackMessage);
         useStore.getState().setChatInputText(input || interimInput || '');
         if (!isAiDrawerOpen) useStore.getState().toggleAiDrawer();
@@ -365,7 +367,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         startVisualizer(stream);
 
         if (recognitionRef.current) {
-          recognitionRef.current.lang = 'id-ID';
+          recognitionRef.current.lang = language === 'en' ? 'en-US' : 'id-ID';
           try { recognitionRef.current.stop(); } catch(e) {}
 
           setTimeout(() => {
@@ -441,7 +443,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   };
 
   const handleSubmitInternal = async (text: string) => {
-    const finalTxt = text.trim() || (useStore.getState().lastUploadedImage ? 'Tolong analisa gambar ini.' : '');
+    const finalTxt = text.trim() || (useStore.getState().lastUploadedImage ? t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.') : '');
     if (!finalTxt || isThinking) return;
     setInput('');
     useStore.getState().addMessage({ role: 'user', text: finalTxt });
@@ -524,23 +526,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                      <span className="text-[13.5px] font-bold text-slate-800 leading-tight truncate">
-                       {isThinking ? "Memproses dengan Gemma 4..." :
-                        isTranscribing ? "Menerjemahkan Suara..." :
-                        isListening ? (interimInput || input || (speechSupported ? "Mendengarkan..." : "Merekam suara...")) :
+                       {isThinking ? t('processingWithModel', 'Memproses dengan Gemma 4...') :
+                        isTranscribing ? t('transcribingVoice', 'Menerjemahkan Suara...') :
+                        isListening ? (interimInput || input || (speechSupported ? t('listening', 'Mendengarkan...') : t('recordingVoice', 'Merekam suara...'))) :
                         voiceNotice ? voiceNotice :
-                        "Semua Sistem Siap"}
+                        t('allSystemsReady', 'Semua Sistem Siap')}
                      </span>
                      <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
                        {isListening || isThinking ? (
-                         <span className="flex gap-1.5 items-center">
-                           Trido AI Aktif
-                           <div className="flex gap-1">
-                             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
-                             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                           </div>
-                         </span>
-                       ) : speechSupported ? "Mode Siaga" : "Suara terbatas: gunakan rekam atau teks"}
+                          <span className="flex gap-1.5 items-center">
+                            {t('tridoAiActive', 'Trido AI Aktif')}
+                            <div className="flex gap-1">
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            </div>
+                          </span>
+                       ) : speechSupported ? t('standbyMode', 'Mode Siaga') : t('limitedVoiceDesc', 'Suara terbatas: gunakan rekam atau teks')}
                      </span>
                   </div>
                </div>
@@ -551,7 +553,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                        <img src={lastUploadedImage} alt="Uploaded" className="h-10 w-10 object-cover rounded-[0.85rem] border-2 border-white shadow-sm" />
                        <button
                          onClick={() => setLastUploadedImage(null)}
-                         className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-md hover:bg-rose-600 active:scale-90 transition-transform"
+                         className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-md hover:bg-rose-600 active:scale-95 transition-transform"
                        >
                          <X size={12} strokeWidth={3} />
                        </button>
@@ -560,13 +562,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                   <FileUploadButton
                     className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95"
                     icon={<Plus size={22} />}
-                    title="Unggah Gambar"
+                    title={t('uploadImage', 'Unggah Gambar')}
                   />
 
                   <button
                     onClick={toggleListening}
                     disabled={isTranscribing || isThinking}
-                    title={speechSupported ? "Mulai input suara" : "Rekam suara untuk transkripsi"}
+                    title={speechSupported ? t('startVoiceInput', 'Mulai input suara') : t('recordVoiceForTranscription', 'Rekam suara untuk transkripsi')}
                     className={`w-12 h-12 flex items-center justify-center rounded-[1.3rem] text-white shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 shadow-red-500/25 animate-pulse scale-105 ring-4 ring-red-500/10' : 'bg-blue-600 shadow-blue-600/30 hover:scale-105 hover:bg-blue-500'} disabled:opacity-50 disabled:pointer-events-none active:scale-95 shrink-0`}
                   >
                     <Mic size={20} />
@@ -576,7 +578,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                     <button
                       onClick={() => abortTask()}
                       className="w-12 h-12 flex items-center justify-center bg-rose-50 text-red-500 rounded-[1.3rem] hover:bg-red-100 hover:text-red-600 transition-all font-bold group active:scale-95 border border-red-100 shrink-0"
-                      title="Batalkan Proses"
+                      title={t('cancelProcess', 'Batalkan Proses')}
                     >
                       <Square size={16} className="fill-current group-hover:scale-90 transition-transform" />
                     </button>
@@ -597,14 +599,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
            >
              <button
                onClick={() => undoCanvas()}
-               title="Batal (Undo)"
+               title={language === 'en' ? 'Undo' : 'Batal (Undo)'}
                className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
              >
                <Undo2 size={16} />
              </button>
              <button
                onClick={() => redoCanvas()}
-               title="Ulangi (Redo)"
+               title={language === 'en' ? 'Redo' : 'Ulangi (Redo)'}
                className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
              >
                <Redo2 size={16} />
@@ -612,7 +614,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
              <div className="w-px h-5 bg-slate-200/80 mx-1.5" />
              <button
                onClick={handleDeleteSelection}
-               title="Hapus Elemen Terpilih"
+               title={language === 'en' ? 'Delete Selected Element' : 'Hapus Elemen Terpilih'}
                className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors active:scale-90"
              >
                <Trash2 size={16} />
@@ -636,7 +638,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                <Plus size={18} />
              </button>
              <div className="w-0.5 h-5 bg-slate-200/80 mx-1.5 rounded-full" />
-             <button onClick={() => handleZoom('reset')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95" title="Paskan ke Layar">
+             <button onClick={() => handleZoom('reset')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95" title={t('fitToScreen', 'Paskan ke Layar')}>
                <Maximize size={18} />
              </button>
            </motion.div>

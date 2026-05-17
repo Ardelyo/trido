@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserCheck, UserX, UserMinus } from 'lucide-react';
+import { useTranslation } from '../utils/translations';
 
 const students = [
   { id: 1, name: 'Budi Santoso' },
@@ -10,13 +11,14 @@ const students = [
 ];
 
 export const AttendanceTool: React.FC = () => {
+  const { t } = useTranslation();
   const [attendance, setAttendance] = useState<Record<number, 'H' | 'I' | 'A' | 'S'>>({});
 
   return (
     <div className="flex flex-col h-full bg-slate-50 font-sans">
       <div className="p-4 bg-white border-b border-slate-100 flex items-center justify-between">
-        <h4 className="font-extrabold text-slate-800 text-sm">Absensi Kelas</h4>
-        <span className="text-xs font-bold bg-blue-100 text-blue-600 px-2 py-1 rounded-full">{students.length} Siswa</span>
+        <h4 className="font-extrabold text-slate-800 text-sm">{t('attendanceClassTitle', 'Absensi Kelas')}</h4>
+        <span className="text-xs font-bold bg-blue-100 text-blue-600 px-2 py-1 rounded-full">{students.length} {t('studentsCount', 'Siswa')}</span>
       </div>
       <div className="flex-1 overflow-auto p-4 custom-scrollbar space-y-2">
         {students.map(s => (
@@ -45,10 +47,10 @@ export const AttendanceTool: React.FC = () => {
           </div>
         ))}
       </div>
-      <div className="p-4 bg-white border-t border-slate-100 flex justify-between text-xs font-bold text-slate-500">
-         <span>H: Hadir</span>
-         <span>I: Izin / S: Sakit</span>
-         <span>A: Alpa</span>
+      <div className="p-4 bg-white border-t border-slate-100 flex flex-col sm:flex-row gap-2 justify-between text-xs font-bold text-slate-500">
+         <span>{t('attendancePresent', 'H: Hadir')}</span>
+         <span>{t('attendanceExcused', 'I: Izin / S: Sakit')}</span>
+         <span>{t('attendanceAbsent', 'A: Alpa')}</span>
       </div>
     </div>
   );

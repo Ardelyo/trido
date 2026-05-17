@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { CreatorTool, FontFamily } from '../types';
+import { useTranslation } from '../utils/translations';
 
 // ── Palette & sizes ──────────────────────────────────────────────────────────
 const PALETTE = [
@@ -26,29 +27,29 @@ const FONTS: { value: FontFamily; label: string }[] = [
   { value: 'Playfair Display', label: 'Playfair' },
 ];
 
-const ALL_SHAPES: { tool: CreatorTool; icon: any; label: string }[] = [
-  { tool: 'RECTANGLE',    icon: Square,        label: 'Kotak' },
-  { tool: 'CIRCLE',       icon: Circle,        label: 'Lingkaran' },
-  { tool: 'TRIANGLE',     icon: Triangle,      label: 'Segitiga' },
-  { tool: 'LINE',         icon: Minus,         label: 'Garis' },
-  { tool: 'ARROW',        icon: MoveRight,     label: 'Panah' },
-  { tool: 'STAR',         icon: Star,          label: 'Bintang' },
-  { tool: 'DIAMOND',      icon: Diamond,       label: 'Berlian' },
-  { tool: 'HEART',        icon: Heart,         label: 'Hati' },
-  { tool: 'PENTAGON',     icon: Pentagon,      label: 'Pentagon' },
-  { tool: 'POLYGON',      icon: Hexagon,       label: 'Heksagon' },
-  { tool: 'SPEECH_BUBBLE',icon: MessageSquare, label: 'Balon Kata' },
+const ALL_SHAPES: { tool: CreatorTool; icon: any; label: string; tKey: string }[] = [
+  { tool: 'RECTANGLE',    icon: Square,        label: 'Kotak', tKey: 'shape_RECTANGLE' },
+  { tool: 'CIRCLE',       icon: Circle,        label: 'Lingkaran', tKey: 'shape_CIRCLE' },
+  { tool: 'TRIANGLE',     icon: Triangle,      label: 'Segitiga', tKey: 'shape_TRIANGLE' },
+  { tool: 'LINE',         icon: Minus,         label: 'Garis', tKey: 'shape_LINE' },
+  { tool: 'ARROW',        icon: MoveRight,     label: 'Panah', tKey: 'shape_ARROW' },
+  { tool: 'STAR',         icon: Star,          label: 'Bintang', tKey: 'shape_STAR' },
+  { tool: 'DIAMOND',      icon: Diamond,       label: 'Berlian', tKey: 'shape_DIAMOND' },
+  { tool: 'HEART',        icon: Heart,         label: 'Hati', tKey: 'shape_HEART' },
+  { tool: 'PENTAGON',     icon: Pentagon,      label: 'Pentagon', tKey: 'shape_PENTAGON' },
+  { tool: 'POLYGON',      icon: Hexagon,       label: 'Heksagon', tKey: 'shape_POLYGON' },
+  { tool: 'SPEECH_BUBBLE',icon: MessageSquare, label: 'Balon Kata', tKey: 'shape_SPEECH_BUBBLE' },
 ];
 
 const APPS = [
-  { label: 'Kalkulator', icon: Calculator,  key: 'toggleCalculator' as const },
-  { label: 'Timer',      icon: Clock,       key: 'toggleTimer' as const },
-  { label: 'Catatan',    icon: FileText,    key: 'toggleNotes' as const },
-  { label: 'Kuis AI',   icon: HelpCircle,  key: 'toggleQuiz' as const },
-  { label: 'Konversi',   icon: Activity,    key: 'toggleUnitConverter' as const },
-  { label: 'Periodik',   icon: FlaskConical,key: 'togglePeriodicTable' as const },
-  { label: 'Presensi',   icon: Users,       key: 'toggleAttendance' as const },
-  { label: 'To-Do',      icon: CheckSquare, key: 'toggleTodoList' as const },
+  { label: 'Kalkulator', icon: Calculator,  key: 'toggleCalculator' as const, tKey: 'app_Calculator' },
+  { label: 'Timer',      icon: Clock,       key: 'toggleTimer' as const, tKey: 'app_Timer' },
+  { label: 'Catatan',    icon: FileText,    key: 'toggleNotes' as const, tKey: 'app_Notes' },
+  { label: 'Kuis AI',   icon: HelpCircle,  key: 'toggleQuiz' as const, tKey: 'app_Quiz' },
+  { label: 'Konversi',   icon: Activity,    key: 'toggleUnitConverter' as const, tKey: 'app_Conversion' },
+  { label: 'Periodik',   icon: FlaskConical,key: 'togglePeriodicTable' as const, tKey: 'app_Periodic' },
+  { label: 'Presensi',   icon: Users,       key: 'toggleAttendance' as const, tKey: 'app_Attendance' },
+  { label: 'To-Do',      icon: CheckSquare, key: 'toggleTodoList' as const, tKey: 'app_Todo' },
 ];
 
 type PanelId = 'draw' | 'shapes' | 'text' | 'apps';
@@ -106,6 +107,7 @@ interface DrawingToolbarProps {
 export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   onImageUpload,
 }) => {
+  const { t } = useTranslation();
   const {
     activeTool, setActiveTool,
     brushColor, setBrushColor, brushWidth, setBrushWidth,
@@ -138,7 +140,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         className="relative flex flex-col items-center gap-1 bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-xl shadow-slate-900/8 rounded-2xl p-1.5"
       >
         {/* 1. SELECT */}
-        <Btn icon={MousePointer2} active={activeTool === 'SELECT'} title="Pilih Elemen" onClick={() => { setActiveTool('SELECT'); close(); }} />
+        <Btn icon={MousePointer2} active={activeTool === 'SELECT'} title={t('selectElement', 'Pilih Elemen')} onClick={() => { setActiveTool('SELECT'); close(); }} />
 
         <div className="w-5 h-px bg-slate-200/80" />
 
@@ -147,7 +149,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
           <Btn
             icon={activeTool === 'ERASER' ? Eraser : Pencil}
             active={openPanel === 'draw' || isDrawingMode}
-            title="Coret & Hapus"
+            title={t('scribbleAndEraser', 'Coret & Hapus')}
             onClick={() => {
               if (!isDrawingMode) {
                 setActiveTool('PENCIL');
@@ -158,7 +160,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
             <ChevronRight size={7} className="absolute right-0.5 bottom-0.5 opacity-50" />
           </Btn>
           <Flyout open={openPanel === 'draw'}>
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Mode Coret</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">{t('scribbleMode', 'Mode Coret')}</div>
             <div className="flex gap-1 mb-3">
               <button
                 onClick={() => setActiveTool('PENCIL')}
@@ -166,7 +168,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   activeTool === 'PENCIL' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                <Pencil size={12} /> Pensil
+                <Pencil size={12} /> {t('pencil', 'Pensil')}
               </button>
               <button
                 onClick={() => setActiveTool('ERASER')}
@@ -174,11 +176,11 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   activeTool === 'ERASER' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                <Eraser size={12} /> Penghapus
+                <Eraser size={12} /> {t('eraser', 'Penghapus')}
               </button>
             </div>
 
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Pilihan Warna</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">{t('colorOptions', 'Pilihan Warna')}</div>
             <div className="grid grid-cols-6 gap-1 mb-2">
               {PALETTE.map(c => (
                 <button
@@ -198,7 +200,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
               className="w-full h-8 rounded-lg cursor-pointer border border-slate-200 mb-3"
             />
 
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Ketebalan Brush</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">{t('brushThickness', 'Ketebalan Brush')}</div>
             <div className="flex gap-1">
               {BRUSH_SIZES.map(s => (
                 <button
@@ -223,19 +225,19 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
           <Btn
             icon={ShapeIcon}
             active={openPanel === 'shapes' || !!activeShape}
-            title="Bentuk & Garis"
+            title={t('shapesAndLines', 'Bentuk & Garis')}
             onClick={() => toggle('shapes')}
           >
             <ChevronRight size={7} className="absolute right-0.5 bottom-0.5 opacity-50" />
           </Btn>
           <Flyout open={openPanel === 'shapes'} align="center">
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Pilih Bentuk</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">{t('selectShape', 'Pilih Bentuk')}</div>
             <div className="grid grid-cols-4 gap-1.5 mb-3">
               {ALL_SHAPES.map(s => (
                 <motion.button
                   key={s.tool}
                   whileTap={{ scale: 0.85 }}
-                  title={s.label}
+                  title={t(s.tKey, s.label)}
                   onClick={() => { setActiveTool(s.tool); close(); }}
                   className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${
                     activeTool === s.tool ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-600'
@@ -245,7 +247,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                 </motion.button>
               ))}
             </div>
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Gaya Isian</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">{t('fillStyle', 'Gaya Isian')}</div>
             <button
               onClick={() => setShapeFilled(!isShapeFilled)}
               className={`w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${
@@ -253,7 +255,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
               }`}
             >
               <PaintBucket size={12} />
-              {isShapeFilled ? 'Isian Aktif' : 'Garis Tepi Saja'}
+              {isShapeFilled ? t('fillActive', 'Isian Aktif') : t('outlineOnly', 'Garis Tepi Saja')}
             </button>
           </Flyout>
         </div>
@@ -263,7 +265,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
           <Btn
             icon={Type}
             active={openPanel === 'text' || activeTool === 'TEXT'}
-            title="Teks & Tipografi"
+            title={t('textAndTypography', 'Teks & Tipografi')}
             onClick={() => {
               if (activeTool !== 'TEXT') {
                 setActiveTool('TEXT');
@@ -274,7 +276,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
             <ChevronRight size={7} className="absolute right-0.5 bottom-0.5 opacity-50" />
           </Btn>
           <Flyout open={openPanel === 'text'} align="center">
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Gaya Huruf</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">{t('fontStyle', 'Gaya Huruf')}</div>
             {FONTS.map(f => (
               <button
                 key={f.value}
@@ -287,7 +289,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                 {f.label}
               </button>
             ))}
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-3 mb-1.5">Ukuran Teks</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-3 mb-1.5">{t('textSize', 'Ukuran Teks')}</div>
             <div className="flex gap-1 flex-wrap">
               {[14, 20, 28, 40, 56].map(s => (
                 <button
@@ -305,15 +307,15 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         </div>
 
         {/* 5. IMAGE */}
-        <Btn icon={ImageIcon} title="Sisipkan Gambar" onClick={onImageUpload} />
+        <Btn icon={ImageIcon} title={t('insertImage', 'Sisipkan Gambar')} onClick={onImageUpload} />
 
         <div className="w-5 h-px bg-slate-200/80" />
 
         {/* 6. APPS & WIDGETS */}
         <div className="relative">
-          <Btn icon={MoreHorizontal} active={openPanel === 'apps'} title="Alat & Aplikasi" onClick={() => toggle('apps')} />
+          <Btn icon={MoreHorizontal} active={openPanel === 'apps'} title={t('toolsAndApps', 'Alat & Aplikasi')} onClick={() => toggle('apps')} />
           <Flyout open={openPanel === 'apps'} align="bottom">
-            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Alat Kelas & Widget</div>
+            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">{t('classToolsAndWidgets', 'Alat Kelas & Widget')}</div>
             <div className="grid grid-cols-2 gap-1.5">
               {APPS.map(app => (
                 <button
@@ -322,7 +324,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-colors text-[10px] font-bold touch-manipulation"
                 >
                   <app.icon size={16} />
-                  {app.label}
+                  {t(app.tKey, app.label)}
                 </button>
               ))}
             </div>

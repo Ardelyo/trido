@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Copy, Download, Image as ImageIcon, FileJson } from 'lucide-react';
 import { useStore } from '../store';
+import { useTranslation } from '../utils/translations';
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface ExportDialogProps {
 }
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, canvasRef }) => {
+  const { t } = useTranslation();
+  
   const handleExportPNG = () => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -71,7 +74,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-sm bg-white rounded-[2rem] shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-slate-200/60 z-[101] overflow-hidden flex flex-col"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <h3 className="text-[16px] font-extrabold text-slate-800">Ekspor Papan Tulis</h3>
+              <h3 className="text-[16px] font-extrabold text-slate-800">
+                {t('export', 'Ekspor')} {t('whiteboard', 'Papan Tulis')}
+              </h3>
               <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-200/50 text-slate-500 transition-colors">
                 <X size={18} strokeWidth={2.5} />
               </button>
@@ -86,8 +91,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   <ImageIcon size={24} />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <div className="font-bold text-slate-800 text-[15px]">Simpan sebagai PNG</div>
-                  <div className="text-[13px] text-slate-500 font-medium">Gambar kualitas tinggi</div>
+                  <div className="font-bold text-slate-800 text-[15px]">{t('saveAsPng', 'Simpan sebagai PNG')}</div>
+                  <div className="text-[13px] text-slate-500 font-medium">{t('highQualityImage', 'Gambar kualitas tinggi')}</div>
                 </div>
               </button>
 
@@ -99,8 +104,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   <FileJson size={24} />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <div className="font-bold text-slate-800 text-[15px]">Simpan sebagai JSON</div>
-                  <div className="text-[13px] text-slate-500 font-medium">Data bisa diedit lagi nanti</div>
+                  <div className="font-bold text-slate-800 text-[15px]">{t('saveAsJson', 'Simpan sebagai JSON')}</div>
+                  <div className="text-[13px] text-slate-500 font-medium">{t('editableLater', 'Data bisa diedit lagi nanti')}</div>
                 </div>
               </button>
             </div>

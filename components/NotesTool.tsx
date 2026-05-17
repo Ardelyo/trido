@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Save, Trash2, List, Type, Bold, Italic, Link } from 'lucide-react';
+import { useTranslation } from '../utils/translations';
 
 export const NotesTool: React.FC = () => {
+  const { t } = useTranslation();
   const [note, setNote] = useState('');
   
   return (
@@ -21,12 +23,12 @@ export const NotesTool: React.FC = () => {
       <textarea
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="Tulis catatan pelajaran di sini..."
+        placeholder={t('notesPlaceholder', 'Tulis catatan pelajaran di sini...')}
         className="flex-1 p-6 text-[15px] leading-relaxed text-slate-700 bg-transparent outline-none resize-none font-medium placeholder:text-slate-300"
       />
 
       <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center shrink-0">
-         <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">Auto-save aktif</span>
+         <span className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">{t('autoSaveActive', 'Auto-save aktif')}</span>
          <div className="flex gap-1">
             <div className="w-1 h-1 rounded-full bg-emerald-400" />
             <div className="w-1 h-1 rounded-full bg-emerald-400" />

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from '../utils/translations';
 
 interface Todo {
   id: string;
@@ -8,10 +9,11 @@ interface Todo {
 }
 
 export const TodoListTool: React.FC = () => {
-  const [todos, setTodos] = useState<Todo[]>([
-    { id: '1', text: 'Bahas Bab 4', completed: true },
-    { id: '2', text: 'Latihan Soal Matematika', completed: false },
-    { id: '3', text: 'Tugas Kelompok', completed: false },
+  const { t, language } = useTranslation();
+  const [todos, setTodos] = useState<Todo[]>(() => [
+    { id: '1', text: language === 'en' ? 'Discuss Chapter 4' : 'Bahas Bab 4', completed: true },
+    { id: '2', text: language === 'en' ? 'Math Exercises' : 'Latihan Soal Matematika', completed: false },
+    { id: '3', text: language === 'en' ? 'Group Assignment' : 'Tugas Kelompok', completed: false },
   ]);
   const [input, setInput] = useState('');
 
@@ -38,7 +40,7 @@ export const TodoListTool: React.FC = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addTodo()}
-          placeholder="Tambah tugas baru..."
+          placeholder={t('todoPlaceholder', 'Tambah tugas baru...')}
           className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium outline-none focus:border-blue-500"
         />
         <button onClick={addTodo} className="w-10 h-10 bg-blue-600 text-white flex items-center justify-center rounded-xl shadow-md hover:bg-blue-700 active:scale-95 transition-all">
@@ -63,7 +65,7 @@ export const TodoListTool: React.FC = () => {
           </div>
         ))}
         {todos.length === 0 && (
-          <div className="text-center text-slate-400 text-sm font-bold mt-10">Belum ada tugas.</div>
+          <div className="text-center text-slate-400 text-sm font-bold mt-10">{t('noTasksYet', 'Belum ada tugas.')}</div>
         )}
       </div>
     </div>
