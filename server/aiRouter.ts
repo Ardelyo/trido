@@ -54,8 +54,8 @@ const getPreferredAutoMode = (): AiMode => {
 const getOllamaUrl = () => process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
 const getOllamaModel = () => process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
 
-const probeGemini = async () => {
-  const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
+const probeGemini = async (customKey?: string) => {
+  const key = customKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!key) {
     return { online: false, reason: 'missing_key' };
   }
@@ -95,8 +95,8 @@ const probeVertex = async () => {
   return { online: true, reason: 'configured' };
 };
 
-const probeOllama = async () => {
-  const url = getOllamaUrl();
+const probeOllama = async (customUrl?: string) => {
+  const url = customUrl || getOllamaUrl();
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CONFIG.ai.ollama.probeTimeoutMs);
@@ -121,7 +121,10 @@ const probeOllama = async () => {
   }
 };
 
-const getAvailableMode = async (): Promise<{
+const getAvailableMode = async (
+  customGeminiKey?: string,
+  customOllamaUrl?: string
+): Promise<{
   mode: AiMode | 'unavailable';
   model: string;
   online: boolean;
@@ -131,8 +134,8 @@ const getAvailableMode = async (): Promise<{
   vertexStatus?: { online: boolean; reason: string };
 }> => {
   const configuredMode = getConfiguredMode();
-  const gemini = await probeGemini();
-  const ollama = await probeOllama();
+  const gemini = await probeGemini(customGeminiKey);
+  const ollama = await probeOllama(customOllamaUrl);
   const vertex = await probeVertex();
 
   const geminiInfo = { online: gemini.online, reason: gemini.reason };
@@ -146,7 +149,7 @@ const getAvailableMode = async (): Promise<{
   }
 
   if (preferredMode === 'gemini') {
-    const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    const key = customGeminiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (gemini.online || key) {
       return { mode: 'gemini', model: CONFIG.ai.gemini.model, online: gemini.online, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
     }
@@ -223,11 +226,16 @@ aiRouter.get("/status", async (req, res) => {
   res.json(await getAvailableMode());
 });
 
+aiRouter.post("/status", async (req, res) => {
+  const { geminiApiKey, ollamaBaseUrl } = req.body;
+  res.json(await getAvailableMode(geminiApiKey, ollamaBaseUrl));
+});
+
 aiRouter.post("/generate", async (req, res) => {
   try {
-    const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference } = req.body;
+    const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
-    const status = await getAvailableMode();
+    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
     const mode = status.mode;
 
     if (mode === 'unavailable') {
@@ -260,7 +268,7 @@ aiRouter.post("/generate", async (req, res) => {
     } else if (mode === 'gemini') {
       try {
         result = await generateAgentActionsGemini(
-          prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
+          prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey
         );
       } catch (e) {
         if (configuredMode === 'auto') {
@@ -268,7 +276,7 @@ aiRouter.post("/generate", async (req, res) => {
           // Reuse status already fetched above — avoid second probe round-trip
           if (status.ollamaStatus?.online && status.ollamaStatus?.hasModel) {
             result = await generateAgentActionsOllama(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
+              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl
             );
           } else {
             throw e;
@@ -279,7 +287,7 @@ aiRouter.post("/generate", async (req, res) => {
       }
     } else {
       result = await generateAgentActionsOllama(
-        prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
+        prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl
       );
     }
 
@@ -292,8 +300,8 @@ aiRouter.post("/generate", async (req, res) => {
 
 aiRouter.post("/tool-content", async (req, res) => {
   try {
-    const { toolId, prompt, aiPreference } = req.body;
-    const status = await getAvailableMode();
+    const { toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
+    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
     const mode = status.mode;
 
     if (mode === 'unavailable') {
@@ -304,9 +312,9 @@ aiRouter.post("/tool-content", async (req, res) => {
     if (mode === 'vertex') {
       result = await generateToolContentVertex(toolId, prompt);
     } else if (mode === 'gemini') {
-      result = await generateToolContentGemini(toolId, prompt);
+      result = await generateToolContentGemini(toolId, prompt, geminiApiKey);
     } else {
-      result = await generateToolContentOllama(toolId, prompt);
+      result = await generateToolContentOllama(toolId, prompt, ollamaBaseUrl);
     }
 
     res.json({ result });
@@ -318,8 +326,8 @@ aiRouter.post("/tool-content", async (req, res) => {
 
 aiRouter.post("/transcribe", async (req, res) => {
   try {
-    const { base64Audio, aiPreference } = req.body;
-    const status = await getAvailableMode();
+    const { base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
+    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
     const mode = status.mode;
 
     if (mode === 'unavailable') {
@@ -330,9 +338,9 @@ aiRouter.post("/transcribe", async (req, res) => {
     if (mode === 'vertex') {
       text = await transcribeAudioVertex(base64Audio);
     } else if (mode === 'gemini') {
-      text = await transcribeAudioGemini(base64Audio);
+      text = await transcribeAudioGemini(base64Audio, geminiApiKey);
     } else {
-      text = await transcribeAudioOllama(base64Audio);
+      text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl);
     }
 
     res.json({ text });

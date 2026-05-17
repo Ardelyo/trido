@@ -88,7 +88,7 @@ export const generateAgentActions = async (
   pageContext?: { current: number; total: number },
   domElements: Record<string, any> = {}
 ) => {
-  const { aiPreference } = useStore.getState();
+  const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
   return requestJson<any>('/api/ai/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -101,28 +101,30 @@ export const generateAgentActions = async (
       history,
       pageContext,
       domElements,
-      aiPreference
+      aiPreference,
+      geminiApiKey,
+      ollamaBaseUrl
     })
   });
 };
 
 export const generateToolContent = async (toolId: string, prompt: string): Promise<any> => {
-  const { aiPreference } = useStore.getState();
+  const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
   const data = await requestJson<{ result: any }>('/api/ai/tool-content', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ toolId, prompt, aiPreference })
+    body: JSON.stringify({ toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl })
   });
 
   return data.result;
 };
 
 export const transcribeAudio = async (base64Audio: string): Promise<string> => {
-  const { aiPreference } = useStore.getState();
+  const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
   const data = await requestJson<{ text: string }>('/api/ai/transcribe', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ base64Audio, aiPreference })
+    body: JSON.stringify({ base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl })
   });
 
   return data.text;

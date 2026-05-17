@@ -61,6 +61,12 @@ interface AppStore extends AgentState {
 
   aiPreference: AiPreference;
   setAiPreference: (pref: AiPreference) => void;
+
+  geminiApiKey: string;
+  setGeminiApiKey: (key: string) => void;
+
+  ollamaBaseUrl: string;
+  setOllamaBaseUrl: (url: string) => void;
   
   isViewerUrl: boolean;
   setIsViewerUrl: (v: boolean) => void;
@@ -145,6 +151,14 @@ const getInitialAiPreference = (): AiPreference => {
   return (saved === 'gemini' || saved === 'ollama' || saved === 'vertex' || saved === 'auto') 
     ? (saved as AiPreference) 
     : 'auto';
+};
+
+const getInitialGeminiApiKey = (): string => {
+  return localStorage.getItem('gemini_api_key') || '';
+};
+
+const getInitialOllamaBaseUrl = (): string => {
+  return localStorage.getItem('ollama_base_url') || '';
 };
 
 const getInitialUserName = (): string => {
@@ -294,6 +308,18 @@ export const useStore = create<AppStore>((set, get) => ({
   setAiPreference: (pref) => {
     localStorage.setItem('ai_preference', pref);
     set({ aiPreference: pref });
+  },
+
+  geminiApiKey: getInitialGeminiApiKey(),
+  setGeminiApiKey: (key) => {
+    localStorage.setItem('gemini_api_key', key);
+    set({ geminiApiKey: key });
+  },
+
+  ollamaBaseUrl: getInitialOllamaBaseUrl(),
+  setOllamaBaseUrl: (url) => {
+    localStorage.setItem('ollama_base_url', url);
+    set({ ollamaBaseUrl: url });
   },
 
   isViewerUrl: false,

@@ -3,7 +3,16 @@ import { useStore } from '../store';
 import { Moon, Sun, Monitor, Lock, Unlock } from 'lucide-react';
 
 export const BoardSettingsTool: React.FC = () => {
-  const { theme, toggleTheme } = useStore();
+  const { 
+    theme, 
+    toggleTheme,
+    aiPreference,
+    setAiPreference,
+    geminiApiKey,
+    setGeminiApiKey,
+    ollamaBaseUrl,
+    setOllamaBaseUrl
+  } = useStore();
 
   return (
     <div className="flex flex-col h-full bg-slate-50 font-sans p-4 space-y-4 overflow-auto custom-scrollbar">
@@ -26,21 +35,57 @@ export const BoardSettingsTool: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Penyedia AI</h4>
-        <select 
-          value={useStore.getState().aiPreference}
-          onChange={(e) => useStore.getState().setAiPreference(e.target.value as any)}
-          className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-3 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-        >
-          <option value="auto">Otomatis (Rekomendasi)</option>
-          <option value="gemini">Google Gemini API</option>
-          <option value="vertex">Google Vertex AI</option>
-          <option value="ollama">Ollama (Lokal)</option>
-        </select>
-        <p className="mt-2 text-[10px] text-slate-400 font-medium leading-relaxed">
-          Pilih Vertex AI untuk performa enterprise atau Ollama untuk privasi total tanpa internet.
-        </p>
+      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+        <div>
+          <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Penyedia AI</h4>
+          <select 
+            value={aiPreference}
+            onChange={(e) => setAiPreference(e.target.value as any)}
+            className="w-full bg-slate-50 border-none rounded-xl py-2.5 px-3 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+          >
+            <option value="auto">Otomatis (Rekomendasi)</option>
+            <option value="gemini">Google Gemini API</option>
+            <option value="vertex">Google Vertex AI</option>
+            <option value="ollama">Ollama (Lokal)</option>
+          </select>
+          <p className="mt-2 text-[10px] text-slate-400 font-medium leading-relaxed">
+            Pilih Vertex AI untuk performa enterprise atau Ollama untuk privasi total tanpa internet.
+          </p>
+        </div>
+
+        {/* Gemini API Key Input */}
+        {(aiPreference === 'gemini' || aiPreference === 'auto') && (
+          <div className="space-y-1.5 pt-2 border-t border-slate-100">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Kunci API Gemini</label>
+            <input 
+              type="password"
+              value={geminiApiKey}
+              onChange={(e) => setGeminiApiKey(e.target.value)}
+              placeholder="Masukkan Kunci API Gemini..."
+              className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            />
+            <p className="text-[9px] text-slate-400">
+              Kunci API disimpan secara lokal. Menggunakan model <code className="bg-slate-100 px-1 rounded text-slate-600 font-bold">gemma-4-31b-it</code>.
+            </p>
+          </div>
+        )}
+
+        {/* Ollama Base URL Input */}
+        {(aiPreference === 'ollama' || aiPreference === 'auto') && (
+          <div className="space-y-1.5 pt-2 border-t border-slate-100">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">URL Ollama Lokal</label>
+            <input 
+              type="text"
+              value={ollamaBaseUrl}
+              onChange={(e) => setOllamaBaseUrl(e.target.value)}
+              placeholder="http://localhost:11434"
+              className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            />
+            <p className="text-[9px] text-slate-400">
+              URL default: <code className="bg-slate-100 px-1 rounded text-slate-600 font-bold">http://localhost:11434</code>. Menggunakan model <code className="bg-slate-100 px-1 rounded text-slate-600 font-bold">gemma4:e2b</code>.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">

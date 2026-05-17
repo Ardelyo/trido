@@ -4,7 +4,7 @@ import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, 
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 
-const getAiClient = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY || "dummy" });
+const getAiClient = (customKey?: string) => new GoogleGenAI({ apiKey: customKey || process.env.GEMINI_API_KEY || process.env.API_KEY || "dummy" });
 const logger = createLogger('gemini-adapter');
 
 export const generateAgentActionsGemini = async (
@@ -15,7 +15,8 @@ export const generateAgentActionsGemini = async (
   highResInputImage?: string | null,
   history: { role: 'user' | 'model'; text: string }[] = [],
   pageContext?: { current: number; total: number },
-  domElements: Record<string, any> = {}
+  domElements: Record<string, any> = {},
+  customKey?: string
 ) => {
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
@@ -37,7 +38,7 @@ export const generateAgentActionsGemini = async (
     }
   ];
 
-  const ai = getAiClient();
+  const ai = getAiClient(customKey);
   const response = await ai.models.generateContent({
     model: CONFIG.ai.gemini.model,
     contents: contents,
@@ -67,7 +68,7 @@ export const generateAgentActionsGemini = async (
   };
 };
 
-export const generateToolContentGemini = async (toolId: string, prompt: string): Promise<any> => {
+export const generateToolContentGemini = async (toolId: string, prompt: string, customKey?: string): Promise<any> => {
   const model = CONFIG.ai.gemini.model;
   let promptText = "";
   
@@ -97,7 +98,7 @@ export const generateToolContentGemini = async (toolId: string, prompt: string):
     Format your response in Markdown. Text: "${prompt}"`;
   }
 
-  const ai = getAiClient();
+  const ai = getAiClient(customKey);
   const response = await ai.models.generateContent({
     model,
     contents: [{ role: 'user', parts: [{ text: promptText }] }],
@@ -116,8 +117,8 @@ export const generateToolContentGemini = async (toolId: string, prompt: string):
   }
 };
 
-export const transcribeAudioGemini = async (base64Audio: string): Promise<string> => {
-  const ai = getAiClient();
+export const transcribeAudioGemini = async (base64Audio: string, customKey?: string): Promise<string> => {
+  const ai = getAiClient(customKey);
   const response = await ai.models.generateContent({
     model: CONFIG.ai.gemini.model,
     contents: [

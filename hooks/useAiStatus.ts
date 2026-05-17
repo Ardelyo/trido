@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CONFIG } from '../constants';
+import { useStore } from '../store';
 
 export interface AiStatus {
   mode: 'gemini' | 'ollama' | 'vertex' | 'unavailable';
@@ -13,6 +14,7 @@ export interface AiStatus {
 }
 
 export const useAiStatus = () => {
+  const { geminiApiKey, ollamaBaseUrl } = useStore();
   const [status, setStatus] = useState<AiStatus>({
     mode: 'unavailable',
     model: '',
@@ -22,7 +24,11 @@ export const useAiStatus = () => {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch('/api/ai/status');
+        const res = await fetch('/api/ai/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ geminiApiKey, ollamaBaseUrl })
+        });
         if (res.ok) {
           const data = await res.json();
           setStatus({ ...data, checkedAt: Date.now() });
@@ -43,7 +49,7 @@ export const useAiStatus = () => {
       window.removeEventListener('online', fetchStatus);
       window.removeEventListener('offline', fetchStatus);
     };
-  }, []);
+  }, [geminiApiKey, ollamaBaseUrl]);
 
   return status;
 };

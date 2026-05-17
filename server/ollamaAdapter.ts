@@ -5,7 +5,7 @@ import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger('ollama-adapter');
-const getOllamaUrl = () => process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
+const getOllamaUrl = (customUrl?: string) => customUrl || process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
 
 export const generateAgentActionsOllama = async (
   prompt: string,
@@ -15,7 +15,8 @@ export const generateAgentActionsOllama = async (
   highResInputImage?: string | null,
   history: { role: 'user' | 'model'; text: string }[] = [],
   pageContext?: { current: number; total: number },
-  domElements: Record<string, any> = {}
+  domElements: Record<string, any> = {},
+  customUrl?: string
 ) => {
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   
@@ -59,7 +60,7 @@ export const generateAgentActionsOllama = async (
     headers["Authorization"] = `Bearer ${process.env.OLLAMA_API_KEY}`;
   }
 
-  const response = await fetch(`${getOllamaUrl()}/api/chat`, {
+  const response = await fetch(`${getOllamaUrl(customUrl)}/api/chat`, {
     method: "POST",
     headers,
     body: JSON.stringify(payload)
@@ -157,7 +158,7 @@ export const generateAgentActionsOllama = async (
   };
 };
 
-export const generateToolContentOllama = async (toolId: string, prompt: string): Promise<any> => {
+export const generateToolContentOllama = async (toolId: string, prompt: string, customUrl?: string): Promise<any> => {
   let promptText = "";
   if (toolId === 'mindmap') {
     promptText = `Generate a JSON array of mindmap nodes for the topic: "${prompt}". 
@@ -196,7 +197,7 @@ export const generateToolContentOllama = async (toolId: string, prompt: string):
     headers["Authorization"] = `Bearer ${process.env.OLLAMA_API_KEY}`;
   }
 
-  const response = await fetch(`${getOllamaUrl()}/api/chat`, {
+  const response = await fetch(`${getOllamaUrl(customUrl)}/api/chat`, {
     method: "POST",
     headers,
     body: JSON.stringify(payload)
@@ -221,7 +222,7 @@ export const generateToolContentOllama = async (toolId: string, prompt: string):
   }
 };
 
-export const transcribeAudioOllama = async (base64Audio: string): Promise<string> => {
+export const transcribeAudioOllama = async (base64Audio: string, customUrl?: string): Promise<string> => {
   logger.warn(`Audio transcription via Ollama is not fully supported with ${CONFIG.ai.ollama.model} yet.`);
   return "Fitur voice command belum tersedia di mode lokal penuh.";
 };
