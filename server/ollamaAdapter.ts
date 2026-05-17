@@ -60,11 +60,21 @@ export const generateAgentActionsOllama = async (
     headers["Authorization"] = `Bearer ${process.env.OLLAMA_API_KEY}`;
   }
 
-  const response = await fetch(`${getOllamaUrl(customUrl)}/api/chat`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(payload)
-  });
+  const controller = new AbortController();
+  const timeoutMs = (CONFIG.ai.ollama as any).generateTimeoutMs || 120_000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(`${getOllamaUrl(customUrl)}/api/chat`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const data = await response.json();
 
@@ -101,52 +111,62 @@ export const generateAgentActionsOllama = async (
         return parsed.success ? parsed.data : null;
       }).filter(Boolean);
     } else {
-      // Fallback: Manual JSON extraction from text
-      try {
-        const jsonPatterns = [
-            /```json\s*([\s\S]*?)\s*```/g,
-            /({[\s\S]*})/g,
-            /(\[[\s\S]*\])/g
-        ];
+      // Fallback: extract JSON tool calls from text (model didn't use native tool_calls)
+      // Only attempt extraction on reasonably short responses to avoid catastrophic regex
+      if (textResponse.length < 8000) {
+        try {
+          // Strip thinking tags first
+          const cleanText = textResponse
+            .replace(/<think>[\s\S]*?<\/think>/g, '')
+            .replace(/<thought>[\s\S]*?<\/thought>/g, '')
+            .trim();
 
-        for (const pattern of jsonPatterns) {
-            const matches = textResponse.matchAll(pattern);
-            for (const match of matches) {
-                try {
-                    const rawJson = JSON.parse(match[1]);
+          // Match fenced JSON blocks first (safest)
+          const fencedMatches = [...cleanText.matchAll(/```json\s*([\s\S]*?)\s*```/g)];
+          for (const match of fencedMatches) {
+            try {
+              const rawJson = JSON.parse(match[1]);
+              // Case: { "calls": [...] }
+              const legacyResult = LegacyResponseSchema.safeParse(rawJson);
+              if (legacyResult.success) { functionCalls.push(...legacyResult.data.calls); continue; }
+              // Case: single tool call object
+              const singleResult = ToolCallSchema.safeParse(rawJson);
+              if (singleResult.success) { functionCalls.push(singleResult.data); continue; }
+              // Case: array of tool calls
+              const arrayResult = z.array(ToolCallSchema).safeParse(rawJson);
+              if (arrayResult.success) { functionCalls.push(...arrayResult.data); continue; }
+            } catch { /* skip invalid JSON */ }
+          }
 
-                    // Case 1: { "calls": [...] }
-                    const legacyResult = LegacyResponseSchema.safeParse(rawJson);
-                    if (legacyResult.success) {
-                        functionCalls = [...functionCalls, ...legacyResult.data.calls];
-                        continue;
-                    }
-
-                    // Case 2: { "name": "...", "args": {...} }
+          // Only try bare JSON if no fenced blocks found and response looks JSON-like
+          if (functionCalls.length === 0) {
+            const trimmed = cleanText.trim();
+            if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.length < 4000) {
+              try {
+                const rawJson = JSON.parse(trimmed);
+                const legacyResult = LegacyResponseSchema.safeParse(rawJson);
+                if (legacyResult.success) { functionCalls.push(...legacyResult.data.calls); }
+                else {
+                  const arrayResult = z.array(ToolCallSchema).safeParse(rawJson);
+                  if (arrayResult.success) { functionCalls.push(...arrayResult.data); }
+                  else {
                     const singleResult = ToolCallSchema.safeParse(rawJson);
-                    if (singleResult.success) {
-                        functionCalls.push(singleResult.data);
-                        continue;
-                    }
-
-                    // Case 3: [ { "name": "...", "args": {...} }, ... ]
-                    const arrayResult = z.array(ToolCallSchema).safeParse(rawJson);
-                    if (arrayResult.success) {
-                        functionCalls = [...functionCalls, ...arrayResult.data];
-                        continue;
-                    }
-                } catch (e) {}
+                    if (singleResult.success) { functionCalls.push(singleResult.data); }
+                  }
+                }
+              } catch { /* not valid JSON */ }
             }
-            if (functionCalls.length > 0) break;
+          }
+        } catch (e) {
+          logger.warn('[Ollama Adapter] JSON extraction failed', e);
         }
-      } catch (e) {
-          logger.warn("[Ollama Adapter] Manual JSON extraction failed", e);
       }
     }
   }
 
-  const validation = validateFunctionCalls(functionCalls, canvasObjects);
+  const validation = validateFunctionCalls(functionCalls, canvasObjects, domElements);
   if (!validation.isValid) {
+    logger.warn('[Ollama] Validation issues', { errors: validation.errors });
     functionCalls = validation.fixedCalls;
   }
 
@@ -223,6 +243,9 @@ export const generateToolContentOllama = async (toolId: string, prompt: string, 
 };
 
 export const transcribeAudioOllama = async (base64Audio: string, customUrl?: string): Promise<string> => {
-  logger.warn(`Audio transcription via Ollama is not fully supported with ${CONFIG.ai.ollama.model} yet.`);
-  return "Fitur voice command belum tersedia di mode lokal penuh.";
+  const model = process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
+  // Only vision-capable models can process audio — for text models, return graceful fallback
+  // Ollama doesn't support native audio input yet; we return a localised prompt
+  logger.warn(`[Ollama] Audio transcription not natively supported by ${model}. Returning fallback.`);
+  return '';
 };

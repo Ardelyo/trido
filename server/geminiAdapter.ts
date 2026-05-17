@@ -39,24 +39,34 @@ export const generateAgentActionsGemini = async (
   ];
 
   const ai = getAiClient(customKey);
-  const response = await ai.models.generateContent({
-    model: CONFIG.ai.gemini.model,
-    contents: contents,
-    config: {
-      tools: [{ functionDeclarations: tools }],
-      toolConfig: { includeServerSideToolInvocations: true },
-      systemInstruction: systemInstruction,
-      temperature: CONFIG.ai.gemini.generation.temperature,
-      maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens
-    }
-  });
+
+  // Timeout controller
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CONFIG.ai.gemini.probeTimeoutMs * 10);
+
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: CONFIG.ai.gemini.model,
+      contents: contents,
+      config: {
+        tools: [{ functionDeclarations: tools }],
+        systemInstruction: systemInstruction,
+        temperature: CONFIG.ai.gemini.generation.temperature,
+        maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens
+      }
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   let functionCalls = response.functionCalls || [];
   const textResponse = response.text || "";
   const thought = extractThinking(response);
 
-  const validation = validateFunctionCalls(functionCalls, canvasObjects);
+  const validation = validateFunctionCalls(functionCalls, canvasObjects, domElements);
   if (!validation.isValid) {
+    logger.warn('Function call validation issues', { errors: validation.errors });
     functionCalls = validation.fixedCalls;
   }
 
@@ -127,11 +137,11 @@ export const transcribeAudioGemini = async (base64Audio: string, customKey?: str
           {
             inlineData: {
               mimeType: "audio/webm",
-              data: base64Audio.replace(/^data:audio\/(webm|ogg|wav);base64,/, ""),
+              data: base64Audio.replace(/^data:audio\/(webm|ogg|wav|mp4|mpeg);base64,/, ""),
             },
           },
           {
-            text: "Transkripsikan audio ini ke teks Bahasa Indonesia. Jangan menambahkan komentar, penjelasan, atau tanda baca tambahan jika tidak perlu. Kembalikan hanya teks hasil transkripsinya saja. Jika tidak ada suara manusia, kembalikan string kosong.",
+            text: "Transcribe this audio exactly as spoken. Detect the language automatically and return the transcript in that same language. Return only the transcribed text — no commentary, no explanation, no punctuation corrections. If there is no human speech, return an empty string.",
           },
         ],
       },

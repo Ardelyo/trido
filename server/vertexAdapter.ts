@@ -89,8 +89,9 @@ export const generateAgentActionsVertex = async (
 
   const thought = extractThinking({ text: textResponse, candidates: response.candidates });
 
-  const validation = validateFunctionCalls(functionCalls, canvasObjects);
+  const validation = validateFunctionCalls(functionCalls, canvasObjects, domElements);
   if (!validation.isValid) {
+    logger.warn('Function call validation issues (Vertex)', { errors: validation.errors });
     functionCalls = validation.fixedCalls;
   }
 
@@ -169,11 +170,11 @@ export const transcribeAudioVertex = async (base64Audio: string): Promise<string
           {
             inlineData: {
               mimeType: "audio/webm",
-              data: base64Audio.replace(/^data:audio\/(webm|ogg|wav);base64,/, ""),
+              data: base64Audio.replace(/^data:audio\/(webm|ogg|wav|mp4|mpeg);base64,/, ""),
             },
           },
           {
-            text: "Transkripsikan audio ini ke teks Bahasa Indonesia. Jangan menambahkan komentar, penjelasan, atau tanda baca tambahan jika tidak perlu. Kembalikan hanya teks hasil transkripsinya saja. Jika tidak ada suara manusia, kembalikan string kosong.",
+            text: "Transcribe this audio exactly as spoken. Detect the language automatically and return the transcript in that same language. Return only the transcribed text — no commentary, no explanation, no punctuation corrections. If there is no human speech, return an empty string.",
           },
         ],
       },

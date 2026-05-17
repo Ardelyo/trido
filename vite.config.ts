@@ -67,9 +67,11 @@ export default defineConfig(({ mode }) => {
           }
         })
       ],
+      // NOTE: GEMINI_API_KEY must NOT be exposed to the frontend bundle.
+      // All AI calls are proxied through the Express backend (/api/ai/*).
+      // Only non-sensitive build-time flags go here.
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
       },
       resolve: {
         alias: {

@@ -54,6 +54,12 @@ const getPreferredAutoMode = (): AiMode => {
 const getOllamaUrl = () => process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
 const getOllamaModel = () => process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
 
+// ── Status probe cache (TTL: 15s) ────────────────────────────────────────────
+// Prevents triple-probe (Gemini + Ollama + Vertex) on every /generate request.
+const STATUS_CACHE_TTL_MS = 15_000;
+type CachedStatus = Awaited<ReturnType<typeof _getAvailableMode>>;
+const statusCache = new Map<string, { ts: number; value: CachedStatus }>();
+
 const probeGemini = async (customKey?: string) => {
   const key = customKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!key) {
@@ -101,7 +107,8 @@ const probeOllama = async (customUrl?: string) => {
   }
 };
 
-const getAvailableMode = async (
+// Internal uncached implementation
+const _getAvailableMode = async (
   customGeminiKey?: string,
   customOllamaUrl?: string
 ): Promise<{
@@ -151,6 +158,21 @@ const getAvailableMode = async (
     ollamaStatus: ollamaInfo,
     vertexStatus: vertexInfo
   };
+};
+
+// Cached wrapper
+const getAvailableMode = async (
+  customGeminiKey?: string,
+  customOllamaUrl?: string
+): Promise<CachedStatus> => {
+  const cacheKey = `${customGeminiKey || ''}|${customOllamaUrl || ''}`;
+  const cached = statusCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < STATUS_CACHE_TTL_MS) {
+    return cached.value;
+  }
+  const value = await _getAvailableMode(customGeminiKey, customOllamaUrl);
+  statusCache.set(cacheKey, { ts: Date.now(), value });
+  return value;
 };
 
 aiRouter.post("/pull-model", async (req, res) => {

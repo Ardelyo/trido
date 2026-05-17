@@ -1,14 +1,17 @@
 {
-  "name": "copy-of-ghost-in-the-machine",
+  "name": "trido",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",
+    "build:server": "tsc --project tsconfig.server.json",
+    "build:all": "npm run build && npm run build:server",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "start": "tsx server.ts"
+    "start": "node dist-server/server.js",
+    "start:dev": "NODE_ENV=production tsx server.ts"
   },
   "dependencies": {
     "@google-cloud/vertexai": "^1.12.0",

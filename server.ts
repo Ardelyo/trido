@@ -11,7 +11,11 @@ import { ClientToServerEvents, RoomState, ServerToClientEvents, SocketData, Sock
 import { createLogger } from "./utils/logger";
 
 const logger = createLogger('server');
-const ROOMS_FILE = path.join(process.cwd(), CONFIG.server.roomsPersistenceFile);
+// Rooms file: configurable via env, defaults to cwd.
+// On ephemeral hosts (Render, Railway) this resets on deploy — that is expected
+// for a demo environment. Point ROOMS_FILE_PATH to a mounted volume for persistence.
+const ROOMS_FILE = process.env.ROOMS_FILE_PATH ||
+  path.join(process.cwd(), CONFIG.server.roomsPersistenceFile);
 
 function saveRooms(rooms: Map<string, RoomState>) {
   try {
@@ -38,10 +42,15 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.SERVER_PORT || CONFIG.server.defaultPort);
 
+  // CORS: lock to specific origin in production via ALLOWED_ORIGIN env var.
+  // Falls back to * in development only.
+  const allowedOrigin = process.env.ALLOWED_ORIGIN ||
+    (process.env.NODE_ENV === 'production' ? false : '*');
+
   const httpServer = createServer(app);
   const io = new Server<ClientToServerEvents, ServerToClientEvents, SocketInterServerEvents, SocketData>(httpServer, {
     cors: {
-      origin: "*",
+      origin: allowedOrigin,
       methods: ["GET", "POST"]
     }
   });
@@ -111,8 +120,13 @@ async function startServer() {
   });
 
   // API routes FIRST
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      env: process.env.NODE_ENV || 'development',
+      aiMode: process.env.AI_MODE || 'auto',
+      version: process.env.npm_package_version || '1.0.0'
+    });
   });
 
   app.use("/api/ai", aiRouter);
@@ -127,7 +141,8 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*all', (req, res) => {
+    // Express 5: use explicit path pattern for SPA fallback (not '*')
+    app.get(/^(?!\/api).*/, (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

@@ -12,7 +12,7 @@ export const CONFIG = {
       probeTimeoutMs: 3000,
       generation: {
         temperature: 0.3,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,
       },
       transcription: {
         temperature: 0.1,
@@ -26,12 +26,12 @@ export const CONFIG = {
       numCtx: 8192,
     },
     vertex: {
-      model: 'gemini-1.5-flash',
+      model: 'gemma-4-31b-it',
       location: 'us-central1',
       probeTimeoutMs: 3000,
       generation: {
         temperature: 0.3,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 4096,
       },
     },
     request: {

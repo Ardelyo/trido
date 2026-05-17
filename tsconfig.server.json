@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "outDir": "./dist-server",
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": [
+    "server.ts",
+    "server/**/*.ts",
+    "services/**/*.ts",
+    "utils/**/*.ts",
+    "constants.ts",
+    "types.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "components/**",
+    "hooks/**",
+    "App.tsx",
+    "index.tsx",
+    "store.ts"
+  ]
+}
