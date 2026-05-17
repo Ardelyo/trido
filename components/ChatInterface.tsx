@@ -35,8 +35,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
   const transcriptBufferRef = useRef('');
   const interimBufferRef = useRef('');
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [lastShape, setLastShape] = useState<CreatorTool>('RECTANGLE');
 
@@ -274,20 +272,31 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     if (isListening) {
       setIsListening(false);
       recognitionRef.current?.stop();
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      } else {
-        // If no mediaRecorder, fallback to handleSendVoice directly
-        setTimeout(handleSendVoice, 200);
-        sounds.play('mic_off');
-      }
+      sounds.play('mic_off');
       stopVisualizer();
+
+      // Wait up to 600ms for final SpeechRecognition results to flush
+      await new Promise(r => setTimeout(r, 600));
+      const finalLocalTranscript = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
+      if (finalLocalTranscript || useStore.getState().lastUploadedImage) {
+        handleSubmitInternal(finalLocalTranscript);
+      }
+      transcriptBufferRef.current = '';
+      interimBufferRef.current = '';
+      setInput('');
+      setInterimInput('');
+      useStore.getState().setChatInputText('');
+      useStore.getState().setInterimInputText('');
     } else {
-      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-        const fallbackMessage = t('voiceUnsupported', 'Browser ini belum mendukung input suara. Gunakan kolom teks di Copilot.');
+      if (!speechSupported) {
+        const fallbackMessage = t('voiceUnsupported', 'Browser ini belum mendukung fitur pengenalan suara lokal (Web Speech API). Silakan gunakan kolom teks.');
         setVoiceNotice(fallbackMessage);
-        useStore.getState().setChatInputText(input || interimInput || '');
         if (!isAiDrawerOpen) useStore.getState().toggleAiDrawer();
+        return;
+      }
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setVoiceNotice("Akses mikrofon tidak didukung di peramban ini.");
         return;
       }
 
@@ -309,71 +318,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         transcriptBufferRef.current = '';
         interimBufferRef.current = '';
 
-        // Setup MediaRecorder for Gemini transcription
-        audioChunksRef.current = [];
-        const recorderOptions = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : undefined;
-        const mediaRecorder = new MediaRecorder(stream, recorderOptions);
-        mediaRecorderRef.current = mediaRecorder;
-
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-          }
-        };
-
-        mediaRecorder.onstop = async () => {
-          let finalLocalTranscript = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
-
-          // Race condition fix: onstop fires before SpeechRecognition's final onresult event.
-          // If speech recognition is supported and we have no committed transcript yet,
-          // wait up to 600ms for the recognition engine to flush its last utterance.
-          if (!finalLocalTranscript && speechSupported && recognitionRef.current) {
-            await new Promise(r => setTimeout(r, 600));
-            finalLocalTranscript = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
-          }
-
-          // Only fall back to backend transcription when the Web Speech API is genuinely
-          // unavailable in this browser. If speechSupported=true, recognition already ran.
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          const hasAudioContent = audioBlob.size > 0;
-
-          if (!finalLocalTranscript && hasAudioContent && !speechSupported) {
-            setIsTranscribing(true);
-            try {
-              const base64Audio = await new Promise<string>((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.readAsDataURL(audioBlob);
-              });
-
-              const transcript = await transcribeAudio(base64Audio);
-              if (transcript) {
-                finalLocalTranscript = transcript.trim();
-                transcriptBufferRef.current = finalLocalTranscript;
-              }
-            } catch (err) {
-                setVoiceNotice(err instanceof AiServiceError ? err.message : "Transkripsi suara gagal. Gunakan input teks untuk sementara.");
-              } finally {
-              setIsTranscribing(false);
-            }
-          }
-
-          if (finalLocalTranscript || useStore.getState().lastUploadedImage) {
-            handleSubmitInternal(finalLocalTranscript);
-          }
-
-          transcriptBufferRef.current = '';
-          interimBufferRef.current = '';
-          setInput('');
-          setInterimInput('');
-          useStore.getState().setChatInputText('');
-          useStore.getState().setInterimInputText('');
-
-          // Clean up stream tracks
-          stream.getTracks().forEach(track => track.stop());
-        };
-
-        mediaRecorder.start();
         startVisualizer(stream);
 
         if (recognitionRef.current) {
@@ -388,8 +332,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
               stopVisualizer();
             }
           }, 100);
-        } else {
-          setVoiceNotice("Web Speech API tidak tersedia di browser ini. Rekaman akan ditranskripsi setelah tombol mikrofon ditekan lagi.");
         }
       } catch (err) {
         setMicPermission('denied');
@@ -414,12 +356,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     if (isListening) {
       setIsListening(false);
       recognitionRef.current?.stop();
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
       stopVisualizer();
     }
   };
+
 
   const handleCanvasImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
