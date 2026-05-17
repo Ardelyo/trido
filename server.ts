@@ -14,6 +14,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import fs from "fs";
+
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { aiRouter } from "./server/aiRouter";
@@ -150,10 +151,11 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    // APP_DIST_PATH is set by Electron before requiring this bundle.
+    // Falls back to process.cwd()/dist for normal tsx production runs.
+    const distPath = process.env.APP_DIST_PATH || path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    // Express 5: use explicit path pattern for SPA fallback (not '*')
-    app.get(/^(?!\/api).*/, (_req, res) => {
+    app.get(/^\/(?!api).*/, (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

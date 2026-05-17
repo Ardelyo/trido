@@ -32,11 +32,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const [micPermission, setMicPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
   const [speechSupported, setSpeechSupported] = useState(true);
   const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
+  const [showTranscript, setShowTranscript] = useState(true);
 
   const transcriptBufferRef = useRef('');
   const interimBufferRef = useRef('');
+  const isListeningRef = useRef(isListening);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [lastShape, setLastShape] = useState<CreatorTool>('RECTANGLE');
+
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   const {
     isThinking, isActing, actionQueue, logs,
@@ -244,7 +250,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       recognitionRef.current.onend = () => {
         console.log("Speech recognition ended");
         // Don't auto-restart if we are transcribing via Gemini
-        if (isListening && !isTranscribing) {
+        if (isListeningRef.current && !isTranscribing) {
           try {
             recognitionRef.current.start();
           } catch(e) {
@@ -458,85 +464,140 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         <div className="flex-1 hidden md:block"></div>
 
         {/* Center: AI Status & Voice Control */}
-        <AnimatePresence>
-          {!isAiDrawerOpen && (
-            <motion.div
-               initial={{ opacity: 0, y: 20, scale: 0.95 }}
-               animate={{ opacity: 1, y: 0, scale: 1 }}
-               exit={{ opacity: 0, y: 20, scale: 0.95, pointerEvents: 'none' }}
-               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-               className="pointer-events-auto flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 bg-white/95 backdrop-blur-xl rounded-4xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 w-full sm:w-auto min-w-0 sm:min-w-[320px] max-w-full origin-bottom"
-            >
-               <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                  <div className={`flex items-center justify-center text-blue-600 transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-blue-50/80 border border-blue-100 shadow-sm'}`}>
-                     {isListening ? <AudioVisualizer isListening={isListening} audioData={audioData} /> :
-                      isThinking ? <Loader2 size={20} className="animate-spin" /> :
-                      isTranscribing ? <Activity size={20} className="animate-pulse" /> :
-                      <Sparkles size={20} />}
-                  </div>
-                  <div className="flex flex-col flex-1 min-w-0">
-                     <span className="text-[13.5px] font-bold text-slate-800 leading-tight truncate">
-                       {isThinking ? t('processingWithModel', 'Memproses dengan Gemma 4...') :
-                        isTranscribing ? t('transcribingVoice', 'Menerjemahkan Suara...') :
-                        isListening ? (interimInput || input || (speechSupported ? t('listening', 'Mendengarkan...') : t('recordingVoice', 'Merekam suara...'))) :
-                        voiceNotice ? voiceNotice :
-                        t('allSystemsReady', 'Semua Sistem Siap')}
-                     </span>
-                     <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
-                       {isListening || isThinking ? (
-                          <span className="flex gap-1.5 items-center">
-                            {t('tridoAiActive', 'Trido AI Aktif')}
-                            <div className="flex gap-1">
-                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
-                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                            </div>
-                          </span>
-                       ) : speechSupported ? t('standbyMode', 'Mode Siaga') : t('limitedVoiceDesc', 'Suara terbatas: gunakan rekam atau teks')}
-                     </span>
-                  </div>
-               </div>
+        <div className="relative flex flex-col items-center gap-2">
 
-               <div className="flex items-center gap-1.5 border-l-2 border-slate-200/60 pl-4">
-                  {lastUploadedImage && (
-                    <div className="relative mr-2">
-                       <img src={lastUploadedImage} alt="Uploaded" className="h-10 w-10 object-cover rounded-[0.85rem] border-2 border-white shadow-sm" />
-                       <button
-                         onClick={() => setLastUploadedImage(null)}
-                         className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-md hover:bg-rose-600 active:scale-95 transition-transform"
-                       >
-                         <X size={12} strokeWidth={3} />
-                       </button>
-                    </div>
-                  )}
-                  <FileUploadButton
-                    className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95"
-                    icon={<Plus size={22} />}
-                    title={t('uploadImage', 'Unggah Gambar')}
-                  />
-
+          {/* Transcript bubble — expands UPWARD above the bar */}
+          <AnimatePresence>
+            {isListening && showTranscript && (input || interimInput || voiceNotice) && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95, pointerEvents: 'none' }}
+                transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                className="pointer-events-auto w-[min(88vw,520px)] bg-white/97 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-blue-100 p-4"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-semibold text-blue-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                    Transkripsi
+                  </span>
                   <button
-                    onClick={toggleListening}
-                    disabled={isTranscribing || isThinking}
-                    title={speechSupported ? t('startVoiceInput', 'Mulai input suara') : t('recordVoiceForTranscription', 'Rekam suara untuk transkripsi')}
-                    className={`w-12 h-12 flex items-center justify-center rounded-[1.3rem] text-white shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 shadow-red-500/25 animate-pulse scale-105 ring-4 ring-red-500/10' : 'bg-blue-600 shadow-blue-600/30 hover:scale-105 hover:bg-blue-500'} disabled:opacity-50 disabled:pointer-events-none active:scale-95 shrink-0`}
+                    onClick={() => setShowTranscript(false)}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    title="Sembunyikan"
                   >
-                    <Mic size={20} />
+                    <ChevronDown size={16} />
                   </button>
+                </div>
+                <div className="max-h-36 overflow-y-auto">
+                  <p className="text-[13.5px] leading-relaxed text-slate-800">
+                    {input}
+                    {interimInput && <span className="text-slate-400 italic"> {interimInput}</span>}
+                    {voiceNotice && !input && !interimInput && <span className="text-amber-600">{voiceNotice}</span>}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                  {(isThinking || isActing || actionQueue.length > 0) && (
+          {/* Show-transcript button when collapsed */}
+          <AnimatePresence>
+            {isListening && !showTranscript && (input || interimInput) && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                onClick={() => setShowTranscript(true)}
+                className="pointer-events-auto text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
+              >
+                <ChevronUp size={12} /> Tampilkan transkripsi
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Voice island bar — stays compact, never stretches sideways */}
+          <AnimatePresence>
+            {!isAiDrawerOpen && (
+              <motion.div
+                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                 animate={{ opacity: 1, y: 0, scale: 1 }}
+                 exit={{ opacity: 0, y: 20, scale: 0.95, pointerEvents: 'none' }}
+                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                 className="pointer-events-auto flex items-center gap-3 px-3 py-3 bg-white/95 backdrop-blur-xl rounded-4xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
+              >
+                 <div className="flex items-center gap-3">
+                    <div className={`flex items-center justify-center text-blue-600 transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-blue-50/80 border border-blue-100 shadow-sm'}`}>
+                       {isListening ? <AudioVisualizer isListening={isListening} audioData={audioData} /> :
+                        isThinking ? <Loader2 size={20} className="animate-spin" /> :
+                        isTranscribing ? <Activity size={20} className="animate-pulse" /> :
+                        <Sparkles size={20} />}
+                    </div>
+                    <div className="flex flex-col">
+                       <span className="text-[13.5px] font-bold text-slate-800 leading-tight whitespace-nowrap">
+                         {isThinking ? t('processingWithModel', 'Memproses...') :
+                          isTranscribing ? t('transcribingVoice', 'Menerjemahkan...') :
+                          isListening ? (speechSupported ? t('listening', 'Mendengarkan...') : t('recordingVoice', 'Merekam...')) :
+                          voiceNotice ? '⚠️ Perhatian' :
+                          t('allSystemsReady', 'Semua Sistem Siap')}
+                       </span>
+                       <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
+                         {isListening || isThinking ? (
+                            <span className="flex gap-1.5 items-center">
+                              {t('tridoAiActive', 'Trido AI Aktif')}
+                              <div className="flex gap-1">
+                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" />
+                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}} />
+                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}} />
+                              </div>
+                            </span>
+                         ) : voiceNotice ? (
+                            <span className="text-amber-500">{voiceNotice.slice(0, 40)}{voiceNotice.length > 40 ? '…' : ''}</span>
+                         ) : speechSupported ? t('standbyMode', 'Mode Siaga') : t('limitedVoiceDesc', 'Gunakan teks')}
+                       </span>
+                    </div>
+                 </div>
+
+                 <div className="flex items-center gap-1.5 border-l-2 border-slate-200/60 pl-4">
+                    {lastUploadedImage && (
+                      <div className="relative mr-2">
+                         <img src={lastUploadedImage} alt="Uploaded" className="h-10 w-10 object-cover rounded-[0.85rem] border-2 border-white shadow-sm" />
+                         <button
+                           onClick={() => setLastUploadedImage(null)}
+                           className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-md hover:bg-rose-600 active:scale-95 transition-transform"
+                         >
+                           <X size={12} strokeWidth={3} />
+                         </button>
+                      </div>
+                    )}
+                    <FileUploadButton
+                      className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95"
+                      icon={<Plus size={22} />}
+                      title={t('uploadImage', 'Unggah Gambar')}
+                    />
+
                     <button
-                      onClick={() => abortTask()}
-                      className="w-12 h-12 flex items-center justify-center bg-rose-50 text-red-500 rounded-[1.3rem] hover:bg-red-100 hover:text-red-600 transition-all font-bold group active:scale-95 border border-red-100 shrink-0"
-                      title={t('cancelProcess', 'Batalkan Proses')}
+                      onClick={() => { setShowTranscript(true); toggleListening(); }}
+                      disabled={isTranscribing || isThinking}
+                      title={speechSupported ? t('startVoiceInput', 'Mulai input suara') : t('recordVoiceForTranscription', 'Rekam suara')}
+                      className={`w-12 h-12 flex items-center justify-center rounded-[1.3rem] text-white shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 shadow-red-500/25 animate-pulse scale-105 ring-4 ring-red-500/10' : 'bg-blue-600 shadow-blue-600/30 hover:scale-105 hover:bg-blue-500'} disabled:opacity-50 disabled:pointer-events-none active:scale-95 shrink-0`}
                     >
-                      <Square size={16} className="fill-current group-hover:scale-90 transition-transform" />
+                      <Mic size={20} />
                     </button>
-                  )}
-               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+                    {(isThinking || isActing || actionQueue.length > 0) && (
+                      <button
+                        onClick={() => abortTask()}
+                        className="w-12 h-12 flex items-center justify-center bg-rose-50 text-red-500 rounded-[1.3rem] hover:bg-red-100 hover:text-red-600 transition-all font-bold group active:scale-95 border border-red-100 shrink-0"
+                        title={t('cancelProcess', 'Batalkan Proses')}
+                      >
+                        <Square size={16} className="fill-current group-hover:scale-90 transition-transform" />
+                      </button>
+                    )}
+                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Right: Zoom Controls & History Controls */}
         <div className="pointer-events-auto flex-1 hidden md:flex justify-end gap-3">

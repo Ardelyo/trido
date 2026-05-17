@@ -14,6 +14,9 @@ node_modules
 dist
 dist-ssr
 dist-server
+dist-electron
+dist-release
+release-zip
 
 
 # Environment — NEVER commit real keys

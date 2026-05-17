@@ -3,16 +3,85 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "main": "dist-electron/main.cjs",
   "scripts": {
     "dev": "tsx watch server.ts",
     "build": "vite build",
     "build:server": "tsc --project tsconfig.server.json",
     "build:all": "npm run build && npm run build:server",
+    "build:electron": "npm run build && node scripts/build-electron.js && electron-builder",
+    "build:electron:win": "npm run build && node scripts/build-electron.js && electron-builder --win",
+    "build:electron:mac": "npm run build && node scripts/build-electron.js && electron-builder --mac",
+    "build:electron:linux": "npm run build && node scripts/build-electron.js && electron-builder --linux",
+    "electron:dev": "node scripts/build-electron.js && electron .",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
     "start": "NODE_ENV=production tsx server.ts",
     "start:dev": "NODE_ENV=production tsx server.ts"
-
+  },
+  "build": {
+    "appId": "ai.trido.classroom",
+    "productName": "Trido",
+    "copyright": "Copyright © 2025 Trido",
+    "directories": {
+      "output": "dist-release",
+      "buildResources": "public"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraFiles": [
+      {
+        "from": ".env.example",
+        "to": ".env.example"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/pwa-512x512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Trido"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "public/pwa-512x512.png",
+      "category": "public.app-category.education"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/pwa-512x512.png",
+      "category": "Education"
+    }
   },
   "dependencies": {
     "@google-cloud/vertexai": "^1.12.0",
@@ -48,6 +117,9 @@
     "@types/node": "^22.14.0",
     "@types/socket.io-client": "^1.4.36",
     "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^42.1.0",
+    "electron-builder": "^26.8.1",
+    "esbuild": "^0.28.0",
     "jsdom": "^27.0.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
