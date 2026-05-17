@@ -1,18 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store';
-import { Moon, Sun, Monitor, Lock, Unlock } from 'lucide-react';
+import { Moon, Sun, Monitor, Unlock } from 'lucide-react';
 
 export const BoardSettingsTool: React.FC = () => {
-  const { 
-    theme, 
-    toggleTheme,
-    aiPreference,
-    setAiPreference,
-    geminiApiKey,
-    setGeminiApiKey,
-    ollamaBaseUrl,
-    setOllamaBaseUrl
-  } = useStore();
+  const { theme, toggleTheme, aiPreference, setAiPreference, createNewSession } = useStore();
+
+  const [geminiApiKey, setGeminiApiKeyLocal] = useState(
+    () => localStorage.getItem('gemini_api_key_override') || ''
+  );
+  const [ollamaBaseUrl, setOllamaBaseUrlLocal] = useState(
+    () => localStorage.getItem('ollama_base_url_override') || ''
+  );
+
+  const handleGeminiKeyChange = (val: string) => {
+    setGeminiApiKeyLocal(val);
+    localStorage.setItem('gemini_api_key_override', val);
+  };
+
+  const handleOllamaUrlChange = (val: string) => {
+    setOllamaBaseUrlLocal(val);
+    localStorage.setItem('ollama_base_url_override', val);
+  };
 
   return (
     <div className="flex flex-col h-full bg-slate-50 font-sans p-4 space-y-4 overflow-auto custom-scrollbar">
@@ -60,7 +68,7 @@ export const BoardSettingsTool: React.FC = () => {
             <input 
               type="password"
               value={geminiApiKey}
-              onChange={(e) => setGeminiApiKey(e.target.value)}
+              onChange={(e) => handleGeminiKeyChange(e.target.value)}
               placeholder="Masukkan Kunci API Gemini..."
               className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
@@ -77,7 +85,7 @@ export const BoardSettingsTool: React.FC = () => {
             <input 
               type="text"
               value={ollamaBaseUrl}
-              onChange={(e) => setOllamaBaseUrl(e.target.value)}
+              onChange={(e) => handleOllamaUrlChange(e.target.value)}
               placeholder="http://localhost:11434"
               className="w-full bg-slate-50 border-none rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
@@ -115,7 +123,15 @@ export const BoardSettingsTool: React.FC = () => {
 
       <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100 border-dashed">
          <h4 className="text-[11px] font-black text-rose-500 uppercase tracking-widest mb-2">Zona Berbahaya</h4>
-         <button className="w-full py-2 bg-white text-rose-600 font-bold text-sm rounded-xl border border-rose-200 hover:bg-rose-600 hover:text-white transition-all shadow-sm">
+         <button 
+           onClick={() => {
+             if (window.confirm('Yakin ingin menghapus seluruh papan? Tindakan ini tidak bisa dibatalkan.')) {
+               createNewSession();
+               window.dispatchEvent(new CustomEvent('clearCanvas'));
+             }
+           }}
+           className="w-full py-2 bg-white text-rose-600 font-bold text-sm rounded-xl border border-rose-200 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
+         >
            Hapus Seluruh Papan
          </button>
       </div>

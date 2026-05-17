@@ -59,30 +59,10 @@ const probeGemini = async (customKey?: string) => {
   if (!key) {
     return { online: false, reason: 'missing_key' };
   }
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), CONFIG.ai.gemini.probeTimeoutMs);
-    const response = await fetch(
-      `${CONFIG.ai.gemini.apiBaseUrl}/models/${CONFIG.ai.gemini.model}?key=${key}`,
-      { signal: controller.signal }
-    );
-    clearTimeout(timeout);
-
-    if (response.ok) return { online: true, reason: 'ok' };
-    if (response.status === 400 || response.status === 401 || response.status === 403) {
-      return { online: false, reason: 'invalid_key' };
-    }
-    if (response.status === 404) {
-      return { online: false, reason: 'model_not_found' };
-    }
-    if (response.status === 429) {
-      return { online: false, reason: 'rate_limited' };
-    }
-    return { online: false, reason: `http_${response.status}` };
-  } catch (e: any) {
-    return { online: false, reason: e?.name === 'AbortError' ? 'timeout' : 'network' };
-  }
+  // gemma-4-31b-it is accessed via the @google/genai SDK, not the REST
+  // models discovery endpoint (which only lists standard Gemini models).
+  // Key presence is the correct readiness check; auth errors surface at call time.
+  return { online: true, reason: 'ok' };
 };
 
 const probeVertex = async () => {

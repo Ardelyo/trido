@@ -341,6 +341,13 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     };
     window.addEventListener('removeCanvasObject', handleRemoteRemove);
 
+    const handleClearCanvas = () => {
+      canvas.clear();
+      canvas.backgroundColor = 'transparent';
+      canvas.requestRenderAll();
+    };
+    window.addEventListener('clearCanvas', handleClearCanvas);
+
     const updateDomFromObject = (obj: any) => {
        if (obj.isDomPlaceholder) {
          updateDomElement(obj.id, {
@@ -503,6 +510,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('removeCanvasObject', handleRemoteRemove);
+      window.removeEventListener('clearCanvas', handleClearCanvas);
     };
   }, []);
 

@@ -176,9 +176,11 @@ export const useGeminiBrain = () => {
            payload = { text: args.text, x: pos.x, y: pos.y, fontSize, color: '#000000' };
         } else if (call.name === 'update_component') {
            actionType = 'EDIT_HTML';
+           let parsedUpdateConfig = {};
+           try { parsedUpdateConfig = JSON.parse(args.configJson); } catch (_) {}
            payload = {
              objectId: args.objectId,
-             config: JSON.parse(args.configJson)
+             config: parsedUpdateConfig
            };
         } else if (call.name === 'add_component') {
            actionType = 'RENDER_HTML';
