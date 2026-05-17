@@ -324,10 +324,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         mediaRecorder.onstop = async () => {
           let finalLocalTranscript = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
 
+          // Race condition fix: onstop fires before SpeechRecognition's final onresult event.
+          // If speech recognition is supported and we have no committed transcript yet,
+          // wait up to 600ms for the recognition engine to flush its last utterance.
+          if (!finalLocalTranscript && speechSupported && recognitionRef.current) {
+            await new Promise(r => setTimeout(r, 600));
+            finalLocalTranscript = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
+          }
+
+          // Only fall back to backend transcription when the Web Speech API is genuinely
+          // unavailable in this browser. If speechSupported=true, recognition already ran.
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           const hasAudioContent = audioBlob.size > 0;
 
-          if (!finalLocalTranscript && hasAudioContent) {
+          if (!finalLocalTranscript && hasAudioContent && !speechSupported) {
             setIsTranscribing(true);
             try {
               const base64Audio = await new Promise<string>((resolve) => {
