@@ -1,9 +1,0 @@
-{
-  "name": "Smartboard Teach AI",
-  "description": "Papan aksesibilitas bertenaga AI untuk guru, tempat berkolaborasi dengan agen virtual untuk membuat materi pembelajaran visual secara real-time melalui mode suara.",
-  "requestFramePermissions": [
-    "microphone"
-  ],
-  "orientation": "landscape",
-  "majorCapabilities": []
-}
