@@ -183,12 +183,11 @@ const App: React.FC = () => {
           </main>
 
           {/* Minimal Branding */}
-          <div className="absolute bottom-10 right-10 opacity-20 flex items-center gap-2 pointer-events-none select-none z-50">
-             <div className="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-white">
-               <Square size={18} fill="white" />
-             </div>
+          <div className="absolute bottom-10 right-10 opacity-25 flex items-center gap-2 pointer-events-none select-none z-50">
+             <img src="/logo.png" alt="Trido Logo" className="w-7 h-7 object-contain" />
              <span className="text-xl font-black text-slate-900 tracking-tighter">Trido</span>
           </div>
+
 
           <AnimatePresence>
             {!canvasRef.current && (
@@ -222,10 +221,12 @@ const App: React.FC = () => {
                 <Menu size={22} />
               </button>
               {/* Logo & Product Name */}
-              <div className="flex items-center gap-1 bg-white/60 backdrop-blur-md px-4 py-2 lg:py-2.5 rounded-[1.25rem] shadow-sm border border-white">
+              <div className="flex items-center gap-2 bg-white/60 backdrop-blur-md px-4 py-2 lg:py-2.5 rounded-[1.25rem] shadow-sm border border-white">
+                <img src="/logo.png" alt="Trido Logo" className="w-6 h-6 object-contain" />
                 <span className="font-extrabold text-xl text-[#0f172a] tracking-tight">Trido</span>
                 <span className="hidden md:inline ml-3 font-medium text-[15px] pl-4 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
               </div>
+
             </div>
 
             {/* Mode Indicator (Center) */}
