@@ -7,12 +7,30 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build output
 dist
 dist-ssr
+
+# Environment — NEVER commit real keys
+.env
+.env.local
+.env.*.local
+
+# Runtime server state
+rooms_persistence.json
+
+# Local machine artifacts
+lint_output.txt
 *.local
 
-# Editor directories and files
+# IDE / platform metadata
+metadata.json
+.gemini/
+
+# Editor directories
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -22,3 +40,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Empty directories
+lib/
