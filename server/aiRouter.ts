@@ -204,6 +204,14 @@ const classifyAiError = (error: any): { code: AiErrorCode; status: number; messa
   if (status === 404 || raw.includes('not found') || raw.includes('model')) {
     return { code: 'model_not_found', status: 404, retryable: false, message: 'Model AI yang dikonfigurasi tidak ditemukan.' };
   }
+  if (raw.includes('spending cap') || raw.includes('spend cap') || raw.includes('resource_exhausted')) {
+    return { 
+      code: 'rate_limited', 
+      status: 429, 
+      retryable: false, 
+      message: 'Batas anggaran bulanan (spending cap) untuk kunci API Gemini Anda di Google AI Studio telah terlampaui. Silakan gunakan penyedia AI lain (seperti Vertex AI atau Ollama lokal) di menu Pengaturan, atau perbarui kunci API Anda.' 
+    };
+  }
   if (status === 429 || raw.includes('quota') || raw.includes('rate')) {
     return { code: 'rate_limited', status: 429, retryable: true, message: 'Kuota atau batas permintaan AI sedang tercapai. Coba lagi sebentar.' };
   }
@@ -224,6 +232,44 @@ const sendAiError = (res: Response, error: unknown) => {
   });
 };
 
+const getCandidateModes = (
+  configuredMode: AiPreference,
+  status: CachedStatus,
+  customGeminiKey?: string
+): AiMode[] => {
+  const candidateModes: AiMode[] = [];
+  const geminiKeyExists = !!(customGeminiKey || process.env.GEMINI_API_KEY || process.env.API_KEY);
+
+  if (configuredMode !== 'auto') {
+    candidateModes.push(configuredMode as AiMode);
+    // Add other modes as fallbacks if configured/online
+    if (configuredMode !== 'vertex' && status.vertexStatus?.online) {
+      candidateModes.push('vertex');
+    }
+    if (configuredMode !== 'gemini' && (status.geminiStatus?.online || geminiKeyExists)) {
+      candidateModes.push('gemini');
+    }
+    if (configuredMode !== 'ollama' && status.ollamaStatus?.online && status.ollamaStatus?.hasModel) {
+      candidateModes.push('ollama');
+    }
+  } else {
+    // Under 'auto', start with the probed preferred mode, then others
+    if (status.mode !== 'unavailable') {
+      candidateModes.push(status.mode as AiMode);
+    }
+    if (status.vertexStatus?.online && !candidateModes.includes('vertex')) {
+      candidateModes.push('vertex');
+    }
+    if ((status.geminiStatus?.online || geminiKeyExists) && !candidateModes.includes('gemini')) {
+      candidateModes.push('gemini');
+    }
+    if (status.ollamaStatus?.online && status.ollamaStatus?.hasModel && !candidateModes.includes('ollama')) {
+      candidateModes.push('ollama');
+    }
+  }
+  return candidateModes;
+};
+
 aiRouter.get("/status", async (req, res) => {
   res.json(await getAvailableMode());
 });
@@ -238,9 +284,10 @@ aiRouter.post("/generate", async (req, res) => {
     const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
-    const mode = status.mode;
 
-    if (mode === 'unavailable') {
+    const candidateModes = getCandidateModes(configuredMode, status, geminiApiKey);
+
+    if (candidateModes.length === 0 || status.mode === 'unavailable') {
       let reason = 'no_internet';
       let serviceName = 'AI';
 
@@ -263,34 +310,35 @@ aiRouter.post("/generate", async (req, res) => {
     }
 
     let result;
-    if (mode === 'vertex') {
-      result = await generateAgentActionsVertex(
-        prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
-      );
-    } else if (mode === 'gemini') {
+    let lastError: any = null;
+    let success = false;
+
+    for (const mode of candidateModes) {
       try {
-        result = await generateAgentActionsGemini(
-          prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey
-        );
-      } catch (e) {
-        if (configuredMode === 'auto') {
-          logger.warn("Gemini failed, falling back to Ollama", e);
-          // Reuse status already fetched above — avoid second probe round-trip
-          if (status.ollamaStatus?.online && status.ollamaStatus?.hasModel) {
-            result = await generateAgentActionsOllama(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl
-            );
-          } else {
-            throw e;
-          }
-        } else {
-          throw e;
+        logger.info(`Attempting /generate with mode: ${mode}`);
+        if (mode === 'vertex') {
+          result = await generateAgentActionsVertex(
+            prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
+          );
+        } else if (mode === 'gemini') {
+          result = await generateAgentActionsGemini(
+            prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey
+          );
+        } else if (mode === 'ollama') {
+          result = await generateAgentActionsOllama(
+            prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl
+          );
         }
+        success = true;
+        break;
+      } catch (err: any) {
+        logger.warn(`Generate failed with mode: ${mode}. Error: ${err.message || err}`);
+        lastError = err;
       }
-    } else {
-      result = await generateAgentActionsOllama(
-        prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl
-      );
+    }
+
+    if (!success) {
+      throw lastError || new Error("Semua penyedia AI yang dikonfigurasi gagal memproses permintaan.");
     }
 
     res.json(result);
@@ -303,20 +351,39 @@ aiRouter.post("/generate", async (req, res) => {
 aiRouter.post("/tool-content", async (req, res) => {
   try {
     const { toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
+    const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
-    const mode = status.mode;
 
-    if (mode === 'unavailable') {
+    const candidateModes = getCandidateModes(configuredMode, status, geminiApiKey);
+
+    if (candidateModes.length === 0 || status.mode === 'unavailable') {
       return res.status(503).json({ error: 'Layanan AI belum tersedia.', code: 'no_internet', retryable: true });
     }
-    
+
     let result;
-    if (mode === 'vertex') {
-      result = await generateToolContentVertex(toolId, prompt);
-    } else if (mode === 'gemini') {
-      result = await generateToolContentGemini(toolId, prompt, geminiApiKey);
-    } else {
-      result = await generateToolContentOllama(toolId, prompt, ollamaBaseUrl);
+    let lastError: any = null;
+    let success = false;
+
+    for (const mode of candidateModes) {
+      try {
+        logger.info(`Attempting /tool-content with mode: ${mode}`);
+        if (mode === 'vertex') {
+          result = await generateToolContentVertex(toolId, prompt);
+        } else if (mode === 'gemini') {
+          result = await generateToolContentGemini(toolId, prompt, geminiApiKey);
+        } else if (mode === 'ollama') {
+          result = await generateToolContentOllama(toolId, prompt, ollamaBaseUrl);
+        }
+        success = true;
+        break;
+      } catch (err: any) {
+        logger.warn(`Tool-content failed with mode: ${mode}. Error: ${err.message || err}`);
+        lastError = err;
+      }
+    }
+
+    if (!success) {
+      throw lastError || new Error("Semua penyedia AI yang dikonfigurasi gagal memproses konten alat.");
     }
 
     res.json({ result });
@@ -329,20 +396,39 @@ aiRouter.post("/tool-content", async (req, res) => {
 aiRouter.post("/transcribe", async (req, res) => {
   try {
     const { base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
+    const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
-    const mode = status.mode;
 
-    if (mode === 'unavailable') {
+    const candidateModes = getCandidateModes(configuredMode, status, geminiApiKey);
+
+    if (candidateModes.length === 0 || status.mode === 'unavailable') {
       return res.status(503).json({ error: 'Transkripsi suara membutuhkan Gemini atau layanan lokal yang tersedia.', code: 'no_internet', retryable: true });
     }
-    
-    let text;
-    if (mode === 'vertex') {
-      text = await transcribeAudioVertex(base64Audio);
-    } else if (mode === 'gemini') {
-      text = await transcribeAudioGemini(base64Audio, geminiApiKey);
-    } else {
-      text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl);
+
+    let text = "";
+    let lastError: any = null;
+    let success = false;
+
+    for (const mode of candidateModes) {
+      try {
+        logger.info(`Attempting /transcribe with mode: ${mode}`);
+        if (mode === 'vertex') {
+          text = await transcribeAudioVertex(base64Audio);
+        } else if (mode === 'gemini') {
+          text = await transcribeAudioGemini(base64Audio, geminiApiKey);
+        } else if (mode === 'ollama') {
+          text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl);
+        }
+        success = true;
+        break;
+      } catch (err: any) {
+        logger.warn(`Transcribe failed with mode: ${mode}. Error: ${err.message || err}`);
+        lastError = err;
+      }
+    }
+
+    if (!success) {
+      throw lastError || new Error("Semua penyedia AI yang dikonfigurasi gagal melakukan transkripsi.");
     }
 
     res.json({ text });
