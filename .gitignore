@@ -13,6 +13,8 @@ node_modules
 # Build output
 dist
 dist-ssr
+dist-server
+
 
 # Environment — NEVER commit real keys
 .env

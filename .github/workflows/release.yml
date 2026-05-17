@@ -1,0 +1,205 @@
+name: Build & Publish Demo Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build Demo Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend (Vite)
+        run: npm run build
+
+      - name: Create start.bat (Windows launcher)
+        run: |
+          cat > start.bat << 'BATEOF'
+          @echo off
+          title Trido - AI Digital Classroom
+          color 0B
+          echo.
+          echo  =========================================
+          echo   Trido - AI-Powered Digital Classroom
+          echo  =========================================
+          echo.
+
+          :: Check Node.js
+          where node >nul 2>&1
+          if %errorlevel% neq 0 (
+            echo [ERROR] Node.js is not installed.
+            echo Please install Node.js from https://nodejs.org (v18 or higher)
+            pause
+            exit /b 1
+          )
+
+          echo [1/3] Checking Node.js...
+          node --version
+
+          echo [2/3] Installing dependencies (first run may take a moment)...
+          call npm install --omit=dev --silent
+
+          echo [3/3] Starting Trido server...
+          echo.
+          echo  Access the app at: http://localhost:3000
+          echo  Press Ctrl+C to stop the server.
+          echo.
+
+          :: Open browser after 3 second delay
+          start "" /b cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:3000"
+
+          :: Start server
+          npm start
+          pause
+          BATEOF
+
+      - name: Create start.sh (Linux/macOS launcher)
+        run: |
+          cat > start.sh << 'SHEOF'
+          #!/usr/bin/env bash
+          set -e
+
+          echo ""
+          echo " ========================================="
+          echo "  Trido - AI-Powered Digital Classroom"
+          echo " ========================================="
+          echo ""
+
+          # Check Node.js
+          if ! command -v node &>/dev/null; then
+            echo "[ERROR] Node.js is not installed."
+            echo "Please install Node.js from https://nodejs.org (v18 or higher)"
+            exit 1
+          fi
+
+          echo "[1/3] Checking Node.js..."
+          node --version
+
+          echo "[2/3] Installing dependencies (first run may take a moment)..."
+          npm install --omit=dev --silent
+
+          echo "[3/3] Starting Trido server..."
+          echo ""
+          echo " Access the app at: http://localhost:3000"
+          echo " Press Ctrl+C to stop the server."
+          echo ""
+
+          # Open browser after 3s
+          (sleep 3 && (xdg-open http://localhost:3000 2>/dev/null || open http://localhost:3000 2>/dev/null || true)) &
+
+          npm start
+          SHEOF
+          chmod +x start.sh
+
+      - name: Create README for release
+        run: |
+          cat > DEMO_README.txt << 'EOF'
+          ============================================
+           Trido - AI-Powered Digital Classroom
+           Demo Package
+          ============================================
+
+          REQUIREMENTS
+          ------------
+          - Node.js v18 or higher (download from https://nodejs.org)
+          - A Gemini API key (free at https://aistudio.google.com)
+
+          QUICK START
+          -----------
+          1. Extract this ZIP to any folder
+          2. Copy .env.example to .env and add your GEMINI_API_KEY
+          3. Windows: Double-click start.bat
+             macOS/Linux: Open terminal, run: bash start.sh
+          4. Browser opens automatically at http://localhost:3000
+
+          CONFIGURATION
+          -------------
+          Edit the .env file to set your API key:
+            GEMINI_API_KEY=your_key_here
+
+          NOTES
+          -----
+          - First launch installs dependencies (requires internet, ~30 seconds)
+          - Subsequent launches are instant
+          - Voice input requires Chrome or Edge (Web Speech API)
+          - For collaboration: share your local network IP (e.g. http://192.168.x.x:3000)
+
+          SUPPORT
+          -------
+          See docs/ folder for full documentation.
+          EOF
+
+      - name: Package release ZIP
+        run: |
+          mkdir -p release-package
+          # Copy essential files
+          cp -r dist release-package/
+          cp -r server release-package/
+          cp -r utils release-package/
+          cp -r docs release-package/
+          cp server.ts release-package/
+          cp constants.ts release-package/
+          cp types.ts release-package/
+          cp package.json release-package/
+          cp package-lock.json release-package/
+          cp tsconfig.json release-package/
+          cp tsconfig.server.json release-package/
+          cp .env.example release-package/
+          cp start.bat release-package/
+          cp start.sh release-package/
+          cp DEMO_README.txt release-package/README.txt
+          cp README.md release-package/
+          # Create the zip
+          cd release-package
+          zip -r ../trido-demo-${{ github.ref_name }}.zip .
+          cd ..
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Trido ${{ github.ref_name }} — Demo Release"
+          body: |
+            ## 🎓 Trido AI Digital Classroom — ${{ github.ref_name }}
+
+            ### 📦 Quick Demo Installation
+            1. Download `trido-demo-${{ github.ref_name }}.zip` below
+            2. Extract the ZIP to any folder
+            3. Copy `.env.example` → `.env` and add your `GEMINI_API_KEY`
+            4. **Windows**: Double-click `start.bat`  
+               **macOS/Linux**: Run `bash start.sh` in terminal
+            5. Browser opens automatically at **http://localhost:3000**
+
+            ### ⚙️ Requirements
+            - [Node.js v18+](https://nodejs.org) must be installed
+            - Free Gemini API key from [Google AI Studio](https://aistudio.google.com)
+
+            ### ✨ Features
+            - 🎨 AI-powered infinite canvas whiteboard
+            - 🤖 Multi-model AI (Gemini, Ollama, Vertex AI)
+            - 🎤 Voice input via Web Speech API (Chrome/Edge)
+            - 📊 Mindmap, Quiz, Timer, App Builder tools
+            - 🔄 Real-time classroom collaboration via Socket.IO
+            - 🌐 English & Indonesian language support
+
+            > **First launch** will install npm dependencies (~30 seconds). Subsequent launches are instant.
+          files: trido-demo-${{ github.ref_name }}.zip
+          draft: false
+          prerelease: false
