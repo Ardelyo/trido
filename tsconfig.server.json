@@ -7,6 +7,8 @@
     "outDir": "./dist-server",
     "noEmit": false,
     "allowImportingTsExtensions": false,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "jsx": "react-jsx",
     "types": ["node"]
   },

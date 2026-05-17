@@ -80,42 +80,59 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
       let centerX = window.innerWidth / 2 || 400;
       let centerY = window.innerHeight / 2 || 300;
 
-      let lastX = centerX;
-      let lastY = centerY;
 
-      if (activeTool.id === 'mindmap' && Array.isArray(result)) {
-        result.forEach((node: any, idx: number) => {
-           let fill = '#3B82F6';
-           let width = 200;
-           let height = 80;
-           if (node.style === 'MAIN_TOPIC') { fill = '#1D4ED8'; width = 250; height = 100; }
-           else if (node.style === 'DETAIL') { fill = '#93C5FD'; width = 150; height = 60; }
+      if (activeTool.id === 'mindmap') {
+        // Support both old flat-array format and new { nodes, connections } format
+        const nodes: any[] = Array.isArray(result) ? result : (result?.nodes || []);
+        const connections: any[] = Array.isArray(result) ? [] : (result?.connections || []);
 
-           if (node.relativePosition === 'CENTER') {
-             lastX = centerX;
-             lastY = centerY;
-           } else if (node.relativePosition === 'RIGHT_OF_LAST') {
-             lastX += width + 60;
-           } else if (node.relativePosition === 'BELOW_LAST') {
-             lastY += height + 40;
-           } else if (node.relativePosition === 'LEFT_OF_LAST') {
-             lastX -= width + 60;
-           } else if (node.relativePosition === 'ABOVE_LAST') {
-             lastY -= height + 40;
-           }
+        // Node style config (matches useGeminiBrain)
+        const STYLE: Record<string, { fill: string; width: number; height: number }> = {
+          MAIN_TOPIC: { fill: '#4F46E5', width: 260, height: 100 },
+          SUBTOPIC:   { fill: '#0EA5E9', width: 210, height: 80  },
+          DETAIL:     { fill: '#475569', width: 170, height: 60  },
+          HIGHLIGHT:  { fill: '#F59E0B', width: 210, height: 80  },
+        };
+        const GAP_X = 60, GAP_Y = 44;
 
-           addAction({
-             id: `action_${Date.now()}_${idx}`,
-             type: 'CREATE_SHAPE',
-             payload: {
-               shapeType: 'RECTANGLE',
-               x: lastX, y: lastY,
-               text: node.text,
-               fill, width, height,
-               textColor: '#FFFFFF'
-             },
-             status: 'PENDING'
-           });
+        let lastX = centerX, lastY = centerY;
+        let lastW = 210, lastH = 80;
+
+        nodes.forEach((node: any, idx: number) => {
+          const s = STYLE[node.style] || STYLE.SUBTOPIC;
+
+          if (node.relativePosition === 'CENTER') {
+            lastX = centerX; lastY = centerY;
+          } else if (node.relativePosition === 'RIGHT_OF_LAST') {
+            lastX += lastW + GAP_X;
+          } else if (node.relativePosition === 'BELOW_LAST') {
+            lastY += lastH + GAP_Y;
+          } else if (node.relativePosition === 'LEFT_OF_LAST') {
+            lastX -= lastW + GAP_X;
+          } else if (node.relativePosition === 'ABOVE_LAST') {
+            lastY -= lastH + GAP_Y;
+          }
+
+          lastW = s.width; lastH = s.height;
+
+          addAction({
+            id: `action_${Date.now()}_${idx}`,
+            type: 'CREATE_SHAPE',
+            payload: { shapeType: 'RECTANGLE', x: lastX, y: lastY, text: node.text, fill: s.fill, width: s.width, height: s.height, textColor: '#FFFFFF' },
+            status: 'PENDING'
+          });
+        });
+
+        // Enqueue connection drawing after all nodes
+        connections.forEach((conn: any, idx: number) => {
+          if (conn.from && conn.to) {
+            addAction({
+              id: `action_conn_${Date.now()}_${idx}`,
+              type: 'DRAW_PATH',
+              payload: { fromNodeText: conn.from, toNodeText: conn.to, lineStyle: 'ARROW_STRAIGHT' },
+              status: 'PENDING'
+            });
+          }
         });
       } else if (activeTool.id === 'quiz') {
          addAction({

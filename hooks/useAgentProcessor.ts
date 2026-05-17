@@ -290,22 +290,39 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
           const { pathSvg, x, y, strokeColor, strokeWidth, fromNodeText, toNodeText, lineStyle } = action.payload;
           if (fromNodeText && toNodeText) {
             // Node connection logic by text label
-            const findNodeByText = (text: string) => {
-              const search = text.toLowerCase();
-              // Find group containing textual match or fallback to closest Match
-              const objs = canvas.getObjects().reverse(); // newer first
-              for (let o of objs) {
-                 if (o.type === 'group') {
-                    let match = false;
-                    o.getObjects().forEach((inner: any) => {
-                       if ((inner.type === 'i-text' || inner.type === 'text' || inner.type === 'textbox') && inner.text && inner.text.toLowerCase().includes(search)) {
-                          match = true;
-                       }
-                    });
-                    if (match) return o;
-                 } else if ((o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') && o.text && o.text.toLowerCase().includes(search)) {
-                   return o;
-                 }
+            const findNodeByText = (searchText: string) => {
+              const search = searchText.toLowerCase().trim();
+              const objs = canvas.getObjects().reverse();
+
+              const getNodeText = (o: any): string | null => {
+                if (o.type === 'group') {
+                  for (const inner of o.getObjects()) {
+                    if ((inner.type === 'i-text' || inner.type === 'text' || inner.type === 'textbox') && inner.text)
+                      return inner.text.toLowerCase().trim();
+                  }
+                } else if ((o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') && o.text) {
+                  return o.text.toLowerCase().trim();
+                }
+                return null;
+              };
+
+              // Tier 1: exact match
+              for (const o of objs) { const t = getNodeText(o); if (t === search) return o; }
+              // Tier 2: one contains the other
+              for (const o of objs) { const t = getNodeText(o); if (t && (t.includes(search) || search.includes(t))) return o; }
+              // Tier 3: word-level overlap ≥60%
+              const searchWords = search.split(/\s+/).filter((w: string) => w.length > 2);
+              if (searchWords.length > 0) {
+                let bestScore = 0; let bestObj: any = null;
+                for (const o of objs) {
+                  const t = getNodeText(o);
+                  if (!t) continue;
+                  const nodeWords = t.split(/\s+/);
+                  const matched = searchWords.filter((sw: string) => nodeWords.some((nw: string) => nw.includes(sw) || sw.includes(nw))).length;
+                  const score = matched / searchWords.length;
+                  if (score > bestScore) { bestScore = score; bestObj = o; }
+                }
+                if (bestScore >= 0.6 && bestObj) return bestObj;
               }
               return null;
             };
@@ -317,22 +334,40 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                await execute((source.left + target.left) / 2, (source.top + target.top) / 2, 'Connecting...', () => {
                   const sx = source.left, sy = source.top;
                   const tx = target.left, ty = target.top;
-                  let pathStr = `M ${sx} ${sy} L ${tx} ${ty}`;
-                  if (lineStyle === 'ARROW_CURVED') {
-                     pathStr = `M ${sx} ${sy} Q ${sx + (tx - sx)/2} ${sy - 150} ${tx} ${ty}`;
-                  }
+                  const isArrow = !lineStyle || lineStyle === 'ARROW_STRAIGHT' || lineStyle === 'ARROW_CURVED';
+                  let pathStr = lineStyle === 'ARROW_CURVED'
+                    ? `M ${sx} ${sy} Q ${sx + (tx - sx) / 2} ${sy - 120} ${tx} ${ty}`
+                    : `M ${sx} ${sy} L ${tx} ${ty}`;
+
                   const path = new window.fabric.Path(pathStr, {
                      fill: 'transparent',
-                     stroke: '#3B82F6',
-                     strokeWidth: 4,
+                     stroke: '#6366F1',
+                     strokeWidth: 2.5,
+                     strokeLineCap: 'round',
                      id: `path_${Date.now()}`
                   });
                   canvas.add(path);
-                  canvas.sendToBack(path); // put lines behind nodes!
+                  canvas.sendToBack(path);
+
+                  // Draw arrowhead at target end
+                  if (isArrow) {
+                    const angle = Math.atan2(ty - sy, tx - sx);
+                    const aLen = 12, aWidth = 7;
+                    const ax1 = tx - aLen * Math.cos(angle - 0.4);
+                    const ay1 = ty - aLen * Math.sin(angle - 0.4);
+                    const ax2 = tx - aLen * Math.cos(angle + 0.4);
+                    const ay2 = ty - aLen * Math.sin(angle + 0.4);
+                    const head = new window.fabric.Polygon(
+                      [{ x: tx, y: ty }, { x: ax1, y: ay1 }, { x: ax2, y: ay2 }],
+                      { fill: '#6366F1', stroke: 'transparent', strokeWidth: 0, id: `arrow_${Date.now()}`, selectable: false, evented: false }
+                    );
+                    canvas.add(head);
+                    canvas.sendToBack(head);
+                  }
                   canvas.requestRenderAll();
                });
             } else {
-               console.warn("Could not find nodes:", fromNodeText, toNodeText);
+               console.warn('[connect_nodes] Could not find nodes:', fromNodeText, '->', toNodeText);
             }
           } else if (pathSvg) {
             await execute(x, y, 'Sketching...', () => {

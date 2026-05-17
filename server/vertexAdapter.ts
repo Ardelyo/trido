@@ -108,10 +108,21 @@ export const generateToolContentVertex = async (toolId: string, prompt: string):
   let promptText = "";
   
   if (toolId === 'mindmap') {
-    promptText = `Generate a JSON array of mindmap nodes for the topic: "${prompt}". 
-    Each node must have: text (string), style (MAIN_TOPIC, SUBTOPIC, DETAIL), and relativePosition (CENTER for the first one, then RIGHT_OF_LAST, BELOW_LAST, etc.).
-    Example: [{"text": "AI", "style": "MAIN_TOPIC", "relativePosition": "CENTER"}, {"text": "Machine Learning", "style": "SUBTOPIC", "relativePosition": "RIGHT_OF_LAST"}]
-    RETURN ONLY RAW VALID JSON ARRAY without markdown formatting.`;
+    promptText = `Generate a JSON object for a mind map about: "${prompt}".
+Format EXACTLY:
+{
+  "nodes": [
+    {"text": "string", "style": "MAIN_TOPIC|SUBTOPIC|DETAIL", "relativePosition": "CENTER|RIGHT_OF_LAST|BELOW_LAST|LEFT_OF_LAST|ABOVE_LAST"}
+  ],
+  "connections": [
+    {"from": "exact node text", "to": "exact node text"}
+  ]
+}
+Rules:
+- Maximum 8 nodes (1 MAIN_TOPIC + up to 5 SUBTOPIC + up to 2 DETAIL)
+- First node MUST use relativePosition CENTER
+- "from" and "to" MUST be the EXACT text string from nodes[].text
+- RETURN ONLY RAW VALID JSON, no markdown, no explanation.`;
   } else if (toolId === 'quiz') {
     promptText = `Generate a JSON object for a comprehensive quiz about: "${prompt}".
     Format EXACTLY: {

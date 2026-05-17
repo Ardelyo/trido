@@ -82,7 +82,7 @@ export const useGeminiBrain = () => {
         .filter(Boolean);
 
       // --- 3. AI REQUEST ---
-      const { functionCalls, textResponse, thought } = await generateAgentActions(
+      const _aiResult = await generateAgentActions(
         prompt,
         dataUrl,
         objectsJson,
@@ -93,6 +93,8 @@ export const useGeminiBrain = () => {
         { current: storeState.currentPageIndex, total: storeState.pages.length },
         storeState.domElements
       );
+      let functionCalls = _aiResult.functionCalls;
+      const { textResponse, thought } = _aiResult;
 
       if (thought) {
         addLog(`AI Thoughts: ${thought}`);
@@ -107,11 +109,31 @@ export const useGeminiBrain = () => {
 
       // --- 4. ACTION MAPPING FROM SMALL MODEL TOOLS ---
 
+      // Safety cap — prevent the small model from flooding the queue with 30+ calls
+      const MAX_CALLS = 20;
+      if (functionCalls.length > MAX_CALLS) {
+        logger.warn(`[Cap] Clamping ${functionCalls.length} function calls to ${MAX_CALLS}`);
+        functionCalls = functionCalls.slice(0, MAX_CALLS);
+      }
+
       // Deduplication guard — prevents AI looping by enqueuing duplicate calls
       // e.g. AI sends add_mindmap_node('X', CENTER) twice in one batch
       const seenCallSigs = new Set<string>();
 
       let lastWorldPos = { x: (tl.x + br.x) / 2, y: (tl.y + br.y) / 2 };
+      // Track last node size for accurate relative positioning
+      let lastNodeW = 210;
+      let lastNodeH = 80;
+
+      // Style config: dimensions and fill colors
+      const NODE_STYLE: Record<string, { fill: string; width: number; height: number }> = {
+        MAIN_TOPIC: { fill: '#4F46E5', width: 260, height: 100 },
+        SUBTOPIC:   { fill: '#0EA5E9', width: 210, height: 80  },
+        DETAIL:     { fill: '#475569', width: 170, height: 60  },
+        HIGHLIGHT:  { fill: '#F59E0B', width: 210, height: 80  },
+      };
+      const GAP_X = 60;
+      const GAP_Y = 44;
 
       const getPos = (gridPos?: string, relativePos?: string) => {
         const vWidth = br.x - tl.x;
@@ -120,14 +142,14 @@ export const useGeminiBrain = () => {
         if (relativePos) {
            let offset = { x: 0, y: 0 };
            if (relativePos === 'CENTER') {
-             // Reset to viewport center — don't accumulate from lastWorldPos
+             // Reset to viewport center
              lastWorldPos = { x: (tl.x + br.x) / 2, y: (tl.y + br.y) / 2 };
              return lastWorldPos;
            }
-           else if (relativePos === 'RIGHT_OF_LAST') offset = { x: 350, y: 0 };
-           else if (relativePos === 'BELOW_LAST') offset = { x: 0, y: 200 };
-           else if (relativePos === 'LEFT_OF_LAST') offset = { x: -350, y: 0 };
-           else if (relativePos === 'ABOVE_LAST') offset = { x: 0, y: -200 };
+           else if (relativePos === 'RIGHT_OF_LAST') offset = { x: lastNodeW + GAP_X, y: 0 };
+           else if (relativePos === 'BELOW_LAST')  offset = { x: 0, y: lastNodeH + GAP_Y };
+           else if (relativePos === 'LEFT_OF_LAST') offset = { x: -(lastNodeW + GAP_X), y: 0 };
+           else if (relativePos === 'ABOVE_LAST')  offset = { x: 0, y: -(lastNodeH + GAP_Y) };
            lastWorldPos = { x: lastWorldPos.x + offset.x, y: lastWorldPos.y + offset.y };
            return lastWorldPos;
         }
@@ -154,21 +176,22 @@ export const useGeminiBrain = () => {
 
         if (call.name === 'add_mindmap_node') {
            actionType = 'CREATE_SHAPE';
+           const styleKey = (args.style as string) || 'SUBTOPIC';
+           const styleConf = NODE_STYLE[styleKey] || NODE_STYLE.SUBTOPIC;
            const pos = getPos(undefined, args.relativePosition);
-           let fill = '#3B82F6';
-           let width = 200;
-           let height = 80;
-           if (args.style === 'MAIN_TOPIC') { fill = '#1D4ED8'; width = 250; height = 100; }
-           else if (args.style === 'DETAIL') { fill = '#93C5FD'; width = 150; height = 60; }
-           else if (args.style === 'HIGHLIGHT') { fill = '#F59E0B'; }
+           // Update tracked size AFTER getPos so next node uses this node's dimensions
+           lastNodeW = styleConf.width;
+           lastNodeH = styleConf.height;
 
            payload = {
              shapeType: 'RECTANGLE',
              x: pos.x, y: pos.y,
              text: args.text,
-             fill, width, height,
+             fill: styleConf.fill,
+             width: styleConf.width,
+             height: styleConf.height,
              textColor: '#FFFFFF',
-             idAlias: `node_${index}` // to track creation order context
+             idAlias: `node_${index}`
            };
         } else if (call.name === 'connect_nodes') {
            actionType = 'DRAW_PATH';
@@ -263,7 +286,15 @@ export const useGeminiBrain = () => {
         if (!actionType) return;
 
         // Deduplication: build a signature from tool name + key args
-        const sig = `${call.name}:${args.text || ''}:${args.gridPosition || ''}:${args.relativePosition || ''}:${args.objectId || ''}`;
+        const sig = [
+          call.name,
+          args.text || '',
+          args.gridPosition || '',
+          args.relativePosition || '',
+          args.objectId || '',
+          args.fromNodeText || '',
+          args.toNodeText || ''
+        ].join(':');
         if (seenCallSigs.has(sig)) {
           logger.warn(`[Dedup] Duplicate tool call skipped: ${sig}`);
           return;
