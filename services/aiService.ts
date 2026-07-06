@@ -54,8 +54,16 @@ const parseAiError = async (response: Response): Promise<AiServiceError> => {
 
 const requestJson = async <T>(url: string, init: RequestInit, retries = CONFIG.ai.request.retryCount): Promise<T> => {
   for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
     try {
-      const response = await fetch(url, init);
+      const response = await fetch(url, {
+        ...init,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
         const error = await parseAiError(response);
         if (!error.retryable || attempt === retries) throw error;
@@ -64,7 +72,18 @@ const requestJson = async <T>(url: string, init: RequestInit, retries = CONFIG.a
       }
       return await response.json();
     } catch (error: any) {
+      clearTimeout(timeoutId);
       if (error instanceof AiServiceError) throw error;
+      
+      if (error.name === 'AbortError') {
+        throw new AiServiceError(
+          'Permintaan AI melebihi batas waktu (timeout 25 detik). Silakan coba lagi.',
+          'server_error',
+          408,
+          false
+        );
+      }
+
       const networkError = new AiServiceError(
         'Tidak bisa menghubungi layanan AI. Periksa koneksi internet atau server lokal.',
         'no_internet',
@@ -87,7 +106,17 @@ export const generateAgentActions = async (
   highResInputImage?: string | null,
   history: { role: 'user' | 'model'; text: string }[] = [],
   pageContext?: { current: number; total: number },
-  domElements: Record<string, any> = {}
+  domElements: Record<string, any> = {},
+  intent?: string,
+  forceTools?: boolean,
+  lessonContext?: {
+    subject?: string;
+    topic?: string;
+    gradeLevel?: string;
+    phase?: string;
+    existingMindmapNodes?: string[];
+    completedSteps?: string[];
+  }
 ) => {
   const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
   const apiUrl = (import.meta as any).env.VITE_API_URL || '';
@@ -105,7 +134,10 @@ export const generateAgentActions = async (
       domElements,
       aiPreference,
       geminiApiKey,
-      ollamaBaseUrl
+      ollamaBaseUrl,
+      intent,
+      forceTools,
+      lessonContext
     })
   });
 };

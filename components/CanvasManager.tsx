@@ -523,6 +523,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     canvas.freeDrawingBrush = new window.fabric.PencilBrush(canvas);
     canvas.freeDrawingBrush.color = brushColor;
     canvas.freeDrawingBrush.width = brushWidth;
+    canvas.freeDrawingBrush.decimate = 2.0; // ⚡ Real-time point simplification (Douglas-Peucker approximation)
 
     if (isViewerUrl) {
       canvas.isDrawingMode = false;
@@ -541,6 +542,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       // Eraser uses white/background color at large width
       canvas.freeDrawingBrush.color = '#ffffff';
       canvas.freeDrawingBrush.width = Math.max(brushWidth * 4, 20);
+      canvas.freeDrawingBrush.decimate = 2.0; // ⚡ Real-time point simplification for eraser
       canvas.discardActiveObject();
       canvas.getObjects().forEach((o: any) => { o.selectable = false; o.evented = false; });
       canvas.requestRenderAll();

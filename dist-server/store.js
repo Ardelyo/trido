@@ -14,8 +14,36 @@ const getInitialGeminiApiKey = () => {
 const getInitialOllamaBaseUrl = () => {
     return localStorage.getItem('ollama_base_url') || '';
 };
+const getInitialLanguage = () => {
+    const saved = localStorage.getItem('trido_language');
+    return (saved === 'id' || saved === 'en') ? saved : 'id';
+};
 const getInitialUserName = () => {
     return localStorage.getItem('trido_user_name') || 'Guru';
+};
+// ============================================================================
+// ZERO-COST SIZE ESTIMATOR (Replaces JSON.stringify)
+// ============================================================================
+const estimateSessionSize = (pages) => {
+    let bytes = 0;
+    for (const page of pages) {
+        // Canvas objects estimation
+        const canvasObj = page.canvas;
+        if (canvasObj && canvasObj.objects) {
+            bytes += canvasObj.objects.length * 180; // avg 180 bytes/object
+        }
+        // DOM elements estimation
+        if (page.dom) {
+            bytes += Object.keys(page.dom).length * 420;
+        }
+        // Preview image (base64 overhead ~33%)
+        if (page.previewDataUrl) {
+            bytes += page.previewDataUrl.length * 0.75;
+        }
+        // Viewport transform (negligible)
+        bytes += 48;
+    }
+    return Math.max(bytes, 512); // Minimum 512 bytes
 };
 export const useStore = create((set, get) => ({
     currentSessionId: null,
@@ -45,7 +73,7 @@ export const useStore = create((set, get) => ({
             updatedAt: now,
             createdAt: currentSessionId ? (sessions.find(s => s.id === currentSessionId)?.createdAt || now) : now,
             thumbnail: pages[0]?.previewDataUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=500&q=80',
-            sizeBytes: JSON.stringify(pages).length, // simple approximation
+            sizeBytes: estimateSessionSize(pages), // ⚡ INSTANT
             pages: pages
         };
         await saveSessionToDb(session);
@@ -58,7 +86,9 @@ export const useStore = create((set, get) => ({
             pages: [{ canvas: {}, dom: {}, previewDataUrl: '' }],
             currentPageIndex: 0,
             domElements: {},
-            messages: [{ role: 'model', text: 'Halo! Papan tulis baru telah disiapkan.' }]
+            messages: [{ role: 'model', text: 'Halo! Papan tulis baru telah disiapkan.' }],
+            lessonPlan: null,
+            activeMindmapNodes: []
         });
     },
     loadSessionData: async (id) => {
@@ -69,7 +99,9 @@ export const useStore = create((set, get) => ({
                 pages: session.pages,
                 currentPageIndex: 0,
                 domElements: session.pages[0]?.dom || {},
-                isHistoryOpen: false
+                isHistoryOpen: false,
+                lessonPlan: null,
+                activeMindmapNodes: []
             });
             // the canvas engine will need to detect this change and load
         }
@@ -80,6 +112,65 @@ export const useStore = create((set, get) => ({
         if (get().currentSessionId === id) {
             get().createNewSession();
         }
+    },
+    // ── Lesson Engine State ────────────────────────────────────────────────
+    lessonPlan: null,
+    activeMindmapNodes: [],
+    startLesson: (subject, topic, gradeLevel) => {
+        const plan = {
+            id: `lesson_${Date.now()}`,
+            subject,
+            topic,
+            gradeLevel,
+            phase: 'planning',
+            plannedSteps: [],
+            completedSteps: [],
+            createdAt: Date.now()
+        };
+        set({ lessonPlan: plan });
+    },
+    advanceLessonPhase: () => {
+        const { lessonPlan } = get();
+        if (!lessonPlan)
+            return;
+        const phases = ['planning', 'intro', 'core', 'practice', 'closing'];
+        const currentIdx = phases.indexOf(lessonPlan.phase);
+        const nextPhase = phases[currentIdx + 1] || 'closing';
+        set({
+            lessonPlan: { ...lessonPlan, phase: nextPhase }
+        });
+    },
+    completeLessonStep: (stepId, objectIds) => {
+        const { lessonPlan } = get();
+        if (!lessonPlan)
+            return;
+        const updatedSteps = lessonPlan.plannedSteps.map(step => step.id === stepId
+            ? { ...step, status: 'created', canvasObjectIds: objectIds }
+            : step);
+        set({
+            lessonPlan: {
+                ...lessonPlan,
+                plannedSteps: updatedSteps,
+                completedSteps: [...lessonPlan.completedSteps, stepId]
+            }
+        });
+    },
+    clearLesson: () => set({
+        lessonPlan: null,
+        activeMindmapNodes: []
+    }),
+    // Mindmap node registry
+    registerMindmapNode: (node) => set((state) => ({
+        activeMindmapNodes: [
+            // Replace if same text exists
+            ...state.activeMindmapNodes.filter(n => n.text !== node.text),
+            node
+        ]
+    })),
+    clearMindmapNodes: () => set({ activeMindmapNodes: [] }),
+    getMindmapNodeByText: (text) => {
+        const { activeMindmapNodes } = get();
+        return activeMindmapNodes.find(n => n.text.toLowerCase().trim() === text.toLowerCase().trim());
     },
     cursorPosition: { x: 0, y: 0 },
     spatialTarget: null,
@@ -130,8 +221,11 @@ export const useStore = create((set, get) => ({
         localStorage.setItem('trido_user_name', trimmed);
         set({ userName: trimmed });
     },
-    language: 'id',
-    setLanguage: (lang) => set({ language: lang }),
+    language: getInitialLanguage(),
+    setLanguage: (lang) => {
+        localStorage.setItem('trido_language', lang);
+        set({ language: lang });
+    },
     aiPreference: getInitialAiPreference(),
     setAiPreference: (pref) => {
         localStorage.setItem('ai_preference', pref);

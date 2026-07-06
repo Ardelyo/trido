@@ -1,6 +1,6 @@
 import { VertexAI, GenerativeModel } from "@google-cloud/vertexai";
 import { CanvasObjectData } from "../types";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, ViewportBounds } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, ViewportBounds, getCapability } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 
@@ -30,12 +30,25 @@ export const generateAgentActionsVertex = async (
   highResInputImage?: string | null,
   history: { role: 'user' | 'model'; text: string }[] = [],
   pageContext?: { current: number; total: number },
-  domElements: Record<string, any> = {}
+  domElements: Record<string, any> = {},
+  intent?: string,
+  forceTools?: boolean,
+  lessonContext?: any
 ) => {
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
-  const systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements);
+  const capability = getCapability(CONFIG.ai.vertex.model);
+  let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
+
+  // Add intent context to system prompt
+  const intentInstruction = intent === 'question' 
+    ? '\n\nNOTE: User is asking a QUESTION. Prioritize a helpful text answer. Only use tools if visualization would genuinely help.'
+    : intent === 'creation'
+    ? '\n\nNOTE: User wants to CREATE something. Use tools immediately. Explain briefly what you made in your text response.'
+    : '';
+
+  systemInstruction += intentInstruction;
 
   const contents = [
     ...history.map(h => ({
@@ -52,6 +65,8 @@ export const generateAgentActionsVertex = async (
     }
   ];
 
+  const isCreationRequest = forceTools !== undefined ? forceTools : /buat|create|gambar|draw|add|tambah/i.test(prompt);
+
   const vertex = getVertexClient();
   const model = vertex.getGenerativeModel({
     model: CONFIG.ai.vertex.model,
@@ -63,7 +78,12 @@ export const generateAgentActionsVertex = async (
       role: 'system',
       parts: [{ text: systemInstruction }]
     },
-    tools: [{ functionDeclarations: tools as any }]
+    tools: [{ functionDeclarations: tools as any }],
+    toolConfig: {
+      functionCallingConfig: {
+        mode: 'AUTO' as any
+      }
+    }
   });
 
   const result = await model.generateContent({ contents: contents as any });

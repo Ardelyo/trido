@@ -6,12 +6,14 @@ interface FileUploadButtonProps {
   className?: string;
   icon?: React.ReactNode;
   title?: string;
+  disabled?: boolean;
 }
 
 export const FileUploadButton: React.FC<FileUploadButtonProps> = ({ 
   className, 
   icon = <Paperclip size={18} />, 
-  title = "Unggah file / gambar" 
+  title = "Unggah file / gambar",
+  disabled = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -43,7 +45,8 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
       <button 
         type="button" 
         onClick={() => fileInputRef.current?.click()} 
-        className={className || "text-slate-400 hover:text-blue-500 transition-colors p-2 rounded-xl hover:bg-blue-50"} 
+        disabled={disabled}
+        className={`${className || "text-slate-400 hover:text-blue-500 transition-colors p-2 rounded-xl hover:bg-blue-50"} ${disabled ? 'opacity-40 pointer-events-none' : ''}`} 
         title={title}
       >
         {icon}

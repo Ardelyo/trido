@@ -1,6 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, FunctionCallingConfigMode } from "@google/genai";
 import { CanvasObjectData } from "../types";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, ViewportBounds } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, ViewportBounds, getCapability } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 
@@ -16,12 +16,25 @@ export const generateAgentActionsGemini = async (
   history: { role: 'user' | 'model'; text: string }[] = [],
   pageContext?: { current: number; total: number },
   domElements: Record<string, any> = {},
-  customKey?: string
+  customKey?: string,
+  intent?: string,
+  forceTools?: boolean,
+  lessonContext?: any
 ) => {
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
-  const systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements);
+  const capability = getCapability(CONFIG.ai.gemini.model);
+  let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
+
+  // Add intent context to system prompt
+  const intentInstruction = intent === 'question' 
+    ? '\n\nNOTE: User is asking a QUESTION. Prioritize a helpful text answer. Only use tools if visualization would genuinely help.'
+    : intent === 'creation'
+    ? '\n\nNOTE: User wants to CREATE something. Use tools immediately. Explain briefly what you made in your text response.'
+    : '';
+
+  systemInstruction += intentInstruction;
 
   const contents = [
     ...history.map(h => ({
@@ -38,6 +51,8 @@ export const generateAgentActionsGemini = async (
     }
   ];
 
+  const isCreationRequest = forceTools !== undefined ? forceTools : /buat|create|gambar|draw|add|tambah/i.test(prompt);
+
   const ai = getAiClient(customKey);
 
   // Use a dedicated generate timeout — 90s is enough for complex multi-tool requests
@@ -52,6 +67,11 @@ export const generateAgentActionsGemini = async (
       contents: contents,
       config: {
         tools: [{ functionDeclarations: tools }],
+        toolConfig: {
+          functionCallingConfig: {
+            mode: FunctionCallingConfigMode.AUTO
+          }
+        },
         systemInstruction: systemInstruction,
         temperature: CONFIG.ai.gemini.generation.temperature,
         maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens

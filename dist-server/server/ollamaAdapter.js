@@ -1,12 +1,21 @@
 import { z } from "zod";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 const logger = createLogger('ollama-adapter');
 const getOllamaUrl = (customUrl) => customUrl || process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
-export const generateAgentActionsOllama = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, customUrl) => {
+export const generateAgentActionsOllama = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, customUrl, intent, forceTools, lessonContext) => {
     const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements);
+    const modelName = process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
+    const capability = getCapability(modelName);
+    let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
+    // Add intent context to system prompt
+    const intentInstruction = intent === 'question'
+        ? '\n\nNOTE: User is asking a QUESTION. Prioritize a helpful text answer. Only use tools if visualization would genuinely help.'
+        : intent === 'creation'
+            ? '\n\nNOTE: User wants to CREATE something. Use tools immediately. Explain briefly what you made in your text response.'
+            : '';
+    systemInstruction += intentInstruction;
     const mappedTools = tools.map(t => ({
         type: "function",
         function: {
@@ -168,10 +177,17 @@ export const generateAgentActionsOllama = async (prompt, canvasImageBase64, canv
 export const generateToolContentOllama = async (toolId, prompt, customUrl) => {
     let promptText = "";
     if (toolId === 'mindmap') {
-        promptText = `Generate a JSON array of mindmap nodes for the topic: "${prompt}". 
-    Each node must have EXACTLY these fields: text (string), style (MAIN_TOPIC, SUBTOPIC, DETAIL), and relativePosition (CENTER for the first one, then RIGHT_OF_LAST, BELOW_LAST, etc.).
-    Example: [{"text": "AI", "style": "MAIN_TOPIC", "relativePosition": "CENTER"}, {"text": "Machine Learning", "style": "SUBTOPIC", "relativePosition": "RIGHT_OF_LAST"}]
-    RETURN ONLY THE JSON ARRAY. NO PREAMBLE. NO MARKDOWN. JUST [ ... ]`;
+        promptText = `Generate a JSON object for a mind map about: "${prompt}".
+Return EXACTLY this format:
+{
+  "nodes": [
+    {"text": "string", "style": "MAIN_TOPIC|SUBTOPIC|DETAIL", "parentNodeText": null_or_string}
+  ]
+}
+Rules:
+- Maximum 8 nodes: exactly 1 MAIN_TOPIC (root, parentNodeText=null), 4-5 SUBTOPIC, 0-2 DETAIL
+- parentNodeText MUST be the EXACT text of an existing node in this list
+- RETURN ONLY RAW VALID JSON. NO MARKDOWN. NO EXPLANATION.`;
     }
     else if (toolId === 'quiz') {
         promptText = `Generate a JSON object for a comprehensive quiz about: "${prompt}".

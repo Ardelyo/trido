@@ -281,7 +281,7 @@ aiRouter.post("/status", async (req, res) => {
 
 aiRouter.post("/generate", async (req, res) => {
   try {
-    const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
+    const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl, intent, forceTools, lessonContext } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
 
@@ -320,15 +320,15 @@ aiRouter.post("/generate", async (req, res) => {
           logger.info(`Attempting /generate with mode: ${mode}${attempt > 0 ? ' (retry)' : ''}`);
           if (mode === 'vertex') {
             result = await generateAgentActionsVertex(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements
+              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, intent, forceTools, lessonContext
             );
           } else if (mode === 'gemini') {
             result = await generateAgentActionsGemini(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey
+              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey, intent, forceTools, lessonContext
             );
           } else if (mode === 'ollama') {
             result = await generateAgentActionsOllama(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl
+              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl, intent, forceTools, lessonContext
             );
           }
           modeSuccess = true;

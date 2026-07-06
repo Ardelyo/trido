@@ -560,6 +560,23 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     // Play success sound when queue is finished
     if (useStore.getState().actionQueue.length === 0) {
       sounds.play('success');
+      
+      // Remove tiny circle objects that have no text and no connections (Fix 4)
+      const toRemove: any[] = [];
+      canvas.getObjects().forEach((obj: any) => {
+        if (obj.type === 'circle') {
+          const circle = obj;
+          if (
+            (circle.radius || 0) < 8 &&
+            !circle.id?.startsWith('node_') &&
+            !circle.id?.startsWith('agent_')
+          ) {
+            toRemove.push(obj);
+          }
+        }
+      });
+      toRemove.forEach(obj => canvas.remove(obj));
+      canvas.requestRenderAll();
     }
   };
 

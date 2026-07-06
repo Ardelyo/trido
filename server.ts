@@ -29,13 +29,37 @@ const logger = createLogger('server');
 const ROOMS_FILE = process.env.ROOMS_FILE_PATH ||
   path.join(process.cwd(), CONFIG.server.roomsPersistenceFile);
 
+let saveTimeout: NodeJS.Timeout | null = null;
+let isSaving = false;
+let pendingSave = false;
+
 function saveRooms(rooms: Map<string, RoomState>) {
-  try {
-    const data = JSON.stringify(Array.from(rooms.entries()));
-    fs.writeFileSync(ROOMS_FILE, data);
-  } catch (e) {
-    logger.error("Failed to save rooms", e);
+  if (isSaving) {
+    pendingSave = true;
+    return;
   }
+
+  if (saveTimeout) return;
+
+  saveTimeout = setTimeout(async () => {
+    saveTimeout = null;
+    isSaving = true;
+    
+    try {
+      const data = JSON.stringify(Array.from(rooms.entries()));
+      const tempFile = `${ROOMS_FILE}.tmp`;
+      await fs.promises.writeFile(tempFile, data, "utf8");
+      await fs.promises.rename(tempFile, ROOMS_FILE);
+    } catch (e) {
+      logger.error("Async save rooms failed", e);
+    } finally {
+      isSaving = false;
+      if (pendingSave) {
+        pendingSave = false;
+        saveRooms(rooms);
+      }
+    }
+  }, 2000); // 2-second write coalescing debounce
 }
 
 function loadRooms(): Map<string, RoomState> {
@@ -101,6 +125,45 @@ async function startServer() {
         saveRooms(rooms);
       }
       socket.to(roomId).emit("canvas-update", data);
+    });
+
+    // Receive incremental canvas object delta updates
+    socket.on("canvas-delta", ({ roomId, delta }) => {
+      const room = rooms.get(roomId);
+      if (room) {
+        if (room.state && !Array.isArray(room.state)) {
+          const stateObj = room.state as Record<string, any>;
+          if (!stateObj.objects) {
+            stateObj.objects = [];
+          }
+          const objects = stateObj.objects as any[];
+          
+          if (delta.action === "add" || delta.action === "modify") {
+            const idx = objects.findIndex((o: any) => o.id === delta.objectId);
+            if (idx >= 0) {
+              objects[idx] = delta.objectData;
+            } else {
+              objects.push(delta.objectData);
+            }
+          } else if (delta.action === "remove") {
+            stateObj.objects = objects.filter((o: any) => o.id !== delta.objectId);
+          }
+        } else if (Array.isArray(room.state)) {
+          const objects = room.state as any[];
+          if (delta.action === "add" || delta.action === "modify") {
+            const idx = objects.findIndex((o: any) => o.id === delta.objectId);
+            if (idx >= 0) {
+              objects[idx] = delta.objectData;
+            } else {
+              objects.push(delta.objectData);
+            }
+          } else if (delta.action === "remove") {
+            room.state = objects.filter((o: any) => o.id !== delta.objectId);
+          }
+        }
+        saveRooms(rooms);
+      }
+      socket.to(roomId).emit("canvas-delta", delta);
     });
 
     // Receive viewport updates

@@ -1,4 +1,14 @@
 import "dotenv/config";
+// Suppress @google/genai SDK internal warning about non-text function-call parts.
+// The SDK logs this unconditionally at response construction — we extract parts
+// directly from candidates[0].content.parts so this warning is a false positive.
+const _consoleWarn = console.warn.bind(console);
+console.warn = (...args) => {
+    const msg = typeof args[0] === 'string' ? args[0] : '';
+    if (msg.includes('non-text parts') && msg.includes('functionCall'))
+        return;
+    _consoleWarn(...args);
+};
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -14,14 +24,36 @@ const logger = createLogger('server');
 // for a demo environment. Point ROOMS_FILE_PATH to a mounted volume for persistence.
 const ROOMS_FILE = process.env.ROOMS_FILE_PATH ||
     path.join(process.cwd(), CONFIG.server.roomsPersistenceFile);
+let saveTimeout = null;
+let isSaving = false;
+let pendingSave = false;
 function saveRooms(rooms) {
-    try {
-        const data = JSON.stringify(Array.from(rooms.entries()));
-        fs.writeFileSync(ROOMS_FILE, data);
+    if (isSaving) {
+        pendingSave = true;
+        return;
     }
-    catch (e) {
-        logger.error("Failed to save rooms", e);
-    }
+    if (saveTimeout)
+        return;
+    saveTimeout = setTimeout(async () => {
+        saveTimeout = null;
+        isSaving = true;
+        try {
+            const data = JSON.stringify(Array.from(rooms.entries()));
+            const tempFile = `${ROOMS_FILE}.tmp`;
+            await fs.promises.writeFile(tempFile, data, "utf8");
+            await fs.promises.rename(tempFile, ROOMS_FILE);
+        }
+        catch (e) {
+            logger.error("Async save rooms failed", e);
+        }
+        finally {
+            isSaving = false;
+            if (pendingSave) {
+                pendingSave = false;
+                saveRooms(rooms);
+            }
+        }
+    }, 2000); // 2-second write coalescing debounce
 }
 function loadRooms() {
     try {
@@ -79,6 +111,48 @@ async function startServer() {
             }
             socket.to(roomId).emit("canvas-update", data);
         });
+        // Receive incremental canvas object delta updates
+        socket.on("canvas-delta", ({ roomId, delta }) => {
+            const room = rooms.get(roomId);
+            if (room) {
+                if (room.state && !Array.isArray(room.state)) {
+                    const stateObj = room.state;
+                    if (!stateObj.objects) {
+                        stateObj.objects = [];
+                    }
+                    const objects = stateObj.objects;
+                    if (delta.action === "add" || delta.action === "modify") {
+                        const idx = objects.findIndex((o) => o.id === delta.objectId);
+                        if (idx >= 0) {
+                            objects[idx] = delta.objectData;
+                        }
+                        else {
+                            objects.push(delta.objectData);
+                        }
+                    }
+                    else if (delta.action === "remove") {
+                        stateObj.objects = objects.filter((o) => o.id !== delta.objectId);
+                    }
+                }
+                else if (Array.isArray(room.state)) {
+                    const objects = room.state;
+                    if (delta.action === "add" || delta.action === "modify") {
+                        const idx = objects.findIndex((o) => o.id === delta.objectId);
+                        if (idx >= 0) {
+                            objects[idx] = delta.objectData;
+                        }
+                        else {
+                            objects.push(delta.objectData);
+                        }
+                    }
+                    else if (delta.action === "remove") {
+                        room.state = objects.filter((o) => o.id !== delta.objectId);
+                    }
+                }
+                saveRooms(rooms);
+            }
+            socket.to(roomId).emit("canvas-delta", delta);
+        });
         // Receive viewport updates
         socket.on("viewport-update", ({ roomId, viewport }) => {
             const room = rooms.get(roomId);
@@ -123,10 +197,11 @@ async function startServer() {
         app.use(vite.middlewares);
     }
     else {
-        const distPath = path.join(process.cwd(), 'dist');
+        // APP_DIST_PATH is set by Electron before requiring this bundle.
+        // Falls back to process.cwd()/dist for normal tsx production runs.
+        const distPath = process.env.APP_DIST_PATH || path.join(process.cwd(), 'dist');
         app.use(express.static(distPath));
-        // Express 5: use explicit path pattern for SPA fallback (not '*')
-        app.get(/^(?!\/api).*/, (_req, res) => {
+        app.get(/^\/(?!api).*/, (_req, res) => {
             res.sendFile(path.join(distPath, 'index.html'));
         });
     }

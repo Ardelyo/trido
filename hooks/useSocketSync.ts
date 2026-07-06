@@ -100,6 +100,40 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
       }
     });
 
+    socket.on('canvas-delta', (delta) => {
+      if (isCurrentlyViewer && canvasRef.current && delta) {
+         const canvas = canvasRef.current;
+         try {
+           if (delta.action === 'remove') {
+             const toRemove = canvas.getObjects().find((o: any) => o.id === delta.objectId);
+             if (toRemove) {
+               canvas.remove(toRemove);
+               canvas.requestRenderAll();
+             }
+           } else if (delta.action === 'add' || delta.action === 'modify') {
+             const existing = canvas.getObjects().find((o: any) => o.id === delta.objectId);
+             if (existing) {
+               existing.set(delta.objectData);
+               existing.setCoords();
+               canvas.requestRenderAll();
+             } else {
+               window.fabric.util.enlivenObjects([delta.objectData], (objects: any[]) => {
+                 if (objects && objects[0]) {
+                   // Ensure the object retains its custom properties
+                   const obj = objects[0];
+                   obj.id = delta.objectId;
+                   canvas.add(obj);
+                   canvas.requestRenderAll();
+                 }
+               });
+             }
+           }
+         } catch(e) {
+           logger.error('Failed to apply canvas delta update', e);
+         }
+      }
+    });
+
     socket.on('viewport-update', ({ viewport }) => {
       if (isCurrentlyViewer && canvasRef.current) {
         // Use the viewport to sync camera movement
@@ -135,31 +169,41 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
     };
   }, []);
 
-  // Sync our local canvas if we are the host
+  // Sync our local canvas if we are the host via delta updates
   useEffect(() => {
      if (isViewer || !canvasRef.current || !socketRef.current || !roomId) return;
      const canvas = canvasRef.current;
+     const socket = socketRef.current;
 
-     let timeout: ReturnType<typeof setTimeout>;
-     const handleCanvasChange = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-           const json = canvas.toJSON(['id', 'zIndex', 'isDomPlaceholder']);
-           socketRef.current?.emit('canvas-update', { roomId, data: json });
-        }, CONFIG.ui.socketSyncDebounceMs);
+     const emitDelta = (action: 'add' | 'modify' | 'remove', obj: any) => {
+       if (!obj || obj.id === 'agent_cursor' || obj.id === 'spatial_indicator') return;
+       
+       // Assure object has a unique id
+       if (!obj.id) {
+         obj.id = `obj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+       }
+
+       const delta = {
+         action,
+         objectId: obj.id,
+         objectData: action !== 'remove' ? obj.toObject(['id', 'zIndex', 'isDomPlaceholder']) : undefined
+       };
+
+       socket.emit('canvas-delta', { roomId, delta });
      };
 
-     canvas.on('object:modified', handleCanvasChange);
-     canvas.on('object:added', handleCanvasChange);
-     canvas.on('object:removed', handleCanvasChange);
-     canvas.on('path:created', handleCanvasChange);
+     const handleObjectAdded = (e: any) => emitDelta('add', e.target);
+     const handleObjectModified = (e: any) => emitDelta('modify', e.target);
+     const handleObjectRemoved = (e: any) => emitDelta('remove', e.target);
+
+     canvas.on('object:added', handleObjectAdded);
+     canvas.on('object:modified', handleObjectModified);
+     canvas.on('object:removed', handleObjectRemoved);
 
      return () => {
-        canvas.off('object:modified', handleCanvasChange);
-        canvas.off('object:added', handleCanvasChange);
-        canvas.off('object:removed', handleCanvasChange);
-        canvas.off('path:created', handleCanvasChange);
-        clearTimeout(timeout);
+        canvas.off('object:added', handleObjectAdded);
+        canvas.off('object:modified', handleObjectModified);
+        canvas.off('object:removed', handleObjectRemoved);
      }
   }, [roomId, isViewer]);
 

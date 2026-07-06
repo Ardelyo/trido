@@ -103,6 +103,8 @@ export interface ClientToServerEvents {
   'join-room': (roomId: string) => void;
   // Replace the room canvas snapshot after a host-side canvas mutation.
   'canvas-update': (payload: { roomId: string; data: CanvasJson }) => void;
+  // Send a delta update for a specific object on the canvas.
+  'canvas-delta': (payload: { roomId: string; delta: any }) => void;
   // Broadcast camera movement from the host to viewers.
   'viewport-update': (payload: { roomId: string; viewport: ViewportTransform }) => void;
   // Broadcast interactive DOM overlay state from the host to viewers.
@@ -114,6 +116,8 @@ export interface ServerToClientEvents {
   'canvas-init': (data: CanvasJson) => void;
   // Incremental canvas snapshot broadcast to viewers.
   'canvas-update': (data: CanvasJson) => void;
+  // Delta canvas update sent to viewers.
+  'canvas-delta': (delta: any) => void;
   // Camera transform broadcast; socketId identifies the emitting host/client.
   'viewport-update': (payload: { socketId: string; viewport: ViewportTransform }) => void;
   // Initial DOM overlay state sent after joining.
@@ -134,4 +138,42 @@ declare global {
     SpeechRecognition: any;
     webkitSpeechRecognition: any;
   }
+}
+
+export type LessonPhase = 
+  | 'planning'
+  | 'intro' 
+  | 'core'
+  | 'practice'
+  | 'closing'
+  | 'freeform';
+
+export interface LessonPlan {
+  id: string;
+  subject: string;
+  topic: string;
+  gradeLevel: string;
+  phase: LessonPhase;
+  plannedSteps: LessonStep[];
+  completedSteps: string[];
+  createdAt: number;
+}
+
+export interface LessonStep {
+  id: string;
+  phase: LessonPhase;
+  title: string;
+  contentType: 'mindmap' | 'flowchart' | 'timeline' | 'comparison' | 'text' | 'quiz' | 'document';
+  status: 'planned' | 'created' | 'skipped';
+  canvasObjectIds: string[];
+  suggestion: string;
+}
+
+export interface MindmapNodeRecord {
+  text: string;
+  style: 'MAIN_TOPIC' | 'SUBTOPIC' | 'DETAIL' | 'HIGHLIGHT';
+  parentNodeText: string | null;
+  canvasObjectId: string;
+  x: number;
+  y: number;
 }

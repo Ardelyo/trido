@@ -43,8 +43,14 @@ const parseAiError = async (response) => {
 };
 const requestJson = async (url, init, retries = CONFIG.ai.request.retryCount) => {
     for (let attempt = 0; attempt <= retries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 25000);
         try {
-            const response = await fetch(url, init);
+            const response = await fetch(url, {
+                ...init,
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
             if (!response.ok) {
                 const error = await parseAiError(response);
                 if (!error.retryable || attempt === retries)
@@ -55,8 +61,12 @@ const requestJson = async (url, init, retries = CONFIG.ai.request.retryCount) =>
             return await response.json();
         }
         catch (error) {
+            clearTimeout(timeoutId);
             if (error instanceof AiServiceError)
                 throw error;
+            if (error.name === 'AbortError') {
+                throw new AiServiceError('Permintaan AI melebihi batas waktu (timeout 25 detik). Silakan coba lagi.', 'server_error', 408, false);
+            }
             const networkError = new AiServiceError('Tidak bisa menghubungi layanan AI. Periksa koneksi internet atau server lokal.', 'no_internet', 0, true);
             if (attempt === retries)
                 throw networkError;
@@ -65,9 +75,10 @@ const requestJson = async (url, init, retries = CONFIG.ai.request.retryCount) =>
     }
     throw new AiServiceError('Permintaan AI gagal setelah beberapa percobaan.', 'server_error', 500, false);
 };
-export const generateAgentActions = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}) => {
+export const generateAgentActions = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, intent, forceTools, lessonContext) => {
     const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
-    return requestJson('/api/ai/generate', {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    return requestJson(`${apiUrl}/api/ai/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -81,25 +92,20 @@ export const generateAgentActions = async (prompt, canvasImageBase64, canvasObje
             domElements,
             aiPreference,
             geminiApiKey,
-            ollamaBaseUrl
+            ollamaBaseUrl,
+            intent,
+            forceTools,
+            lessonContext
         })
     });
 };
 export const generateToolContent = async (toolId, prompt) => {
     const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
-    const data = await requestJson('/api/ai/tool-content', {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    const data = await requestJson(`${apiUrl}/api/ai/tool-content`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl })
     });
     return data.result;
-};
-export const transcribeAudio = async (base64Audio) => {
-    const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
-    const data = await requestJson('/api/ai/transcribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl })
-    });
-    return data.text;
 };

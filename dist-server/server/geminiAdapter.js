@@ -1,13 +1,21 @@
-import { GoogleGenAI } from "@google/genai";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking } from "./aiTools";
+import { GoogleGenAI, FunctionCallingConfigMode } from "@google/genai";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 const getAiClient = (customKey) => new GoogleGenAI({ apiKey: customKey || process.env.GEMINI_API_KEY || process.env.API_KEY || "dummy" });
 const logger = createLogger('gemini-adapter');
-export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, customKey) => {
+export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, customKey, intent, forceTools, lessonContext) => {
     const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements);
+    const capability = getCapability(CONFIG.ai.gemini.model);
+    let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
+    // Add intent context to system prompt
+    const intentInstruction = intent === 'question'
+        ? '\n\nNOTE: User is asking a QUESTION. Prioritize a helpful text answer. Only use tools if visualization would genuinely help.'
+        : intent === 'creation'
+            ? '\n\nNOTE: User wants to CREATE something. Use tools immediately. Explain briefly what you made in your text response.'
+            : '';
+    systemInstruction += intentInstruction;
     const contents = [
         ...history.map(h => ({
             role: h.role,
@@ -22,6 +30,7 @@ export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canv
             ]
         }
     ];
+    const isCreationRequest = forceTools !== undefined ? forceTools : /buat|create|gambar|draw|add|tambah/i.test(prompt);
     const ai = getAiClient(customKey);
     // Use a dedicated generate timeout — 90s is enough for complex multi-tool requests
     const generateTimeoutMs = CONFIG.ai.gemini.generateTimeoutMs ?? 90_000;
@@ -34,6 +43,11 @@ export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canv
             contents: contents,
             config: {
                 tools: [{ functionDeclarations: tools }],
+                toolConfig: {
+                    functionCallingConfig: {
+                        mode: FunctionCallingConfigMode.AUTO
+                    }
+                },
                 systemInstruction: systemInstruction,
                 temperature: CONFIG.ai.gemini.generation.temperature,
                 maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens
@@ -43,8 +57,17 @@ export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canv
     finally {
         clearTimeout(timeoutId);
     }
-    let functionCalls = response.functionCalls || [];
-    const textResponse = response.text || "";
+    // Extract text AND function calls from raw parts — avoids SDK .text getter warning
+    const _candidate = response.candidates?.[0];
+    const _parts = _candidate?.content?.parts || [];
+    const textResponse = _parts
+        .filter((p) => p.text && !p.thought)
+        .map((p) => p.text)
+        .join('') || '';
+    // Extract function calls from parts directly (bypasses SDK getter that triggers the warning)
+    let functionCalls = _parts
+        .filter((p) => p.functionCall)
+        .map((p) => ({ name: p.functionCall.name, args: p.functionCall.args || {} }));
     const thought = extractThinking(response);
     const validation = validateFunctionCalls(functionCalls, canvasObjects, domElements);
     if (!validation.isValid) {
@@ -62,10 +85,17 @@ export const generateToolContentGemini = async (toolId, prompt, customKey) => {
     const model = CONFIG.ai.gemini.model;
     let promptText = "";
     if (toolId === 'mindmap') {
-        promptText = `Generate a JSON array of mindmap nodes for the topic: "${prompt}". 
-    Each node must have: text (string), style (MAIN_TOPIC, SUBTOPIC, DETAIL), and relativePosition (CENTER for the first one, then RIGHT_OF_LAST, BELOW_LAST, etc.).
-    Example: [{"text": "AI", "style": "MAIN_TOPIC", "relativePosition": "CENTER"}, {"text": "Machine Learning", "style": "SUBTOPIC", "relativePosition": "RIGHT_OF_LAST"}]
-    RETURN ONLY RAW VALID JSON ARRAY without markdown formatting.`;
+        promptText = `Generate a JSON object for a mind map about: "${prompt}".
+Return EXACTLY this format:
+{
+  "nodes": [
+    {"text": "string", "style": "MAIN_TOPIC|SUBTOPIC|DETAIL", "parentNodeText": null_or_string}
+  ]
+}
+Rules:
+- Maximum 8 nodes: exactly 1 MAIN_TOPIC (root, parentNodeText=null), 4-5 SUBTOPIC, 0-2 DETAIL
+- parentNodeText MUST be the EXACT text of an existing node in this list
+- RETURN ONLY RAW VALID JSON. NO MARKDOWN. NO EXPLANATION.`;
     }
     else if (toolId === 'quiz') {
         promptText = `Generate a JSON object for a comprehensive quiz about: "${prompt}".

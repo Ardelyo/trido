@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CanvasObjectData } from "../types";
-import { tools, buildSystemInstruction, validateFunctionCalls, ViewportBounds, extractThinking } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, ViewportBounds, extractThinking, getCapability } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 
@@ -16,11 +16,25 @@ export const generateAgentActionsOllama = async (
   history: { role: 'user' | 'model'; text: string }[] = [],
   pageContext?: { current: number; total: number },
   domElements: Record<string, any> = {},
-  customUrl?: string
+  customUrl?: string,
+  intent?: string,
+  forceTools?: boolean,
+  lessonContext?: any
 ) => {
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   
-  const systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements);
+  const modelName = process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
+  const capability = getCapability(modelName);
+  let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
+
+  // Add intent context to system prompt
+  const intentInstruction = intent === 'question' 
+    ? '\n\nNOTE: User is asking a QUESTION. Prioritize a helpful text answer. Only use tools if visualization would genuinely help.'
+    : intent === 'creation'
+    ? '\n\nNOTE: User wants to CREATE something. Use tools immediately. Explain briefly what you made in your text response.'
+    : '';
+
+  systemInstruction += intentInstruction;
   
   const mappedTools = tools.map(t => ({
     type: "function",

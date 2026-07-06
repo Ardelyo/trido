@@ -216,7 +216,7 @@ aiRouter.post("/status", async (req, res) => {
 });
 aiRouter.post("/generate", async (req, res) => {
     try {
-        const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
+        const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl, intent, forceTools, lessonContext } = req.body;
         const configuredMode = getRuntimePreference(aiPreference);
         const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
         const candidateModes = getCandidateModes(configuredMode, status, geminiApiKey);
@@ -245,23 +245,37 @@ aiRouter.post("/generate", async (req, res) => {
         let lastError = null;
         let success = false;
         for (const mode of candidateModes) {
-            try {
-                logger.info(`Attempting /generate with mode: ${mode}`);
-                if (mode === 'vertex') {
-                    result = await generateAgentActionsVertex(prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements);
+            let modeSuccess = false;
+            for (let attempt = 0; attempt < 2; attempt++) {
+                try {
+                    logger.info(`Attempting /generate with mode: ${mode}${attempt > 0 ? ' (retry)' : ''}`);
+                    if (mode === 'vertex') {
+                        result = await generateAgentActionsVertex(prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, intent, forceTools, lessonContext);
+                    }
+                    else if (mode === 'gemini') {
+                        result = await generateAgentActionsGemini(prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey, intent, forceTools, lessonContext);
+                    }
+                    else if (mode === 'ollama') {
+                        result = await generateAgentActionsOllama(prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl, intent, forceTools, lessonContext);
+                    }
+                    modeSuccess = true;
+                    break;
                 }
-                else if (mode === 'gemini') {
-                    result = await generateAgentActionsGemini(prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey);
+                catch (err) {
+                    const is500 = err?.status === 500 || err?.message?.includes('"code":500');
+                    if (attempt === 0 && is500) {
+                        logger.warn(`[Retry] 500 from ${mode}, retrying in 1.2s...`);
+                        await new Promise(r => setTimeout(r, 1200));
+                        continue;
+                    }
+                    logger.warn(`Generate failed with mode: ${mode}. Error: ${JSON.stringify({ error: err.message || err })}`);
+                    lastError = err;
+                    break;
                 }
-                else if (mode === 'ollama') {
-                    result = await generateAgentActionsOllama(prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl);
-                }
+            }
+            if (modeSuccess) {
                 success = true;
                 break;
-            }
-            catch (err) {
-                logger.warn(`Generate failed with mode: ${mode}. Error: ${err.message || err}`);
-                lastError = err;
             }
         }
         if (!success) {

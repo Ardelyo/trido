@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, AiPreference } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 
 interface AppStore extends AgentState {
@@ -142,6 +142,21 @@ interface AppStore extends AgentState {
   createNewSession: () => void;
   loadSessionData: (id: string) => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
+
+  // ── Lesson Engine ──────────────────────────────────────────────────────
+  lessonPlan: LessonPlan | null;
+  activeMindmapNodes: MindmapNodeRecord[];
+  
+  // Lesson Actions
+  startLesson: (subject: string, topic: string, gradeLevel: string) => void;
+  advanceLessonPhase: () => void;
+  completeLessonStep: (stepId: string, objectIds: string[]) => void;
+  clearLesson: () => void;
+  
+  // Mindmap tracking
+  registerMindmapNode: (node: MindmapNodeRecord) => void;
+  clearMindmapNodes: () => void;
+  getMindmapNodeByText: (text: string) => MindmapNodeRecord | undefined;
 }
 
 let autoSaveTimeout: ReturnType<typeof setTimeout>;
@@ -168,6 +183,36 @@ const getInitialLanguage = (): 'id' | 'en' => {
 
 const getInitialUserName = (): string => {
   return localStorage.getItem('trido_user_name') || 'Guru';
+};
+
+// ============================================================================
+// ZERO-COST SIZE ESTIMATOR (Replaces JSON.stringify)
+// ============================================================================
+const estimateSessionSize = (pages: AppStore['pages']): number => {
+  let bytes = 0;
+  
+  for (const page of pages) {
+    // Canvas objects estimation
+    const canvasObj = page.canvas as any;
+    if (canvasObj && canvasObj.objects) {
+      bytes += canvasObj.objects.length * 180; // avg 180 bytes/object
+    }
+    
+    // DOM elements estimation
+    if (page.dom) {
+      bytes += Object.keys(page.dom).length * 420;
+    }
+    
+    // Preview image (base64 overhead ~33%)
+    if (page.previewDataUrl) {
+      bytes += page.previewDataUrl.length * 0.75;
+    }
+    
+    // Viewport transform (negligible)
+    bytes += 48;
+  }
+  
+  return Math.max(bytes, 512); // Minimum 512 bytes
 };
 
 export const useStore = create<AppStore>((set, get) => ({
@@ -201,7 +246,7 @@ export const useStore = create<AppStore>((set, get) => ({
       updatedAt: now,
       createdAt: currentSessionId ? (sessions.find(s => s.id === currentSessionId)?.createdAt || now) : now,
       thumbnail: pages[0]?.previewDataUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=500&q=80',
-      sizeBytes: JSON.stringify(pages).length, // simple approximation
+      sizeBytes: estimateSessionSize(pages), // ⚡ INSTANT
       pages: pages
     };
     
@@ -216,7 +261,9 @@ export const useStore = create<AppStore>((set, get) => ({
       pages: [{ canvas: {}, dom: {}, previewDataUrl: '' }],
       currentPageIndex: 0,
       domElements: {},
-      messages: [{ role: 'model', text: 'Halo! Papan tulis baru telah disiapkan.' }]
+      messages: [{ role: 'model', text: 'Halo! Papan tulis baru telah disiapkan.' }],
+      lessonPlan: null,
+      activeMindmapNodes: []
     });
   },
   
@@ -228,7 +275,9 @@ export const useStore = create<AppStore>((set, get) => ({
         pages: session.pages,
         currentPageIndex: 0,
         domElements: session.pages[0]?.dom || {},
-        isHistoryOpen: false
+        isHistoryOpen: false,
+        lessonPlan: null,
+        activeMindmapNodes: []
       });
       // the canvas engine will need to detect this change and load
     }
@@ -240,6 +289,79 @@ export const useStore = create<AppStore>((set, get) => ({
     if (get().currentSessionId === id) {
       get().createNewSession();
     }
+  },
+
+  // ── Lesson Engine State ────────────────────────────────────────────────
+  lessonPlan: null,
+  activeMindmapNodes: [],
+
+  startLesson: (subject, topic, gradeLevel) => {
+    const plan: LessonPlan = {
+      id: `lesson_${Date.now()}`,
+      subject,
+      topic,
+      gradeLevel,
+      phase: 'planning',
+      plannedSteps: [],
+      completedSteps: [],
+      createdAt: Date.now()
+    };
+    set({ lessonPlan: plan });
+  },
+
+  advanceLessonPhase: () => {
+    const { lessonPlan } = get();
+    if (!lessonPlan) return;
+    
+    const phases: LessonPhase[] = ['planning', 'intro', 'core', 'practice', 'closing'];
+    const currentIdx = phases.indexOf(lessonPlan.phase);
+    const nextPhase = phases[currentIdx + 1] || 'closing';
+    
+    set({ 
+      lessonPlan: { ...lessonPlan, phase: nextPhase }
+    });
+  },
+
+  completeLessonStep: (stepId, objectIds) => {
+    const { lessonPlan } = get();
+    if (!lessonPlan) return;
+    
+    const updatedSteps = lessonPlan.plannedSteps.map(step =>
+      step.id === stepId 
+        ? { ...step, status: 'created' as const, canvasObjectIds: objectIds }
+        : step
+    );
+    
+    set({
+      lessonPlan: {
+        ...lessonPlan,
+        plannedSteps: updatedSteps,
+        completedSteps: [...lessonPlan.completedSteps, stepId]
+      }
+    });
+  },
+
+  clearLesson: () => set({ 
+    lessonPlan: null, 
+    activeMindmapNodes: [] 
+  }),
+
+  // Mindmap node registry
+  registerMindmapNode: (node) => set((state) => ({
+    activeMindmapNodes: [
+      // Replace if same text exists
+      ...state.activeMindmapNodes.filter(n => n.text !== node.text),
+      node
+    ]
+  })),
+
+  clearMindmapNodes: () => set({ activeMindmapNodes: [] }),
+
+  getMindmapNodeByText: (text) => {
+    const { activeMindmapNodes } = get();
+    return activeMindmapNodes.find(
+      n => n.text.toLowerCase().trim() === text.toLowerCase().trim()
+    );
   },
 
   cursorPosition: { x: 0, y: 0 },

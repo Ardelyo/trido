@@ -1,5 +1,5 @@
 import { VertexAI } from "@google-cloud/vertexai";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 const logger = createLogger('vertex-adapter');
@@ -15,10 +15,18 @@ const getVertexClient = () => {
     }
     return vertexClient;
 };
-export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}) => {
+export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, intent, forceTools, lessonContext) => {
     const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements);
+    const capability = getCapability(CONFIG.ai.vertex.model);
+    let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
+    // Add intent context to system prompt
+    const intentInstruction = intent === 'question'
+        ? '\n\nNOTE: User is asking a QUESTION. Prioritize a helpful text answer. Only use tools if visualization would genuinely help.'
+        : intent === 'creation'
+            ? '\n\nNOTE: User wants to CREATE something. Use tools immediately. Explain briefly what you made in your text response.'
+            : '';
+    systemInstruction += intentInstruction;
     const contents = [
         ...history.map(h => ({
             role: h.role === 'model' ? 'model' : 'user',
@@ -33,6 +41,7 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
             ]
         }
     ];
+    const isCreationRequest = forceTools !== undefined ? forceTools : /buat|create|gambar|draw|add|tambah/i.test(prompt);
     const vertex = getVertexClient();
     const model = vertex.getGenerativeModel({
         model: CONFIG.ai.vertex.model,
@@ -44,7 +53,12 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
             role: 'system',
             parts: [{ text: systemInstruction }]
         },
-        tools: [{ functionDeclarations: tools }]
+        tools: [{ functionDeclarations: tools }],
+        toolConfig: {
+            functionCallingConfig: {
+                mode: 'AUTO'
+            }
+        }
     });
     const result = await model.generateContent({ contents: contents });
     const response = result.response;
@@ -80,10 +94,17 @@ export const generateToolContentVertex = async (toolId, prompt) => {
     const modelName = CONFIG.ai.vertex.model;
     let promptText = "";
     if (toolId === 'mindmap') {
-        promptText = `Generate a JSON array of mindmap nodes for the topic: "${prompt}". 
-    Each node must have: text (string), style (MAIN_TOPIC, SUBTOPIC, DETAIL), and relativePosition (CENTER for the first one, then RIGHT_OF_LAST, BELOW_LAST, etc.).
-    Example: [{"text": "AI", "style": "MAIN_TOPIC", "relativePosition": "CENTER"}, {"text": "Machine Learning", "style": "SUBTOPIC", "relativePosition": "RIGHT_OF_LAST"}]
-    RETURN ONLY RAW VALID JSON ARRAY without markdown formatting.`;
+        promptText = `Generate a JSON object for a mind map about: "${prompt}".
+Return EXACTLY this format:
+{
+  "nodes": [
+    {"text": "string", "style": "MAIN_TOPIC|SUBTOPIC|DETAIL", "parentNodeText": null_or_string}
+  ]
+}
+Rules:
+- Maximum 8 nodes: exactly 1 MAIN_TOPIC (root, parentNodeText=null), 4-5 SUBTOPIC, 0-2 DETAIL
+- parentNodeText MUST be the EXACT text of an existing node in this list
+- RETURN ONLY RAW VALID JSON, no markdown, no explanation.`;
     }
     else if (toolId === 'quiz') {
         promptText = `Generate a JSON object for a comprehensive quiz about: "${prompt}".

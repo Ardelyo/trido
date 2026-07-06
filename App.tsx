@@ -27,10 +27,12 @@ import { useStore } from './store';
 import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
 import { useTranslation } from './utils/translations';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
   const canvasRef = useRef<any>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [, setReady] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -45,9 +47,22 @@ const App: React.FC = () => {
   const { roomId, isViewer } = useSocketSync(canvasRef);
   const { loadSessions } = useStore();
 
+  const {
+    logs, inputMode, setInputMode, messages, isAiDrawerOpen, toggleAiDrawer,
+    language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage,
+    userName, setUserName,
+    pages, currentPageIndex, switchPage, addPage, isThinking
+  } = useStore();
+
   useEffect(() => {
     loadSessions();
   }, []); // Only run once on mount
+
+  useEffect(() => {
+    if ((import.meta as any).env?.DEV || (typeof process !== 'undefined' && process.env.NODE_ENV === 'development')) {
+      import('./utils/debugHelpers').then(({ attachDebugTools }) => attachDebugTools());
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -64,12 +79,20 @@ const App: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const {
-    logs, inputMode, setInputMode, messages, isAiDrawerOpen, toggleAiDrawer,
-    language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage,
-    userName, setUserName,
-    pages, currentPageIndex, switchPage, addPage
-  } = useStore();
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isThinking]);
+
+  useEffect(() => {
+    if (isAiDrawerOpen && chatEndRef.current) {
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [isAiDrawerOpen]);
+
   const { processUserPrompt } = useGeminiBrain();
   const aiStatus = useAiStatus();
 
@@ -498,6 +521,27 @@ const App: React.FC = () => {
                           </div>
                       </motion.div>
                     ))}
+                    {isThinking && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        className="flex flex-col items-start"
+                      >
+                        <div className="bg-white text-slate-800 border border-slate-200/60 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-3xl rounded-tl-sm p-4 max-w-[90%] flex items-center gap-2">
+                          <span className="text-sm font-semibold text-slate-500">Trido sedang berpikir</span>
+                          <div className="flex gap-1">
+                            {[0, 1, 2].map(i => (
+                              <div
+                                key={i}
+                                className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                                style={{ animationDelay: `${i * 0.15}s` }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                    <div ref={chatEndRef} />
                   </div>
 
                   {/* Input Bar */}
@@ -505,6 +549,7 @@ const App: React.FC = () => {
                     <form
                       onSubmit={async (e) => {
                         e.preventDefault();
+                        if (isThinking) return;
                         if(!chatInputText.trim() && !lastUploadedImage) return;
                         const text = chatInputText.trim() || t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.');
                         setChatInputText('');
@@ -517,6 +562,7 @@ const App: React.FC = () => {
                           className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 ml-0.5 active:scale-95"
                           icon={<Plus size={20} />}
                           title={t('uploadFileOrImage', 'Unggah file / gambar')}
+                          disabled={isThinking}
                         />
                         <button
                           type="button"
@@ -524,7 +570,8 @@ const App: React.FC = () => {
                             useStore.getState().toggleAiDrawer();
                             setTimeout(() => window.dispatchEvent(new Event('start-mic')), 300);
                           }}
-                          className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 active:scale-95"
+                          disabled={isThinking}
+                          className={`text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 active:scale-95 ${isThinking ? 'opacity-40 pointer-events-none' : ''}`}
                           title={t('switchToVoice', 'Beralih ke mode suara')}
                         >
                           <Mic size={20} />
@@ -533,13 +580,14 @@ const App: React.FC = () => {
                           type="text"
                           value={chatInputText}
                           onChange={(e) => setChatInputText(e.target.value)}
-                          placeholder={t('askSomething', 'Tanya sesuatu...')}
-                          className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-slate-800 placeholder-slate-400 h-10 px-2"
+                          disabled={isThinking}
+                          placeholder={isThinking ? t('tridoIsThinking', 'Trido sedang berpikir...') : t('askSomething', 'Tanya sesuatu...')}
+                          className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-slate-800 placeholder-slate-400 h-10 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                          <button
                            type="submit"
-                           disabled={!chatInputText.trim() && !lastUploadedImage}
-                           className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${chatInputText.trim() || lastUploadedImage ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none'}`}
+                           disabled={isThinking || (!chatInputText.trim() && !lastUploadedImage)}
+                           className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${isThinking ? 'bg-slate-100 text-slate-400 scale-95 pointer-events-none opacity-50' : (chatInputText.trim() || lastUploadedImage ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none')}`}
                          >
                            <Send size={18} />
                          </button>
@@ -557,10 +605,10 @@ const App: React.FC = () => {
 
 const Layout: React.FC = () => {
   return (
-    <>
+    <ErrorBoundary>
       <App />
       <ToastContainer />
-    </>
+    </ErrorBoundary>
   );
 };
 

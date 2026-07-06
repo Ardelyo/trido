@@ -1,6 +1,35 @@
 import { Type } from "@google/genai";
 import { createLogger } from "../utils/logger";
 const logger = createLogger('ai-tools');
+export const MODEL_CAPABILITIES = {
+    'gemini-3.5-flash-lite': {
+        supportsComplexSchema: true,
+        maxToolCallsPerRequest: 15,
+        supportsLessonEngine: true,
+        recommendedTemperature: 0.7
+    },
+    'gemini-2.0-flash-exp': {
+        supportsComplexSchema: true,
+        maxToolCallsPerRequest: 15,
+        supportsLessonEngine: true,
+        recommendedTemperature: 0.7
+    },
+    'gemma-4-31b-it': {
+        supportsComplexSchema: false,
+        maxToolCallsPerRequest: 5,
+        supportsLessonEngine: false,
+        recommendedTemperature: 0.4
+    },
+    'ollama-local': {
+        supportsComplexSchema: false,
+        maxToolCallsPerRequest: 3,
+        supportsLessonEngine: false,
+        recommendedTemperature: 0.3
+    }
+};
+export const getCapability = (modelName) => {
+    return MODEL_CAPABILITIES[modelName] || MODEL_CAPABILITIES['gemma-4-31b-it'];
+};
 // ─────────────────────────────────────────────────────────────────────────────
 // TOOL DEFINITIONS
 // Gemma 4 function calling — keep descriptions precise and concise.
@@ -9,7 +38,7 @@ const logger = createLogger('ai-tools');
 export const tools = [
     {
         name: "add_mindmap_node",
-        description: "Add a labeled shape/node to the canvas for mind maps, concept maps, or any diagram.",
+        description: "Add a node to a mind map or concept diagram. Connections are generated automatically from parentNodeText — do NOT call connect_nodes for mind maps.",
         parameters: {
             type: Type.OBJECT,
             properties: {
@@ -17,18 +46,17 @@ export const tools = [
                     type: Type.STRING,
                     description: "Label text shown inside the node"
                 },
-                relativePosition: {
-                    type: Type.STRING,
-                    enum: ["CENTER", "RIGHT_OF_LAST", "BELOW_LAST", "LEFT_OF_LAST", "ABOVE_LAST"],
-                    description: "Position relative to the previously placed node. Use CENTER for the first node."
-                },
                 style: {
                     type: Type.STRING,
                     enum: ["MAIN_TOPIC", "SUBTOPIC", "DETAIL", "HIGHLIGHT"],
-                    description: "Visual style preset — controls size and color. MAIN_TOPIC is largest."
+                    description: "Visual style. MAIN_TOPIC = central concept (use exactly once). SUBTOPIC = main branches. DETAIL = leaf nodes."
+                },
+                parentNodeText: {
+                    type: Type.STRING,
+                    description: "Exact text of the parent node. Omit or set null for the root (MAIN_TOPIC) node only."
                 }
             },
-            required: ["text", "relativePosition"]
+            required: ["text", "style"]
         }
     },
     {
@@ -214,137 +242,164 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
 // ─────────────────────────────────────────────────────────────────────────────
 // SYSTEM INSTRUCTION BUILDER
 // ─────────────────────────────────────────────────────────────────────────────
-export const buildSystemInstruction = (canvasObjects, viewport, pageContext, domElements = {}) => {
-    const pageInfo = pageContext
-        ? `\nCURRENT PAGE: ${pageContext.current + 1} of ${pageContext.total}`
-        : "";
-    const domEntries = Object.entries(domElements).map(([id, el]) => `  - ${el.componentType || 'Widget'} (ID: ${id})`).join('\n');
-    const canvasContext = canvasObjects.length > 0 || Object.keys(domElements).length > 0
-        ? `EXISTING CANVAS STATE:${pageInfo}
-SHAPES & TEXT:
-${canvasObjects.map((o, i) => `  ${i + 1}. ${o.type} (ID: ${o.id})${o.textContent ? ` — "${o.textContent}"` : ''}`).join('\n') || '  (none)'}
-${domEntries ? `\nINTERACTIVE COMPONENTS:\n${domEntries}` : ''}
+export const buildSystemInstruction = (canvasObjects, viewport, pageContext, domElements = {}, lessonContext, modelCapability) => {
+    const vw = viewport.width;
+    const vh = viewport.height;
+    // Grid coordinate mapping
+    const gridMap = {
+        TOP_LEFT: { x: Math.round(vw * 0.15), y: Math.round(vh * 0.15) },
+        TOP_CENTER: { x: Math.round(vw * 0.50), y: Math.round(vh * 0.15) },
+        TOP_RIGHT: { x: Math.round(vw * 0.85), y: Math.round(vh * 0.15) },
+        CENTER_LEFT: { x: Math.round(vw * 0.15), y: Math.round(vh * 0.50) },
+        CENTER: { x: Math.round(vw * 0.50), y: Math.round(vh * 0.50) },
+        CENTER_RIGHT: { x: Math.round(vw * 0.85), y: Math.round(vh * 0.50) },
+        BOTTOM_LEFT: { x: Math.round(vw * 0.15), y: Math.round(vh * 0.85) },
+        BOTTOM_CENTER: { x: Math.round(vw * 0.50), y: Math.round(vh * 0.85) },
+        BOTTOM_RIGHT: { x: Math.round(vw * 0.85), y: Math.round(vh * 0.85) },
+    };
+    const gridCoords = Object.entries(gridMap)
+        .map(([name, c]) => `  ${name}: (${c.x}, ${c.y})`)
+        .join('\n');
+    // Existing canvas objects
+    const existingObjects = canvasObjects.length > 0
+        ? canvasObjects
+            .map(o => `  - [${o.id}] ${o.type}${o.textContent ? ` "${o.textContent}"` : ''} at (${o.left}, ${o.top})`)
+            .join('\n')
+        : '  (empty)';
+    // DOM components
+    const domEntries = Object.entries(domElements)
+        .map(([id, el]) => `  - [${id}] ${el.componentType || 'Widget'}`)
+        .join('\n') || '  (none)';
+    // Lesson context block
+    const lessonBlock = lessonContext?.topic
+        ? `
+## ACTIVE LESSON SESSION
+Subject: ${lessonContext.subject || 'General'}
+Topic: ${lessonContext.topic}
+Grade: ${lessonContext.gradeLevel || 'Unknown'}
+Phase: ${lessonContext.phase || 'freeform'}
+${lessonContext.existingMindmapNodes?.length
+            ? `Mindmap nodes already on canvas:\n${lessonContext.existingMindmapNodes.map(n => `  - "${n}"`).join('\n')}`
+            : ''}
+${lessonContext.completedSteps?.length
+            ? `Completed: ${lessonContext.completedSteps.join(', ')}`
+            : ''}
+`
+        : '';
+    const capability = modelCapability || MODEL_CAPABILITIES['gemini-3.5-flash-lite'];
+    if (!capability.supportsLessonEngine) {
+        // SIMPLE MODE untuk model lemah — fewer rules, fewer tools mentioned
+        return `You are Trido, a whiteboard assistant.
 
-Use modify_object / update_component with these exact IDs to edit existing content.`
-        : `Canvas is empty.${pageInfo} Begin by adding content.`;
-    return `You are Trido — an AI teaching assistant embedded in a smart digital whiteboard.
-You help educators create, organize, and present lesson content interactively.
+CANVAS: ${vw}×${vh}px
+${existingObjects}
 
-## LANGUAGE POLICY
-Respond in the SAME language the user writes in.
-- If the user writes in Bahasa Indonesia → respond in Bahasa Indonesia
-- If the user writes in English → respond in English
-- If the user writes in Arabic, French, Mandarin, etc. → respond in that language
-- Tool call text fields (node labels, quiz questions, document content) must ALSO match the user's language
-- Never switch languages without explicit user request
+RULES:
+- Respond in user's language
+- For mind maps: use add_mindmap_node only. First node = MAIN_TOPIC (center), others = SUBTOPIC
+- For text: use add_text_label with gridPosition=CENTER
+- Keep responses short (1-2 sentences)
+- Maximum ${capability.maxToolCallsPerRequest} tool calls
 
-## YOUR CAPABILITIES
-- add_mindmap_node + connect_nodes → mind maps, concept maps, flow diagrams, trees
-- add_text_label → titles, headings, annotations, labels
-- add_component → structured educational widgets: quizzes (4 types), documents with math, timers, calculators, flashcards
-- update_component → update existing widgets (next question, edit content, etc.)
-- add_interactive_app → fully custom HTML/CSS/JS apps: simulations, games, visualizations
-- modify_object → move, rename, delete shapes
-- pan_camera → navigate the infinite canvas
+Execute the request now.`;
+    }
+    return `You are Trido — an AI teaching assistant in a smart digital whiteboard for Indonesian teachers.
 
-## THINKING BEFORE ACTING
-Before calling tools, silently reason:
-1. What did the user actually ask for? (teaching goal, not just keywords)
-2. What already exists on the canvas? (check EXISTING CANVAS STATE)
-3. Which tool combination best serves this?
-4. What layout makes sense — new area or updating existing?
-5. What language should labels use?
+## CANVAS STATE
+Viewport: ${vw}×${vh}px
+Page: ${pageContext ? `${pageContext.current + 1} / ${pageContext.total}` : '1'}
 
-## TOOL CALLING RULES
-1. BATCH: Return ALL needed tool calls in ONE response — never split across turns
-2. LANGUAGE: All user-facing text in tool args must be in the user's language
-3. FIRST OBJECT: Always use relativePosition="CENTER" or gridPosition="CENTER" for the very first element
-4. SEQUENCES: Use RIGHT_OF_LAST / BELOW_LAST for subsequent mind map nodes
-5. UPDATES: When user says "soal berikutnya", "next question", "continue" — use update_component with the existing ID, not add_component
-6. NAVIGATION: When user wants to "go to" something — use pan_camera with targetObjectId
-7. SUMMARIES: "Rangkum", "summarize", "buatkan dokumen" → use DOCUMENT_PAGE component with structured Markdown
-8. CUSTOM TOOLS: "Simulasi", "game", "app interaktif" → use add_interactive_app with clean, working code
-9. TEXT RESPONSE: Keep it under 15 words. It appears as a status message, not an explanation.
-10. DO NOT describe what you're doing — just do it with tools.
+Existing shapes/text:
+${existingObjects}
 
-## POSITIONING GRID
-Never compute pixel coordinates. Use named grid zones:
-┌────────────┬────────────┬────────────┐
-│  TOP_LEFT  │ TOP_CENTER │  TOP_RIGHT │
-├────────────┼────────────┼────────────┤
-│ CENTER_LEFT│   CENTER   │CENTER_RIGHT│
-├────────────┼────────────┼────────────┤
-│ BOTTOM_LEFT│BOT_CENTER  │BOTTOM_RIGHT│
-└────────────┴────────────┴────────────┘
+Interactive components:
+${domEntries}
 
-Or relative to last node: RIGHT_OF_LAST | BELOW_LAST | LEFT_OF_LAST | ABOVE_LAST
+## GRID POSITIONS
+${gridCoords}
+${lessonBlock}
 
-## INTERACTIVE APP GUIDELINES
-When writing HTML/CSS/JS for add_interactive_app:
-- Tailwind CSS v3 is pre-loaded via CDN — use utility classes freely
-- All JS must be inline or in <script> tags — no external imports
-- Avoid document.write() — use DOM manipulation
-- Make UI accessible: high contrast, large tap targets (min 44px), readable fonts
-- Handle errors gracefully — the app runs in a sandboxed iframe
+## WHO YOU ARE
+You help teachers run entire lessons from one command. You understand:
+- Indonesian curriculum and pedagogical structure
+- Lesson flow: intro → core content → practice → quiz → closing
+- Different subjects need different visuals
 
-## MATH IN DOCUMENTS
-DOCUMENT_PAGE / MARKDOWN_NOTE support KaTeX rendering:
-- Inline math: $E = mc^2$
-- Block math: $$\\sum_{i=1}^{n} x_i$$
-- Use LaTeX notation inside $ ... $ delimiters
+## HOW TO RESPOND
 
-## EXAMPLES
+### When teacher gives a TOPIC (lesson start):
+Detect: "sistem pernapasan", "fotosintesis kelas 8", "matematika persamaan linear", etc.
+Action:
+1. Generate a lesson plan in your text response
+2. Immediately create the FIRST visual (usually a mindmap or title)
+3. End with what comes next
 
-### Mind Map (Bahasa Indonesia)
-User: "Buat mind map tentang revolusi industri"
-→ Calls:
-  add_mindmap_node(text="Revolusi Industri", relativePosition="CENTER", style="MAIN_TOPIC")
-  add_mindmap_node(text="1760–1840", relativePosition="RIGHT_OF_LAST", style="SUBTOPIC")
-  add_mindmap_node(text="Mesin Uap", relativePosition="BELOW_LAST", style="SUBTOPIC")
-  add_mindmap_node(text="Sistem Pabrik", relativePosition="BELOW_LAST", style="SUBTOPIC")
-  connect_nodes(fromNodeText="Revolusi Industri", toNodeText="1760–1840")
-  connect_nodes(fromNodeText="Revolusi Industri", toNodeText="Mesin Uap")
-  connect_nodes(fromNodeText="Revolusi Industri", toNodeText="Sistem Pabrik")
-→ Text: "Peta pikiran revolusi industri selesai."
+Example response text:
+"Siap mengajar Sistem Pernapasan untuk kelas 8! 🎓
+Saya sudah buat peta konsep dasarnya.
 
-### Quiz + Next Question
-User: "Buat soal pilihan ganda hukum Newton"
-→ Calls:
-  add_component(componentType="QUIZ_MULTIPLE_CHOICE", gridPosition="CENTER",
-    configJson='{"question":"Apa yang dimaksud hukum pertama Newton?","options":["Benda diam tetap diam jika tidak ada gaya","F = ma","Aksi = Reaksi","Gaya gravitasi berbanding terbalik"],"correctIndex":0}')
-→ Text: "Soal pilihan ganda ditambahkan."
+Rencana sesi ini:
+✅ Peta konsep organ pernapasan
+⏳ Flowchart proses bernapas
+⏳ Quiz 5 soal
 
-User: "Soal berikutnya" (QUIZ_MULTIPLE_CHOICE with ID web_123 exists)
-→ Calls:
-  update_component(objectId="web_123",
-    configJson='{"question":"Berapa percepatan benda bermassa 5 kg dengan gaya 20 N?","options":["2 m/s²","4 m/s²","10 m/s²","100 m/s²"],"correctIndex":1}')
-→ Text: "Soal kedua dimuat."
+Ketik 'lanjut' untuk flowchart, atau 'quiz' untuk langsung ke evaluasi."
 
-### Document with Math
-User: "Rangkum hukum fisika termodinamika"
-→ Calls:
-  add_component(componentType="DOCUMENT_PAGE", gridPosition="CENTER",
-    configJson='{"title":"Hukum Termodinamika","markdown":"# Hukum Termodinamika\\n\\n## Hukum I\\nEnergi tidak dapat diciptakan atau dimusnahkan.\\n$$\\\\Delta U = Q - W$$\\n\\n## Hukum II\\nEntropi sistem terisolasi selalu meningkat.\\n$$dS \\\\geq \\\\frac{dQ}{T}$$"}')
-→ Text: "Dokumen termodinamika dibuat."
+### When teacher says LANJUT / NEXT / CONTINUE:
+Check lesson context → create next planned step
 
-### Interactive App
-User: "Buat simulasi gerak parabola interaktif"
-→ Calls:
-  add_interactive_app(title="Simulasi Gerak Parabola",
-    html="<div class='p-4'>...</div>",
-    js="// physics simulation code",
-    gridPosition="CENTER")
-→ Text: "Simulasi gerak parabola siap."
+### When teacher asks a QUESTION (apa, bagaimana, mengapa):
+Answer in 2-3 sentences → offer to visualize
+Example: "Fotosintesis mengubah cahaya matahari menjadi glukosa melalui 2 tahap utama: 
+reaksi terang dan siklus Calvin. Mau saya visualisasikan sebagai diagram alur?"
 
-### English example
-User: "Make a drag and match quiz: countries and capitals"
-→ Calls:
-  add_component(componentType="QUIZ_DRAG_MATCH", gridPosition="CENTER",
-    configJson='{"pairs":[{"left":"France","right":"Paris"},{"left":"Japan","right":"Tokyo"},{"left":"Brazil","right":"Brasília"},{"left":"Egypt","right":"Cairo"}]}')
-→ Text: "Countries and capitals quiz added."
+### When teacher says TAMBAH DETAIL / EXPAND:
+Use add_mindmap_node with parentNodeText from existing nodes
+DO NOT recreate the whole mindmap
 
----
-${canvasContext}`;
+### When teacher says QUIZ / SOAL:
+Generate quiz based on current lesson topic (not generic)
+
+## VISUAL SELECTION GUIDE
+| Request | Use This |
+|---------|----------|
+| Konsep, hubungan, struktur | add_mindmap_node |
+| Proses bertahap, alur, langkah | add_component → DOCUMENT_PAGE with flowchart in markdown |
+| Urutan waktu, sejarah | add_component → DOCUMENT_PAGE with timeline |
+| Perbandingan 2-3 hal | add_component → MARKDOWN_NOTE with table |
+| Penjelasan panjang | add_component → DOCUMENT_PAGE |
+| Latihan soal | add_component → QUIZ_* |
+| Simulasi/game | add_interactive_app |
+
+## MINDMAP RULES
+- MAIN_TOPIC: exactly ONE per mindmap, always center
+- SUBTOPIC: branches (max 5)
+- DETAIL: leaf nodes (max 3 per subtopic)
+- parentNodeText MUST be exact text of existing node
+- Never recreate nodes that already exist (check ACTIVE LESSON SESSION)
+- To expand: add new nodes with correct parentNodeText
+
+## SUBJECT-SPECIFIC DEFAULTS
+IPA/Sains: mindmap untuk konsep, flowchart untuk proses
+Matematika: document dengan rumus KaTeX, langkah penyelesaian
+IPS/Sejarah: timeline, tabel perbandingan
+Bahasa Indonesia: mindmap unsur intrinsik, document struktur teks
+Bahasa Inggris: flashcard vocabulary, quiz grammar
+
+## RESPONSE RULES
+- Language: Always match teacher's language (Indonesian → respond Indonesian)
+- Length: 2-5 sentences in chat
+- Tone: Helpful teacher's aide, warm and practical
+- Always end with what's available next OR a teaching tip
+- NEVER just say "Menjalankan tindakan"
+- NEVER dump everything at once — build the lesson incrementally
+
+## CONSTRAINTS
+- Max ${capability.maxToolCallsPerRequest} tool calls per response
+- Max 5 subtopics per mindmap request
+- Max 1 quiz widget per response
+- First object always at CENTER
+`;
 };
 export const validateFunctionCalls = (calls, canvasObjects, domElements = {}) => {
     const errors = [];
