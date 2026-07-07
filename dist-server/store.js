@@ -14,6 +14,15 @@ const getInitialGeminiApiKey = () => {
 const getInitialOllamaBaseUrl = () => {
     return localStorage.getItem('ollama_base_url') || '';
 };
+const getInitialSelectedGeminiModel = () => {
+    return localStorage.getItem('selected_gemini_model') || 'gemini-3.5-flash-lite';
+};
+const getInitialSelectedOllamaModel = () => {
+    return localStorage.getItem('selected_ollama_model') || 'gemma4:e2b';
+};
+const getInitialSelectedVertexModel = () => {
+    return localStorage.getItem('selected_vertex_model') || 'gemma-4-31b-it';
+};
 const getInitialLanguage = () => {
     const saved = localStorage.getItem('trido_language');
     return (saved === 'id' || saved === 'en') ? saved : 'id';
@@ -240,6 +249,21 @@ export const useStore = create((set, get) => ({
     setOllamaBaseUrl: (url) => {
         localStorage.setItem('ollama_base_url', url);
         set({ ollamaBaseUrl: url });
+    },
+    selectedGeminiModel: getInitialSelectedGeminiModel(),
+    setSelectedGeminiModel: (model) => {
+        localStorage.setItem('selected_gemini_model', model);
+        set({ selectedGeminiModel: model });
+    },
+    selectedOllamaModel: getInitialSelectedOllamaModel(),
+    setSelectedOllamaModel: (model) => {
+        localStorage.setItem('selected_ollama_model', model);
+        set({ selectedOllamaModel: model });
+    },
+    selectedVertexModel: getInitialSelectedVertexModel(),
+    setSelectedVertexModel: (model) => {
+        localStorage.setItem('selected_vertex_model', model);
+        set({ selectedVertexModel: model });
     },
     isViewerUrl: false,
     setIsViewerUrl: (v) => set({ isViewerUrl: v }),

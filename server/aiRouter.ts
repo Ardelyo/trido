@@ -81,7 +81,7 @@ const probeVertex = async () => {
   return { online: true, reason: 'configured' };
 };
 
-const probeOllama = async (customUrl?: string) => {
+const probeOllama = async (customUrl?: string, customModel?: string) => {
   const url = customUrl || getOllamaUrl();
   try {
     const controller = new AbortController();
@@ -93,14 +93,21 @@ const probeOllama = async (customUrl?: string) => {
 
     const data = await response.json();
     const models = (data.models || []).map((m: any) => m.name);
-    const model = getOllamaModel();
-    const hasRequiredModel = models.includes(model) || models.some((m: string) => m.startsWith(model + ':'));
+    const configuredModel = customModel || getOllamaModel();
+    
+    // Check configured model, and alternative fallbacks requested by user: gemma-4-31b-it or gemma4:31b, or default gemma4:e2b
+    const candidateModels = [configuredModel, 'gemma-4-31b-it', 'gemma4:31b', 'gemma4:e2b'];
+    const activeModel = candidateModels.find(candidate => 
+      models.includes(candidate) || models.some((m: string) => m.startsWith(candidate + ':'))
+    );
+    const hasRequiredModel = !!activeModel;
 
     return {
       online: true,
       reason: hasRequiredModel ? 'ok' : 'model_missing',
       models,
-      hasRequiredModel
+      hasRequiredModel,
+      activeModel: activeModel || configuredModel
     };
   } catch (e: any) {
     return { online: false, reason: e?.name === 'AbortError' ? 'timeout' : 'local_unavailable', models: [] };
@@ -110,23 +117,24 @@ const probeOllama = async (customUrl?: string) => {
 // Internal uncached implementation
 const _getAvailableMode = async (
   customGeminiKey?: string,
-  customOllamaUrl?: string
+  customOllamaUrl?: string,
+  customOllamaModel?: string
 ): Promise<{
   mode: AiMode | 'unavailable';
   model: string;
   online: boolean;
   reason: string;
-  ollamaStatus?: { online: boolean; hasModel: boolean; models: string[] };
+  ollamaStatus?: { online: boolean; hasModel: boolean; models: string[]; activeModel?: string };
   geminiStatus?: { online: boolean; reason: string };
   vertexStatus?: { online: boolean; reason: string };
 }> => {
   const configuredMode = getConfiguredMode();
   const gemini = await probeGemini(customGeminiKey);
-  const ollama = await probeOllama(customOllamaUrl);
+  const ollama = await probeOllama(customOllamaUrl, customOllamaModel);
   const vertex = await probeVertex();
 
   const geminiInfo = { online: gemini.online, reason: gemini.reason };
-  const ollamaInfo = { online: ollama.online, hasModel: !!ollama.hasRequiredModel, models: ollama.models };
+  const ollamaInfo = { online: ollama.online, hasModel: !!ollama.hasRequiredModel, models: ollama.models, activeModel: ollama.activeModel };
   const vertexInfo = { online: vertex.online, reason: vertex.reason };
 
   const preferredMode = configuredMode === 'auto' ? getPreferredAutoMode() : configuredMode;
@@ -141,17 +149,17 @@ const _getAvailableMode = async (
       return { mode: 'gemini', model: CONFIG.ai.gemini.model, online: gemini.online, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
     }
     if (ollama.online && ollama.hasRequiredModel) {
-      return { mode: 'ollama', model: getOllamaModel(), online: true, reason: 'cloud_key_missing_using_local', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
+      return { mode: 'ollama', model: ollama.activeModel || getOllamaModel(), online: true, reason: 'cloud_key_missing_using_local', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
     }
     return { mode: 'unavailable', model: CONFIG.ai.gemini.model, online: false, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
   }
 
   if (ollama.online && ollama.hasRequiredModel) {
-    return { mode: 'ollama', model: getOllamaModel(), online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
+    return { mode: 'ollama', model: ollama.activeModel || getOllamaModel(), online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
   }
   return {
     mode: 'unavailable',
-    model: getOllamaModel(),
+    model: ollama.activeModel || getOllamaModel(),
     online: false,
     reason: ollama.online ? 'model_missing' : ollama.reason,
     geminiStatus: geminiInfo,
@@ -163,14 +171,15 @@ const _getAvailableMode = async (
 // Cached wrapper
 const getAvailableMode = async (
   customGeminiKey?: string,
-  customOllamaUrl?: string
+  customOllamaUrl?: string,
+  customOllamaModel?: string
 ): Promise<CachedStatus> => {
-  const cacheKey = `${customGeminiKey || ''}|${customOllamaUrl || ''}`;
+  const cacheKey = `${customGeminiKey || ''}|${customOllamaUrl || ''}|${customOllamaModel || ''}`;
   const cached = statusCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < STATUS_CACHE_TTL_MS) {
     return cached.value;
   }
-  const value = await _getAvailableMode(customGeminiKey, customOllamaUrl);
+  const value = await _getAvailableMode(customGeminiKey, customOllamaUrl, customOllamaModel);
   statusCache.set(cacheKey, { ts: Date.now(), value });
   return value;
 };
@@ -275,15 +284,15 @@ aiRouter.get("/status", async (req, res) => {
 });
 
 aiRouter.post("/status", async (req, res) => {
-  const { geminiApiKey, ollamaBaseUrl } = req.body;
-  res.json(await getAvailableMode(geminiApiKey, ollamaBaseUrl));
+  const { geminiApiKey, ollamaBaseUrl, selectedOllamaModel } = req.body;
+  res.json(await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel));
 });
 
 aiRouter.post("/generate", async (req, res) => {
   try {
-    const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl, intent, forceTools, lessonContext } = req.body;
+    const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel, intent, forceTools, lessonContext } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
-    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
+    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel);
 
     const candidateModes = getCandidateModes(configuredMode, status, geminiApiKey);
 
@@ -320,15 +329,15 @@ aiRouter.post("/generate", async (req, res) => {
           logger.info(`Attempting /generate with mode: ${mode}${attempt > 0 ? ' (retry)' : ''}`);
           if (mode === 'vertex') {
             result = await generateAgentActionsVertex(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, intent, forceTools, lessonContext
+              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, intent, forceTools, lessonContext, selectedVertexModel
             );
           } else if (mode === 'gemini') {
             result = await generateAgentActionsGemini(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey, intent, forceTools, lessonContext
+              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey, intent, forceTools, lessonContext, selectedGeminiModel
             );
           } else if (mode === 'ollama') {
             result = await generateAgentActionsOllama(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl, intent, forceTools, lessonContext
+              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl, intent, forceTools, lessonContext, selectedOllamaModel || status.ollamaStatus?.activeModel
             );
           }
           modeSuccess = true;
@@ -361,9 +370,9 @@ aiRouter.post("/generate", async (req, res) => {
 
 aiRouter.post("/tool-content", async (req, res) => {
   try {
-    const { toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
+    const { toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
-    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
+    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel);
 
     const candidateModes = getCandidateModes(configuredMode, status, geminiApiKey);
 
@@ -379,11 +388,11 @@ aiRouter.post("/tool-content", async (req, res) => {
       try {
         logger.info(`Attempting /tool-content with mode: ${mode}`);
         if (mode === 'vertex') {
-          result = await generateToolContentVertex(toolId, prompt);
+          result = await generateToolContentVertex(toolId, prompt, selectedVertexModel);
         } else if (mode === 'gemini') {
-          result = await generateToolContentGemini(toolId, prompt, geminiApiKey);
+          result = await generateToolContentGemini(toolId, prompt, geminiApiKey, selectedGeminiModel);
         } else if (mode === 'ollama') {
-          result = await generateToolContentOllama(toolId, prompt, ollamaBaseUrl);
+          result = await generateToolContentOllama(toolId, prompt, ollamaBaseUrl, selectedOllamaModel || status.ollamaStatus?.activeModel);
         }
         success = true;
         break;
@@ -406,9 +415,9 @@ aiRouter.post("/tool-content", async (req, res) => {
 
 aiRouter.post("/transcribe", async (req, res) => {
   try {
-    const { base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl } = req.body;
+    const { base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
-    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl);
+    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel);
 
     const candidateModes = getCandidateModes(configuredMode, status, geminiApiKey);
 
@@ -424,11 +433,11 @@ aiRouter.post("/transcribe", async (req, res) => {
       try {
         logger.info(`Attempting /transcribe with mode: ${mode}`);
         if (mode === 'vertex') {
-          text = await transcribeAudioVertex(base64Audio);
+          text = await transcribeAudioVertex(base64Audio, selectedVertexModel);
         } else if (mode === 'gemini') {
-          text = await transcribeAudioGemini(base64Audio, geminiApiKey);
+          text = await transcribeAudioGemini(base64Audio, geminiApiKey, selectedGeminiModel);
         } else if (mode === 'ollama') {
-          text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl);
+          text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl, selectedOllamaModel || status.ollamaStatus?.activeModel);
         }
         success = true;
         break;

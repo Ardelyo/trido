@@ -67,6 +67,15 @@ interface AppStore extends AgentState {
 
   ollamaBaseUrl: string;
   setOllamaBaseUrl: (url: string) => void;
+
+  selectedGeminiModel: string;
+  setSelectedGeminiModel: (model: string) => void;
+
+  selectedOllamaModel: string;
+  setSelectedOllamaModel: (model: string) => void;
+
+  selectedVertexModel: string;
+  setSelectedVertexModel: (model: string) => void;
   
   isViewerUrl: boolean;
   setIsViewerUrl: (v: boolean) => void;
@@ -174,6 +183,18 @@ const getInitialGeminiApiKey = (): string => {
 
 const getInitialOllamaBaseUrl = (): string => {
   return localStorage.getItem('ollama_base_url') || '';
+};
+
+const getInitialSelectedGeminiModel = (): string => {
+  return localStorage.getItem('selected_gemini_model') || 'gemini-3.5-flash-lite';
+};
+
+const getInitialSelectedOllamaModel = (): string => {
+  return localStorage.getItem('selected_ollama_model') || 'gemma4:e2b';
+};
+
+const getInitialSelectedVertexModel = (): string => {
+  return localStorage.getItem('selected_vertex_model') || 'gemma-4-31b-it';
 };
 
 const getInitialLanguage = (): 'id' | 'en' => {
@@ -450,6 +471,24 @@ export const useStore = create<AppStore>((set, get) => ({
   setOllamaBaseUrl: (url) => {
     localStorage.setItem('ollama_base_url', url);
     set({ ollamaBaseUrl: url });
+  },
+
+  selectedGeminiModel: getInitialSelectedGeminiModel(),
+  setSelectedGeminiModel: (model) => {
+    localStorage.setItem('selected_gemini_model', model);
+    set({ selectedGeminiModel: model });
+  },
+
+  selectedOllamaModel: getInitialSelectedOllamaModel(),
+  setSelectedOllamaModel: (model) => {
+    localStorage.setItem('selected_ollama_model', model);
+    set({ selectedOllamaModel: model });
+  },
+
+  selectedVertexModel: getInitialSelectedVertexModel(),
+  setSelectedVertexModel: (model) => {
+    localStorage.setItem('selected_vertex_model', model);
+    set({ selectedVertexModel: model });
   },
 
   isViewerUrl: false,

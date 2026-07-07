@@ -118,7 +118,7 @@ export const generateAgentActions = async (
     completedSteps?: string[];
   }
 ) => {
-  const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
+  const { aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = useStore.getState() as any;
   const apiUrl = (import.meta as any).env.VITE_API_URL || '';
   return requestJson<any>(`${apiUrl}/api/ai/generate`, {
     method: 'POST',
@@ -135,6 +135,9 @@ export const generateAgentActions = async (
       aiPreference,
       geminiApiKey,
       ollamaBaseUrl,
+      selectedGeminiModel,
+      selectedOllamaModel,
+      selectedVertexModel,
       intent,
       forceTools,
       lessonContext
@@ -143,12 +146,12 @@ export const generateAgentActions = async (
 };
 
 export const generateToolContent = async (toolId: string, prompt: string): Promise<any> => {
-  const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
+  const { aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = useStore.getState() as any;
   const apiUrl = (import.meta as any).env.VITE_API_URL || '';
   const data = await requestJson<{ result: any }>(`${apiUrl}/api/ai/tool-content`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl })
+    body: JSON.stringify({ toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel })
   });
 
   return data.result;

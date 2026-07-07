@@ -19,11 +19,12 @@ export const generateAgentActionsOllama = async (
   customUrl?: string,
   intent?: string,
   forceTools?: boolean,
-  lessonContext?: any
+  lessonContext?: any,
+  modelOverride?: string
 ) => {
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   
-  const modelName = process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
+  const modelName = modelOverride || process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
   const capability = getCapability(modelName);
   let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
 
@@ -60,7 +61,7 @@ export const generateAgentActionsOllama = async (
   }
 
   const payload = {
-    model: process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model,
+    model: modelName,
     messages: messages,
     tools: mappedTools,
     stream: false,
@@ -192,7 +193,7 @@ export const generateAgentActionsOllama = async (
   };
 };
 
-export const generateToolContentOllama = async (toolId: string, prompt: string, customUrl?: string): Promise<any> => {
+export const generateToolContentOllama = async (toolId: string, prompt: string, customUrl?: string, modelOverride?: string): Promise<any> => {
   let promptText = "";
   if (toolId === 'mindmap') {
     promptText = `Generate a JSON object for a mind map about: "${prompt}".
@@ -228,7 +229,7 @@ Rules:
   }
 
   const payload = {
-    model: process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model,
+    model: modelOverride || process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model,
     messages: [{ role: "user", content: promptText }],
     stream: false
   };
@@ -263,8 +264,8 @@ Rules:
   }
 };
 
-export const transcribeAudioOllama = async (base64Audio: string, customUrl?: string): Promise<string> => {
-  const model = process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
+export const transcribeAudioOllama = async (base64Audio: string, customUrl?: string, modelOverride?: string): Promise<string> => {
+  const model = modelOverride || process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
   // Only vision-capable models can process audio — for text models, return graceful fallback
   // Ollama doesn't support native audio input yet; we return a localised prompt
   logger.warn(`[Ollama] Audio transcription not natively supported by ${model}. Returning fallback.`);

@@ -4,9 +4,9 @@ import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 const logger = createLogger('ollama-adapter');
 const getOllamaUrl = (customUrl) => customUrl || process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
-export const generateAgentActionsOllama = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, customUrl, intent, forceTools, lessonContext) => {
+export const generateAgentActionsOllama = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, customUrl, intent, forceTools, lessonContext, modelOverride) => {
     const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const modelName = process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
+    const modelName = modelOverride || process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
     const capability = getCapability(modelName);
     let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
     // Add intent context to system prompt
@@ -37,7 +37,7 @@ export const generateAgentActionsOllama = async (prompt, canvasImageBase64, canv
         messages[messages.length - 1].images.push(highResInputImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, ""));
     }
     const payload = {
-        model: process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model,
+        model: modelName,
         messages: messages,
         tools: mappedTools,
         stream: false,
@@ -174,7 +174,7 @@ export const generateAgentActionsOllama = async (prompt, canvasImageBase64, canv
         validationErrors: validation.errors
     };
 };
-export const generateToolContentOllama = async (toolId, prompt, customUrl) => {
+export const generateToolContentOllama = async (toolId, prompt, customUrl, modelOverride) => {
     let promptText = "";
     if (toolId === 'mindmap') {
         promptText = `Generate a JSON object for a mind map about: "${prompt}".
@@ -212,7 +212,7 @@ Rules:
     Format your response in Markdown. Text: "${prompt}"`;
     }
     const payload = {
-        model: process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model,
+        model: modelOverride || process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model,
         messages: [{ role: "user", content: promptText }],
         stream: false
     };
@@ -242,8 +242,8 @@ Rules:
         return null;
     }
 };
-export const transcribeAudioOllama = async (base64Audio, customUrl) => {
-    const model = process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
+export const transcribeAudioOllama = async (base64Audio, customUrl, modelOverride) => {
+    const model = modelOverride || process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
     // Only vision-capable models can process audio — for text models, return graceful fallback
     // Ollama doesn't support native audio input yet; we return a localised prompt
     logger.warn(`[Ollama] Audio transcription not natively supported by ${model}. Returning fallback.`);

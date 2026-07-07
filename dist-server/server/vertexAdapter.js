@@ -15,10 +15,11 @@ const getVertexClient = () => {
     }
     return vertexClient;
 };
-export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, intent, forceTools, lessonContext) => {
+export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, intent, forceTools, lessonContext, modelOverride) => {
     const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const capability = getCapability(CONFIG.ai.vertex.model);
+    const selectedModel = modelOverride || CONFIG.ai.vertex.model;
+    const capability = getCapability(selectedModel);
     let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
     // Add intent context to system prompt
     const intentInstruction = intent === 'question'
@@ -44,7 +45,7 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
     const isCreationRequest = forceTools !== undefined ? forceTools : /buat|create|gambar|draw|add|tambah/i.test(prompt);
     const vertex = getVertexClient();
     const model = vertex.getGenerativeModel({
-        model: CONFIG.ai.vertex.model,
+        model: selectedModel,
         generationConfig: {
             temperature: CONFIG.ai.vertex.generation.temperature,
             maxOutputTokens: CONFIG.ai.vertex.generation.maxOutputTokens,
@@ -90,8 +91,8 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
         validationErrors: validation.errors
     };
 };
-export const generateToolContentVertex = async (toolId, prompt) => {
-    const modelName = CONFIG.ai.vertex.model;
+export const generateToolContentVertex = async (toolId, prompt, modelOverride) => {
+    const modelName = modelOverride || CONFIG.ai.vertex.model;
     let promptText = "";
     if (toolId === 'mindmap') {
         promptText = `Generate a JSON object for a mind map about: "${prompt}".
@@ -148,10 +149,10 @@ Rules:
         return null;
     }
 };
-export const transcribeAudioVertex = async (base64Audio) => {
+export const transcribeAudioVertex = async (base64Audio, modelOverride) => {
     const vertex = getVertexClient();
     const model = vertex.getGenerativeModel({
-        model: CONFIG.ai.vertex.model,
+        model: modelOverride || CONFIG.ai.vertex.model,
         generationConfig: { temperature: 0.1 }
     });
     const result = await model.generateContent({

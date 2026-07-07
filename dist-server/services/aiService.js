@@ -76,7 +76,7 @@ const requestJson = async (url, init, retries = CONFIG.ai.request.retryCount) =>
     throw new AiServiceError('Permintaan AI gagal setelah beberapa percobaan.', 'server_error', 500, false);
 };
 export const generateAgentActions = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, intent, forceTools, lessonContext) => {
-    const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
+    const { aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = useStore.getState();
     const apiUrl = import.meta.env.VITE_API_URL || '';
     return requestJson(`${apiUrl}/api/ai/generate`, {
         method: 'POST',
@@ -93,6 +93,9 @@ export const generateAgentActions = async (prompt, canvasImageBase64, canvasObje
             aiPreference,
             geminiApiKey,
             ollamaBaseUrl,
+            selectedGeminiModel,
+            selectedOllamaModel,
+            selectedVertexModel,
             intent,
             forceTools,
             lessonContext
@@ -100,12 +103,12 @@ export const generateAgentActions = async (prompt, canvasImageBase64, canvasObje
     });
 };
 export const generateToolContent = async (toolId, prompt) => {
-    const { aiPreference, geminiApiKey, ollamaBaseUrl } = useStore.getState();
+    const { aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = useStore.getState();
     const apiUrl = import.meta.env.VITE_API_URL || '';
     const data = await requestJson(`${apiUrl}/api/ai/tool-content`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl })
+        body: JSON.stringify({ toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel })
     });
     return data.result;
 };

@@ -33,12 +33,14 @@ export const generateAgentActionsVertex = async (
   domElements: Record<string, any> = {},
   intent?: string,
   forceTools?: boolean,
-  lessonContext?: any
+  lessonContext?: any,
+  modelOverride?: string
 ) => {
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
-  const capability = getCapability(CONFIG.ai.vertex.model);
+  const selectedModel = modelOverride || CONFIG.ai.vertex.model;
+  const capability = getCapability(selectedModel);
   let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
 
   // Add intent context to system prompt
@@ -69,7 +71,7 @@ export const generateAgentActionsVertex = async (
 
   const vertex = getVertexClient();
   const model = vertex.getGenerativeModel({
-    model: CONFIG.ai.vertex.model,
+    model: selectedModel,
     generationConfig: {
       temperature: CONFIG.ai.vertex.generation.temperature,
       maxOutputTokens: CONFIG.ai.vertex.generation.maxOutputTokens,
@@ -123,8 +125,8 @@ export const generateAgentActionsVertex = async (
   };
 };
 
-export const generateToolContentVertex = async (toolId: string, prompt: string): Promise<any> => {
-  const modelName = CONFIG.ai.vertex.model;
+export const generateToolContentVertex = async (toolId: string, prompt: string, modelOverride?: string): Promise<any> => {
+  const modelName = modelOverride || CONFIG.ai.vertex.model;
   let promptText = "";
   
   if (toolId === 'mindmap') {
@@ -182,10 +184,10 @@ Rules:
   }
 };
 
-export const transcribeAudioVertex = async (base64Audio: string): Promise<string> => {
+export const transcribeAudioVertex = async (base64Audio: string, modelOverride?: string): Promise<string> => {
   const vertex = getVertexClient();
   const model = vertex.getGenerativeModel({
-    model: CONFIG.ai.vertex.model,
+    model: modelOverride || CONFIG.ai.vertex.model,
     generationConfig: { temperature: 0.1 }
   });
 

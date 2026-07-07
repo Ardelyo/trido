@@ -39,6 +39,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     aiPreference, setAiPreference,
     geminiApiKey, setGeminiApiKey,
     ollamaBaseUrl, setOllamaBaseUrl,
+    selectedGeminiModel, setSelectedGeminiModel,
+    selectedOllamaModel, setSelectedOllamaModel,
+    selectedVertexModel, setSelectedVertexModel,
     theme, toggleTheme,
     userName, setUserName,
     language, setLanguage,
@@ -47,6 +50,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   // Local state — only commit to store/localStorage on Save
   const [localKey, setLocalKey] = useState(geminiApiKey);
   const [localOllamaUrl, setLocalOllamaUrl] = useState(ollamaBaseUrl || 'http://localhost:11434');
+  const [localGeminiModel, setLocalGeminiModel] = useState(selectedGeminiModel);
+  const [localOllamaModel, setLocalOllamaModel] = useState(selectedOllamaModel);
+  const [localVertexModel, setLocalVertexModel] = useState(selectedVertexModel);
   const [localName, setLocalName] = useState(userName);
   const [localAiPref, setLocalAiPref] = useState(aiPreference);
   const [localLang, setLocalLang] = useState(language);
@@ -63,7 +69,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
       const res = await fetch('/api/ai/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geminiApiKey: localKey, ollamaBaseUrl: localOllamaUrl })
+        body: JSON.stringify({ 
+          geminiApiKey: localKey, 
+          ollamaBaseUrl: localOllamaUrl,
+          selectedOllamaModel: localOllamaModel 
+        })
       });
       const data = await res.json();
       setAiStatus(data.online !== false && data.mode !== 'unavailable' ? 'online' : 'offline');
@@ -75,11 +85,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   const handleSave = () => {
     setGeminiApiKey(localKey);
     setOllamaBaseUrl(localOllamaUrl);
+    setSelectedGeminiModel(localGeminiModel);
+    setSelectedOllamaModel(localOllamaModel);
+    setSelectedVertexModel(localVertexModel);
     setUserName(localName);
     setAiPreference(localAiPref);
     setLanguage(localLang);
     localStorage.setItem('gemini_api_key', localKey);
     localStorage.setItem('ollama_base_url', localOllamaUrl);
+    localStorage.setItem('selected_gemini_model', localGeminiModel);
+    localStorage.setItem('selected_ollama_model', localOllamaModel);
+    localStorage.setItem('selected_vertex_model', localVertexModel);
     localStorage.setItem('trido_user_name', localName);
     localStorage.setItem('ai_preference', localAiPref);
     localStorage.setItem('trido_sound', soundEnabled ? 'on' : 'off');
@@ -97,6 +113,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
 
   const isGeminiMode = localAiPref === 'gemini' || localAiPref === 'auto';
   const isOllamaMode = localAiPref === 'ollama' || localAiPref === 'auto';
+  const isVertexMode = localAiPref === 'vertex' || localAiPref === 'auto';
 
   return (
     <motion.div
@@ -197,56 +214,113 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
               </div>
             </Field>
 
-            {/* Gemini Key */}
+            {/* Gemini Key & Model */}
             {isGeminiMode && (
-              <Field
-                label={t('geminiApiKey', 'Kunci API Gemini')}
-                hint={t('geminiApiKeyHint', 'Kunci disimpan di browser Anda saja — tidak pernah dikirim ke server kami. Model: gemma-4-31b-it')}
-              >
-                <div className="relative">
-                  <Key size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type={showKey ? 'text' : 'password'}
-                    value={localKey}
-                    onChange={e => setLocalKey(e.target.value)}
-                    placeholder="AIzaSy..."
-                    className={`${inputCls} pl-10 pr-10`}
-                  />
-                  <button
-                    onClick={() => setShowKey(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-                <a
-                  href="https://aistudio.google.com/apikey"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:underline mt-1"
+              <>
+                <Field
+                  label={t('geminiApiKey', 'Kunci API Gemini')}
+                  hint={t('geminiApiKeyHint', 'Kunci disimpan di browser Anda saja — tidak pernah dikirim ke server kami.')}
                 >
-                  <ExternalLink size={11} /> {t('getFreeApiKey', 'Dapatkan kunci API gratis di Google AI Studio')}
-                </a>
+                  <div className="relative">
+                    <Key size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type={showKey ? 'text' : 'password'}
+                      value={localKey}
+                      onChange={e => setLocalKey(e.target.value)}
+                      placeholder="AIzaSy..."
+                      className={`${inputCls} pl-10 pr-10`}
+                    />
+                    <button
+                      onClick={() => setShowKey(v => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:underline mt-1"
+                  >
+                    <ExternalLink size={11} /> {t('getFreeApiKey', 'Dapatkan kunci API gratis di Google AI Studio')}
+                  </a>
+                </Field>
+
+                <Field
+                  label={t('geminiModel', 'Model Gemini / Gemma')}
+                  hint={t('geminiModelHint', 'Pilih model yang ingin digunakan saat terhubung ke Google AI Cloud.')}
+                >
+                  <select
+                    value={localGeminiModel}
+                    onChange={e => setLocalGeminiModel(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Default - Recommended)</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Capable)</option>
+                    <option value="gemini-2.5-pro">gemini-2.5-pro (High Intelligence)</option>
+                    <option value="gemma-2-27b-it">gemma-2-27b-it (Open Weights)</option>
+                    <option value="gemma-2-9b-it">gemma-2-9b-it (Lightweight Open Weights)</option>
+                  </select>
+                </Field>
+              </>
+            )}
+
+            {/* Vertex AI Model */}
+            {isVertexMode && (
+              <Field
+                label={t('vertexModel', 'Model Vertex AI')}
+                hint={t('vertexModelHint', 'Pilih model Vertex AI yang digunakan di Google Cloud Project Anda. Project ID dan lokasi dikonfigurasi melalui variabel lingkungan server.')}
+              >
+                <select
+                  value={localVertexModel}
+                  onChange={e => setLocalVertexModel(e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="gemma-4-31b-it">gemma-4-31b-it (Next-gen Gemma 4 31B)</option>
+                  <option value="gemma-2-27b-it">gemma-2-27b-it (Gemma 2 27B)</option>
+                  <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Capable)</option>
+                  <option value="gemini-2.5-pro">gemini-2.5-pro (High Intelligence)</option>
+                </select>
               </Field>
             )}
 
-            {/* Ollama URL */}
+            {/* Ollama URL & Model */}
             {isOllamaMode && (
-              <Field
-                label={t('localOllamaUrl', 'URL Ollama Lokal')}
-                hint={t('ollamaUrlHint', 'Pastikan Ollama berjalan dan model gemma4:e2b sudah diunduh (ollama pull gemma4:e2b)')}
-              >
-                <div className="relative">
-                  <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={localOllamaUrl}
-                    onChange={e => setLocalOllamaUrl(e.target.value)}
-                    placeholder="http://localhost:11434"
-                    className={`${inputCls} pl-10`}
-                  />
-                </div>
-              </Field>
+              <>
+                <Field
+                  label={t('localOllamaUrl', 'URL Ollama Lokal')}
+                  hint={t('ollamaUrlHint', 'Pastikan Ollama berjalan di latar belakang.')}
+                >
+                  <div className="relative">
+                    <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={localOllamaUrl}
+                      onChange={e => setLocalOllamaUrl(e.target.value)}
+                      placeholder="http://localhost:11434"
+                      className={`${inputCls} pl-10`}
+                    />
+                  </div>
+                </Field>
+
+                <Field
+                  label={t('ollamaModel', 'Model Ollama Lokal')}
+                  hint={t('ollamaModelHint', 'Pilih model Ollama lokal Anda. Pastikan model yang dipilih telah diunduh menggunakan perintah: ollama pull [nama-model]')}
+                >
+                  <select
+                    value={localOllamaModel}
+                    onChange={e => setLocalOllamaModel(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="gemma4:31b">gemma4:31b (Gemma 4 31B IT - Recommended Offline)</option>
+                    <option value="gemma-4-31b-it">gemma-4-31b-it (Gemma 4 31B Alternate Name)</option>
+                    <option value="gemma4:e2b">gemma4:e2b (Lightweight Gemma 4 - Default)</option>
+                    <option value="gemma:7b">gemma:7b (Gemma 1.1 7B)</option>
+                    <option value="gemma:2b">gemma:2b (Gemma 1.1 2B)</option>
+                  </select>
+                </Field>
+              </>
             )}
 
             {/* Connection Test */}
