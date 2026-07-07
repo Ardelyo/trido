@@ -25,7 +25,7 @@ export const generateAgentActionsGemini = async (
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
-  const selectedModel = modelOverride || CONFIG.ai.gemini.model;
+  const selectedModel = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
   const capability = getCapability(selectedModel);
   let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
 
@@ -111,7 +111,7 @@ export const generateAgentActionsGemini = async (
 };
 
 export const generateToolContentGemini = async (toolId: string, prompt: string, customKey?: string, modelOverride?: string): Promise<any> => {
-  const model = modelOverride || CONFIG.ai.gemini.model;
+  const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
   let promptText = "";
   
   if (toolId === 'mindmap') {
@@ -167,7 +167,7 @@ Rules:
 };
 
 export const transcribeAudioGemini = async (base64Audio: string, customKey?: string, modelOverride?: string): Promise<string> => {
-  const model = modelOverride || CONFIG.ai.gemini.model;
+  const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
   const ai = getAiClient(customKey);
   const response = await ai.models.generateContent({
     model: model,

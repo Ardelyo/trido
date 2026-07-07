@@ -62,6 +62,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
 
   // AI status probe
   const [aiStatus, setAiStatus] = useState<'checking' | 'online' | 'offline' | null>(null);
+  const [serverEnvGeminiModel, setServerEnvGeminiModel] = useState<string | null>(null);
 
   const handleProbe = async () => {
     setAiStatus('checking');
@@ -77,10 +78,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
       });
       const data = await res.json();
       setAiStatus(data.online !== false && data.mode !== 'unavailable' ? 'online' : 'offline');
+      if (data.envGeminiModel) {
+        setServerEnvGeminiModel(data.envGeminiModel);
+        // If the local model is still the default, and we have a server env model override, let's sync it!
+        if (localGeminiModel === 'gemini-3.5-flash-lite') {
+          setLocalGeminiModel(data.envGeminiModel);
+        }
+      }
     } catch {
       setAiStatus('offline');
     }
   };
+
+  useEffect(() => {
+    handleProbe();
+  }, []);
 
   const handleSave = () => {
     setGeminiApiKey(localKey);
@@ -257,10 +269,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     className={inputCls}
                   >
                     <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Default - Recommended)</option>
+                    <option value="gemini-3.5-flash">gemini-3.5-flash (High Intelligence)</option>
+                    <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra-fast)</option>
                     <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Capable)</option>
                     <option value="gemini-2.5-pro">gemini-2.5-pro (High Intelligence)</option>
                     <option value="gemma-2-27b-it">gemma-2-27b-it (Open Weights)</option>
                     <option value="gemma-2-9b-it">gemma-2-9b-it (Lightweight Open Weights)</option>
+                    {serverEnvGeminiModel && 
+                     serverEnvGeminiModel !== 'gemini-3.5-flash-lite' && 
+                     serverEnvGeminiModel !== 'gemini-3.5-flash' && 
+                     serverEnvGeminiModel !== 'gemini-3.1-flash-lite' && 
+                     serverEnvGeminiModel !== 'gemini-2.5-flash' && 
+                     serverEnvGeminiModel !== 'gemini-2.5-pro' && 
+                     serverEnvGeminiModel !== 'gemma-2-27b-it' && 
+                     serverEnvGeminiModel !== 'gemma-2-9b-it' && (
+                      <option value={serverEnvGeminiModel}>{serverEnvGeminiModel} (Environment Override)</option>
+                    )}
                   </select>
                 </Field>
               </>

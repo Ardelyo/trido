@@ -23,6 +23,18 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
+  'gemini-3.5-flash': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 15,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.7
+  },
+  'gemini-3.1-flash-lite': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 15,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.7
+  },
   'gemini-2.0-flash-exp': {
     supportsComplexSchema: true,
     maxToolCallsPerRequest: 15,
@@ -44,7 +56,13 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
 };
 
 export const getCapability = (modelName: string): ModelCapability => {
-  return MODEL_CAPABILITIES[modelName] || MODEL_CAPABILITIES['gemma-4-31b-it'];
+  if (MODEL_CAPABILITIES[modelName]) {
+    return MODEL_CAPABILITIES[modelName];
+  }
+  if (modelName.startsWith('gemini-')) {
+    return MODEL_CAPABILITIES['gemini-3.5-flash-lite'];
+  }
+  return MODEL_CAPABILITIES['gemma-4-31b-it'];
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

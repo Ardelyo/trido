@@ -53,6 +53,7 @@ const getPreferredAutoMode = (): AiMode => {
 
 const getOllamaUrl = () => process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
 const getOllamaModel = () => process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
+const getGeminiModel = () => process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
 
 // ── Status probe cache (TTL: 15s) ────────────────────────────────────────────
 // Prevents triple-probe (Gemini + Ollama + Vertex) on every /generate request.
@@ -127,6 +128,7 @@ const _getAvailableMode = async (
   ollamaStatus?: { online: boolean; hasModel: boolean; models: string[]; activeModel?: string };
   geminiStatus?: { online: boolean; reason: string };
   vertexStatus?: { online: boolean; reason: string };
+  envGeminiModel?: string | null;
 }> => {
   const configuredMode = getConfiguredMode();
   const gemini = await probeGemini(customGeminiKey);
@@ -140,22 +142,22 @@ const _getAvailableMode = async (
   const preferredMode = configuredMode === 'auto' ? getPreferredAutoMode() : configuredMode;
 
   if (preferredMode === 'vertex' && vertex.online) {
-    return { mode: 'vertex', model: CONFIG.ai.vertex.model, online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
+    return { mode: 'vertex', model: CONFIG.ai.vertex.model, online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo, envGeminiModel: process.env.GEMINI_MODEL || null };
   }
 
   if (preferredMode === 'gemini') {
     const key = customGeminiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (gemini.online || key) {
-      return { mode: 'gemini', model: CONFIG.ai.gemini.model, online: gemini.online, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
+      return { mode: 'gemini', model: getGeminiModel(), online: gemini.online, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo, envGeminiModel: process.env.GEMINI_MODEL || null };
     }
     if (ollama.online && ollama.hasRequiredModel) {
-      return { mode: 'ollama', model: ollama.activeModel || getOllamaModel(), online: true, reason: 'cloud_key_missing_using_local', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
+      return { mode: 'ollama', model: ollama.activeModel || getOllamaModel(), online: true, reason: 'cloud_key_missing_using_local', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo, envGeminiModel: process.env.GEMINI_MODEL || null };
     }
-    return { mode: 'unavailable', model: CONFIG.ai.gemini.model, online: false, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
+    return { mode: 'unavailable', model: getGeminiModel(), online: false, reason: gemini.reason, geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo, envGeminiModel: process.env.GEMINI_MODEL || null };
   }
 
   if (ollama.online && ollama.hasRequiredModel) {
-    return { mode: 'ollama', model: ollama.activeModel || getOllamaModel(), online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo };
+    return { mode: 'ollama', model: ollama.activeModel || getOllamaModel(), online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo, envGeminiModel: process.env.GEMINI_MODEL || null };
   }
   return {
     mode: 'unavailable',
@@ -164,7 +166,8 @@ const _getAvailableMode = async (
     reason: ollama.online ? 'model_missing' : ollama.reason,
     geminiStatus: geminiInfo,
     ollamaStatus: ollamaInfo,
-    vertexStatus: vertexInfo
+    vertexStatus: vertexInfo,
+    envGeminiModel: process.env.GEMINI_MODEL || null
   };
 };
 
