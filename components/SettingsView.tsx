@@ -273,6 +273,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra-fast)</option>
                     <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Capable)</option>
                     <option value="gemini-2.5-pro">gemini-2.5-pro (High Intelligence)</option>
+                    <option value="gemma-4-31b-it">gemma-4-31b-it (Next-gen Gemma 4 31B)</option>
                     <option value="gemma-2-27b-it">gemma-2-27b-it (Open Weights)</option>
                     <option value="gemma-2-9b-it">gemma-2-9b-it (Lightweight Open Weights)</option>
                     {serverEnvGeminiModel && 
@@ -281,6 +282,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                      serverEnvGeminiModel !== 'gemini-3.1-flash-lite' && 
                      serverEnvGeminiModel !== 'gemini-2.5-flash' && 
                      serverEnvGeminiModel !== 'gemini-2.5-pro' && 
+                     serverEnvGeminiModel !== 'gemma-4-31b-it' && 
                      serverEnvGeminiModel !== 'gemma-2-27b-it' && 
                      serverEnvGeminiModel !== 'gemma-2-9b-it' && (
                       <option value={serverEnvGeminiModel}>{serverEnvGeminiModel} (Environment Override)</option>
