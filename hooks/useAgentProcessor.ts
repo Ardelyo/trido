@@ -341,8 +341,8 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
 
                   const path = new window.fabric.Path(pathStr, {
                      fill: 'transparent',
-                     stroke: '#6366F1',
-                     strokeWidth: 2.5,
+                     stroke: strokeColor || '#3B82F6',
+                     strokeWidth: 2,
                      strokeLineCap: 'round',
                      id: `path_${Date.now()}`
                   });
@@ -359,7 +359,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                     const ay2 = ty - aLen * Math.sin(angle + 0.4);
                     const head = new window.fabric.Polygon(
                       [{ x: tx, y: ty }, { x: ax1, y: ay1 }, { x: ax2, y: ay2 }],
-                      { fill: '#6366F1', stroke: 'transparent', strokeWidth: 0, id: `arrow_${Date.now()}`, selectable: false, evented: false }
+                      { fill: strokeColor || '#3B82F6', stroke: 'transparent', strokeWidth: 0, id: `arrow_${Date.now()}`, selectable: false, evented: false }
                     );
                     canvas.add(head);
                     canvas.sendToBack(head);
