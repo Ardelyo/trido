@@ -70,8 +70,8 @@ export const generateAgentActionsVertex = async (
   const isCreationRequest = forceTools !== undefined ? forceTools : /buat|create|gambar|draw|add|tambah/i.test(prompt);
 
   const vertex = getVertexClient();
-  const model = vertex.getGenerativeModel({
-    model: selectedModel,
+  const createModelInstance = (targetModel: string) => vertex.getGenerativeModel({
+    model: targetModel,
     generationConfig: {
       temperature: CONFIG.ai.vertex.generation.temperature,
       maxOutputTokens: CONFIG.ai.vertex.generation.maxOutputTokens,
@@ -88,7 +88,20 @@ export const generateAgentActionsVertex = async (
     }
   });
 
-  const result = await model.generateContent({ contents: contents as any });
+  let result;
+  try {
+    const model = createModelInstance(selectedModel);
+    result = await model.generateContent({ contents: contents as any });
+  } catch (error: any) {
+    if (error?.message?.includes('404') && selectedModel !== 'gemini-2.5-flash') {
+      logger.warn(`Model ${selectedModel} not found (404) on Vertex AI. Falling back to gemini-2.5-flash.`);
+      const fallbackModel = createModelInstance('gemini-2.5-flash');
+      result = await fallbackModel.generateContent({ contents: contents as any });
+    } else {
+      throw error;
+    }
+  }
+
   const response = result.response;
   
   const candidate = response.candidates?.[0];
@@ -163,14 +176,29 @@ Rules:
   }
 
   const vertex = getVertexClient();
-  const model = vertex.getGenerativeModel({
-    model: modelName,
-    generationConfig: { temperature: CONFIG.ai.vertex.generation.temperature }
-  });
-
-  const result = await model.generateContent({
-    contents: [{ role: 'user', parts: [{ text: promptText }] }] as any
-  });
+  let result;
+  try {
+    const model = vertex.getGenerativeModel({
+      model: modelName,
+      generationConfig: { temperature: CONFIG.ai.vertex.generation.temperature }
+    });
+    result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: promptText }] }] as any
+    });
+  } catch (error: any) {
+    if (error?.message?.includes('404') && modelName !== 'gemini-2.5-flash') {
+      logger.warn(`Model ${modelName} not found (404) on Vertex AI tool-content. Falling back to gemini-2.5-flash.`);
+      const fallbackModel = vertex.getGenerativeModel({
+        model: 'gemini-2.5-flash',
+        generationConfig: { temperature: CONFIG.ai.vertex.generation.temperature }
+      });
+      result = await fallbackModel.generateContent({
+        contents: [{ role: 'user', parts: [{ text: promptText }] }] as any
+      });
+    } else {
+      throw error;
+    }
+  }
 
   const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text || "";
   if (toolId === 'summary') return text;

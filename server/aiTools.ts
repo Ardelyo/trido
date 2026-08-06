@@ -566,6 +566,7 @@ export const extractThinking = (response: any): string => {
 
   const text = response?.text || response?.content || '';
   const patterns = [
+    /<\|channel>thought\s*([\s\S]*?)<channel\|>/,
     /<thought>(.*?)<\/thought>/s,
     /```thinking\n(.*?)\n```/s,
     /\[THINKING\](.*?)\[\/THINKING\]/s,
