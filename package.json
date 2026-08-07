@@ -94,6 +94,8 @@
     "idb-keyval": "^6.2.2",
     "lucide-react": "^1.8.0",
     "motion": "^12.38.0",
+    "pdf-lib": "^1.17.1",
+    "puppeteer": "^25.5.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-markdown": "^10.1.0",

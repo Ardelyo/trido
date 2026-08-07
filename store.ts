@@ -174,7 +174,7 @@ const getInitialAiPreference = (): AiPreference => {
   const saved = localStorage.getItem('ai_preference');
   return (saved === 'gemini' || saved === 'ollama' || saved === 'vertex' || saved === 'auto') 
     ? (saved as AiPreference) 
-    : 'auto';
+    : 'vertex';
 };
 
 const getInitialGeminiApiKey = (): string => {

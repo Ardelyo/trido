@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CanvasObjectData } from "../types";
-import { tools, buildSystemInstruction, validateFunctionCalls, ViewportBounds, extractThinking, getCapability } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, ViewportBounds, extractThinking, getCapability } from "./aiTools.js";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 

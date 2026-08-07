@@ -145,6 +145,10 @@ const _getAvailableMode = async (
     return { mode: 'vertex', model: CONFIG.ai.vertex.model, online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo, envGeminiModel: process.env.GEMINI_MODEL || null };
   }
 
+  if (vertex.online) {
+    return { mode: 'vertex', model: CONFIG.ai.vertex.model, online: true, reason: 'ok', geminiStatus: geminiInfo, ollamaStatus: ollamaInfo, vertexStatus: vertexInfo, envGeminiModel: process.env.GEMINI_MODEL || null };
+  }
+
   if (preferredMode === 'gemini') {
     const key = customGeminiKey || process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (gemini.online || key) {
@@ -361,7 +365,8 @@ aiRouter.post("/generate", async (req, res) => {
     }
 
     if (!success) {
-      throw lastError || new Error("Semua penyedia AI yang dikonfigurasi gagal memproses permintaan.");
+      const errDetail = lastError?.message ? ` (${lastError.message})` : '';
+      throw lastError || new Error(`Semua penyedia AI yang dikonfigurasi gagal memproses permintaan.${errDetail}`);
     }
 
     res.json(result);
