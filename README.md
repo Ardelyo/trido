@@ -64,8 +64,8 @@ It works when you're offline. It works with a slow connection. It works with a $
 ### Install
 
 ```bash
-git clone https://github.com/Ardelyo/smartboard-teach-ai
-cd smartboard-teach-ai
+git clone https://github.com/Ardelyo/trido
+cd trido
 npm install
 cp .env.example .env
 ```
@@ -120,7 +120,7 @@ Set `AI_MODE=ollama` in your `.env` and the app switches automatically. No inter
 ## Project Structure
 
 ```
-smartboard-teach-ai/
+trido/
 ├── App.tsx                    # Root component + routing
 ├── store.ts                   # Zustand global state
 ├── types.ts                   # TypeScript interfaces
@@ -250,7 +250,9 @@ The technology — Gemma 4, function calling, Fabric.js, Socket.IO — is the sc
 
 ## License
 
-MIT. Use it, fork it, build on it. If you build something for educators, tell us about it.
+- **Code & Software:** Licensed under the [MIT License](LICENSE).
+- **Documentation, Writeups & Competition Deliverables:** Licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) License.
+- **AI Models:** Gemma 4 models are subject to the [Gemma Open Model Terms of Use](https://ai.google.dev/gemma/terms).
 
 ---
 

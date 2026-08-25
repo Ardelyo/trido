@@ -95,7 +95,7 @@ CMD ["npm", "start"]
 ### Build Docker Image
 
 ```bash
-docker build -t smartboard-teach-ai:latest .
+docker build -t trido:latest .
 ```
 
 ### Run Container Locally
@@ -104,7 +104,7 @@ docker build -t smartboard-teach-ai:latest .
 docker run -p 3000:3000 \
   -e VITE_GEMINI_API_KEY=your_key \
   -e NODE_ENV=production \
-  smartboard-teach-ai:latest
+  trido:latest
 ```
 
 Access at `http://localhost:3000`.
@@ -187,7 +187,7 @@ To deploy successfully:
 
 ```bash
 # Push Docker image to Azure Container Registry
-az acr build --registry myregistry --image smartboard-teach-ai:latest .
+az acr build --registry myregistry --image trido:latest .
 
 # Create App Service
 az appservice plan create \
@@ -199,7 +199,7 @@ az webapp create \
   --resource-group mygroup \
   --plan smartboard-plan \
   --name smartboard-app \
-  --deployment-container-image-name myregistry.azurecr.io/smartboard-teach-ai:latest
+  --deployment-container-image-name myregistry.azurecr.io/trido:latest
 
 # Configure environment variables
 az webapp config appsettings set \
@@ -214,7 +214,7 @@ az webapp config appsettings set \
 2. Connect App Service to GitHub:
    ```bash
    az webapp deployment github-actions add \
-     --repo YourUsername/smartboard-teach-ai \
+     --repo YourUsername/trido \
      --resource-group mygroup \
      --name smartboard-app
    ```
@@ -224,11 +224,11 @@ az webapp config appsettings set \
 
 ```bash
 # Build and push to Google Container Registry
-gcloud builds submit --tag gcr.io/PROJECT_ID/smartboard-teach-ai
+gcloud builds submit --tag gcr.io/PROJECT_ID/trido
 
 # Deploy
-gcloud run deploy smartboard-teach-ai \
-  --image gcr.io/PROJECT_ID/smartboard-teach-ai \
+gcloud run deploy trido \
+  --image gcr.io/PROJECT_ID/trido \
   --platform managed \
   --region us-central1 \
   --set-env-vars VITE_GEMINI_API_KEY=your_key,NODE_ENV=production \
@@ -240,13 +240,13 @@ gcloud run deploy smartboard-teach-ai \
 
 ```bash
 # Create ECR repository
-aws ecr create-repository --repository-name smartboard-teach-ai
+aws ecr create-repository --repository-name trido
 
 # Build and push
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com
-docker build -t smartboard-teach-ai:latest .
-docker tag smartboard-teach-ai:latest YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/smartboard-teach-ai:latest
-docker push YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/smartboard-teach-ai:latest
+docker build -t trido:latest .
+docker tag trido:latest YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/trido:latest
+docker push YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/trido:latest
 
 # Create ECS task definition (save as task-definition.json)
 # Then register it
@@ -480,10 +480,10 @@ If a deployment goes wrong:
 
 ```bash
 # Keep previous Docker image tagged
-docker tag smartboard-teach-ai:latest smartboard-teach-ai:v1.2.0
+docker tag trido:latest trido:v1.2.0
 
 # Deploy previous version
-docker run -p 3000:3000 smartboard-teach-ai:v1.2.0
+docker run -p 3000:3000 trido:v1.2.0
 ```
 
 For cloud platforms:

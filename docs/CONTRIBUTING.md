@@ -12,7 +12,7 @@ Be respectful. We're building a tool for educators; let's keep it constructive a
 
 ```bash
 git clone <repo>
-cd smartboard-teach-ai
+cd trido
 npm install
 ```
 

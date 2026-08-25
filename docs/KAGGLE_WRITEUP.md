@@ -143,9 +143,17 @@ But none of that is more important than keeping Pak Damar in the loop. He's not 
 
 ## Resources
 
-- **Code:** [github.com/Ardelyo/smartboard-teach-ai](https://github.com/Ardelyo/smartboard-teach-ai)
+- **Code:** [github.com/Ardelyo/trido](https://github.com/Ardelyo/trido)
 - **Live Demo:** [trido.vercel.app](https://trido.vercel.app)
 - **Video:** [YouTube — Trido Classroom Demo](https://youtube.com)
+
+---
+
+## License & Open Source Attribution
+
+- **Source Code:** [MIT License](https://github.com/Ardelyo/trido/blob/main/LICENSE)
+- **Writeup & Competition Materials:** [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
+- **Model Usage:** [Gemma Open Model Terms of Use](https://ai.google.dev/gemma/terms)
 
 ---
 
