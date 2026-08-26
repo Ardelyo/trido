@@ -1,6 +1,6 @@
 import { GoogleGenAI, FunctionCallingConfigMode } from "@google/genai";
 import { CanvasObjectData } from "../types";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, ViewportBounds, getCapability } from "./aiTools.js";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, ViewportBounds, getCapability } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 

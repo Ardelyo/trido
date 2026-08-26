@@ -1,27 +1,69 @@
-import { VertexAI } from "@google-cloud/vertexai";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools";
-import { CONFIG } from "../constants";
-import { createLogger } from "../utils/logger";
+import { GoogleAuth } from 'google-auth-library';
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from './aiTools.js';
+import { CONFIG } from '../constants';
+import { createLogger } from '../utils/logger';
 const logger = createLogger('vertex-adapter');
-let vertexClient = null;
-const getVertexClient = () => {
-    if (!vertexClient) {
-        const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID;
-        const location = process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEX_LOCATION || CONFIG.ai.vertex.location;
-        if (!projectId) {
-            logger.error("GOOGLE_CLOUD_PROJECT is not set for Vertex AI");
+let authClient = null;
+const getAuthClient = () => {
+    if (!authClient) {
+        let credentials = undefined;
+        if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+            try {
+                credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+            }
+            catch (e) {
+                logger.error('Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON', e);
+            }
         }
-        vertexClient = new VertexAI({ project: projectId || 'dummy', location });
+        else if (process.env.GCP_SERVICE_ACCOUNT_KEY) {
+            try {
+                credentials = JSON.parse(process.env.GCP_SERVICE_ACCOUNT_KEY);
+            }
+            catch (e) {
+                logger.error('Failed to parse GCP_SERVICE_ACCOUNT_KEY', e);
+            }
+        }
+        authClient = new GoogleAuth({
+            ...(credentials ? { credentials } : {}),
+            scopes: ['https://www.googleapis.com/auth/cloud-platform']
+        });
     }
-    return vertexClient;
+    return authClient;
 };
+async function callVertexRestApi(projectId, location, modelName, payload) {
+    const auth = getAuthClient();
+    const client = await auth.getClient();
+    const tokenResponse = await client.getAccessToken();
+    const token = tokenResponse.token;
+    // Use global or specific location host
+    const host = location === 'global' ? 'aiplatform.googleapis.com' : `${location}-aiplatform.googleapis.com`;
+    const url = `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        const errorMsg = data.error?.message || response.statusText;
+        const error = new Error(errorMsg);
+        error.status = response.status;
+        error.code = data.error?.code;
+        throw error;
+    }
+    return data;
+}
 export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, intent, forceTools, lessonContext, modelOverride) => {
     const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+    const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId || 'gemma4good-494311';
+    const location = process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEX_LOCATION || CONFIG.ai.vertex.location || 'global';
     const selectedModel = modelOverride || CONFIG.ai.vertex.model;
     const capability = getCapability(selectedModel);
     let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
-    // Add intent context to system prompt
     const intentInstruction = intent === 'question'
         ? '\n\nNOTE: User is asking a QUESTION. Prioritize a helpful text answer. Only use tools if visualization would genuinely help.'
         : intent === 'creation'
@@ -36,23 +78,21 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
         {
             role: "user",
             parts: [
-                { inlineData: { mimeType: "image/png", data: cleanCanvasBase64 } },
+                ...(cleanCanvasBase64 ? [{ inlineData: { mimeType: "image/png", data: cleanCanvasBase64 } }] : []),
                 ...(cleanInputImage ? [{ inlineData: { mimeType: "image/png", data: cleanInputImage } }] : []),
                 { text: `User request: ${prompt}\n\nRemember: Use function calls, not descriptions. Batch all actions together.` }
             ]
         }
     ];
-    const isCreationRequest = forceTools !== undefined ? forceTools : /buat|create|gambar|draw|add|tambah/i.test(prompt);
-    const vertex = getVertexClient();
-    const model = vertex.getGenerativeModel({
-        model: selectedModel,
-        generationConfig: {
-            temperature: CONFIG.ai.vertex.generation.temperature,
-            maxOutputTokens: CONFIG.ai.vertex.generation.maxOutputTokens,
-        },
+    const payload = {
+        contents,
         systemInstruction: {
             role: 'system',
             parts: [{ text: systemInstruction }]
+        },
+        generationConfig: {
+            temperature: CONFIG.ai.vertex.generation.temperature,
+            maxOutputTokens: CONFIG.ai.vertex.generation.maxOutputTokens,
         },
         tools: [{ functionDeclarations: tools }],
         toolConfig: {
@@ -60,10 +100,9 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
                 mode: 'AUTO'
             }
         }
-    });
-    const result = await model.generateContent({ contents: contents });
-    const response = result.response;
-    const candidate = response.candidates?.[0];
+    };
+    let data = await callVertexRestApi(projectId, location, selectedModel, payload);
+    const candidate = data.candidates?.[0];
     const parts = candidate?.content?.parts || [];
     let functionCalls = [];
     let textResponse = "";
@@ -78,7 +117,7 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
             textResponse += part.text;
         }
     }
-    const thought = extractThinking({ text: textResponse, candidates: response.candidates });
+    const thought = extractThinking({ text: textResponse, candidates: data.candidates });
     const validation = validateFunctionCalls(functionCalls, canvasObjects, domElements);
     if (!validation.isValid) {
         logger.warn('Function call validation issues (Vertex)', { errors: validation.errors });
@@ -92,6 +131,8 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
     };
 };
 export const generateToolContentVertex = async (toolId, prompt, modelOverride) => {
+    const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId || 'gemma4good-494311';
+    const location = process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEX_LOCATION || CONFIG.ai.vertex.location || 'global';
     const modelName = modelOverride || CONFIG.ai.vertex.model;
     let promptText = "";
     if (toolId === 'mindmap') {
@@ -129,49 +170,61 @@ Rules:
         promptText = `Summarize the following text clearly and concisely, suitable for presentation notes.
     Format your response in Markdown. Text: "${prompt}"`;
     }
-    const vertex = getVertexClient();
-    const model = vertex.getGenerativeModel({
-        model: modelName,
+    const payload = {
+        contents: [{ role: 'user', parts: [{ text: promptText }] }],
         generationConfig: { temperature: CONFIG.ai.vertex.generation.temperature }
-    });
-    const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: promptText }] }]
-    });
-    const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    };
+    let data;
+    try {
+        data = await callVertexRestApi(projectId, location, modelName, payload);
+    }
+    catch (error) {
+        if (error.status === 404 && modelName !== 'gemini-2.5-flash') {
+            logger.warn(`Model ${modelName} returned 404 in tool-content. Falling back to gemini-2.5-flash.`);
+            data = await callVertexRestApi(projectId, location, 'gemini-2.5-flash', payload);
+        }
+        else {
+            throw error;
+        }
+    }
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     if (toolId === 'summary')
         return text;
     try {
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr);
     }
-    catch (e) {
-        logger.error("Failed to parse tool JSON from Vertex", e);
+    catch {
+        logger.error('Failed to parse tool content JSON', { text });
         return null;
     }
 };
-export const transcribeAudioVertex = async (base64Audio, modelOverride) => {
-    const vertex = getVertexClient();
-    const model = vertex.getGenerativeModel({
-        model: modelOverride || CONFIG.ai.vertex.model,
-        generationConfig: { temperature: 0.1 }
-    });
-    const result = await model.generateContent({
-        contents: [
-            {
+export const transcribeAudioVertex = async (audioBase64, mimeType = 'audio/webm', modelOverride) => {
+    const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId || 'gemma4good-494311';
+    const location = process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEX_LOCATION || CONFIG.ai.vertex.location || 'global';
+    const modelName = modelOverride || CONFIG.ai.vertex.model;
+    const cleanAudio = audioBase64.replace(/^data:audio\/\w+;base64,/, "");
+    const payload = {
+        contents: [{
                 role: 'user',
                 parts: [
-                    {
-                        inlineData: {
-                            mimeType: "audio/webm",
-                            data: base64Audio.replace(/^data:audio\/(webm|ogg|wav|mp4|mpeg);base64,/, ""),
-                        },
-                    },
-                    {
-                        text: "Transcribe this audio exactly as spoken. Detect the language automatically and return the transcript in that same language. Return only the transcribed text — no commentary, no explanation, no punctuation corrections. If there is no human speech, return an empty string.",
-                    },
-                ],
-            },
-        ],
-    });
-    return result.response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+                    { inlineData: { mimeType, data: cleanAudio } },
+                    { text: "Transkripsikan rekaman suara ini secara akurat ke teks bahasa Indonesia." }
+                ]
+            }],
+        generationConfig: { temperature: CONFIG.ai.gemini.transcription.temperature }
+    };
+    try {
+        const data = await callVertexRestApi(projectId, location, modelName, payload);
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    }
+    catch (error) {
+        if (error.status === 404 && modelName !== 'gemini-2.5-flash') {
+            logger.warn(`Model ${modelName} returned 404 in transcription. Falling back to gemini-2.5-flash.`);
+            const fallbackData = await callVertexRestApi(projectId, location, 'gemini-2.5-flash', payload);
+            return fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        }
+        logger.error('Vertex AI Audio Transcription failed', error);
+        throw error;
+    }
 };

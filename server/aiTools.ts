@@ -1,6 +1,21 @@
-import { Type, FunctionDeclaration } from "@google/genai";
 import { CanvasObjectData } from "../types";
 import { createLogger } from "../utils/logger";
+
+export const Type = {
+  TYPE_UNSPECIFIED: "TYPE_UNSPECIFIED",
+  STRING: "STRING",
+  NUMBER: "NUMBER",
+  INTEGER: "INTEGER",
+  BOOLEAN: "BOOLEAN",
+  ARRAY: "ARRAY",
+  OBJECT: "OBJECT"
+} as const;
+
+export interface FunctionDeclaration {
+  name: string;
+  description: string;
+  parameters?: Record<string, any>;
+}
 
 const logger = createLogger('ai-tools');
 
@@ -17,6 +32,18 @@ export interface ModelCapability {
 }
 
 export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
+  'gemini-3.7-flash': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 20,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.7
+  },
+  'gemini-3.7-flash-preview': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 20,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.7
+  },
   'gemini-3.5-flash-lite': {
     supportsComplexSchema: true,
     maxToolCallsPerRequest: 15,

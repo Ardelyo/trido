@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -35,7 +35,7 @@ const isAiPreference = (value: unknown): value is AiPreference => (
 const getConfiguredMode = (): AiPreference => {
   const AI_MODE = isAiPreference(process.env.AI_MODE) ? process.env.AI_MODE : 'auto';
   const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY;
-  const VERTEX_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID;
+  const VERTEX_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId;
 
   if (AI_MODE === 'gemini' && !GEMINI_KEY) return 'auto';
   if (AI_MODE === 'vertex' && !VERTEX_PROJECT) return 'auto';
@@ -47,7 +47,7 @@ const getRuntimePreference = (preference?: unknown): AiPreference => (
 );
 
 const getPreferredAutoMode = (): AiMode => {
-  if (process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID) return 'vertex';
+  if (process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId) return 'vertex';
   return process.env.GEMINI_API_KEY || process.env.API_KEY ? 'gemini' : 'ollama';
 };
 
@@ -66,19 +66,14 @@ const probeGemini = async (customKey?: string) => {
   if (!key) {
     return { online: false, reason: 'missing_key' };
   }
-  // gemma-4-31b-it is accessed via the @google/genai SDK, not the REST
-  // models discovery endpoint (which only lists standard Gemini models).
-  // Key presence is the correct readiness check; auth errors surface at call time.
   return { online: true, reason: 'ok' };
 };
 
 const probeVertex = async () => {
-  const project = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID;
+  const project = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId;
   if (!project) {
     return { online: false, reason: 'missing_project' };
   }
-  // Vertex AI SDK doesn't have a simple probe, we just check if config is present
-  // A real probe would involve a small request, but for now we assume online if configured
   return { online: true, reason: 'configured' };
 };
 

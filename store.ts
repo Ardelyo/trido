@@ -186,7 +186,7 @@ const getInitialOllamaBaseUrl = (): string => {
 };
 
 const getInitialSelectedGeminiModel = (): string => {
-  return localStorage.getItem('selected_gemini_model') || 'gemini-3.5-flash-lite';
+  return localStorage.getItem('selected_gemini_model') || 'gemini-3.7-flash';
 };
 
 const getInitialSelectedOllamaModel = (): string => {
@@ -194,7 +194,7 @@ const getInitialSelectedOllamaModel = (): string => {
 };
 
 const getInitialSelectedVertexModel = (): string => {
-  return localStorage.getItem('selected_vertex_model') || 'gemma-4-31b-it';
+  return localStorage.getItem('selected_vertex_model') || 'gemini-3.7-flash';
 };
 
 const getInitialLanguage = (): 'id' | 'en' => {

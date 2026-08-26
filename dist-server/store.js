@@ -6,7 +6,7 @@ const getInitialAiPreference = () => {
     const saved = localStorage.getItem('ai_preference');
     return (saved === 'gemini' || saved === 'ollama' || saved === 'vertex' || saved === 'auto')
         ? saved
-        : 'auto';
+        : 'vertex';
 };
 const getInitialGeminiApiKey = () => {
     return localStorage.getItem('gemini_api_key') || '';
@@ -15,13 +15,13 @@ const getInitialOllamaBaseUrl = () => {
     return localStorage.getItem('ollama_base_url') || '';
 };
 const getInitialSelectedGeminiModel = () => {
-    return localStorage.getItem('selected_gemini_model') || 'gemini-3.5-flash-lite';
+    return localStorage.getItem('selected_gemini_model') || 'gemini-3.7-flash';
 };
 const getInitialSelectedOllamaModel = () => {
     return localStorage.getItem('selected_ollama_model') || 'gemma4:e2b';
 };
 const getInitialSelectedVertexModel = () => {
-    return localStorage.getItem('selected_vertex_model') || 'gemma-4-31b-it';
+    return localStorage.getItem('selected_vertex_model') || 'gemini-3.7-flash';
 };
 const getInitialLanguage = () => {
     const saved = localStorage.getItem('trido_language');

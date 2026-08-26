@@ -1,5 +1,5 @@
 import { GoogleGenAI, FunctionCallingConfigMode } from "@google/genai";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools.js";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 const getAiClient = (customKey) => new GoogleGenAI({ apiKey: customKey || process.env.GEMINI_API_KEY || process.env.API_KEY || "dummy" });

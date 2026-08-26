@@ -1,4 +1,4 @@
-export const GEMINI_MODEL = 'gemini-3.5-flash-lite';
+export const GEMINI_MODEL = 'gemini-3.7-flash';
 export const OLLAMA_MODEL = 'gemma4:e2b';
 export const OLLAMA_THINKING_MODE = 'nothink';
 export const DEFAULT_CANVAS_COLOR = 'transparent';
@@ -9,9 +9,10 @@ export const CONFIG = {
             model: GEMINI_MODEL,
             apiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
             probeTimeoutMs: 3000,
+            generateTimeoutMs: 90000,
             generation: {
-                temperature: 0.15,
-                maxOutputTokens: 4096,
+                temperature: 0.2,
+                maxOutputTokens: 8192,
             },
             transcription: {
                 temperature: 0.1,
@@ -25,12 +26,13 @@ export const CONFIG = {
             numCtx: 8192,
         },
         vertex: {
-            model: 'gemma-4-31b-it',
-            location: 'us-central1',
+            model: 'gemini-3.7-flash',
+            location: 'global',
+            projectId: 'gemma4good-494311',
             probeTimeoutMs: 3000,
             generation: {
-                temperature: 0.3,
-                maxOutputTokens: 4096,
+                temperature: 0.2,
+                maxOutputTokens: 8192,
             },
         },
         request: {

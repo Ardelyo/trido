@@ -23,6 +23,9 @@ release-zip
 .env
 .env.local
 .env.*.local
+*.service-account.json
+.service-account.json
+.vercel
 
 # Runtime server state
 rooms_persistence.json
@@ -48,3 +51,4 @@ metadata.json
 
 # Empty directories
 lib/
+.vercel

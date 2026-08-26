@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools.js";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 const logger = createLogger('ollama-adapter');

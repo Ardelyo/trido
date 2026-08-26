@@ -2,6 +2,18 @@ import { Type } from "@google/genai";
 import { createLogger } from "../utils/logger";
 const logger = createLogger('ai-tools');
 export const MODEL_CAPABILITIES = {
+    'gemini-3.7-flash': {
+        supportsComplexSchema: true,
+        maxToolCallsPerRequest: 20,
+        supportsLessonEngine: true,
+        recommendedTemperature: 0.7
+    },
+    'gemini-3.7-flash-preview': {
+        supportsComplexSchema: true,
+        maxToolCallsPerRequest: 20,
+        supportsLessonEngine: true,
+        recommendedTemperature: 0.7
+    },
     'gemini-3.5-flash-lite': {
         supportsComplexSchema: true,
         maxToolCallsPerRequest: 15,
@@ -503,6 +515,7 @@ export const extractThinking = (response) => {
     }
     const text = response?.text || response?.content || '';
     const patterns = [
+        /<\|channel>thought\s*([\s\S]*?)<channel\|>/,
         /<thought>(.*?)<\/thought>/s,
         /```thinking\n(.*?)\n```/s,
         /\[THINKING\](.*?)\[\/THINKING\]/s,

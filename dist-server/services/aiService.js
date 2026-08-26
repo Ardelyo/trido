@@ -44,7 +44,7 @@ const parseAiError = async (response) => {
 const requestJson = async (url, init, retries = CONFIG.ai.request.retryCount) => {
     for (let attempt = 0; attempt <= retries; attempt++) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
         try {
             const response = await fetch(url, {
                 ...init,
@@ -65,7 +65,7 @@ const requestJson = async (url, init, retries = CONFIG.ai.request.retryCount) =>
             if (error instanceof AiServiceError)
                 throw error;
             if (error.name === 'AbortError') {
-                throw new AiServiceError('Permintaan AI melebihi batas waktu (timeout 25 detik). Silakan coba lagi.', 'server_error', 408, false);
+                throw new AiServiceError('Permintaan AI melebihi batas waktu (timeout 60 detik). Silakan coba lagi.', 'server_error', 408, false);
             }
             const networkError = new AiServiceError('Tidak bisa menghubungi layanan AI. Periksa koneksi internet atau server lokal.', 'no_internet', 0, true);
             if (attempt === retries)
