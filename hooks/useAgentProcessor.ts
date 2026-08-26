@@ -4,10 +4,10 @@ import { useStore } from '../store';
 import { Point } from '../types';
 import { sounds } from '../utils/sounds';
 
-// CONFIG: Human Behavior Emulation
-const MIN_REACTION_TIME = 300; 
-const MAX_REACTION_TIME = 1000;
-const VERIFICATION_PAUSE = 400;
+// CONFIG: High-Speed Agent Action Emulation
+const MIN_REACTION_TIME = 30; 
+const MAX_REACTION_TIME = 80;
+const VERIFICATION_PAUSE = 40;
 
 export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
   const popAction = useStore(state => state.popAction);
@@ -55,10 +55,10 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         y: targetY - (targetY - startPos.y) * 0.25 + (Math.random() * (arcScale * 0.5) * side)
       };
 
-      // 2. Variable Speed (Fitts's Law approximation)
-      const baseTime = 500;
-      const travelTime = dist * 0.4;
-      const duration = Math.min(1500, Math.max(350, baseTime + travelTime));
+      // 2. High-Speed Variable Motion
+      const baseTime = 70;
+      const travelTime = dist * 0.08;
+      const duration = Math.min(220, Math.max(60, baseTime + travelTime));
       
       const startTime = performance.now();
 
@@ -90,24 +90,24 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
   const execute = async (x: number, y: number, label: string, taskFn: () => void) => {
     setCurrentAction(label);
     setSpatialTarget({ x, y });
-    setAccuracy(Math.floor(Math.random() * 10) + 90); // Start with high accuracy
-    
+    setAccuracy(Math.floor(Math.random() * 5) + 95);
+
     // 1. Move
     await animateCursorTo(x, y);
     
-    // 2. Think (Cognitive Pause)
+    // 2. Snappy cognitive pause
     const thinkingTime = Math.random() * (MAX_REACTION_TIME - MIN_REACTION_TIME) + MIN_REACTION_TIME;
     await wait(thinkingTime);
 
     // 3. Click
     setClicking(true);
-    await wait(150);
+    await wait(50);
     setClicking(false);
 
     // 4. Act
     taskFn();
 
-    // 5. Verify (Post-action pause)
+    // 5. Short verify pause
     await wait(VERIFICATION_PAUSE);
     setSpatialTarget(null);
   };

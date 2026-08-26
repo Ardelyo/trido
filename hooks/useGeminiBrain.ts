@@ -693,18 +693,35 @@ ${mindmapContextStr}
           let html = `<div>${args.componentType}</div>`;
           let configObj: any = undefined;
           let pWidth = 450, pHeight = 400;
+          let cType = args.componentType;
 
           if (args.configJson) {
             try {
-              configObj = JSON.parse(args.configJson);
-              if (args.componentType === 'DOCUMENT_PAGE' || args.componentType === 'MARKDOWN_NOTE') { pWidth = 650; pHeight = 800; }
-            } catch (e) {}
+              configObj = typeof args.configJson === 'string' ? JSON.parse(args.configJson) : args.configJson;
+            } catch (e) {
+              configObj = {};
+            }
           }
 
-          if (args.componentType === 'CALCULATOR') { html = CALCULATOR_TEMPLATE; pWidth = 350; pHeight = 500; }
-          else if (args.componentType === 'TIMER') { html = TIMER_TEMPLATE(configObj?.seconds || 300); pWidth = 300; pHeight = 250; }
+          if (cType === 'DOCUMENT_PAGE' || cType === 'MARKDOWN_NOTE') {
+            pWidth = 600; pHeight = 700;
+          } else if (cType === 'QUIZ_MULTIPLE_CHOICE') {
+            pWidth = 480; pHeight = 520;
+            if (configObj?.questions && Array.isArray(configObj.questions) && configObj.questions.length > 1) {
+              cType = 'QUIZ_APP';
+              pWidth = 540; pHeight = 620;
+            }
+          } else if (cType === 'QUIZ_TRUE_FALSE') {
+            pWidth = 440; pHeight = 380;
+          } else if (cType === 'QUIZ_APP') {
+            pWidth = 540; pHeight = 620;
+          } else if (cType === 'CALCULATOR') {
+            html = CALCULATOR_TEMPLATE; pWidth = 350; pHeight = 500;
+          } else if (cType === 'TIMER') {
+            html = TIMER_TEMPLATE(configObj?.seconds || 300); pWidth = 300; pHeight = 250;
+          }
 
-          payload = { html, x: pos.x, y: pos.y, width: pWidth, height: pHeight, componentType: args.componentType, config: configObj };
+          payload = { html, x: pos.x, y: pos.y, width: pWidth, height: pHeight, componentType: cType, config: configObj };
 
         } else if (call.name === 'pan_camera') {
           actionType = 'PAN_CAMERA';

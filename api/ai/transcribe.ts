@@ -50,10 +50,10 @@ export default async function handler(req: any, res: any) {
           role: 'user',
           parts: [
             { inlineData: { mimeType: 'audio/webm', data: cleanAudio } },
-            { text: "Transkripsikan rekaman suara ini secara akurat ke teks bahasa Indonesia." }
+            { text: "Transkripsikan rekaman suara audio ini secara akurat ke dalam teks bahasa Indonesia. Tangkap istilah pembelajaran, instruksi papan tulis, rumus, atau pertanyaan secara jelas dan tepat. Kembalikan HANYA teks transkripsi murni tanpa tanda petik pembuka/penutup atau catatan tambahan." }
           ]
         }],
-        generationConfig: { temperature: 0.1 }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
       })
     });
 
@@ -62,7 +62,8 @@ export default async function handler(req: any, res: any) {
       throw new Error(data.error?.message || vertexRes.statusText);
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    text = text.replace(/^["']|["']$/g, '').trim();
     return res.status(200).json({ text });
   } catch (err: any) {
     return res.status(500).json({

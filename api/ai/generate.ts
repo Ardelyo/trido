@@ -54,7 +54,7 @@ You help teachers and students create rich visual learning materials, mind maps,
 CAPABILITIES & RULES:
 1. When asked to create or explain concepts visually, call appropriate function tools (such as add_mindmap_node, add_component, add_interactive_app, create_shape, add_text).
 2. For mind maps: Start with 1 MAIN_TOPIC node (parentNodeText: null), then branch with SUBTOPIC nodes, and DETAIL nodes.
-3. For quizzes: Use add_component with QUIZ_MULTIPLE_CHOICE or QUIZ_ESSAY and structured JSON.
+3. For quizzes: When creating quizzes via add_component, ALWAYS provide a COMPLETE, EDUCATIONAL question in Indonesian with 4 options, a 0-indexed correctIndex (0-3), and a clear explanation. Example configJson: {"question": "Pertanyaan lengkap...", "options": ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"], "correctIndex": 0, "explanation": "Penjelasan detail..."}. NEVER create empty, placeholder, or generic questions.
 4. Language: Always respond and create content in fluent, natural Indonesian (Bahasa Indonesia) unless requested otherwise.
 5. Canvas viewport: width=${viewport.width}, height=${viewport.height}. Current objects: ${canvasObjects.length}.`;
 
@@ -91,11 +91,18 @@ CAPABILITIES & RULES:
         parameters: {
           type: "OBJECT",
           properties: {
-            componentType: { type: "STRING", enum: ["QUIZ_MULTIPLE_CHOICE", "QUIZ_ESSAY", "DOCUMENT_PAGE", "MARKDOWN_NOTE", "TIMER", "CALCULATOR"], description: "Component type" },
-            title: { type: "STRING", description: "Header title" },
-            configJson: { type: "STRING", description: "JSON configuration string" },
-            x: { type: "NUMBER", description: "X coordinate" },
-            y: { type: "NUMBER", description: "Y coordinate" }
+            componentType: {
+              type: "STRING",
+              enum: ["QUIZ_MULTIPLE_CHOICE", "QUIZ_APP", "QUIZ_TRUE_FALSE", "QUIZ_ESSAY", "DOCUMENT_PAGE", "MARKDOWN_NOTE", "TIMER", "CALCULATOR"],
+              description: "Component type. For quizzes use QUIZ_MULTIPLE_CHOICE or QUIZ_APP."
+            },
+            title: { type: "STRING", description: "Header title displayed on top of the widget" },
+            configJson: {
+              type: "STRING",
+              description: "JSON configuration string. For QUIZ_MULTIPLE_CHOICE: {\"question\":\"Teks soal lengkap\",\"options\":[\"Opsi A\",\"Opsi B\",\"Opsi C\",\"Opsi D\"],\"correctIndex\":0,\"explanation\":\"Penjelasan pembahasan\"}. For QUIZ_TRUE_FALSE: {\"statement\":\"Pernyataan sains/fakta\",\"isTrue\":true,\"explanation\":\"Penjelasan\"}. For DOCUMENT_PAGE/MARKDOWN_NOTE: {\"markdown\":\"# Judul\\n\\nTeks pembahasan materi...\"}."
+            },
+            x: { type: "NUMBER", description: "X coordinate (e.g. 1100)" },
+            y: { type: "NUMBER", description: "Y coordinate (e.g. 100)" }
           },
           required: ["componentType", "title"]
         }
