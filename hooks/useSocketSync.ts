@@ -15,7 +15,6 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
   const socketRef = useRef<BoardSocket | null>(null);
 
   const initialDataRef = useRef<CanvasJson | null>(null);
-
   const isViewerRef = useRef(false);
 
   useEffect(() => {
@@ -30,13 +29,13 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
             initialDataRef.current = null;
             clearInterval(interval);
         } catch(e) {
-          logger.error('Failed to load initial canvas data', e);
+          logger.debug('Failed to load initial canvas data', e);
         }
       }
     }, 100);
 
     return () => clearInterval(interval);
-  }, []); // Only run once
+  }, []);
 
   useEffect(() => {
     // Check if we are in a room from URL
@@ -53,26 +52,39 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
        setRoomId(currentRoomId);
        useStore.getState().setIsViewerUrl(true);
     } else {
-       // We are the host, generate a room ID
        currentRoomId = Math.random().toString(36).substring(2, 9);
        setRoomId(currentRoomId);
     }
 
-    const socketUrl = (import.meta as any).env.VITE_API_URL || window.location.origin;
-    const socket: BoardSocket = io(socketUrl, {
-      path: '/socket.io'
-    });
+    // Only attempt socket connection if on localhost or if VITE_API_URL is configured or roomParam is present
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const customApiUrl = (import.meta as any).env.VITE_API_URL;
+    const shouldConnect = Boolean(customApiUrl || isLocalhost || isCurrentlyViewer);
 
+    if (!shouldConnect) {
+      logger.debug('Running in standalone client mode (socket sync disabled)');
+      return;
+    }
+
+    const socketUrl = customApiUrl || window.location.origin;
+    let failedAttempts = 0;
+
+    const socket: BoardSocket = io(socketUrl, {
+      path: '/socket.io',
+      reconnectionAttempts: 2,
+      timeout: 3000,
+      transports: ['websocket', 'polling']
+    });
 
     socketRef.current = socket;
 
     socket.on('connect', () => {
+      failedAttempts = 0;
       logger.info('Connected to socket server', { socketId: socket.id });
       socket.emit('join-room', currentRoomId);
     });
 
     socket.on('canvas-init', (data) => {
-      logger.debug('Received canvas init');
       if (isCurrentlyViewer && data) {
          if (canvasRef.current) {
              try {
@@ -80,7 +92,7 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
                  canvasRef.current.renderAll();
                });
              } catch(e) {
-               logger.error('Failed to apply canvas init', e);
+               logger.debug('Failed to apply canvas init', e);
              }
          } else {
              initialDataRef.current = data;
@@ -95,7 +107,7 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
              canvasRef.current.renderAll();
            });
          } catch(e) {
-           logger.error('Failed to apply canvas update', e);
+           logger.debug('Failed to apply canvas update', e);
          }
       }
     });
@@ -119,7 +131,6 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
              } else {
                window.fabric.util.enlivenObjects([delta.objectData], (objects: any[]) => {
                  if (objects && objects[0]) {
-                   // Ensure the object retains its custom properties
                    const obj = objects[0];
                    obj.id = delta.objectId;
                    canvas.add(obj);
@@ -129,14 +140,13 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
              }
            }
          } catch(e) {
-           logger.error('Failed to apply canvas delta update', e);
+           logger.debug('Failed to apply canvas delta update', e);
          }
       }
     });
 
     socket.on('viewport-update', ({ viewport }) => {
       if (isCurrentlyViewer && canvasRef.current) {
-        // Use the viewport to sync camera movement
         if (viewport && Array.isArray(viewport)) {
             canvasRef.current.setViewportTransform(viewport);
             canvasRef.current.requestRenderAll();
@@ -156,12 +166,16 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
         }
     });
 
-    socket.on('connect_error', (error) => {
-      logger.error('Socket connection error', error);
+    socket.on('connect_error', () => {
+      failedAttempts++;
+      if (failedAttempts >= 2) {
+        logger.debug('Socket relay unavailable, operating in offline/standalone mode');
+        socket.disconnect();
+      }
     });
 
     socket.on('sync-error', ({ message }) => {
-      logger.warn('Socket sync error', { message });
+      logger.debug('Socket sync error', { message });
     });
 
     return () => {
@@ -169,7 +183,7 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
     };
   }, []);
 
-  // Sync our local canvas if we are the host via delta updates
+  // Sync local canvas if host
   useEffect(() => {
      if (isViewer || !canvasRef.current || !socketRef.current || !roomId) return;
      const canvas = canvasRef.current;
@@ -177,8 +191,8 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
 
      const emitDelta = (action: 'add' | 'modify' | 'remove', obj: any) => {
        if (!obj || obj.id === 'agent_cursor' || obj.id === 'spatial_indicator') return;
+       if (!socket.connected) return;
        
-       // Assure object has a unique id
        if (!obj.id) {
          obj.id = `obj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
        }
@@ -204,16 +218,16 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
         canvas.off('object:added', handleObjectAdded);
         canvas.off('object:modified', handleObjectModified);
         canvas.off('object:removed', handleObjectRemoved);
-     }
+     };
   }, [roomId, isViewer]);
 
-  // Sync our local viewport (camera) if we are the host
+  // Sync viewport if host
   useEffect(() => {
       if (isViewer || !socketRef.current || !roomId) return;
 
       const unsubscribe = useStore.subscribe((state, prevState) => {
-         if (state.viewportTransform !== prevState.viewportTransform) {
-            socketRef.current?.emit('viewport-update', {
+         if (state.viewportTransform !== prevState.viewportTransform && socketRef.current?.connected) {
+            socketRef.current.emit('viewport-update', {
                roomId,
                viewport: state.viewportTransform
             });
@@ -223,13 +237,13 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
       return unsubscribe;
   }, [roomId, isViewer]);
 
-  // Sync our domElements if we are the host
+  // Sync domElements if host
   useEffect(() => {
       if (isViewer || !socketRef.current || !roomId) return;
 
       const unsubscribe = useStore.subscribe((state, prevState) => {
-          if (state.domElements !== prevState.domElements) {
-              socketRef.current?.emit('dom-elements-update', {
+          if (state.domElements !== prevState.domElements && socketRef.current?.connected) {
+              socketRef.current.emit('dom-elements-update', {
                   roomId,
                   domElements: state.domElements
               });

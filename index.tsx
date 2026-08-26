@@ -3,6 +3,21 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { registerSW } from 'virtual:pwa-register';
 
+// Patch Fabric.js textBaseline typo ('alphabetical' -> 'alphabetic') to eliminate canvas enum warnings
+if (typeof window !== 'undefined' && typeof CanvasRenderingContext2D !== 'undefined') {
+  const descriptor = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'textBaseline');
+  if (descriptor?.set) {
+    const origSet = descriptor.set;
+    Object.defineProperty(CanvasRenderingContext2D.prototype, 'textBaseline', {
+      set(val: string) {
+        origSet.call(this, val === 'alphabetical' ? 'alphabetic' : val);
+      },
+      get: descriptor.get,
+      configurable: true
+    });
+  }
+}
+
 // Register PWA service worker
 registerSW({ immediate: true });
 
