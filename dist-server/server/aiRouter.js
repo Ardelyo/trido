@@ -215,8 +215,15 @@ aiRouter.get("/status", async (req, res) => {
     res.json(await getAvailableMode());
 });
 aiRouter.post("/status", async (req, res) => {
-    const { geminiApiKey, ollamaBaseUrl, selectedOllamaModel } = req.body;
-    res.json(await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel));
+    const { geminiApiKey, ollamaBaseUrl, selectedOllamaModel, selectedVertexModel, selectedGeminiModel } = req.body;
+    const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel);
+    if (selectedVertexModel && status.mode === 'vertex') {
+        status.model = selectedVertexModel;
+    }
+    else if (selectedGeminiModel && status.mode === 'gemini') {
+        status.model = selectedGeminiModel;
+    }
+    res.json(status);
 });
 aiRouter.post("/generate", async (req, res) => {
     try {

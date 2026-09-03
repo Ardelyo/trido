@@ -281,6 +281,96 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
             },
             required: ["title", "html", "gridPosition"]
         }
+    },
+    {
+        name: "drag_element",
+        description: "Agentic Computer Use: Drag and drop an element or node across the canvas to a new (toX, toY) coordinate. Target by elementText (label/title) OR by objectId. Fast, snappy, and adaptive.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                elementText: {
+                    type: Type.STRING,
+                    description: "Text or label of the node/element to drag (e.g. 'Fotosintesis', 'Kuis')"
+                },
+                objectId: {
+                    type: Type.STRING,
+                    description: "Optional exact object ID"
+                },
+                toX: {
+                    type: Type.NUMBER,
+                    description: "Target X position on canvas (e.g. 600)"
+                },
+                toY: {
+                    type: Type.NUMBER,
+                    description: "Target Y position on canvas (e.g. 400)"
+                }
+            },
+            required: ["toX", "toY"]
+        }
+    },
+    {
+        name: "drag_all_elements",
+        description: "Agentic Computer Use: Reposition and shift ALL elements on the canvas together by deltaX and deltaY offset pixels. Use to make space, center diagrams, or shift content.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                deltaX: {
+                    type: Type.NUMBER,
+                    description: "Horizontal shift distance in pixels (e.g. 300 to move right, -300 to move left)"
+                },
+                deltaY: {
+                    type: Type.NUMBER,
+                    description: "Vertical shift distance in pixels (e.g. 200 to move down, -200 to move up)"
+                }
+            },
+            required: ["deltaX", "deltaY"]
+        }
+    },
+    {
+        name: "click_element",
+        description: "Agentic Computer Use: Point and click on an interactive element, button, option, or coordinate on the canvas or within widgets.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                elementText: {
+                    type: Type.STRING,
+                    description: "Text or label of the button or element to click"
+                },
+                objectId: {
+                    type: Type.STRING,
+                    description: "Optional object ID"
+                },
+                x: {
+                    type: Type.NUMBER,
+                    description: "Target X coordinate"
+                },
+                y: {
+                    type: Type.NUMBER,
+                    description: "Target Y coordinate"
+                }
+            }
+        }
+    },
+    {
+        name: "create_shape",
+        description: "Draw a geometric shape (RECTANGLE, CIRCLE, TRIANGLE) with customizable dimensions, fill color, and label text.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                shapeType: {
+                    type: Type.STRING,
+                    enum: ["RECTANGLE", "CIRCLE", "TRIANGLE"],
+                    description: "Shape geometry"
+                },
+                x: { type: Type.NUMBER, description: "Center X position" },
+                y: { type: Type.NUMBER, description: "Center Y position" },
+                width: { type: Type.NUMBER, description: "Width in pixels" },
+                height: { type: Type.NUMBER, description: "Height in pixels" },
+                fill: { type: Type.STRING, description: "Hex fill color (e.g. #3b82f6)" },
+                text: { type: Type.STRING, description: "Optional text label inside shape" }
+            },
+            required: ["shapeType", "x", "y", "width", "height"]
+        }
     }
 ];
 // ─────────────────────────────────────────────────────────────────────────────

@@ -152,6 +152,7 @@ interface AppStore extends AgentState {
   createNewSession: () => void;
   loadSessionData: (id: string) => Promise<void>;
   deleteSession: (id: string) => Promise<void>;
+  importProjectSession: (data: any) => Promise<boolean>;
 
   // ── Lesson Engine ──────────────────────────────────────────────────────
   lessonPlan: LessonPlan | null;
@@ -315,6 +316,61 @@ export const useStore = create<AppStore>((set, get) => ({
     await get().loadSessions();
     if (get().currentSessionId === id) {
       get().createNewSession();
+    }
+  },
+
+  importProjectSession: async (data: any) => {
+    try {
+      let pages: PageState[] = [];
+      let initialDom: Record<string, DomElementState> = {};
+      let initialMindmap: MindmapNodeRecord[] = [];
+
+      if (data.pages && Array.isArray(data.pages) && data.pages.length > 0) {
+        pages = data.pages.map((p: any) => ({
+          canvas: p.canvas || {},
+          dom: p.dom || {},
+          previewDataUrl: p.previewDataUrl || '',
+          mindmapNodes: p.mindmapNodes || []
+        }));
+        initialDom = pages[0].dom || {};
+        initialMindmap = pages[0].mindmapNodes || [];
+      } else if (data.canvas) {
+        initialDom = data.dom || {};
+        initialMindmap = data.mindmapNodes || [];
+        pages = [{
+          canvas: data.canvas,
+          dom: initialDom,
+          previewDataUrl: data.previewDataUrl || '',
+          mindmapNodes: initialMindmap
+        }];
+      } else if (data.objects || data.version) {
+        pages = [{
+          canvas: data,
+          dom: {},
+          previewDataUrl: '',
+          mindmapNodes: []
+        }];
+      } else {
+        throw new Error('Format file proyek tidak dikenali.');
+      }
+
+      const newId = `imported_${Date.now()}`;
+      set({
+        currentSessionId: newId,
+        pages,
+        currentPageIndex: 0,
+        domElements: initialDom,
+        activeMindmapNodes: initialMindmap,
+        isHistoryOpen: false,
+        lessonPlan: null
+      });
+
+      const title = data.title || `Papan Impor ${new Date().toLocaleDateString('id-ID')}`;
+      await get().saveCurrentSession(title);
+      return true;
+    } catch (err) {
+      console.error('Failed to import project', err);
+      throw err;
     }
   },
 

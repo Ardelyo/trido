@@ -129,10 +129,123 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     
     const canvas = canvasRef.current;
 
+    const findTargetObject = (objectId?: string, textLabel?: string) => {
+      const objs = canvas.getObjects();
+      if (objectId) {
+        const found = objs.find((o: any) => o.id === objectId);
+        if (found) return found;
+      }
+      if (!textLabel) return null;
+      const search = textLabel.toLowerCase().trim();
+
+      const getNodeText = (o: any): string | null => {
+        if (o.type === 'group') {
+          for (const inner of o.getObjects()) {
+            if ((inner.type === 'i-text' || inner.type === 'text' || inner.type === 'textbox') && inner.text)
+              return inner.text.toLowerCase().trim();
+          }
+        } else if ((o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') && o.text) {
+          return o.text.toLowerCase().trim();
+        }
+        return null;
+      };
+
+      for (const o of objs) {
+        const t = getNodeText(o);
+        if (t === search) return o;
+      }
+      for (const o of objs) {
+        const t = getNodeText(o);
+        if (t && (t.includes(search) || search.includes(t))) return o;
+      }
+      const domElements = useStore.getState().domElements;
+      for (const [domId, dom] of Object.entries(domElements)) {
+        const title = (dom as any)?.config?.title || (dom as any)?.title || '';
+        if (title.toLowerCase().includes(search)) {
+          const domObj = objs.find((o: any) => o.id === domId);
+          if (domObj) return domObj;
+        }
+      }
+      return null;
+    };
+
     try {
       switch (action.type) {
         case 'MOVE_CURSOR': {
           await execute(action.payload.x, action.payload.y, 'Observing...', () => {});
+          break;
+        }
+
+        case 'CLICK_ELEMENT': {
+          const { objectId, elementText, x, y } = action.payload;
+          const target = findTargetObject(objectId, elementText);
+          const targetX = target ? target.left : (typeof x === 'number' ? x : canvas.width / 2);
+          const targetY = target ? target.top : (typeof y === 'number' ? y : canvas.height / 2);
+
+          await animateCursorTo(targetX, targetY);
+          setCurrentAction(`Klik ${elementText || 'elemen'}...`);
+          setClicking(true);
+          sounds.play('click');
+          await wait(60);
+
+          if (target) {
+            canvas.setActiveObject(target);
+            canvas.requestRenderAll();
+          }
+
+          try {
+            const el = document.elementFromPoint(targetX, targetY);
+            if (el && (el.tagName === 'BUTTON' || el.tagName === 'A' || el.tagName === 'INPUT' || el.getAttribute('role') === 'button' || el.closest('button'))) {
+              (el.closest('button') || el as HTMLElement).click();
+            }
+          } catch {}
+
+          setClicking(false);
+          await wait(30);
+          break;
+        }
+
+        case 'DRAG_ALL_ELEMENTS': {
+          const { deltaX, deltaY } = action.payload;
+          const objs = canvas.getObjects();
+          if (objs.length > 0) {
+            const center = canvas.getCenter();
+            await animateCursorTo(center.left, center.top);
+            setCurrentAction('Menggeser semua elemen kanvas...');
+            setClicking(true);
+            await wait(30);
+
+            const steps = 14;
+            let lastProgress = 0;
+
+            for (let i = 1; i <= steps; i++) {
+              const t = i / steps;
+              const ease = 1 - Math.pow(1 - t, 3);
+              const stepDelta = ease - lastProgress;
+              lastProgress = ease;
+
+              const dx = deltaX * stepDelta;
+              const dy = deltaY * stepDelta;
+
+              objs.forEach((o: any) => {
+                o.set({ left: o.left + dx, top: o.top + dy });
+                o.setCoords();
+                if (o.isDomPlaceholder) {
+                  updateDomElement(o.id, { x: o.left, y: o.top });
+                }
+              });
+
+              setCursorPosition({
+                x: center.left + deltaX * ease,
+                y: center.top + deltaY * ease
+              });
+              canvas.requestRenderAll();
+              await wait(10);
+            }
+
+            setClicking(false);
+            await wait(30);
+          }
           break;
         }
 
@@ -448,39 +561,37 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         }
 
         case 'DRAG_OBJECT': {
-          const { objectId, toX, toY } = action.payload;
-          const target = canvas.getObjects().find((o: any) => o.id === objectId);
+          const { objectId, elementText, toX, toY } = action.payload;
+          const target = findTargetObject(objectId, elementText);
           if (target) {
             // 1. Go to Object
             await animateCursorTo(target.left, target.top);
-            setCurrentAction('Grabbing...');
+            setCurrentAction(`Menggeser ${elementText || 'objek'}...`);
             setClicking(true);
-            await wait(200);
+            await wait(30);
 
-            // 2. Drag to Dest
-            setCurrentAction('Moving...');
+            // 2. Drag to Dest (Snappy 14 steps ~140ms)
             const startX = target.left;
             const startY = target.top;
-            const steps = 30;
+            const steps = 14;
             
             for (let i = 1; i <= steps; i++) {
               const t = i / steps;
-              // EaseInOutQuad
-              const ease = t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+              const ease = 1 - Math.pow(1 - t, 3);
               const curX = startX + (toX - startX) * ease;
               const curY = startY + (toY - startY) * ease;
               
               target.set({ left: curX, top: curY });
               target.setCoords();
-              if(target.isDomPlaceholder) updateDomElement(target.id, { x: curX, y: curY });
+              if (target.isDomPlaceholder) updateDomElement(target.id, { x: curX, y: curY });
               
               setCursorPosition({ x: curX, y: curY });
               canvas.requestRenderAll();
-              await wait(16); // ~60fps
+              await wait(10);
             }
             
             setClicking(false);
-            await wait(200);
+            await wait(30);
           }
           break;
         }

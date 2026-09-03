@@ -17,9 +17,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Share2, Users, LayoutDashboard, Home, Square, Layers, FileText,
   Image as ImageIcon, File, History, Settings, Mic, Monitor, Share, Download, Sparkles,
-  CheckCircle2, ChevronDown, Keyboard, Menu,
+  CheckCircle2, ChevronDown, ChevronRight, Keyboard, Menu,
   Clock, CheckSquare, PencilRuler, ShieldCheck, HelpCircle, User,
-  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2
+  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2, Archive
 } from 'lucide-react';
 import { SidebarItem } from './components/SidebarItem';
 import { AiStatusBadge } from './components/AiStatusBadge';
@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
 
@@ -98,10 +99,12 @@ const App: React.FC = () => {
   const aiStatus = useAiStatus();
 
   const getStatusConfig = () => {
+    const storeState = useStore.getState();
     if (aiStatus.mode === 'gemini') {
+      const activeModel = storeState.selectedGeminiModel || (aiStatus.model === 'gemini-3.7-flash' ? 'gemini-3.8-flash' : aiStatus.model) || 'gemini-3.8-flash';
       return {
         text: t('modeCloud', 'Mode Cloud'),
-        detail: `Gemini: ${aiStatus.model}`,
+        detail: `Gemini: ${activeModel}`,
         color: 'text-blue-700 bg-blue-100/80 border-blue-200/50',
         dot: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]',
         statusColor: 'text-blue-600',
@@ -109,9 +112,10 @@ const App: React.FC = () => {
       };
     }
     if (aiStatus.mode === 'vertex') {
+      const activeModel = storeState.selectedVertexModel || (aiStatus.model === 'gemini-3.7-flash' ? 'gemini-3.8-flash' : aiStatus.model) || 'gemini-3.8-flash';
       return {
-        text: t('modeCloudVertex', 'Mode Cloud (Vertex)'),
-        detail: `Vertex: ${aiStatus.model}`,
+        text: t('modeCloudVertex', 'Mode Cloud (Vertex AI)'),
+        detail: `Vertex: ${activeModel}`,
         color: 'text-purple-700 bg-purple-100/80 border-purple-200/50',
         dot: 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]',
         statusColor: 'text-purple-600',
@@ -318,12 +322,108 @@ const App: React.FC = () => {
                 >
                   <div className="w-65 h-full flex flex-col">
                     <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 custom-scrollbar">
-                      <SidebarItem icon={Square} label={t('whiteboard', 'Papan Tulis')} active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen} onClick={() => { if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); setIsSettingsOpen(false); }} />
-                      <SidebarItem icon={Layers} label={t('templates', 'Templat')} active={isTemplatesOpen} onClick={() => { toggleTemplates(); setIsSettingsOpen(false); }} />
-                      <div className="h-5" />
-                      <SidebarItem icon={Sparkles} label={t('agenticAiTools', 'Alat AI Agentic')} active={isAiToolsOpen} onClick={() => { toggleAiTools(); setIsSettingsOpen(false); }} />
-                      <SidebarItem icon={History} label={t('history', 'Riwayat')} active={isHistoryOpen} onClick={() => { toggleHistory(); setIsSettingsOpen(false); }} />
-                      <SidebarItem icon={Settings} label={t('settings', 'Pengaturan')} active={isSettingsOpen} onClick={() => { setIsSettingsOpen(v => !v); if (isTemplatesOpen) toggleTemplates(); if (isAiToolsOpen) toggleAiTools(); if (isHistoryOpen) toggleHistory(); }} />
+                      {/* 1. Whiteboard Core */}
+                      <SidebarItem
+                        icon={Square}
+                        label={t('whiteboard', 'Papan Tulis')}
+                        active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen && !isExportOpen}
+                        onClick={() => {
+                          if (isTemplatesOpen) toggleTemplates();
+                          if (isAiToolsOpen) toggleAiTools();
+                          if (isHistoryOpen) toggleHistory();
+                          setIsSettingsOpen(false);
+                          setIsExportOpen(false);
+                        }}
+                      />
+
+                      {/* 2. History */}
+                      <SidebarItem
+                        icon={Clock}
+                        label={t('history', 'Riwayat Sesi')}
+                        active={isHistoryOpen}
+                        onClick={() => {
+                          toggleHistory();
+                          if (isTemplatesOpen) toggleTemplates();
+                          if (isAiToolsOpen) toggleAiTools();
+                          setIsSettingsOpen(false);
+                          setIsExportOpen(false);
+                        }}
+                      />
+
+                      {/* 3. Export & Import */}
+                      <SidebarItem
+                        icon={Download}
+                        label="Ekspor & Impor"
+                        active={isExportOpen}
+                        onClick={() => {
+                          setIsExportOpen(true);
+                          if (isTemplatesOpen) toggleTemplates();
+                          if (isAiToolsOpen) toggleAiTools();
+                          if (isHistoryOpen) toggleHistory();
+                          setIsSettingsOpen(false);
+                        }}
+                      />
+
+                      {/* 4. Settings */}
+                      <SidebarItem
+                        icon={Settings}
+                        label={t('settings', 'Pengaturan')}
+                        active={isSettingsOpen}
+                        onClick={() => {
+                          setIsSettingsOpen(v => !v);
+                          if (isTemplatesOpen) toggleTemplates();
+                          if (isAiToolsOpen) toggleAiTools();
+                          if (isHistoryOpen) toggleHistory();
+                          setIsExportOpen(false);
+                        }}
+                      />
+
+                      {/* Archived Features Section (Templates & AI Tools) */}
+                      <div className="pt-3 mt-3 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setIsArchiveOpen(!isArchiveOpen)}
+                          className="w-full flex items-center justify-between px-3 py-2 text-[11.5px] font-bold text-slate-400 hover:text-slate-600 rounded-xl transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Archive size={13} />
+                            <span>Arsip Fitur</span>
+                          </div>
+                          {isArchiveOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                        </button>
+
+                        <AnimatePresence>
+                          {isArchiveOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="space-y-1 mt-1 pl-1"
+                            >
+                              <SidebarItem
+                                icon={Layers}
+                                label={t('templates', 'Templat')}
+                                active={isTemplatesOpen}
+                                onClick={() => {
+                                  toggleTemplates();
+                                  setIsSettingsOpen(false);
+                                  setIsExportOpen(false);
+                                }}
+                              />
+                              <SidebarItem
+                                icon={Sparkles}
+                                label={t('agenticAiTools', 'Alat AI')}
+                                active={isAiToolsOpen}
+                                onClick={() => {
+                                  toggleAiTools();
+                                  setIsSettingsOpen(false);
+                                  setIsExportOpen(false);
+                                }}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </nav>
 
                     <div className="p-5 border-t border-slate-100/80 space-y-4 bg-slate-50/50">

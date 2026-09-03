@@ -16,6 +16,7 @@
     "build:electron:linux": "npm run build && node scripts/build-electron.js && electron-builder --linux",
     "electron:dev": "node scripts/build-electron.js && electron .",
     "preview": "vite preview",
+    "check": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "start": "NODE_ENV=production tsx server.ts",
     "start:dev": "NODE_ENV=production tsx server.ts"

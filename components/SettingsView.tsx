@@ -50,9 +50,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   // Local state — only commit to store/localStorage on Save
   const [localKey, setLocalKey] = useState(geminiApiKey);
   const [localOllamaUrl, setLocalOllamaUrl] = useState(ollamaBaseUrl || 'http://localhost:11434');
-  const [localGeminiModel, setLocalGeminiModel] = useState(selectedGeminiModel);
+  const [localGeminiModel, setLocalGeminiModel] = useState(() => {
+    return (!selectedGeminiModel || selectedGeminiModel === 'gemini-3.7-flash') ? 'gemini-3.8-flash' : selectedGeminiModel;
+  });
   const [localOllamaModel, setLocalOllamaModel] = useState(selectedOllamaModel);
-  const [localVertexModel, setLocalVertexModel] = useState(selectedVertexModel);
+  const [localVertexModel, setLocalVertexModel] = useState(() => {
+    return (!selectedVertexModel || selectedVertexModel === 'gemini-3.7-flash') ? 'gemini-3.8-flash' : selectedVertexModel;
+  });
   const [localName, setLocalName] = useState(userName);
   const [localAiPref, setLocalAiPref] = useState(aiPreference);
   const [localLang, setLocalLang] = useState(language);

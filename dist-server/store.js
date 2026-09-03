@@ -129,6 +129,61 @@ export const useStore = create((set, get) => ({
             get().createNewSession();
         }
     },
+    importProjectSession: async (data) => {
+        try {
+            let pages = [];
+            let initialDom = {};
+            let initialMindmap = [];
+            if (data.pages && Array.isArray(data.pages) && data.pages.length > 0) {
+                pages = data.pages.map((p) => ({
+                    canvas: p.canvas || {},
+                    dom: p.dom || {},
+                    previewDataUrl: p.previewDataUrl || '',
+                    mindmapNodes: p.mindmapNodes || []
+                }));
+                initialDom = pages[0].dom || {};
+                initialMindmap = pages[0].mindmapNodes || [];
+            }
+            else if (data.canvas) {
+                initialDom = data.dom || {};
+                initialMindmap = data.mindmapNodes || [];
+                pages = [{
+                        canvas: data.canvas,
+                        dom: initialDom,
+                        previewDataUrl: data.previewDataUrl || '',
+                        mindmapNodes: initialMindmap
+                    }];
+            }
+            else if (data.objects || data.version) {
+                pages = [{
+                        canvas: data,
+                        dom: {},
+                        previewDataUrl: '',
+                        mindmapNodes: []
+                    }];
+            }
+            else {
+                throw new Error('Format file proyek tidak dikenali.');
+            }
+            const newId = `imported_${Date.now()}`;
+            set({
+                currentSessionId: newId,
+                pages,
+                currentPageIndex: 0,
+                domElements: initialDom,
+                activeMindmapNodes: initialMindmap,
+                isHistoryOpen: false,
+                lessonPlan: null
+            });
+            const title = data.title || `Papan Impor ${new Date().toLocaleDateString('id-ID')}`;
+            await get().saveCurrentSession(title);
+            return true;
+        }
+        catch (err) {
+            console.error('Failed to import project', err);
+            throw err;
+        }
+    },
     // ── Lesson Engine State ────────────────────────────────────────────────
     lessonPlan: null,
     activeMindmapNodes: [],

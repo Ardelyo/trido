@@ -742,6 +742,30 @@ ${mindmapContextStr}
             actionType = 'RESIZE_OBJECT';
           }
 
+        } else if (call.name === 'drag_element') {
+          actionType = 'DRAG_OBJECT';
+          payload = { objectId: args.objectId, elementText: args.elementText, toX: args.toX, toY: args.toY };
+
+        } else if (call.name === 'drag_all_elements') {
+          actionType = 'DRAG_ALL_ELEMENTS';
+          payload = { deltaX: args.deltaX, deltaY: args.deltaY };
+
+        } else if (call.name === 'click_element') {
+          actionType = 'CLICK_ELEMENT';
+          payload = { objectId: args.objectId, elementText: args.elementText, x: args.x, y: args.y };
+
+        } else if (call.name === 'create_shape') {
+          actionType = 'CREATE_SHAPE';
+          payload = {
+            shapeType: args.shapeType,
+            x: args.x,
+            y: args.y,
+            width: args.width,
+            height: args.height,
+            fill: args.fill,
+            text: args.text
+          };
+
         } else if (call.name === 'add_interactive_app') {
           actionType = 'RENDER_HTML';
           const pos = getGridPos(args.gridPosition);

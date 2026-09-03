@@ -152,6 +152,45 @@ CAPABILITIES & RULES:
           },
           required: ["text", "x", "y"]
         }
+      },
+      {
+        name: "drag_element",
+        description: "Agentic Computer Use: Drag and drop an element or node across the canvas to a new (toX, toY) coordinate. Target by elementText (label/title) OR by objectId.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            elementText: { type: "STRING", description: "Text or label of the node/element to drag" },
+            objectId: { type: "STRING", description: "Optional object ID" },
+            toX: { type: "NUMBER", description: "Target X position" },
+            toY: { type: "NUMBER", description: "Target Y position" }
+          },
+          required: ["toX", "toY"]
+        }
+      },
+      {
+        name: "drag_all_elements",
+        description: "Agentic Computer Use: Reposition and shift ALL elements on the canvas together by deltaX and deltaY offset pixels.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            deltaX: { type: "NUMBER", description: "Horizontal shift distance in pixels" },
+            deltaY: { type: "NUMBER", description: "Vertical shift distance in pixels" }
+          },
+          required: ["deltaX", "deltaY"]
+        }
+      },
+      {
+        name: "click_element",
+        description: "Agentic Computer Use: Move agent cursor and click an element, button, option, or coordinate.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            elementText: { type: "STRING", description: "Text or label of the button or element to click" },
+            objectId: { type: "STRING", description: "Optional object ID" },
+            x: { type: "NUMBER", description: "Target X coordinate" },
+            y: { type: "NUMBER", description: "Target Y coordinate" }
+          }
+        }
       }
     ];
 
