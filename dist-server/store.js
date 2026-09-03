@@ -36,6 +36,12 @@ const getInitialLanguage = () => {
 const getInitialUserName = () => {
     return localStorage.getItem('trido_user_name') || 'Guru';
 };
+const getInitialTranscribeMode = () => {
+    const saved = localStorage.getItem('trido_transcribe_mode');
+    if (saved === 'record_gemini' || saved === 'gemini_live' || saved === 'upload_audio')
+        return saved;
+    return 'webspeech';
+};
 // ============================================================================
 // ZERO-COST SIZE ESTIMATOR (Replaces JSON.stringify)
 // ============================================================================
@@ -272,6 +278,11 @@ export const useStore = create((set, get) => ({
     messages: [{ role: 'model', text: 'Halo! Saya Trido AI. Ada yang bisa dibantu?' }],
     logs: [],
     inputMode: 'voice',
+    transcribeMode: getInitialTranscribeMode(),
+    setTranscribeMode: (mode) => {
+        localStorage.setItem('trido_transcribe_mode', mode);
+        set({ transcribeMode: mode });
+    },
     zoom: 1,
     viewportTransform: [1, 0, 0, 1, 0, 0],
     domElements: {},

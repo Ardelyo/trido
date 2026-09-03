@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 
 interface AppStore extends AgentState {
@@ -82,6 +82,8 @@ interface AppStore extends AgentState {
   
   // Voice & Text Input
   inputMode: 'voice' | 'text';
+  transcribeMode: TranscribeMode;
+  setTranscribeMode: (mode: TranscribeMode) => void;
   chatInputText: string;
   setChatInputText: (txt: string) => void;
   interimInputText: string;
@@ -210,6 +212,12 @@ const getInitialLanguage = (): 'id' | 'en' => {
 
 const getInitialUserName = (): string => {
   return localStorage.getItem('trido_user_name') || 'Guru';
+};
+
+const getInitialTranscribeMode = (): TranscribeMode => {
+  const saved = localStorage.getItem('trido_transcribe_mode');
+  if (saved === 'record_gemini' || saved === 'gemini_live' || saved === 'upload_audio') return saved;
+  return 'webspeech';
 };
 
 // ============================================================================
@@ -476,6 +484,11 @@ export const useStore = create<AppStore>((set, get) => ({
   messages: [{ role: 'model', text: 'Halo! Saya Trido AI. Ada yang bisa dibantu?' }],
   logs: [],
   inputMode: 'voice',
+  transcribeMode: getInitialTranscribeMode(),
+  setTranscribeMode: (mode) => {
+    localStorage.setItem('trido_transcribe_mode', mode);
+    set({ transcribeMode: mode });
+  },
   zoom: 1,
   viewportTransform: [1, 0, 0, 1, 0, 0],
   domElements: {},

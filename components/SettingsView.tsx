@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   X, Key, Cpu, Globe, Moon, Sun, User, Save, CheckCircle2,
   Eye, EyeOff, ExternalLink, Wifi, WifiOff, Zap, Shield,
-  ChevronRight, RotateCcw, Trash2, Volume2, VolumeX, Info
+  ChevronRight, RotateCcw, Trash2, Volume2, VolumeX, Info,
+  Mic, Radio, Upload, Sparkles
 } from 'lucide-react';
 import { useStore } from '../store';
 import { toast } from '../utils/toast';
@@ -45,6 +46,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     theme, toggleTheme,
     userName, setUserName,
     language, setLanguage,
+    transcribeMode, setTranscribeMode,
   } = useStore();
 
   // Local state — only commit to store/localStorage on Save
@@ -57,6 +59,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   const [localVertexModel, setLocalVertexModel] = useState(() => {
     return (!selectedVertexModel || selectedVertexModel === 'gemini-3.7-flash') ? 'gemini-3.8-flash' : selectedVertexModel;
   });
+  const [localTranscribeMode, setLocalTranscribeMode] = useState(transcribeMode);
   const [localName, setLocalName] = useState(userName);
   const [localAiPref, setLocalAiPref] = useState(aiPreference);
   const [localLang, setLocalLang] = useState(language);
@@ -104,6 +107,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     setSelectedGeminiModel(localGeminiModel);
     setSelectedOllamaModel(localOllamaModel);
     setSelectedVertexModel(localVertexModel);
+    setTranscribeMode(localTranscribeMode);
     setUserName(localName);
     setAiPreference(localAiPref);
     setLanguage(localLang);
@@ -112,6 +116,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     localStorage.setItem('selected_gemini_model', localGeminiModel);
     localStorage.setItem('selected_ollama_model', localOllamaModel);
     localStorage.setItem('selected_vertex_model', localVertexModel);
+    localStorage.setItem('trido_transcribe_mode', localTranscribeMode);
     localStorage.setItem('trido_user_name', localName);
     localStorage.setItem('ai_preference', localAiPref);
     localStorage.setItem('trido_sound', soundEnabled ? 'on' : 'off');
@@ -381,6 +386,106 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   : aiStatus === 'offline'
                   ? t('notConnectedStatus', 'Tidak terhubung')
                   : t('testConnection', 'Test Koneksi AI')}
+              </button>
+            </div>
+          </Section>
+
+          {/* Audio & Transkripsi Suara */}
+          <Section
+            title="Perekaman & Transkripsi Audio"
+            subtitle="Pilih metode perekaman suara guru dan transkripsi AI"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* 1. Web Speech API (Default) */}
+              <button
+                type="button"
+                onClick={() => setLocalTranscribeMode('webspeech')}
+                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                  localTranscribeMode === 'webspeech'
+                    ? 'border-blue-600 bg-blue-50/50 shadow-xs'
+                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
+                    <Mic size={15} className="text-blue-600" /> Web Speech API
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+                    Default (Pemula)
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Transkripsi suara instan langsung di peramban. Sangat cepat, tanpa kuota cloud, dan zero-latency.
+                </p>
+              </button>
+
+              {/* 2. Rekam lalu kirim ke Gemini Cloud */}
+              <button
+                type="button"
+                onClick={() => setLocalTranscribeMode('record_gemini')}
+                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                  localTranscribeMode === 'record_gemini'
+                    ? 'border-blue-600 bg-blue-50/50 shadow-xs'
+                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
+                    <Sparkles size={15} className="text-purple-600" /> Rekam & Kirim Gemini
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
+                    Akurat
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Rekam audio microphone berkualitas tinggi, lalu kirimkan ke Gemini Cloud untuk transkripsi istilah akurat.
+                </p>
+              </button>
+
+              {/* 3. Gemini Live Streaming Transcribe */}
+              <button
+                type="button"
+                onClick={() => setLocalTranscribeMode('gemini_live')}
+                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                  localTranscribeMode === 'gemini_live'
+                    ? 'border-blue-600 bg-blue-50/50 shadow-xs'
+                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
+                    <Radio size={15} className="text-emerald-600" /> Gemini Live Transcribe
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                    Realtime
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Streaming audio live berkelanjutan dengan potongan rekaman mikro ke Gemini Flash API.
+                </p>
+              </button>
+
+              {/* 4. Unggah Berkas Audio */}
+              <button
+                type="button"
+                onClick={() => setLocalTranscribeMode('upload_audio')}
+                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                  localTranscribeMode === 'upload_audio'
+                    ? 'border-blue-600 bg-blue-50/50 shadow-xs'
+                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
+                    <Upload size={15} className="text-amber-600" /> Unggah Berkas Audio
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
+                    File
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Pilih dan unggah file audio (.mp3, .wav, .m4a, .webm) dari rekaman ceramah untuk dianalisis AI.
+                </p>
               </button>
             </div>
           </Section>

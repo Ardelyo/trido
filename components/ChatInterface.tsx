@@ -44,6 +44,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const audioUploadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     isListeningRef.current = isListening;
@@ -59,8 +60,55 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     pages, currentPageIndex, switchPage, addPage, removePage,
     isAiDrawerOpen, isViewerUrl,
     toggleTimer, toggleCalculator, toggleNotes, toggleQuiz,
-    toggleUnitConverter, togglePeriodicTable, toggleAttendance, toggleTodoList, toggleBoardSettings
+    toggleUnitConverter, togglePeriodicTable, toggleAttendance, toggleTodoList, toggleBoardSettings,
+    transcribeMode, selectedVertexModel, selectedGeminiModel, geminiApiKey
   } = useStore();
+
+  const handleAudioFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsTranscribing(true);
+    setVoiceNotice('Mengunggah & mentranskripsikan audio...');
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64Audio = reader.result as string;
+          const storeState = useStore.getState();
+          const response = await fetch('/api/ai/transcribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              base64Audio,
+              selectedVertexModel: storeState.selectedVertexModel,
+              selectedGeminiModel: storeState.selectedGeminiModel,
+              geminiApiKey: storeState.geminiApiKey,
+              aiPreference: storeState.aiPreference
+            })
+          });
+
+          if (!response.ok) throw new Error(`Transkripsi gagal: ${response.statusText}`);
+          const data = await response.json();
+          if (data.text && data.text.trim()) {
+            handleSubmitInternal(data.text.trim());
+          } else {
+            setVoiceNotice('Tidak ada ucapan terdeteksi dalam audio.');
+          }
+        } catch (err: any) {
+          setVoiceNotice('Gagal mentranskripsi: ' + (err.message || String(err)));
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setIsTranscribing(false);
+      setVoiceNotice('Gagal membaca file audio.');
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!canvasRef.current) return;
@@ -290,12 +338,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   }, [isListening]);
 
   const toggleListening = async () => {
+    if (transcribeMode === 'upload_audio') {
+      audioUploadInputRef.current?.click();
+      return;
+    }
+
+    const isWebSpeech = transcribeMode === 'webspeech';
+
     if (isListening) {
       setIsListening(false);
       sounds.play('mic_off');
       stopVisualizer();
 
-      if (recordingMethod === 'webspeech') {
+      if (isWebSpeech) {
         recognitionRef.current?.stop();
         // Wait up to 600ms for final SpeechRecognition results to flush
         await new Promise(r => setTimeout(r, 600));
@@ -316,7 +371,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         }
       }
     } else {
-      if (!speechSupported) {
+      if (isWebSpeech && !speechSupported) {
         const fallbackMessage = t('voiceUnsupported', 'Browser ini belum mendukung fitur pengenalan suara lokal (Web Speech API). Silakan gunakan kolom teks.');
         setVoiceNotice(fallbackMessage);
         if (!isAiDrawerOpen) useStore.getState().toggleAiDrawer();
@@ -349,7 +404,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
         startVisualizer(stream);
 
-        if (recordingMethod === 'webspeech') {
+        if (isWebSpeech) {
           if (recognitionRef.current) {
             recognitionRef.current.lang = language === 'en' ? 'en-US' : 'id-ID';
             try { recognitionRef.current.stop(); } catch(e) {}
@@ -411,7 +466,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                     base64Audio: base64,
                     aiPreference,
                     geminiApiKey,
-                    ollamaBaseUrl
+                    ollamaBaseUrl,
+                    selectedVertexModel: storeState.selectedVertexModel,
+                    selectedGeminiModel: storeState.selectedGeminiModel
                   })
                 });
 
@@ -432,13 +489,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
             };
           };
 
-          mediaRecorder.start();
+          // If gemini_live, stream in 3-second intervals, else continuous recording until stop
+          mediaRecorder.start(transcribeMode === 'gemini_live' ? 3000 : undefined);
 
           setTimeout(() => {
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
               toggleListening();
             }
-          }, 15000); // 15-second auto-stop
+          }, 20000); // 20-second auto-stop
         }
       } catch (err) {
         setMicPermission('denied');
@@ -449,7 +507,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   };
 
   const handleSendVoice = () => {
-    if (recordingMethod === 'webspeech') {
+    const isWebSpeech = transcribeMode === 'webspeech';
+    if (isWebSpeech) {
       const finalInput = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
       if (finalInput || useStore.getState().lastUploadedImage) {
         handleSubmitInternal(finalInput);
@@ -767,7 +826,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
            </motion.div>
         </div>
 
-
+        {/* Hidden Audio File Input for Audio Upload Transcribe */}
+        <input
+          ref={audioUploadInputRef}
+          type="file"
+          accept="audio/mp3,audio/wav,audio/webm,audio/ogg,audio/m4a,audio/*"
+          className="hidden"
+          onChange={handleAudioFileUpload}
+        />
       </div>
     </div>
   );

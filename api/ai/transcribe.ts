@@ -35,7 +35,12 @@ export default async function handler(req: any, res: any) {
 
     const projectId = (process.env.GOOGLE_CLOUD_PROJECT || 'gemma4good-494311').trim();
     const location = (process.env.GOOGLE_CLOUD_LOCATION || 'global').trim();
-    const cleanAudio = base64Audio.replace(/^data:audio\/\w+;base64,/, "").trim();
+    let audioMimeType = 'audio/webm';
+    const mimeMatch = base64Audio.match(/^data:(audio\/[a-zA-Z0-9+.-]+);base64,/);
+    if (mimeMatch) {
+      audioMimeType = mimeMatch[1];
+    }
+    const cleanAudio = base64Audio.replace(/^data:audio\/[a-zA-Z0-9+.-]+;base64,/, "").trim();
 
     const host = location === 'global' ? 'aiplatform.googleapis.com' : `${location}-aiplatform.googleapis.com`;
     const url = `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
@@ -50,7 +55,7 @@ export default async function handler(req: any, res: any) {
         contents: [{
           role: 'user',
           parts: [
-            { inlineData: { mimeType: 'audio/webm', data: cleanAudio } },
+            { inlineData: { mimeType: audioMimeType, data: cleanAudio } },
             { text: "Transkripsikan rekaman suara audio ini secara akurat ke dalam teks bahasa Indonesia. Tangkap istilah pembelajaran, instruksi papan tulis, rumus, atau pertanyaan secara jelas dan tepat. Kembalikan HANYA teks transkripsi murni tanpa tanda petik pembuka/penutup atau catatan tambahan." }
           ]
         }],

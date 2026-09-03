@@ -19,6 +19,7 @@ export type CreatorTool = 'SELECT' | 'PENCIL' | 'ERASER' | 'TEXT' | 'RECTANGLE' 
 
 export type AiPreference = 'auto' | 'gemini' | 'ollama' | 'vertex';
 export type AiRuntimeMode = 'gemini' | 'ollama' | 'vertex' | 'unavailable';
+export type TranscribeMode = 'webspeech' | 'record_gemini' | 'gemini_live' | 'upload_audio';
 export type CanvasJson = Record<string, unknown> | unknown[];
 export type ViewportTransform = number[];
 
