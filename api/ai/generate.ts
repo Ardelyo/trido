@@ -28,7 +28,7 @@ export default async function handler(req: any, res: any) {
       forceTools
     } = body;
 
-    const modelName = (selectedVertexModel || selectedGeminiModel || process.env.VERTEX_MODEL || 'gemini-3.7-flash').trim();
+    const modelName = (selectedVertexModel || selectedGeminiModel || process.env.VERTEX_MODEL || 'gemini-3.8-flash').trim();
 
     const { GoogleAuth } = await import('google-auth-library');
     const adcRaw = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
@@ -188,6 +188,9 @@ CAPABILITIES & RULES:
         generationConfig: {
           temperature: 0.2,
           maxOutputTokens: 8192,
+          thinkingConfig: {
+            thinkingBudget: 0
+          }
         },
         tools: [{ functionDeclarations: toolsDeclarations }],
         toolConfig: {

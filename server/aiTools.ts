@@ -32,6 +32,12 @@ export interface ModelCapability {
 }
 
 export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
+  'gemini-3.8-flash': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 25,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.7
+  },
   'gemini-3.7-flash': {
     supportsComplexSchema: true,
     maxToolCallsPerRequest: 20,
@@ -87,7 +93,7 @@ export const getCapability = (modelName: string): ModelCapability => {
     return MODEL_CAPABILITIES[modelName];
   }
   if (modelName.startsWith('gemini-')) {
-    return MODEL_CAPABILITIES['gemini-3.5-flash-lite'];
+    return MODEL_CAPABILITIES['gemini-3.8-flash'] || MODEL_CAPABILITIES['gemini-3.7-flash'];
   }
   return MODEL_CAPABILITIES['gemma-4-31b-it'];
 };

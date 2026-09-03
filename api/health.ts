@@ -9,7 +9,7 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
     status: 'ok',
     environment: 'vercel-serverless',
     project: 'gemma4good-494311',
-    model: 'gemini-3.7-flash',
+    model: 'gemini-3.8-flash',
     timestamp: new Date().toISOString()
   });
 }

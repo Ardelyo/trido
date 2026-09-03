@@ -33,7 +33,7 @@ export async function callVertexRestApi(projectId: string, location: string, mod
 
   const cleanProj = (projectId || 'gemma4good-494311').trim();
   const cleanLoc = (location || 'global').trim();
-  const cleanModel = (modelName || 'gemini-3.7-flash').trim();
+  const cleanModel = (modelName || 'gemini-3.8-flash').trim();
 
   const host = cleanLoc === 'global' ? 'aiplatform.googleapis.com' : `${cleanLoc}-aiplatform.googleapis.com`;
   const url = `https://${host}/v1/projects/${cleanProj}/locations/${cleanLoc}/publishers/google/models/${cleanModel}:generateContent`;
@@ -79,7 +79,7 @@ export const generateAgentActionsVertex = async (
 
   const projectId = cleanEnv(process.env.GOOGLE_CLOUD_PROJECT) || cleanEnv(process.env.VERTEX_PROJECT_ID) || 'gemma4good-494311';
   const location = cleanEnv(process.env.GOOGLE_CLOUD_LOCATION) || cleanEnv(process.env.VERTEX_LOCATION) || 'global';
-  const selectedModel = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.7-flash';
+  const selectedModel = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.8-flash';
 
   const capability = getCapability(selectedModel);
   let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
@@ -116,6 +116,9 @@ export const generateAgentActionsVertex = async (
     generationConfig: {
       temperature: 0.2,
       maxOutputTokens: 8192,
+      thinkingConfig: {
+        thinkingBudget: 0
+      }
     },
     tools: [{ functionDeclarations: tools as any }],
     toolConfig: {
@@ -163,7 +166,7 @@ export const generateAgentActionsVertex = async (
 export const generateToolContentVertex = async (toolId: string, prompt: string, modelOverride?: string): Promise<any> => {
   const projectId = cleanEnv(process.env.GOOGLE_CLOUD_PROJECT) || cleanEnv(process.env.VERTEX_PROJECT_ID) || 'gemma4good-494311';
   const location = cleanEnv(process.env.GOOGLE_CLOUD_LOCATION) || cleanEnv(process.env.VERTEX_LOCATION) || 'global';
-  const modelName = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.7-flash';
+  const modelName = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.8-flash';
 
   let promptText = "";
   if (toolId === 'mindmap') {
@@ -201,7 +204,12 @@ Rules:
 
   const payload = {
     contents: [{ role: 'user', parts: [{ text: promptText }] }],
-    generationConfig: { temperature: 0.2 }
+    generationConfig: {
+      temperature: 0.2,
+      thinkingConfig: {
+        thinkingBudget: 0
+      }
+    }
   };
 
   let data;
@@ -229,7 +237,7 @@ Rules:
 export const transcribeAudioVertex = async (audioBase64: string, mimeType = 'audio/webm', modelOverride?: string): Promise<string> => {
   const projectId = cleanEnv(process.env.GOOGLE_CLOUD_PROJECT) || cleanEnv(process.env.VERTEX_PROJECT_ID) || 'gemma4good-494311';
   const location = cleanEnv(process.env.GOOGLE_CLOUD_LOCATION) || cleanEnv(process.env.VERTEX_LOCATION) || 'global';
-  const modelName = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.7-flash';
+  const modelName = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.8-flash';
   const cleanAudio = audioBase64.replace(/^data:audio\/\w+;base64,/, "");
 
   const payload = {
@@ -240,7 +248,13 @@ export const transcribeAudioVertex = async (audioBase64: string, mimeType = 'aud
         { text: "Transkripsikan rekaman suara audio ini secara akurat ke dalam teks bahasa Indonesia. Tangkap istilah pembelajaran, instruksi papan tulis, rumus, atau pertanyaan secara jelas dan tepat. Kembalikan HANYA teks transkripsi murni tanpa tanda petik pembuka/penutup atau catatan tambahan." }
       ]
     }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 2048,
+      thinkingConfig: {
+        thinkingBudget: 0
+      }
+    }
   };
 
   try {

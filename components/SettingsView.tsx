@@ -268,8 +268,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     onChange={e => setLocalGeminiModel(e.target.value)}
                     className={inputCls}
                   >
+                    <option value="gemini-3.8-flash">gemini-3.8-flash (Recommended - Ultra-fast, Zero-latency & Full Power)</option>
                     <option value="gemini-3.7-flash">gemini-3.7-flash (Gemma 4 Good - Ultra-fast & Smart)</option>
-                    <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Recommended)</option>
+                    <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Standard)</option>
                     <option value="gemini-3.5-flash">gemini-3.5-flash (High Intelligence)</option>
                     <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra-fast)</option>
                     <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Capable)</option>
@@ -304,6 +305,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   onChange={e => setLocalVertexModel(e.target.value)}
                   className={inputCls}
                 >
+                  <option value="gemini-3.8-flash">gemini-3.8-flash (Recommended - Ultra-fast, Zero-latency & Full Power)</option>
                   <option value="gemini-3.7-flash">gemini-3.7-flash (Gemma 4 Good - Ultra-fast & Smart)</option>
                   <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Capable)</option>
                   <option value="gemini-2.5-pro">gemini-2.5-pro (High Intelligence)</option>

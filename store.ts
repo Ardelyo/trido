@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 
 interface AppStore extends AgentState {
@@ -119,15 +119,16 @@ interface AppStore extends AgentState {
   setBrushWidth: (width: number) => void;
   
   // Pages
-  pages: Array<{ canvas: object, dom: Record<string, DomElementState>, previewDataUrl?: string }>;
+  pages: PageState[];
   currentPageIndex: number;
   addPage: (emptyState?: object, previewDataUrl?: string) => void;
   switchPage: (index: number) => void;
-  updatePageData: (index: number, canvasData: object, domData: Record<string, DomElementState>, previewDataUrl?: string) => void;
+  updatePageData: (index: number, canvasData: object, domData: Record<string, DomElementState>, previewDataUrl?: string, mindmapNodes?: MindmapNodeRecord[]) => void;
   removePage: (index: number) => void;
   
   addAction: (action: AgentAction) => void;
   addMessage: (msg: ChatMessage) => void;
+  clearMessages: () => void;
   popAction: () => AgentAction | undefined;
   addLog: (log: string) => void;
   clearQueue: () => void;
@@ -186,7 +187,9 @@ const getInitialOllamaBaseUrl = (): string => {
 };
 
 const getInitialSelectedGeminiModel = (): string => {
-  return localStorage.getItem('selected_gemini_model') || 'gemini-3.7-flash';
+  const saved = localStorage.getItem('selected_gemini_model');
+  if (!saved || saved === 'gemini-3.7-flash') return 'gemini-3.8-flash';
+  return saved;
 };
 
 const getInitialSelectedOllamaModel = (): string => {
@@ -194,7 +197,9 @@ const getInitialSelectedOllamaModel = (): string => {
 };
 
 const getInitialSelectedVertexModel = (): string => {
-  return localStorage.getItem('selected_vertex_model') || 'gemini-3.7-flash';
+  const saved = localStorage.getItem('selected_vertex_model');
+  if (!saved || saved === 'gemini-3.7-flash') return 'gemini-3.8-flash';
+  return saved;
 };
 
 const getInitialLanguage = (): 'id' | 'en' => {
@@ -279,7 +284,7 @@ export const useStore = create<AppStore>((set, get) => ({
   createNewSession: () => {
     set({
       currentSessionId: null,
-      pages: [{ canvas: {}, dom: {}, previewDataUrl: '' }],
+      pages: [{ canvas: {}, dom: {}, previewDataUrl: '', mindmapNodes: [] }],
       currentPageIndex: 0,
       domElements: {},
       messages: [{ role: 'model', text: 'Halo! Papan tulis baru telah disiapkan.' }],
@@ -291,14 +296,15 @@ export const useStore = create<AppStore>((set, get) => ({
   loadSessionData: async (id) => {
     const session = await getSessionFromDb(id);
     if (session) {
+      const initialPage = session.pages[0];
       set({
         currentSessionId: session.id,
         pages: session.pages,
         currentPageIndex: 0,
-        domElements: session.pages[0]?.dom || {},
+        domElements: initialPage?.dom || {},
         isHistoryOpen: false,
         lessonPlan: null,
-        activeMindmapNodes: []
+        activeMindmapNodes: initialPage?.mindmapNodes || []
       });
       // the canvas engine will need to detect this change and load
     }
@@ -368,15 +374,32 @@ export const useStore = create<AppStore>((set, get) => ({
   }),
 
   // Mindmap node registry
-  registerMindmapNode: (node) => set((state) => ({
-    activeMindmapNodes: [
+  registerMindmapNode: (node) => set((state) => {
+    const updatedNodes = [
       // Replace if same text exists
       ...state.activeMindmapNodes.filter(n => n.text !== node.text),
       node
-    ]
-  })),
+    ];
+    const newPages = [...state.pages];
+    if (newPages[state.currentPageIndex]) {
+      newPages[state.currentPageIndex] = {
+        ...newPages[state.currentPageIndex],
+        mindmapNodes: updatedNodes
+      };
+    }
+    return { activeMindmapNodes: updatedNodes, pages: newPages };
+  }),
 
-  clearMindmapNodes: () => set({ activeMindmapNodes: [] }),
+  clearMindmapNodes: () => set((state) => {
+    const newPages = [...state.pages];
+    if (newPages[state.currentPageIndex]) {
+      newPages[state.currentPageIndex] = {
+        ...newPages[state.currentPageIndex],
+        mindmapNodes: []
+      };
+    }
+    return { activeMindmapNodes: [], pages: newPages };
+  }),
 
   getMindmapNodeByText: (text) => {
     const { activeMindmapNodes } = get();
@@ -509,23 +532,33 @@ export const useStore = create<AppStore>((set, get) => ({
   fontFamily: 'Inter',
   fontSize: 24,
   
-  pages: [{ canvas: {}, dom: {}, previewDataUrl: '' }],
+  pages: [{ canvas: {}, dom: {}, previewDataUrl: '', mindmapNodes: [] }],
   currentPageIndex: 0,
   
   addPage: (emptyState, previewDataUrl) => set((state) => {
-    const newPages = [...state.pages, { canvas: emptyState || {}, dom: {}, previewDataUrl: previewDataUrl || '' }];
-    return { pages: newPages, currentPageIndex: newPages.length - 1 };
+    const newPages = [...state.pages, { canvas: emptyState || {}, dom: {}, previewDataUrl: previewDataUrl || '', mindmapNodes: [] }];
+    return { pages: newPages, currentPageIndex: newPages.length - 1, activeMindmapNodes: [] };
   }),
   switchPage: (index) => set((state) => {
     if (index >= 0 && index < state.pages.length) {
-      return { currentPageIndex: index };
+      const targetPage = state.pages[index];
+      return { 
+        currentPageIndex: index,
+        activeMindmapNodes: targetPage?.mindmapNodes || []
+      };
     }
     return {};
   }),
-  updatePageData: (index, canvasData, domData, previewDataUrl) => set((state) => {
+  updatePageData: (index, canvasData, domData, previewDataUrl, mindmapNodes) => set((state) => {
     const newPages = [...state.pages];
     const oldUrl = newPages[index]?.previewDataUrl;
-    newPages[index] = { canvas: canvasData, dom: domData, previewDataUrl: previewDataUrl !== undefined ? previewDataUrl : oldUrl };
+    const currentNodes = mindmapNodes !== undefined ? mindmapNodes : (newPages[index]?.mindmapNodes || state.activeMindmapNodes);
+    newPages[index] = { 
+      canvas: canvasData, 
+      dom: domData, 
+      previewDataUrl: previewDataUrl !== undefined ? previewDataUrl : oldUrl,
+      mindmapNodes: currentNodes
+    };
     
     // Auto-save logic
     if (state.currentSessionId) {
@@ -543,7 +576,11 @@ export const useStore = create<AppStore>((set, get) => ({
     newPages.splice(index, 1);
     let newIndex = state.currentPageIndex;
     if (newIndex >= newPages.length) newIndex = newPages.length - 1;
-    return { pages: newPages, currentPageIndex: newIndex };
+    return { 
+      pages: newPages, 
+      currentPageIndex: newIndex,
+      activeMindmapNodes: newPages[newIndex]?.mindmapNodes || []
+    };
   }),
 
   setInputMode: (mode) => set({ inputMode: mode }),
@@ -582,6 +619,8 @@ export const useStore = create<AppStore>((set, get) => ({
   },
 
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+  
+  clearMessages: () => set({ messages: [{ role: 'model', text: 'Halo! Saya Trido AI ditenagai model **Gemini 3.8 Flash** Cloud. Ada yang bisa saya bantu di papan tulis?' }] }),
   
   addLog: (log) => set((state) => {
     const newLogs = [log, ...state.logs].slice(0, 50);

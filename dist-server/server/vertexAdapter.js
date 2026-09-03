@@ -1,26 +1,17 @@
-import { GoogleAuth } from 'google-auth-library';
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from './aiTools.js';
-import { CONFIG } from '../constants';
-import { createLogger } from '../utils/logger';
-const logger = createLogger('vertex-adapter');
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from './aiTools';
 let authClient = null;
-const getAuthClient = () => {
+const cleanEnv = (val) => (val ? val.trim() : undefined);
+export const getAuthClient = async () => {
     if (!authClient) {
+        const { GoogleAuth } = await import('google-auth-library');
         let credentials = undefined;
-        if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+        const rawJson = cleanEnv(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) || cleanEnv(process.env.GCP_SERVICE_ACCOUNT_KEY);
+        if (rawJson) {
             try {
-                credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+                credentials = JSON.parse(rawJson);
             }
             catch (e) {
-                logger.error('Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON', e);
-            }
-        }
-        else if (process.env.GCP_SERVICE_ACCOUNT_KEY) {
-            try {
-                credentials = JSON.parse(process.env.GCP_SERVICE_ACCOUNT_KEY);
-            }
-            catch (e) {
-                logger.error('Failed to parse GCP_SERVICE_ACCOUNT_KEY', e);
+                console.error('Failed to parse JSON credentials', e);
             }
         }
         authClient = new GoogleAuth({
@@ -30,14 +21,16 @@ const getAuthClient = () => {
     }
     return authClient;
 };
-async function callVertexRestApi(projectId, location, modelName, payload) {
-    const auth = getAuthClient();
+export async function callVertexRestApi(projectId, location, modelName, payload) {
+    const auth = await getAuthClient();
     const client = await auth.getClient();
     const tokenResponse = await client.getAccessToken();
     const token = tokenResponse.token;
-    // Use global or specific location host
-    const host = location === 'global' ? 'aiplatform.googleapis.com' : `${location}-aiplatform.googleapis.com`;
-    const url = `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelName}:generateContent`;
+    const cleanProj = (projectId || 'gemma4good-494311').trim();
+    const cleanLoc = (location || 'global').trim();
+    const cleanModel = (modelName || 'gemini-3.8-flash').trim();
+    const host = cleanLoc === 'global' ? 'aiplatform.googleapis.com' : `${cleanLoc}-aiplatform.googleapis.com`;
+    const url = `https://${host}/v1/projects/${cleanProj}/locations/${cleanLoc}/publishers/google/models/${cleanModel}:generateContent`;
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -57,11 +50,11 @@ async function callVertexRestApi(projectId, location, modelName, payload) {
     return data;
 }
 export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, intent, forceTools, lessonContext, modelOverride) => {
-    const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId || 'gemma4good-494311';
-    const location = process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEX_LOCATION || CONFIG.ai.vertex.location || 'global';
-    const selectedModel = modelOverride || CONFIG.ai.vertex.model;
+    const cleanCanvasBase64 = canvasImageBase64 ? canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "").trim() : "";
+    const cleanInputImage = highResInputImage ? highResInputImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, "").trim() : "";
+    const projectId = cleanEnv(process.env.GOOGLE_CLOUD_PROJECT) || cleanEnv(process.env.VERTEX_PROJECT_ID) || 'gemma4good-494311';
+    const location = cleanEnv(process.env.GOOGLE_CLOUD_LOCATION) || cleanEnv(process.env.VERTEX_LOCATION) || 'global';
+    const selectedModel = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.8-flash';
     const capability = getCapability(selectedModel);
     let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
     const intentInstruction = intent === 'question'
@@ -91,8 +84,11 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
             parts: [{ text: systemInstruction }]
         },
         generationConfig: {
-            temperature: CONFIG.ai.vertex.generation.temperature,
-            maxOutputTokens: CONFIG.ai.vertex.generation.maxOutputTokens,
+            temperature: 0.2,
+            maxOutputTokens: 8192,
+            thinkingConfig: {
+                thinkingBudget: 0
+            }
         },
         tools: [{ functionDeclarations: tools }],
         toolConfig: {
@@ -120,7 +116,6 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
     const thought = extractThinking({ text: textResponse, candidates: data.candidates });
     const validation = validateFunctionCalls(functionCalls, canvasObjects, domElements);
     if (!validation.isValid) {
-        logger.warn('Function call validation issues (Vertex)', { errors: validation.errors });
         functionCalls = validation.fixedCalls;
     }
     return {
@@ -131,9 +126,9 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
     };
 };
 export const generateToolContentVertex = async (toolId, prompt, modelOverride) => {
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId || 'gemma4good-494311';
-    const location = process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEX_LOCATION || CONFIG.ai.vertex.location || 'global';
-    const modelName = modelOverride || CONFIG.ai.vertex.model;
+    const projectId = cleanEnv(process.env.GOOGLE_CLOUD_PROJECT) || cleanEnv(process.env.VERTEX_PROJECT_ID) || 'gemma4good-494311';
+    const location = cleanEnv(process.env.GOOGLE_CLOUD_LOCATION) || cleanEnv(process.env.VERTEX_LOCATION) || 'global';
+    const modelName = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.8-flash';
     let promptText = "";
     if (toolId === 'mindmap') {
         promptText = `Generate a JSON object for a mind map about: "${prompt}".
@@ -153,11 +148,11 @@ Rules:
     Format EXACTLY: {
       "title": "string",
       "questions": [
-        { "type": "multiple_choice", "question": "string", "options": ["string", "string", "string", "string"], "correctIndex": number },
+        { "type": "multiple_choice", "question": "string", "options": ["string", "string", "string", "string"], "correctIndex": number, "explanation": "string" },
         { "type": "essay", "question": "string", "expectedAnswer": "string" }
       ]
     }
-    Include at least 2 multiple choice questions and 1 essay question.
+    Include at least 2 multiple choice questions with 4 options and 1 essay question.
     RETURN ONLY RAW VALID JSON without markdown formatting.`;
     }
     else if (toolId === 'website') {
@@ -172,7 +167,12 @@ Rules:
     }
     const payload = {
         contents: [{ role: 'user', parts: [{ text: promptText }] }],
-        generationConfig: { temperature: CONFIG.ai.vertex.generation.temperature }
+        generationConfig: {
+            temperature: 0.2,
+            thinkingConfig: {
+                thinkingBudget: 0
+            }
+        }
     };
     let data;
     try {
@@ -180,7 +180,6 @@ Rules:
     }
     catch (error) {
         if (error.status === 404 && modelName !== 'gemini-2.5-flash') {
-            logger.warn(`Model ${modelName} returned 404 in tool-content. Falling back to gemini-2.5-flash.`);
             data = await callVertexRestApi(projectId, location, 'gemini-2.5-flash', payload);
         }
         else {
@@ -195,36 +194,41 @@ Rules:
         return JSON.parse(jsonStr);
     }
     catch {
-        logger.error('Failed to parse tool content JSON', { text });
         return null;
     }
 };
 export const transcribeAudioVertex = async (audioBase64, mimeType = 'audio/webm', modelOverride) => {
-    const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || CONFIG.ai.vertex.projectId || 'gemma4good-494311';
-    const location = process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEX_LOCATION || CONFIG.ai.vertex.location || 'global';
-    const modelName = modelOverride || CONFIG.ai.vertex.model;
+    const projectId = cleanEnv(process.env.GOOGLE_CLOUD_PROJECT) || cleanEnv(process.env.VERTEX_PROJECT_ID) || 'gemma4good-494311';
+    const location = cleanEnv(process.env.GOOGLE_CLOUD_LOCATION) || cleanEnv(process.env.VERTEX_LOCATION) || 'global';
+    const modelName = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.8-flash';
     const cleanAudio = audioBase64.replace(/^data:audio\/\w+;base64,/, "");
     const payload = {
         contents: [{
                 role: 'user',
                 parts: [
                     { inlineData: { mimeType, data: cleanAudio } },
-                    { text: "Transkripsikan rekaman suara ini secara akurat ke teks bahasa Indonesia." }
+                    { text: "Transkripsikan rekaman suara audio ini secara akurat ke dalam teks bahasa Indonesia. Tangkap istilah pembelajaran, instruksi papan tulis, rumus, atau pertanyaan secara jelas dan tepat. Kembalikan HANYA teks transkripsi murni tanpa tanda petik pembuka/penutup atau catatan tambahan." }
                 ]
             }],
-        generationConfig: { temperature: CONFIG.ai.gemini.transcription.temperature }
+        generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 2048,
+            thinkingConfig: {
+                thinkingBudget: 0
+            }
+        }
     };
     try {
         const data = await callVertexRestApi(projectId, location, modelName, payload);
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        return text.replace(/^["']|["']$/g, '').trim();
     }
     catch (error) {
         if (error.status === 404 && modelName !== 'gemini-2.5-flash') {
-            logger.warn(`Model ${modelName} returned 404 in transcription. Falling back to gemini-2.5-flash.`);
             const fallbackData = await callVertexRestApi(projectId, location, 'gemini-2.5-flash', payload);
-            return fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            let text = fallbackData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            return text.replace(/^["']|["']$/g, '').trim();
         }
-        logger.error('Vertex AI Audio Transcription failed', error);
         throw error;
     }
 };

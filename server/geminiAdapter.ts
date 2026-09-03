@@ -25,7 +25,7 @@ export const generateAgentActionsGemini = async (
   const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
   const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
 
-  const selectedModel = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
+  const selectedModel = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model || 'gemini-3.8-flash';
   const capability = getCapability(selectedModel);
   let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
 
@@ -76,7 +76,10 @@ export const generateAgentActionsGemini = async (
         },
         systemInstruction: systemInstruction,
         temperature: CONFIG.ai.gemini.generation.temperature,
-        maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens
+        maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens,
+        thinkingConfig: {
+          thinkingBudget: 0
+        }
       }
     });
   } finally {
@@ -111,7 +114,7 @@ export const generateAgentActionsGemini = async (
 };
 
 export const generateToolContentGemini = async (toolId: string, prompt: string, customKey?: string, modelOverride?: string): Promise<any> => {
-  const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
+  const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model || 'gemini-3.8-flash';
   let promptText = "";
   
   if (toolId === 'mindmap') {
@@ -151,7 +154,12 @@ Rules:
   const response = await ai.models.generateContent({
     model,
     contents: [{ role: 'user', parts: [{ text: promptText }] }],
-    config: { temperature: CONFIG.ai.gemini.generation.temperature }
+    config: {
+      temperature: CONFIG.ai.gemini.generation.temperature,
+      thinkingConfig: {
+        thinkingBudget: 0
+      }
+    }
   });
 
   const text = response.text || "";
@@ -167,7 +175,7 @@ Rules:
 };
 
 export const transcribeAudioGemini = async (base64Audio: string, customKey?: string, modelOverride?: string): Promise<string> => {
-  const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
+  const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model || 'gemini-3.8-flash';
   const ai = getAiClient(customKey);
   const response = await ai.models.generateContent({
     model: model,
@@ -186,7 +194,12 @@ export const transcribeAudioGemini = async (base64Audio: string, customKey?: str
         ],
       },
     ],
-    config: { temperature: CONFIG.ai.gemini.transcription.temperature },
+    config: {
+      temperature: CONFIG.ai.gemini.transcription.temperature,
+      thinkingConfig: {
+        thinkingBudget: 0
+      }
+    },
   });
 
   return response.text?.trim() || "";

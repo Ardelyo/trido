@@ -1,5 +1,5 @@
 import { GoogleGenAI, FunctionCallingConfigMode } from "@google/genai";
-import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools.js";
+import { tools, buildSystemInstruction, validateFunctionCalls, extractThinking, getCapability } from "./aiTools";
 import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 const getAiClient = (customKey) => new GoogleGenAI({ apiKey: customKey || process.env.GEMINI_API_KEY || process.env.API_KEY || "dummy" });
@@ -7,7 +7,7 @@ const logger = createLogger('gemini-adapter');
 export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, customKey, intent, forceTools, lessonContext, modelOverride) => {
     const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
     const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const selectedModel = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
+    const selectedModel = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model || 'gemini-3.8-flash';
     const capability = getCapability(selectedModel);
     let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
     // Add intent context to system prompt
@@ -51,7 +51,10 @@ export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canv
                 },
                 systemInstruction: systemInstruction,
                 temperature: CONFIG.ai.gemini.generation.temperature,
-                maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens
+                maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens,
+                thinkingConfig: {
+                    thinkingBudget: 0
+                }
             }
         });
     }
@@ -83,7 +86,7 @@ export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canv
     };
 };
 export const generateToolContentGemini = async (toolId, prompt, customKey, modelOverride) => {
-    const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
+    const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model || 'gemini-3.8-flash';
     let promptText = "";
     if (toolId === 'mindmap') {
         promptText = `Generate a JSON object for a mind map about: "${prompt}".
@@ -124,7 +127,12 @@ Rules:
     const response = await ai.models.generateContent({
         model,
         contents: [{ role: 'user', parts: [{ text: promptText }] }],
-        config: { temperature: CONFIG.ai.gemini.generation.temperature }
+        config: {
+            temperature: CONFIG.ai.gemini.generation.temperature,
+            thinkingConfig: {
+                thinkingBudget: 0
+            }
+        }
     });
     const text = response.text || "";
     if (toolId === 'summary')
@@ -139,7 +147,7 @@ Rules:
     }
 };
 export const transcribeAudioGemini = async (base64Audio, customKey, modelOverride) => {
-    const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
+    const model = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model || 'gemini-3.8-flash';
     const ai = getAiClient(customKey);
     const response = await ai.models.generateContent({
         model: model,
@@ -158,7 +166,12 @@ export const transcribeAudioGemini = async (base64Audio, customKey, modelOverrid
                 ],
             },
         ],
-        config: { temperature: CONFIG.ai.gemini.transcription.temperature },
+        config: {
+            temperature: CONFIG.ai.gemini.transcription.temperature,
+            thinkingConfig: {
+                thinkingBudget: 0
+            }
+        },
     });
     return response.text?.trim() || "";
 };

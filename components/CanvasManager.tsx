@@ -44,11 +44,12 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       if (prevSessionId.current === currentSessionId && prevPageIndex.current !== currentPageIndex) {
         const prevState = canvas.toJSON(['id', 'zIndex', 'isDomPlaceholder']);
         const prevDom = useStore.getState().domElements;
+        const prevMindmap = useStore.getState().activeMindmapNodes;
         try {
           const previewUrl = canvas.toDataURL({ format: 'png', multiplier: 0.2 });
-          useStore.getState().updatePageData(prevPageIndex.current, prevState, prevDom, previewUrl);
+          useStore.getState().updatePageData(prevPageIndex.current, prevState, prevDom, previewUrl, prevMindmap);
         } catch (e) {
-          useStore.getState().updatePageData(prevPageIndex.current, prevState, prevDom);
+          useStore.getState().updatePageData(prevPageIndex.current, prevState, prevDom, undefined, prevMindmap);
         }
       }
       

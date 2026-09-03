@@ -1,7 +1,21 @@
-import { Type } from "@google/genai";
 import { createLogger } from "../utils/logger";
+export const Type = {
+    TYPE_UNSPECIFIED: "TYPE_UNSPECIFIED",
+    STRING: "STRING",
+    NUMBER: "NUMBER",
+    INTEGER: "INTEGER",
+    BOOLEAN: "BOOLEAN",
+    ARRAY: "ARRAY",
+    OBJECT: "OBJECT"
+};
 const logger = createLogger('ai-tools');
 export const MODEL_CAPABILITIES = {
+    'gemini-3.8-flash': {
+        supportsComplexSchema: true,
+        maxToolCallsPerRequest: 25,
+        supportsLessonEngine: true,
+        recommendedTemperature: 0.7
+    },
     'gemini-3.7-flash': {
         supportsComplexSchema: true,
         maxToolCallsPerRequest: 20,
@@ -56,7 +70,7 @@ export const getCapability = (modelName) => {
         return MODEL_CAPABILITIES[modelName];
     }
     if (modelName.startsWith('gemini-')) {
-        return MODEL_CAPABILITIES['gemini-3.5-flash-lite'];
+        return MODEL_CAPABILITIES['gemini-3.8-flash'] || MODEL_CAPABILITIES['gemini-3.7-flash'];
     }
     return MODEL_CAPABILITIES['gemma-4-31b-it'];
 };

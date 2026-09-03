@@ -1,8 +1,8 @@
-export const GEMINI_MODEL = 'gemini-3.7-flash';
+export const GEMINI_MODEL = 'gemini-3.8-flash';
 export const OLLAMA_MODEL = 'gemma4:e2b';
 export const OLLAMA_THINKING_MODE = 'nothink';
 export const DEFAULT_CANVAS_COLOR = 'transparent';
-export const AGENT_THINKING_BUDGET = 2000;
+export const AGENT_THINKING_BUDGET = 0;
 
 export const CONFIG = {
   ai: {
@@ -14,6 +14,7 @@ export const CONFIG = {
       generation: {
         temperature: 0.2,
         maxOutputTokens: 8192,
+        thinkingBudget: 0,
       },
       transcription: {
         temperature: 0.1,
@@ -27,13 +28,14 @@ export const CONFIG = {
       numCtx: 8192,
     },
     vertex: {
-      model: 'gemini-3.7-flash',
+      model: 'gemini-3.8-flash',
       location: 'global',
       projectId: 'gemma4good-494311',
       probeTimeoutMs: 3000,
       generation: {
         temperature: 0.2,
         maxOutputTokens: 8192,
+        thinkingBudget: 0,
       },
     },
     request: {

@@ -14,7 +14,7 @@ export default async function handler(req: any, res: any) {
     body = body || {};
 
     const { toolId, prompt, selectedVertexModel } = body;
-    const modelName = (selectedVertexModel || process.env.VERTEX_MODEL || 'gemini-3.7-flash').trim();
+    const modelName = (selectedVertexModel || process.env.VERTEX_MODEL || 'gemini-3.8-flash').trim();
 
     const { GoogleAuth } = await import('google-auth-library');
     const adcRaw = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
@@ -76,7 +76,12 @@ Format your response in Markdown. Text: "${prompt}"`;
       },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: promptText }] }],
-        generationConfig: { temperature: 0.2 }
+        generationConfig: {
+          temperature: 0.2,
+          thinkingConfig: {
+            thinkingBudget: 0
+          }
+        }
       })
     });
 

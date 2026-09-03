@@ -55,6 +55,13 @@ export interface DomElementState {
   zIndex: number;
 }
 
+export interface PageState {
+  canvas: object;
+  dom: Record<string, DomElementState>;
+  previewDataUrl?: string;
+  mindmapNodes?: MindmapNodeRecord[];
+}
+
 export interface BoardSession {
   id: string;
   title: string;
@@ -62,7 +69,7 @@ export interface BoardSession {
   createdAt: number;
   thumbnail: string;
   sizeBytes: number;
-  pages: Array<{ canvas: object; dom: Record<string, DomElementState>; previewDataUrl?: string }>;
+  pages: PageState[];
 }
 
 export interface AgentAction {

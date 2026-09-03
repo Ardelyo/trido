@@ -56,10 +56,18 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
        setRoomId(currentRoomId);
     }
 
-    // Only attempt socket connection if on localhost or if VITE_API_URL is configured or roomParam is present
+    // Only attempt socket connection if on localhost or if VITE_API_URL is configured
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const customApiUrl = (import.meta as any).env.VITE_API_URL;
-    const shouldConnect = Boolean(customApiUrl || isLocalhost || isCurrentlyViewer);
+    const isVercel = window.location.hostname.includes('vercel.app');
+
+    // On Vercel without a custom stateful backend, serverless environment does not support WebSockets
+    if (isVercel && !customApiUrl) {
+      logger.debug('Socket sync disabled: running on Vercel without external VITE_API_URL stateful backend');
+      return;
+    }
+
+    const shouldConnect = Boolean(customApiUrl || isLocalhost || (isCurrentlyViewer && !isVercel));
 
     if (!shouldConnect) {
       logger.debug('Running in standalone client mode (socket sync disabled)');
@@ -71,12 +79,20 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
 
     const socket: BoardSocket = io(socketUrl, {
       path: '/socket.io',
-      reconnectionAttempts: 2,
-      timeout: 3000,
+      reconnectionAttempts: 1,
+      timeout: 2500,
       transports: ['websocket', 'polling']
     });
 
     socketRef.current = socket;
+
+    socket.on('connect_error', (err) => {
+      failedAttempts++;
+      if (failedAttempts <= 1) {
+        logger.debug('Socket connection unavailable, continuing in offline/standalone mode', err.message);
+      }
+      socket.disconnect();
+    });
 
     socket.on('connect', () => {
       failedAttempts = 0;

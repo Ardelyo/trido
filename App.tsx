@@ -19,10 +19,11 @@ import {
   Image as ImageIcon, File, History, Settings, Mic, Monitor, Share, Download, Sparkles,
   CheckCircle2, ChevronDown, Keyboard, Menu,
   Clock, CheckSquare, PencilRuler, ShieldCheck, HelpCircle, User,
-  MoreHorizontal, Plus, X, Check, Pencil, Send
+  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2
 } from 'lucide-react';
 import { SidebarItem } from './components/SidebarItem';
 import { AiStatusBadge } from './components/AiStatusBadge';
+import { ChatMessageItem } from './components/ChatMessageItem';
 import { useStore } from './store';
 import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
@@ -51,7 +52,7 @@ const App: React.FC = () => {
     logs, inputMode, setInputMode, messages, isAiDrawerOpen, toggleAiDrawer,
     language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage,
     userName, setUserName,
-    pages, currentPageIndex, switchPage, addPage, isThinking
+    pages, currentPageIndex, switchPage, addPage, isThinking, isActing
   } = useStore();
 
   useEffect(() => {
@@ -395,8 +396,11 @@ const App: React.FC = () => {
                 {pages.map((_, idx) => (
                   <button
                     key={idx}
+                    disabled={isThinking || isActing}
                     onClick={() => switchPage(idx)}
                     className={`min-w-[32px] h-8 rounded-xl text-[13px] font-black transition-all ${
+                      isThinking || isActing ? 'opacity-50 cursor-not-allowed' : ''
+                    } ${
                       currentPageIndex === idx 
                         ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
                         : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
@@ -407,8 +411,11 @@ const App: React.FC = () => {
                 ))}
                 <div className="w-px h-4 bg-slate-200 mx-1" />
                 <button 
+                  disabled={isThinking || isActing}
                   onClick={() => addPage()}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-blue-600 transition-all"
+                  className={`w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 transition-all ${
+                    isThinking || isActing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 hover:text-blue-600'
+                  }`}
                   title="Tambah Halaman Baru"
                 >
                   <Plus size={16} strokeWidth={3} />
@@ -482,21 +489,40 @@ const App: React.FC = () => {
                   {/* Header */}
                   <div className="h-16 lg:h-20 border-b border-slate-100/80 flex items-center justify-between px-6 font-sans bg-white/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-[1.1rem] bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20 text-white">
+                        <div className="w-10 h-10 rounded-[1.1rem] bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/20 text-white">
                           <Sparkles size={20} />
                         </div>
                         <div>
-                          <div className="font-extrabold text-slate-900 text-[16px]">Trido AI</div>
-                          <div className="text-[12px] text-blue-600 font-bold">{t('digitalAiAssistant', 'Asisten AI Digital')}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-slate-900 text-[16px]">Trido AI</span>
+                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1 shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              gemini-3.8-flash
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-blue-600 font-bold tracking-tight">Cloud • Real-time • Zero Latency</div>
                         </div>
                     </div>
-                    <button onClick={toggleAiDrawer} className="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2.5 rounded-2xl transition-colors active:scale-95">
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          useStore.getState().clearMessages();
+                          toast.info('Riwayat percakapan dibersihkan.');
+                        }}
+                        title="Bersihkan percakapan"
+                        className="text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 p-2.5 rounded-2xl transition-colors active:scale-95 cursor-pointer"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <button onClick={toggleAiDrawer} className="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2.5 rounded-2xl transition-colors active:scale-95 cursor-pointer">
                         <X size={18} strokeWidth={2.5} />
-                    </button>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Chat Content */}
-                  <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 custom-scrollbar scroll-smooth">
+                  <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 custom-scrollbar scroll-smooth">
                     {messages.length === 0 && (
                       <div className="h-full flex flex-col items-center justify-center text-center opacity-50 px-4">
                         <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
@@ -510,30 +536,29 @@ const App: React.FC = () => {
                         initial={{ opacity: 0, y: 10, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         key={i}
-                        className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                        className="w-full"
                       >
-                          <div className={`p-4 rounded-3xl max-w-[90%] text-[14.5px] font-medium leading-relaxed ${
-                            msg.role === 'user'
-                              ? 'bg-blue-600 text-white rounded-tr-sm shadow-md shadow-blue-600/10'
-                              : 'bg-white text-slate-800 border border-slate-200/60 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-tl-sm'
-                          }`}>
-                            {msg.text}
-                          </div>
+                        <ChatMessageItem
+                          message={msg}
+                          isLatest={i === messages.length - 1}
+                          isThinking={isThinking}
+                        />
                       </motion.div>
                     ))}
                     {isThinking && (
                       <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        className="flex flex-col items-start"
+                        className="flex flex-col items-start w-full"
                       >
-                        <div className="bg-white text-slate-800 border border-slate-200/60 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-3xl rounded-tl-sm p-4 max-w-[90%] flex items-center gap-2">
-                          <span className="text-sm font-semibold text-slate-500">Trido sedang berpikir</span>
+                        <div className="bg-white text-slate-800 border border-slate-200/80 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-3xl rounded-tl-sm p-4 max-w-[90%] flex items-center gap-3">
+                          <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-ping" />
+                          <span className="text-sm font-semibold text-slate-600">Trido sedang memproses secara instan...</span>
                           <div className="flex gap-1">
                             {[0, 1, 2].map(i => (
                               <div
                                 key={i}
-                                className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                                className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
                                 style={{ animationDelay: `${i * 0.15}s` }}
                               />
                             ))}

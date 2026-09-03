@@ -18,7 +18,7 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Data audio base64 diperlukan.' });
     }
 
-    const modelName = (selectedVertexModel || process.env.VERTEX_MODEL || 'gemini-3.7-flash').trim();
+    const modelName = (selectedVertexModel || process.env.VERTEX_MODEL || 'gemini-3.8-flash').trim();
 
     const { GoogleAuth } = await import('google-auth-library');
     const adcRaw = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
@@ -53,7 +53,13 @@ export default async function handler(req: any, res: any) {
             { text: "Transkripsikan rekaman suara audio ini secara akurat ke dalam teks bahasa Indonesia. Tangkap istilah pembelajaran, instruksi papan tulis, rumus, atau pertanyaan secara jelas dan tepat. Kembalikan HANYA teks transkripsi murni tanpa tanda petik pembuka/penutup atau catatan tambahan." }
           ]
         }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 2048,
+          thinkingConfig: {
+            thinkingBudget: 0
+          }
+        }
       })
     });
 
