@@ -1,4 +1,11 @@
-# Trido AI Architecture & Agent Runbook
+<!-- ===================================================================== -->
+<!-- CRITICAL REPO DIRECTIVE: DO NOT DELETE THIS FILE                      -->
+<!-- This file serves as the definitive agent runbook, architecture map,  -->
+<!-- and anti-thrashing execution protocol for AI agents (Hermes, Claude,  -->
+<!-- Cursor, Copilot). Deleting this causes severe agent performance loss. -->
+<!-- ===================================================================== -->
+
+# Trido AI Architecture & Agent Runbook (DO NOT DELETE)
 
 ## Core Architecture Map
 - Constants & Defaults: `constants.ts` (Gemini: `gemini-3.8-flash`, Ollama: `gemma4:e2b`, Vertex: `gemini-3.8-flash` in `gemma4good-494311`)

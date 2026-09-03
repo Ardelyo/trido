@@ -5,8 +5,20 @@ import { createLogger } from "../utils/logger";
 const getAiClient = (customKey) => new GoogleGenAI({ apiKey: customKey || process.env.GEMINI_API_KEY || process.env.API_KEY || "dummy" });
 const logger = createLogger('gemini-adapter');
 export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, customKey, intent, forceTools, lessonContext, modelOverride) => {
-    const cleanCanvasBase64 = canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
-    const cleanInputImage = highResInputImage?.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+    const extractImagePayload = (rawUri) => {
+        if (!rawUri || typeof rawUri !== 'string')
+            return null;
+        const trimmed = rawUri.trim();
+        if (!trimmed)
+            return null;
+        const match = trimmed.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
+        if (match) {
+            return { mimeType: match[1], data: match[2].trim() };
+        }
+        return { mimeType: 'image/png', data: trimmed };
+    };
+    const canvasPayload = extractImagePayload(canvasImageBase64);
+    const inputImagePayload = extractImagePayload(highResInputImage);
     const selectedModel = modelOverride || process.env.GEMINI_MODEL || CONFIG.ai.gemini.model || 'gemini-3.8-flash';
     const capability = getCapability(selectedModel);
     let systemInstruction = buildSystemInstruction(canvasObjects, viewport, pageContext, domElements, lessonContext, capability);
@@ -25,8 +37,8 @@ export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canv
         {
             role: "user",
             parts: [
-                { inlineData: { mimeType: "image/png", data: cleanCanvasBase64 } },
-                ...(cleanInputImage ? [{ inlineData: { mimeType: "image/png", data: cleanInputImage } }] : []),
+                ...(canvasPayload?.data ? [{ inlineData: { mimeType: canvasPayload.mimeType, data: canvasPayload.data } }] : []),
+                ...(inputImagePayload?.data ? [{ inlineData: { mimeType: inputImagePayload.mimeType, data: inputImagePayload.data } }] : []),
                 { text: `User request: ${prompt}\n\nRemember: Use function calls, not descriptions. Batch all actions together.` }
             ]
         }

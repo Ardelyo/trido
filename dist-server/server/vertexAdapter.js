@@ -50,8 +50,20 @@ export async function callVertexRestApi(projectId, location, modelName, payload)
     return data;
 }
 export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history = [], pageContext, domElements = {}, intent, forceTools, lessonContext, modelOverride) => {
-    const cleanCanvasBase64 = canvasImageBase64 ? canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "").trim() : "";
-    const cleanInputImage = highResInputImage ? highResInputImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, "").trim() : "";
+    const extractImagePayload = (rawUri) => {
+        if (!rawUri || typeof rawUri !== 'string')
+            return null;
+        const trimmed = rawUri.trim();
+        if (!trimmed)
+            return null;
+        const match = trimmed.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
+        if (match) {
+            return { mimeType: match[1], data: match[2].trim() };
+        }
+        return { mimeType: 'image/png', data: trimmed };
+    };
+    const canvasPayload = extractImagePayload(canvasImageBase64);
+    const inputImagePayload = extractImagePayload(highResInputImage);
     const projectId = cleanEnv(process.env.GOOGLE_CLOUD_PROJECT) || cleanEnv(process.env.VERTEX_PROJECT_ID) || 'gemma4good-494311';
     const location = cleanEnv(process.env.GOOGLE_CLOUD_LOCATION) || cleanEnv(process.env.VERTEX_LOCATION) || 'global';
     const selectedModel = cleanEnv(modelOverride) || cleanEnv(process.env.VERTEX_MODEL) || 'gemini-3.8-flash';
@@ -71,8 +83,8 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
         {
             role: "user",
             parts: [
-                ...(cleanCanvasBase64 ? [{ inlineData: { mimeType: "image/png", data: cleanCanvasBase64 } }] : []),
-                ...(cleanInputImage ? [{ inlineData: { mimeType: "image/png", data: cleanInputImage } }] : []),
+                ...(canvasPayload?.data ? [{ inlineData: { mimeType: canvasPayload.mimeType, data: canvasPayload.data } }] : []),
+                ...(inputImagePayload?.data ? [{ inlineData: { mimeType: inputImagePayload.mimeType, data: inputImagePayload.data } }] : []),
                 { text: `User request: ${prompt}\n\nRemember: Use function calls, not descriptions. Batch all actions together.` }
             ]
         }

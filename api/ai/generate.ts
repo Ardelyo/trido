@@ -46,8 +46,19 @@ export default async function handler(req: any, res: any) {
     const projectId = (process.env.GOOGLE_CLOUD_PROJECT || 'gemma4good-494311').trim();
     const location = (process.env.GOOGLE_CLOUD_LOCATION || 'global').trim();
 
-    const cleanCanvasBase64 = canvasImageBase64 ? canvasImageBase64.replace(/^data:image\/(png|jpeg|jpg);base64,/, "").trim() : "";
-    const cleanInputImage = highResInputImage ? highResInputImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, "").trim() : "";
+    const extractImagePayload = (rawUri?: string | null) => {
+      if (!rawUri || typeof rawUri !== 'string') return null;
+      const trimmed = rawUri.trim();
+      if (!trimmed) return null;
+      const match = trimmed.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
+      if (match) {
+        return { mimeType: match[1], data: match[2].trim() };
+      }
+      return { mimeType: 'image/png', data: trimmed };
+    };
+
+    const canvasPayload = extractImagePayload(canvasImageBase64);
+    const inputImagePayload = extractImagePayload(highResInputImage);
 
     const systemInstruction = `You are Trido, an advanced AI interactive whiteboard and pedagogical assistant.
 You help teachers and students create rich visual learning materials, mind maps, quizzes, and concept diagrams.
@@ -203,8 +214,8 @@ CAPABILITIES & RULES:
       {
         role: "user",
         parts: [
-          ...(cleanCanvasBase64 ? [{ inlineData: { mimeType: "image/png", data: cleanCanvasBase64 } }] : []),
-          ...(cleanInputImage ? [{ inlineData: { mimeType: "image/png", data: cleanInputImage } }] : []),
+          ...(canvasPayload?.data ? [{ inlineData: { mimeType: canvasPayload.mimeType, data: canvasPayload.data } }] : []),
+          ...(inputImagePayload?.data ? [{ inlineData: { mimeType: inputImagePayload.mimeType, data: inputImagePayload.data } }] : []),
           { text: `User request: ${prompt}\n\nRemember: Use function calls, not descriptions. Batch all actions together.` }
         ]
       }
