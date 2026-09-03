@@ -20,6 +20,17 @@ export type CreatorTool = 'SELECT' | 'PENCIL' | 'ERASER' | 'TEXT' | 'RECTANGLE' 
 export type AiPreference = 'auto' | 'gemini' | 'ollama' | 'vertex';
 export type AiRuntimeMode = 'gemini' | 'ollama' | 'vertex' | 'unavailable';
 export type TranscribeMode = 'webspeech' | 'record_gemini' | 'gemini_live' | 'upload_audio';
+
+export interface VoiceConfig {
+  autoStopSeconds: number; // 0 = manual, 5, 10, 15, 20, 30, 60
+  autoSubmit: boolean; // true = auto send to AI, false = paste to input box for review
+  noiseSuppression: boolean;
+  echoCancellation: boolean;
+  autoGainControl: boolean;
+  audioQuality: 'standard' | 'high'; // standard: 16kHz, high: 48kHz Opus
+  language: 'id-ID' | 'en-US' | 'auto';
+  silenceDetectionTimeout: number; // 0 = off, 1.5, 2, 3, 5 seconds
+}
 export type CanvasJson = Record<string, unknown> | unknown[];
 export type ViewportTransform = number[];
 

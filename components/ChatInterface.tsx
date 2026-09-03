@@ -18,6 +18,7 @@ import { FileUploadButton } from './FileUploadButton';
 import { DrawingToolbar } from './DrawingToolbar';
 import { sounds } from '../utils/sounds';
 import { useTranslation } from '../utils/translations';
+import { toast } from '../utils/toast';
 
 interface ChatInterfaceProps {
   canvasRef: React.MutableRefObject<any>;
@@ -61,7 +62,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     isAiDrawerOpen, isViewerUrl,
     toggleTimer, toggleCalculator, toggleNotes, toggleQuiz,
     toggleUnitConverter, togglePeriodicTable, toggleAttendance, toggleTodoList, toggleBoardSettings,
-    transcribeMode, selectedVertexModel, selectedGeminiModel, geminiApiKey
+    transcribeMode, selectedVertexModel, selectedGeminiModel, geminiApiKey, voiceConfig
   } = useStore();
 
   const handleAudioFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,7 +92,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
           if (!response.ok) throw new Error(`Transkripsi gagal: ${response.statusText}`);
           const data = await response.json();
           if (data.text && data.text.trim()) {
-            handleSubmitInternal(data.text.trim());
+            if (voiceConfig.autoSubmit) {
+              handleSubmitInternal(data.text.trim());
+            } else {
+              setInput(data.text.trim());
+              useStore.getState().setChatInputText(data.text.trim());
+              if (!isAiDrawerOpen) useStore.getState().toggleAiDrawer();
+              toast.info('Hasil transkripsi dimasukkan ke kolom input.');
+            }
           } else {
             setVoiceNotice('Tidak ada ucapan terdeteksi dalam audio.');
           }
@@ -356,13 +364,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         await new Promise(r => setTimeout(r, 600));
         const finalLocalTranscript = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
         if (finalLocalTranscript || useStore.getState().lastUploadedImage) {
-          handleSubmitInternal(finalLocalTranscript);
+          if (voiceConfig.autoSubmit) {
+            handleSubmitInternal(finalLocalTranscript);
+          } else {
+            setInput(finalLocalTranscript);
+            useStore.getState().setChatInputText(finalLocalTranscript);
+            if (!isAiDrawerOpen) useStore.getState().toggleAiDrawer();
+            toast.info('Hasil suara dimasukkan ke kolom input.');
+          }
         }
         transcriptBufferRef.current = '';
         interimBufferRef.current = '';
-        setInput('');
+        if (voiceConfig.autoSubmit) setInput('');
         setInterimInput('');
-        useStore.getState().setChatInputText('');
+        if (voiceConfig.autoSubmit) useStore.getState().setChatInputText('');
         useStore.getState().setInterimInputText('');
       } else {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -387,9 +402,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         setVoiceNotice(null);
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
+            echoCancellation: voiceConfig.echoCancellation,
+            noiseSuppression: voiceConfig.noiseSuppression,
+            autoGainControl: voiceConfig.autoGainControl
           }
         });
         audioStreamRef.current = stream;
@@ -406,7 +421,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
         if (isWebSpeech) {
           if (recognitionRef.current) {
-            recognitionRef.current.lang = language === 'en' ? 'en-US' : 'id-ID';
+            const targetLang = voiceConfig.language === 'en-US' ? 'en-US' : (voiceConfig.language === 'id-ID' ? 'id-ID' : (language === 'en' ? 'en-US' : 'id-ID'));
+            recognitionRef.current.lang = targetLang;
             try { recognitionRef.current.stop(); } catch(e) {}
 
             setTimeout(() => {
@@ -478,7 +494,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
                 const data = await response.json();
                 if (data.text && data.text.trim()) {
-                  handleSubmitInternal(data.text.trim());
+                  if (voiceConfig.autoSubmit) {
+                    handleSubmitInternal(data.text.trim());
+                  } else {
+                    setInput(data.text.trim());
+                    useStore.getState().setChatInputText(data.text.trim());
+                    if (!isAiDrawerOpen) useStore.getState().toggleAiDrawer();
+                    toast.info('Hasil transkripsi dimasukkan ke kolom input.');
+                  }
                 }
               } catch (err: any) {
                 console.error("Transcription error:", err);
@@ -492,11 +515,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
           // If gemini_live, stream in 3-second intervals, else continuous recording until stop
           mediaRecorder.start(transcribeMode === 'gemini_live' ? 3000 : undefined);
 
-          setTimeout(() => {
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-              toggleListening();
-            }
-          }, 20000); // 20-second auto-stop
+          // Auto-stop timer: if autoStopSeconds === 0, it's MANUAL (no timeout)
+          if (voiceConfig.autoStopSeconds > 0) {
+            setTimeout(() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                toggleListening();
+              }
+            }, voiceConfig.autoStopSeconds * 1000);
+          }
         }
       } catch (err) {
         setMicPermission('denied');

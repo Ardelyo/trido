@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 
 interface AppStore extends AgentState {
@@ -84,6 +84,8 @@ interface AppStore extends AgentState {
   inputMode: 'voice' | 'text';
   transcribeMode: TranscribeMode;
   setTranscribeMode: (mode: TranscribeMode) => void;
+  voiceConfig: VoiceConfig;
+  setVoiceConfig: (config: Partial<VoiceConfig>) => void;
   chatInputText: string;
   setChatInputText: (txt: string) => void;
   interimInputText: string;
@@ -218,6 +220,25 @@ const getInitialTranscribeMode = (): TranscribeMode => {
   const saved = localStorage.getItem('trido_transcribe_mode');
   if (saved === 'record_gemini' || saved === 'gemini_live' || saved === 'upload_audio') return saved;
   return 'webspeech';
+};
+
+const defaultVoiceConfig: VoiceConfig = {
+  autoStopSeconds: 15,
+  autoSubmit: true,
+  noiseSuppression: true,
+  echoCancellation: true,
+  autoGainControl: true,
+  audioQuality: 'high',
+  language: 'id-ID',
+  silenceDetectionTimeout: 2.5
+};
+
+const getInitialVoiceConfig = (): VoiceConfig => {
+  try {
+    const saved = localStorage.getItem('trido_voice_config');
+    if (saved) return { ...defaultVoiceConfig, ...JSON.parse(saved) };
+  } catch {}
+  return defaultVoiceConfig;
 };
 
 // ============================================================================
@@ -488,6 +509,12 @@ export const useStore = create<AppStore>((set, get) => ({
   setTranscribeMode: (mode) => {
     localStorage.setItem('trido_transcribe_mode', mode);
     set({ transcribeMode: mode });
+  },
+  voiceConfig: getInitialVoiceConfig(),
+  setVoiceConfig: (partial) => {
+    const updated = { ...get().voiceConfig, ...partial };
+    localStorage.setItem('trido_voice_config', JSON.stringify(updated));
+    set({ voiceConfig: updated });
   },
   zoom: 1,
   viewportTransform: [1, 0, 0, 1, 0, 0],

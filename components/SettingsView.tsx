@@ -47,6 +47,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     userName, setUserName,
     language, setLanguage,
     transcribeMode, setTranscribeMode,
+    voiceConfig, setVoiceConfig,
   } = useStore();
 
   // Local state — only commit to store/localStorage on Save
@@ -60,6 +61,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     return (!selectedVertexModel || selectedVertexModel === 'gemini-3.7-flash') ? 'gemini-3.8-flash' : selectedVertexModel;
   });
   const [localTranscribeMode, setLocalTranscribeMode] = useState(transcribeMode);
+  const [localVoiceConfig, setLocalVoiceConfig] = useState(voiceConfig);
   const [localName, setLocalName] = useState(userName);
   const [localAiPref, setLocalAiPref] = useState(aiPreference);
   const [localLang, setLocalLang] = useState(language);
@@ -108,6 +110,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     setSelectedOllamaModel(localOllamaModel);
     setSelectedVertexModel(localVertexModel);
     setTranscribeMode(localTranscribeMode);
+    setVoiceConfig(localVoiceConfig);
     setUserName(localName);
     setAiPreference(localAiPref);
     setLanguage(localLang);
@@ -117,6 +120,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     localStorage.setItem('selected_ollama_model', localOllamaModel);
     localStorage.setItem('selected_vertex_model', localVertexModel);
     localStorage.setItem('trido_transcribe_mode', localTranscribeMode);
+    localStorage.setItem('trido_voice_config', JSON.stringify(localVoiceConfig));
     localStorage.setItem('trido_user_name', localName);
     localStorage.setItem('ai_preference', localAiPref);
     localStorage.setItem('trido_sound', soundEnabled ? 'on' : 'off');
@@ -487,6 +491,131 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   Pilih dan unggah file audio (.mp3, .wav, .m4a, .webm) dari rekaman ceramah untuk dianalisis AI.
                 </p>
               </button>
+            </div>
+
+            {/* Technical Voice Recording Settings */}
+            <div className="pt-4 border-t border-slate-100 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-[13px] font-black text-slate-800 tracking-tight">Pengaturan Teknis Rekaman Suara</h4>
+                  <p className="text-[11px] text-slate-400 font-medium">Atur durasi otomatis, peredam bising, dan alur eksekusi</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* 1. Auto-Stop Duration */}
+                <Field
+                  label="Durasi Berhenti Otomatis (Auto-Stop)"
+                  hint="Pilih apakah rekaman berhenti sendiri setelah waktu tertentu, atau manual."
+                >
+                  <select
+                    value={localVoiceConfig.autoStopSeconds}
+                    onChange={e => setLocalVoiceConfig({ ...localVoiceConfig, autoStopSeconds: Number(e.target.value) })}
+                    className={inputCls}
+                  >
+                    <option value={0}>Manual (Tanpa batas, berhenti saat diklik)</option>
+                    <option value={5}>5 Detik (Instruksi Kilat)</option>
+                    <option value={10}>10 Detik (Perintah Cepat)</option>
+                    <option value={15}>15 Detik (Rekomendasi Default)</option>
+                    <option value={20}>20 Detik (Standar Guru)</option>
+                    <option value={30}>30 Detik (Penjelasan Sedang)</option>
+                    <option value={60}>60 Detik (Narasi Panjang)</option>
+                  </select>
+                </Field>
+
+                {/* 2. Auto-Submit Action */}
+                <Field
+                  label="Alur Hasil Transkripsi"
+                  hint="Kirim langsung ke AI atau tampilkan dulu di kolom chat untuk ditinjau."
+                >
+                  <select
+                    value={localVoiceConfig.autoSubmit ? 'true' : 'false'}
+                    onChange={e => setLocalVoiceConfig({ ...localVoiceConfig, autoSubmit: e.target.value === 'true' })}
+                    className={inputCls}
+                  >
+                    <option value="true">Langsung Kirim ke AI (Otomatis & Cepat)</option>
+                    <option value="false">Tinjau di Kolom Teks Terlebih Dahulu</option>
+                  </select>
+                </Field>
+
+                {/* 3. Language */}
+                <Field
+                  label="Bahasa Rekaman Utama"
+                  hint="Bahasa target untuk pengenalan suara dan transkripsi."
+                >
+                  <select
+                    value={localVoiceConfig.language}
+                    onChange={e => setLocalVoiceConfig({ ...localVoiceConfig, language: e.target.value as any })}
+                    className={inputCls}
+                  >
+                    <option value="id-ID">Bahasa Indonesia (id-ID)</option>
+                    <option value="en-US">Bahasa Inggris (en-US)</option>
+                    <option value="auto">Deteksi Otomatis (Multibahasa)</option>
+                  </select>
+                </Field>
+
+                {/* 4. Silence Detection (VAD) */}
+                <Field
+                  label="Deteksi Hening Otomatis (Silence VAD)"
+                  hint="Otomatis selesaikan rekaman jika guru berhenti bicara."
+                >
+                  <select
+                    value={localVoiceConfig.silenceDetectionTimeout}
+                    onChange={e => setLocalVoiceConfig({ ...localVoiceConfig, silenceDetectionTimeout: Number(e.target.value) })}
+                    className={inputCls}
+                  >
+                    <option value={0}>Nonaktif (Hanya ikuti timer / tombol)</option>
+                    <option value={1.5}>1.5 Detik Hening (Responsif)</option>
+                    <option value={2.5}>2.5 Detik Hening (Rekomendasi)</option>
+                    <option value={4}>4.0 Detik Hening (Santai)</option>
+                  </select>
+                </Field>
+              </div>
+
+              {/* Hardware Mic Flags & Quality */}
+              <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-3">
+                <div className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Peningkatan Kualitas Mikrofon Hardware</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLocalVoiceConfig({ ...localVoiceConfig, noiseSuppression: !localVoiceConfig.noiseSuppression })}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-between ${
+                      localVoiceConfig.noiseSuppression
+                        ? 'bg-blue-50 border-blue-400 text-blue-700'
+                        : 'bg-white border-slate-200 text-slate-500'
+                    }`}
+                  >
+                    <span>Peredam Bising</span>
+                    <span>{localVoiceConfig.noiseSuppression ? '✓' : '✕'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLocalVoiceConfig({ ...localVoiceConfig, echoCancellation: !localVoiceConfig.echoCancellation })}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-between ${
+                      localVoiceConfig.echoCancellation
+                        ? 'bg-blue-50 border-blue-400 text-blue-700'
+                        : 'bg-white border-slate-200 text-slate-500'
+                    }`}
+                  >
+                    <span>Anti-Gema</span>
+                    <span>{localVoiceConfig.echoCancellation ? '✓' : '✕'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setLocalVoiceConfig({ ...localVoiceConfig, autoGainControl: !localVoiceConfig.autoGainControl })}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-between ${
+                      localVoiceConfig.autoGainControl
+                        ? 'bg-blue-50 border-blue-400 text-blue-700'
+                        : 'bg-white border-slate-200 text-slate-500'
+                    }`}
+                  >
+                    <span>Auto-Gain Mic</span>
+                    <span>{localVoiceConfig.autoGainControl ? '✓' : '✕'}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </Section>
 

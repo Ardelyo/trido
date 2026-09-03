@@ -42,6 +42,25 @@ const getInitialTranscribeMode = () => {
         return saved;
     return 'webspeech';
 };
+const defaultVoiceConfig = {
+    autoStopSeconds: 15,
+    autoSubmit: true,
+    noiseSuppression: true,
+    echoCancellation: true,
+    autoGainControl: true,
+    audioQuality: 'high',
+    language: 'id-ID',
+    silenceDetectionTimeout: 2.5
+};
+const getInitialVoiceConfig = () => {
+    try {
+        const saved = localStorage.getItem('trido_voice_config');
+        if (saved)
+            return { ...defaultVoiceConfig, ...JSON.parse(saved) };
+    }
+    catch { }
+    return defaultVoiceConfig;
+};
 // ============================================================================
 // ZERO-COST SIZE ESTIMATOR (Replaces JSON.stringify)
 // ============================================================================
@@ -282,6 +301,12 @@ export const useStore = create((set, get) => ({
     setTranscribeMode: (mode) => {
         localStorage.setItem('trido_transcribe_mode', mode);
         set({ transcribeMode: mode });
+    },
+    voiceConfig: getInitialVoiceConfig(),
+    setVoiceConfig: (partial) => {
+        const updated = { ...get().voiceConfig, ...partial };
+        localStorage.setItem('trido_voice_config', JSON.stringify(updated));
+        set({ voiceConfig: updated });
     },
     zoom: 1,
     viewportTransform: [1, 0, 0, 1, 0, 0],
