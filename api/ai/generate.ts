@@ -28,7 +28,8 @@ export default async function handler(req: any, res: any) {
       forceTools
     } = body;
 
-    const modelName = (selectedVertexModel || selectedGeminiModel || process.env.VERTEX_MODEL || 'gemini-3.8-flash').trim();
+    const rawModel = selectedVertexModel || selectedGeminiModel || process.env.VERTEX_MODEL || 'gemini-3.8-flash';
+    const modelName = (rawModel === 'gemini-3.7-flash' ? 'gemini-3.8-flash' : rawModel).trim();
 
     const { GoogleAuth } = await import('google-auth-library');
     const adcRaw = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;

@@ -16,8 +16,8 @@ export default async function handler(req: any, res: any) {
 
     const vertexProjectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.VERTEX_PROJECT_ID || 'gemma4good-494311';
     const vertexLocation = process.env.GOOGLE_CLOUD_LOCATION || process.env.VERTEX_LOCATION || 'global';
-    const vertexModel = body.selectedVertexModel || process.env.VERTEX_MODEL || 'gemini-3.8-flash';
-    const geminiModel = body.selectedGeminiModel || process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    const vertexModel = body.selectedVertexModel || (process.env.VERTEX_MODEL && process.env.VERTEX_MODEL !== 'gemini-3.7-flash' ? process.env.VERTEX_MODEL : 'gemini-3.8-flash');
+    const geminiModel = body.selectedGeminiModel || (process.env.GEMINI_MODEL && process.env.GEMINI_MODEL !== 'gemini-3.7-flash' ? process.env.GEMINI_MODEL : 'gemini-3.8-flash');
 
     const hasVertex = Boolean(vertexProjectId);
     const hasGemini = Boolean(process.env.GEMINI_API_KEY || body.geminiApiKey);
