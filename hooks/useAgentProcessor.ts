@@ -338,6 +338,23 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
               obj = new window.fabric.Circle({ ...common, radius: width / 2 });
             } else if (shapeType === 'TRIANGLE') {
               obj = new window.fabric.Triangle(common);
+            } else if (shapeType === 'ARROW') {
+              const arrowPath = `M ${-width/2} 0 L ${width/2} 0 M ${width/2 - 16} -10 L ${width/2} 0 L ${width/2 - 16} 10`;
+              obj = new window.fabric.Path(arrowPath, {
+                ...common,
+                fill: 'transparent',
+                stroke: fill || defaultColor,
+                strokeWidth: 3,
+                strokeLineCap: 'round',
+                strokeLineJoin: 'round'
+              });
+            } else if (shapeType === 'LINE') {
+              obj = new window.fabric.Line([-width/2, 0, width/2, 0], {
+                ...common,
+                stroke: fill || defaultColor,
+                strokeWidth: 3,
+                strokeLineCap: 'round'
+              });
             }
 
             if (obj && text) {
@@ -400,94 +417,92 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         }
 
         case 'DRAW_PATH': {
-          const { pathSvg, x, y, strokeColor, strokeWidth, fromNodeText, toNodeText, lineStyle } = action.payload;
-          if (fromNodeText && toNodeText) {
-            // Node connection logic by text label
-            const findNodeByText = (searchText: string) => {
-              const search = searchText.toLowerCase().trim();
-              const objs = canvas.getObjects().reverse();
+          const { pathSvg, x, y, strokeColor, strokeWidth, fromNodeText, toNodeText, lineStyle, fromX, fromY, toX, toY, direction, isArrow = true } = action.payload;
 
-              const getNodeText = (o: any): string | null => {
-                if (o.type === 'group') {
-                  for (const inner of o.getObjects()) {
-                    if ((inner.type === 'i-text' || inner.type === 'text' || inner.type === 'textbox') && inner.text)
-                      return inner.text.toLowerCase().trim();
-                  }
-                } else if ((o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') && o.text) {
-                  return o.text.toLowerCase().trim();
-                }
-                return null;
-              };
+          let sx: number | undefined = typeof fromX === 'number' ? fromX : undefined;
+          let sy: number | undefined = typeof fromY === 'number' ? fromY : undefined;
+          let tx: number | undefined = typeof toX === 'number' ? toX : undefined;
+          let ty: number | undefined = typeof toY === 'number' ? toY : undefined;
 
-              // Tier 1: exact match
-              for (const o of objs) { const t = getNodeText(o); if (t === search) return o; }
-              // Tier 2: one contains the other
-              for (const o of objs) { const t = getNodeText(o); if (t && (t.includes(search) || search.includes(t))) return o; }
-              // Tier 3: word-level overlap ≥60%
-              const searchWords = search.split(/\s+/).filter((w: string) => w.length > 2);
-              if (searchWords.length > 0) {
-                let bestScore = 0; let bestObj: any = null;
-                for (const o of objs) {
-                  const t = getNodeText(o);
-                  if (!t) continue;
-                  const nodeWords = t.split(/\s+/);
-                  const matched = searchWords.filter((sw: string) => nodeWords.some((nw: string) => nw.includes(sw) || sw.includes(nw))).length;
-                  const score = matched / searchWords.length;
-                  if (score > bestScore) { bestScore = score; bestObj = o; }
-                }
-                if (bestScore >= 0.6 && bestObj) return bestObj;
-              }
-              return null;
-            };
-
-            const source = findNodeByText(fromNodeText);
-            const target = findNodeByText(toNodeText);
-
-            if (source && target) {
-               await execute((source.left + target.left) / 2, (source.top + target.top) / 2, 'Connecting...', () => {
-                  const sx = source.left, sy = source.top;
-                  const tx = target.left, ty = target.top;
-                  const isArrow = !lineStyle || lineStyle === 'ARROW_STRAIGHT' || lineStyle === 'ARROW_CURVED';
-                  let pathStr = lineStyle === 'ARROW_CURVED'
-                    ? `M ${sx} ${sy} Q ${sx + (tx - sx) / 2} ${sy - 120} ${tx} ${ty}`
-                    : `M ${sx} ${sy} L ${tx} ${ty}`;
-
-                  const path = new window.fabric.Path(pathStr, {
-                     fill: 'transparent',
-                     stroke: strokeColor || '#3B82F6',
-                     strokeWidth: 2,
-                     strokeLineCap: 'round',
-                     id: `path_${Date.now()}`
-                  });
-                  canvas.add(path);
-                  canvas.sendToBack(path);
-
-                  // Draw arrowhead at target end
-                  if (isArrow) {
-                    const angle = Math.atan2(ty - sy, tx - sx);
-                    const aLen = 12, aWidth = 7;
-                    const ax1 = tx - aLen * Math.cos(angle - 0.4);
-                    const ay1 = ty - aLen * Math.sin(angle - 0.4);
-                    const ax2 = tx - aLen * Math.cos(angle + 0.4);
-                    const ay2 = ty - aLen * Math.sin(angle + 0.4);
-                    const head = new window.fabric.Polygon(
-                      [{ x: tx, y: ty }, { x: ax1, y: ay1 }, { x: ax2, y: ay2 }],
-                      { fill: strokeColor || '#3B82F6', stroke: 'transparent', strokeWidth: 0, id: `arrow_${Date.now()}`, selectable: false, evented: false }
-                    );
-                    canvas.add(head);
-                    canvas.sendToBack(head);
-                  }
-                  canvas.requestRenderAll();
-               });
-            } else {
-               console.warn('[connect_nodes] Could not find nodes:', fromNodeText, '->', toNodeText);
+          if (fromNodeText) {
+            const source = findTargetObject(undefined, fromNodeText);
+            if (source) {
+              sx = source.left;
+              sy = source.top;
             }
+          }
+
+          if (toNodeText) {
+            const target = findTargetObject(undefined, toNodeText);
+            if (target) {
+              tx = target.left;
+              ty = target.top;
+            }
+          }
+
+          // If starting point found, but target point not specified, calculate from direction
+          if (typeof sx === 'number' && typeof sy === 'number' && (typeof tx !== 'number' || typeof ty !== 'number')) {
+            const dir = (direction || 'RIGHT').toUpperCase();
+            const dist = 180;
+            if (dir.includes('RIGHT')) tx = sx + dist;
+            else if (dir.includes('LEFT')) tx = sx - dist;
+            else tx = sx;
+
+            if (dir.includes('DOWN')) ty = sy + dist;
+            else if (dir.includes('UP')) ty = sy - dist;
+            else ty = sy;
+          }
+
+          // If no start point specified at all, fallback to canvas center
+          if (typeof sx !== 'number' || typeof sy !== 'number') {
+            const center = canvas.getCenter();
+            sx = center.left - 100;
+            sy = center.top;
+            tx = center.left + 100;
+            ty = center.top;
+          }
+
+          if (typeof sx === 'number' && typeof sy === 'number' && typeof tx === 'number' && typeof ty === 'number') {
+            await execute((sx + tx) / 2, (sy + ty) / 2, isArrow ? 'Drawing Arrow...' : 'Drawing Line...', () => {
+              const effectiveColor = strokeColor || '#3B82F6';
+              const effectiveWidth = strokeWidth || 3;
+              const hasArrow = isArrow !== false && (!lineStyle || lineStyle === 'ARROW_STRAIGHT' || lineStyle === 'ARROW_CURVED');
+              let pathStr = lineStyle === 'ARROW_CURVED'
+                ? `M ${sx} ${sy} Q ${sx + (tx - sx) / 2} ${sy - 80} ${tx} ${ty}`
+                : `M ${sx} ${sy} L ${tx} ${ty}`;
+
+              const path = new window.fabric.Path(pathStr, {
+                fill: 'transparent',
+                stroke: effectiveColor,
+                strokeWidth: effectiveWidth,
+                strokeLineCap: 'round',
+                id: `path_${Date.now()}`
+              });
+              canvas.add(path);
+              canvas.sendToBack(path);
+
+              if (hasArrow) {
+                const angle = Math.atan2(ty - sy, tx - sx);
+                const aLen = 14, aWidth = 8;
+                const ax1 = tx - aLen * Math.cos(angle - 0.45);
+                const ay1 = ty - aLen * Math.sin(angle - 0.45);
+                const ax2 = tx - aLen * Math.cos(angle + 0.45);
+                const ay2 = ty - aLen * Math.sin(angle + 0.45);
+                const head = new window.fabric.Polygon(
+                  [{ x: tx, y: ty }, { x: ax1, y: ay1 }, { x: ax2, y: ay2 }],
+                  { fill: effectiveColor, stroke: 'transparent', strokeWidth: 0, id: `arrow_${Date.now()}`, selectable: false, evented: false }
+                );
+                canvas.add(head);
+                canvas.sendToBack(head);
+              }
+              canvas.requestRenderAll();
+            });
           } else if (pathSvg) {
-            await execute(x, y, 'Sketching...', () => {
+            await execute(x || canvas.width / 2, y || canvas.height / 2, 'Sketching...', () => {
               const path = new window.fabric.Path(pathSvg);
               path.set({
-                left: x, 
-                top: y,
+                left: x || canvas.width / 2,
+                top: y || canvas.height / 2,
                 originX: 'center',
                 originY: 'center',
                 fill: 'transparent',

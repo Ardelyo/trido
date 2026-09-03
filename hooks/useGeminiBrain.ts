@@ -151,15 +151,15 @@ const validateAndFixToolCall = (call: any): { valid: boolean; fixed?: any; error
 };
 
 const classifyIntent = (prompt: string): 'question' | 'creation' | 'modification' | 'navigation' => {
-  const questionWords = /^(apa|bagaimana|mengapa|kapan|siapa|berapa|what|how|why|when|who|jelaskan|explain)/i;
-  const creationWords = /buat|create|gambar|draw|tambah|add|tulis|write|bikin|generate/i;
-  const modificationWords = /ubah|edit|hapus|delete|pindah|move|update|ganti|change/i;
+  const modificationWords = /ubah|edit|hapus|delete|pindah|move|update|ganti|change|geser|drag|geserkan|pindahkan|reposition|align/i;
+  const creationWords = /buat|create|gambar|draw|tambah|add|tulis|write|bikin|generate|tarik|garis|panah|arrow|line|hubungkan|connect|shape|kotak|lingkaran|segitiga/i;
   const navigationWords = /pergi|go|zoom|pan|navigasi|navigate|ke halaman|page/i;
+  const questionWords = /^(apa|bagaimana|mengapa|kapan|siapa|berapa|what|how|why|when|who)/i;
 
-  if (questionWords.test(prompt.trim())) return 'question';
-  if (creationWords.test(prompt)) return 'creation';
   if (modificationWords.test(prompt)) return 'modification';
+  if (creationWords.test(prompt)) return 'creation';
   if (navigationWords.test(prompt)) return 'navigation';
+  if (questionWords.test(prompt.trim())) return 'question';
   return 'creation'; // default
 };
 
@@ -453,21 +453,21 @@ ${mindmapContextStr}
         connectCalls = [];
       }
 
-      // 🛑 Validasi tambahan: buang connect_nodes dengan garbage values
+      // Validasi connect_nodes
       connectCalls = connectCalls.filter(c => {
-        const from = c.args?.fromNodeText || '';
-        const to = c.args?.toNodeText || '';
-        const garbageValues = ['MAIN_TOPIC', 'SUBTOPIC', 'DETAIL', 'HIGHLIGHT', 'root', '//root//', ''];
-        
-        const isGarbage = garbageValues.some(g => 
-          from.toUpperCase() === g.toUpperCase() || to.toUpperCase() === g.toUpperCase()
-        );
-        
-        if (isGarbage) {
-          logger.warn(`[Safety] Rejected garbage connect_nodes call: "${from}" -> "${to}"`);
+        const from = (c.args?.fromNodeText || '').trim();
+        const to = (c.args?.toNodeText || '').trim();
+        const direction = c.args?.direction;
+        const hasCoords = typeof c.args?.fromX === 'number' || typeof c.args?.toX === 'number';
+
+        if (hasCoords || direction) return true;
+
+        const garbageValues = ['MAIN_TOPIC', 'SUBTOPIC', 'DETAIL', 'HIGHLIGHT', 'root', '//root//'];
+        if (garbageValues.includes(from.toUpperCase()) || garbageValues.includes(to.toUpperCase())) {
+          logger.warn(`[Safety] Rejected placeholder connect_nodes call: "${from}" -> "${to}"`);
           return false;
         }
-        return true;
+        return Boolean(from || to);
       });
 
       // ── Viewport center (world coords) ─────────────────────────────────────
@@ -662,7 +662,18 @@ ${mindmapContextStr}
         pathActions.push({
           id: `action_conn_free_${Date.now()}_${idx}`,
           type: 'DRAW_PATH',
-          payload: { fromNodeText: call.args.fromNodeText, toNodeText: call.args.toNodeText, lineStyle: call.args.lineStyle },
+          payload: {
+            fromNodeText: call.args.fromNodeText,
+            toNodeText: call.args.toNodeText,
+            fromX: call.args.fromX,
+            fromY: call.args.fromY,
+            toX: call.args.toX,
+            toY: call.args.toY,
+            direction: call.args.direction,
+            lineStyle: call.args.lineStyle || 'ARROW_STRAIGHT',
+            strokeColor: call.args.strokeColor || '#3B82F6',
+            isArrow: call.args.isArrow !== false
+          },
           status: 'PENDING'
         });
       });
@@ -673,7 +684,22 @@ ${mindmapContextStr}
         let actionType: AgentAction['type'] | null = null;
         let payload: any = {};
 
-        if (call.name === 'add_text_label') {
+        if (call.name === 'draw_arrow_or_line') {
+          actionType = 'DRAW_PATH';
+          payload = {
+            fromNodeText: args.fromText || args.fromNodeText,
+            toNodeText: args.toText || args.toNodeText,
+            fromX: args.fromX,
+            fromY: args.fromY,
+            toX: args.toX,
+            toY: args.toY,
+            direction: args.direction,
+            lineStyle: args.lineStyle || 'ARROW_STRAIGHT',
+            strokeColor: args.color || args.strokeColor || '#3B82F6',
+            isArrow: args.isArrow !== false
+          };
+
+        } else if (call.name === 'add_text_label') {
           actionType = 'WRITE_TEXT';
           const pos = getGridPos(args.gridPosition);
           let fontSize = 24;

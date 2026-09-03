@@ -105,25 +105,49 @@ export const tools = [
     },
     {
         name: "connect_nodes",
-        description: "Draw a line or arrow between two existing nodes by their label text.",
+        description: "Draw a line or arrow between elements, coordinates, or in a specific direction.",
         parameters: {
             type: Type.OBJECT,
             properties: {
                 fromNodeText: {
                     type: Type.STRING,
-                    description: "Exact or partial label of the source node"
+                    description: "Source element label or text (optional)"
                 },
                 toNodeText: {
                     type: Type.STRING,
-                    description: "Exact or partial label of the destination node"
+                    description: "Destination element label or text (optional)"
+                },
+                fromX: {
+                    type: Type.NUMBER,
+                    description: "Start X coordinate (optional)"
+                },
+                fromY: {
+                    type: Type.NUMBER,
+                    description: "Start Y coordinate (optional)"
+                },
+                toX: {
+                    type: Type.NUMBER,
+                    description: "End X coordinate (optional)"
+                },
+                toY: {
+                    type: Type.NUMBER,
+                    description: "End Y coordinate (optional)"
+                },
+                direction: {
+                    type: Type.STRING,
+                    enum: ["RIGHT", "LEFT", "UP", "DOWN", "UP_RIGHT", "UP_LEFT", "DOWN_RIGHT", "DOWN_LEFT"],
+                    description: "Direction to point arrow (e.g. RIGHT, DOWN)"
                 },
                 lineStyle: {
                     type: Type.STRING,
                     enum: ["ARROW_STRAIGHT", "ARROW_CURVED", "LINE"],
                     description: "Arrow style. Use ARROW_CURVED for organic flow diagrams."
+                },
+                strokeColor: {
+                    type: Type.STRING,
+                    description: "Hex stroke color (default #3B82F6)"
                 }
-            },
-            required: ["fromNodeText", "toNodeText"]
+            }
         }
     },
     {

@@ -60,15 +60,50 @@ export default async function handler(req: any, res: any) {
     const canvasPayload = extractImagePayload(canvasImageBase64);
     const inputImagePayload = extractImagePayload(highResInputImage);
 
-    const systemInstruction = `You are Trido, an advanced AI interactive whiteboard and pedagogical assistant.
-You help teachers and students create rich visual learning materials, mind maps, quizzes, and concept diagrams.
+    const existingObjectsContext = canvasObjects && canvasObjects.length > 0
+      ? canvasObjects.map((o: any) => `  - [ID: ${o.id}] "${o.textContent || o.text || o.label || o.id}" (${o.type}) at X=${o.left}, Y=${o.top}, W=${o.width || 0}, H=${o.height || 0}`).join('\n')
+      : '  (Canvas is currently empty)';
 
-CAPABILITIES & RULES:
-1. When asked to create or explain concepts visually, call appropriate function tools (such as add_mindmap_node, add_component, add_interactive_app, create_shape, add_text).
-2. For mind maps: Start with 1 MAIN_TOPIC node (parentNodeText: null), then branch with SUBTOPIC nodes, and DETAIL nodes.
-3. For quizzes: When creating quizzes via add_component, ALWAYS provide a COMPLETE, EDUCATIONAL question in Indonesian with 4 options, a 0-indexed correctIndex (0-3), and a clear explanation. Example configJson: {"question": "Pertanyaan lengkap...", "options": ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"], "correctIndex": 0, "explanation": "Penjelasan detail..."}. NEVER create empty, placeholder, or generic questions.
-4. Language: Always respond and create content in fluent, natural Indonesian (Bahasa Indonesia) unless requested otherwise.
-5. Canvas viewport: width=${viewport.width}, height=${viewport.height}. Current objects: ${canvasObjects.length}.`;
+    const domContext = domElements && Object.keys(domElements).length > 0
+      ? Object.entries(domElements).map(([id, d]: any) => `  - [Widget ID: ${id}] ${d.componentType || 'Widget'} at X=${d.x || 0}, Y=${d.y || 0} title="${d.config?.title || d.title || ''}"`).join('\n')
+      : '  (None)';
+
+    const systemInstruction = `You are Trido, an autonomous agentic interactive whiteboard and pedagogical AI.
+You have FULL AUTONOMOUS COMPUTER USE capabilities to create, draw, move, and manipulate content on the whiteboard canvas.
+
+CURRENT CANVAS STATE:
+- Viewport: width=${viewport.width}, height=${viewport.height}
+- Existing Canvas Objects:
+${existingObjectsContext}
+- Existing Interactive Widgets:
+${domContext}
+
+FULL AUTONOMOUS COMPUTER USE CAPABILITIES:
+1. PINDAHKAN ELEMEN (Move/Drag):
+   - When asked to move or drag an element (e.g. "pindahkan", "geser"), call \`drag_element\` with \`elementText\` matching the element label (or \`objectId\`) and destination \`toX\`, \`toY\`.
+2. PINDAHKAN SEMUA (Move/Shift All):
+   - When asked to move or shift all elements (e.g. "geser semua ke kanan"), call \`drag_all_elements\` with \`deltaX\` and \`deltaY\`.
+3. TARIK GARIS & BUAT PANAH (Draw Lines & Arrows):
+   - When asked to draw lines or arrows (e.g. "tarik garis", "buatkan panah ke arah...", "hubungkan"), call \`connect_nodes\`:
+     * From one node to another: \`fromNodeText\` and \`toNodeText\`.
+     * From a node pointing in a direction: \`fromNodeText\` and \`direction\` ("RIGHT", "LEFT", "UP", "DOWN", "UP_RIGHT", "DOWN_RIGHT", etc.).
+     * Between explicit coordinates: \`fromX\`, \`fromY\` to \`toX\`, \`toY\`.
+     * Line style: \`lineStyle\` ("ARROW_STRAIGHT", "ARROW_CURVED", "LINE").
+4. BUAT BENTUK (Shapes):
+   - Call \`create_shape\` with \`shapeType\` ("RECTANGLE", "CIRCLE", "TRIANGLE", "ARROW", "LINE"), \`x\`, \`y\`, \`width\`, \`height\`, and optional \`fill\` and \`label\`.
+5. KLIK ELEMEN (Click):
+   - Call \`click_element\` with \`elementText\` or coordinates to click buttons, interactive quiz options, or select objects.
+6. MIND MAP:
+   - Call \`add_mindmap_node\` with \`text\`, \`style\` ("MAIN_TOPIC", "SUBTOPIC", "DETAIL"), and \`parentNodeText\`.
+7. WIDGET & KUIS:
+   - Call \`add_component\` for quizzes, markdown notes, timer, calculator.
+8. APP MINI INTERAKTIF:
+   - Call \`add_interactive_app\` with custom HTML/JS simulation.
+
+CRITICAL EXECUTION RULES:
+- ALWAYS call the appropriate tool immediately! NEVER say "I will move it" without calling the tool.
+- Batch multiple actions together in a single turn when appropriate.
+- Respond in natural Indonesian (Bahasa Indonesia).`;
 
     const toolsDeclarations = [
       {
@@ -86,15 +121,20 @@ CAPABILITIES & RULES:
       },
       {
         name: "connect_nodes",
-        description: "Draw a line or arrow between two existing nodes by their label text.",
+        description: "Draw a line or arrow between elements, coordinates, or in a specific direction.",
         parameters: {
           type: "OBJECT",
           properties: {
-            fromNodeText: { type: "STRING", description: "Source node label" },
-            toNodeText: { type: "STRING", description: "Destination node label" },
-            lineStyle: { type: "STRING", enum: ["ARROW_STRAIGHT", "ARROW_CURVED", "LINE"], description: "Arrow style" }
-          },
-          required: ["fromNodeText", "toNodeText"]
+            fromNodeText: { type: "STRING", description: "Source element label or text (optional)" },
+            toNodeText: { type: "STRING", description: "Destination element label or text (optional)" },
+            fromX: { type: "NUMBER", description: "Start X coordinate (optional)" },
+            fromY: { type: "NUMBER", description: "Start Y coordinate (optional)" },
+            toX: { type: "NUMBER", description: "End X coordinate (optional)" },
+            toY: { type: "NUMBER", description: "End Y coordinate (optional)" },
+            direction: { type: "STRING", enum: ["RIGHT", "LEFT", "UP", "DOWN", "UP_RIGHT", "UP_LEFT", "DOWN_RIGHT", "DOWN_LEFT"], description: "Direction to point arrow (e.g. RIGHT, DOWN)" },
+            lineStyle: { type: "STRING", enum: ["ARROW_STRAIGHT", "ARROW_CURVED", "LINE"], description: "Arrow or line style" },
+            strokeColor: { type: "STRING", description: "Hex stroke color code" }
+          }
         }
       },
       {
@@ -139,7 +179,7 @@ CAPABILITIES & RULES:
         parameters: {
           type: "OBJECT",
           properties: {
-            shapeType: { type: "STRING", enum: ["RECTANGLE", "CIRCLE", "TRIANGLE", "ARROW"], description: "Geometry" },
+            shapeType: { type: "STRING", enum: ["RECTANGLE", "CIRCLE", "TRIANGLE", "ARROW", "LINE"], description: "Geometry" },
             x: { type: "NUMBER", description: "X coordinate" },
             y: { type: "NUMBER", description: "Y coordinate" },
             width: { type: "NUMBER", description: "Width" },
