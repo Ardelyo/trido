@@ -1,5 +1,6 @@
 import { DomElementState, MindmapNodeRecord } from '../types';
 import { MindmapLayoutNode } from './mindmapLayout';
+import { toPng, toBlob } from 'html-to-image';
 
 /**
  * Utility helper to trigger clean file downloads in browser
@@ -698,4 +699,58 @@ export function exportQuizToQuizizzCSV(quizzes: any[]): string {
   });
 
   return csv;
+}
+
+/**
+ * ── 15. EXPORT ANY DOM COMPONENT DIRECTLY AS HIGH-PRECISION PNG ─────────────
+ */
+export async function exportComponentAsPNG(
+  target: string | HTMLElement,
+  title: string,
+  options: { pixelRatio?: number; backgroundColor?: string } = {}
+): Promise<boolean> {
+  const node = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!node) return false;
+
+  const bg = options.backgroundColor || '#ffffff';
+  const pixelRatio = options.pixelRatio || 2;
+
+  try {
+    const dataUrl = await toPng(node, {
+      pixelRatio,
+      backgroundColor: bg,
+      filter: (child: HTMLElement) => !child.classList?.contains('no-print')
+    });
+
+    downloadFile(dataUrl, `${slugify(title)}_${pixelRatio}x.png`, 'image/png');
+    return true;
+  } catch (err) {
+    console.error('Failed to export component as PNG:', err);
+    return false;
+  }
+}
+
+/**
+ * ── 16. COPY COMPONENT DIRECTLY AS IMAGE TO CLIPBOARD ──────────────────────
+ */
+export async function copyComponentAsImage(target: string | HTMLElement): Promise<boolean> {
+  const node = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!node) return false;
+
+  try {
+    const blob = await toBlob(node, {
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+      filter: (child: HTMLElement) => !child.classList?.contains('no-print')
+    });
+    if (!blob) return false;
+
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': blob })
+    ]);
+    return true;
+  } catch (err) {
+    console.error('Failed to copy component image:', err);
+    return false;
+  }
 }

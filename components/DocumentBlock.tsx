@@ -4,8 +4,8 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import { toast } from '../utils/toast';
-import { triggerPrintComponent, exportDocumentAsHtml, exportDocumentAsMarkdown } from '../utils/smartExport';
-import { Copy, Printer, Globe, FileText, Check } from 'lucide-react';
+import { triggerPrintComponent, exportDocumentAsHtml, exportDocumentAsMarkdown, exportComponentAsPNG } from '../utils/smartExport';
+import { Copy, Printer, Globe, FileText, Check, Image as ImageIcon } from 'lucide-react';
 
 interface DocumentBlockProps {
   config: {
@@ -52,6 +52,14 @@ export const DocumentBlock: React.FC<DocumentBlockProps> = ({ config }) => {
     toast.success('Berkas Markdown (.md) berhasil diunduh.');
   };
 
+  const handleDownloadPNG = async () => {
+    if (containerRef.current) {
+      toast.info('Membuat gambar PNG HD dokumen...');
+      const ok = await exportComponentAsPNG(containerRef.current, title, { pixelRatio: 2 });
+      if (ok) toast.success('Gambar PNG dokumen berhasil diunduh!');
+    }
+  };
+
   return (
     <div
       ref={containerRef}
@@ -80,6 +88,14 @@ export const DocumentBlock: React.FC<DocumentBlockProps> = ({ config }) => {
           >
             {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
             Salin
+          </button>
+          <button
+            onClick={handleDownloadPNG}
+            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+            title="Unduh Gambar PNG HD Dokumen (2x Retina)"
+          >
+            <ImageIcon size={12} />
+            PNG
           </button>
           <button
             onClick={handleDownloadMarkdown}

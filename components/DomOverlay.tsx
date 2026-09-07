@@ -21,14 +21,18 @@ import { ScoreboardTool } from './ScoreboardTool';
 import { MathGraphTool } from './MathGraphTool';
 import {
   Printer, Maximize2, Minimize2, X, Download, FileText, Globe,
-  Code, Compass, BookOpen, Clock, Calculator, HelpCircle, Layers, Sparkles, Users, SquareCheckBig
+  Code, Compass, BookOpen, Clock, Calculator, HelpCircle, Layers, Sparkles, Users, SquareCheckBig,
+  Image as ImageIcon, Copy
 } from 'lucide-react';
 import {
+  triggerPrintComponent,
   printCleanDocument,
   exportDocumentAsHtml,
   exportDocumentAsMarkdown,
   exportInteractiveAppAsHtml,
   exportQuizAsPrintableWorksheet,
+  exportComponentAsPNG,
+  copyComponentAsImage,
   downloadFile,
   slugify
 } from '../utils/smartExport';
@@ -76,53 +80,33 @@ export const DomOverlay: React.FC = () => {
       return;
     }
 
-    if (type === 'MARKDOWN_NOTE' || type === 'DOCUMENT_PAGE' || type === 'MARKMAP_MINDMAP') {
-      const ok = printCleanDocument(`widget-${el.id}`, title);
-      if (ok) {
-        toast.success('Membuka pratinjau cetak PDF bersih.');
-        return;
-      }
+    triggerPrintComponent(`widget-${el.id}`);
+    toast.success('Membuka pratinjau cetak PDF bersih.');
+  };
+
+  const handleExportComponentPNG = async (el: DomElementState, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const title = el.config?.title || el.componentType || 'komponen';
+    toast.info('Membuat gambar PNG HD...');
+    const ok = await exportComponentAsPNG(`widget-${el.id}`, title, { pixelRatio: 2 });
+    if (ok) {
+      toast.success('Gambar PNG berhasil diunduh!');
+    } else {
+      toast.error('Gagal membuat gambar PNG.');
     }
+  };
 
-    // Generic fallback print
-    const elementNode = document.getElementById(`widget-${el.id}`);
-    if (!elementNode) return;
-
-    const printWindow = window.open('', '_blank', 'width=900,height=1000');
-    if (!printWindow) return;
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${title}</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" />
-          <style>
-            @media print {
-              body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              .no-print { display: none !important; }
-              .print-container { overflow: visible !important; height: auto !important; }
-              * { box-shadow: none !important; }
-            }
-            body { padding: 30px; font-family: sans-serif; background: white; color: #1e293b; }
-            .print-container { max-width: 850px; margin: 0 auto; }
-          </style>
-        </head>
-        <body>
-          <div class="print-container">
-            ${elementNode.innerHTML}
-          </div>
-          <script>
-            setTimeout(() => {
-              window.print();
-              window.close();
-            }, 800);
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+  const handleCopyComponentImage = async (el: DomElementState, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    toast.info('Menyalin gambar ke clipboard...');
+    const ok = await copyComponentAsImage(`widget-${el.id}`);
+    if (ok) {
+      toast.success('Gambar disalin ke clipboard! Siap di-paste ke Canva/WA.');
+    } else {
+      toast.error('Gagal menyalin gambar.');
+    }
   };
 
   const handleQuickExport = (el: DomElementState, e: React.MouseEvent) => {
@@ -317,12 +301,32 @@ export const DomOverlay: React.FC = () => {
 
                 {/* PC Window Actions */}
                 <div className="flex items-center gap-1 shrink-0 no-print">
+                  {/* Unduh PNG */}
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => handleExportComponentPNG(el, e)}
+                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-blue-600 transition cursor-pointer"
+                    title="Unduh Gambar PNG HD Objek (2x Retina)"
+                  >
+                    <ImageIcon size={13} />
+                  </button>
+
+                  {/* Salin Gambar */}
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => handleCopyComponentImage(el, e)}
+                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-emerald-600 transition cursor-pointer"
+                    title="Salin Gambar ke Clipboard (Siap Paste ke Canva/Word/WA)"
+                  >
+                    <Copy size={13} />
+                  </button>
+
                   {/* Print / PDF */}
                   <button
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => handlePrint(el, e)}
                     className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-indigo-600 transition cursor-pointer"
-                    title="Cetak Dokumen / Unduh PDF Bersih"
+                    title="Cetak Dokumen Bersih / PDF"
                   >
                     <Printer size={13} />
                   </button>
@@ -331,8 +335,8 @@ export const DomOverlay: React.FC = () => {
                   <button
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => handleQuickExport(el, e)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-blue-600 transition cursor-pointer"
-                    title="Unduh Berkas Objek Mandiri (HTML/SVG/MD)"
+                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-amber-600 transition cursor-pointer"
+                    title="Unduh Berkas Mandiri (HTML/SVG/MD/CSV)"
                   >
                     <Download size={13} />
                   </button>
@@ -341,7 +345,7 @@ export const DomOverlay: React.FC = () => {
                   <button
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={() => setFullscreenWidgetId(el.id)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-emerald-600 transition cursor-pointer"
+                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-purple-600 transition cursor-pointer"
                     title="Layar Penuh (Fullscreen PC Focus)"
                   >
                     <Maximize2 size={13} />
@@ -405,6 +409,22 @@ export const DomOverlay: React.FC = () => {
 
               {/* Titlebar Actions */}
               <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => handleExportComponentPNG(activeFullscreenEl, e)}
+                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  title="Unduh Gambar PNG HD Objek"
+                >
+                  <ImageIcon size={14} /> Unduh PNG
+                </button>
+
+                <button
+                  onClick={(e) => handleCopyComponentImage(activeFullscreenEl, e)}
+                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  title="Salin Gambar ke Clipboard"
+                >
+                  <Copy size={14} /> Salin Gambar
+                </button>
+
                 <button
                   onClick={(e) => handlePrint(activeFullscreenEl, e)}
                   className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"

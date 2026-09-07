@@ -96,6 +96,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "google-auth-library": "^11.0.2",
+    "html-to-image": "^1.11.13",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^1.8.0",
     "markmap-lib": "^0.18.12",
