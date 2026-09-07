@@ -29,6 +29,9 @@ release-zip
 
 # Runtime server state
 rooms_persistence.json
+data/
+*.telemetry.json
+trido_telemetry.json
 
 # Local machine artifacts
 lint_output.txt

@@ -259,6 +259,34 @@ CRITICAL EXECUTION RULES:
         }
       },
       {
+        name: "update_component",
+        description: "Replace or update the content of an existing component (Document note, Quiz, Markmap, Mermaid diagram, or App). Target by componentTitle (e.g. 'Catatan Materi') or objectId.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            componentTitle: { type: "STRING", description: "Title or text label of the component to update" },
+            objectId: { type: "STRING", description: "Optional exact ID of the component" },
+            action: { type: "STRING", enum: ["REPLACE", "APPEND", "UPDATE_CONFIG"], description: "Update mode: REPLACE or APPEND" },
+            configJson: { type: "STRING", description: "New JSON configuration matching the component type" }
+          },
+          required: ["configJson"]
+        }
+      },
+      {
+        name: "update_mindmap_node",
+        description: "Update, rename, restyle, or edit an existing mindmap node on the board.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            targetText: { type: "STRING", description: "Current text label of the mindmap node to modify" },
+            newText: { type: "STRING", description: "New text label for the node" },
+            newStyle: { type: "STRING", enum: ["CENTRAL", "MAIN_TOPIC", "SUBTOPIC", "DETAIL"], description: "Optional new style" },
+            newParentNodeText: { type: "STRING", description: "Optional new parent node label to reconnect" }
+          },
+          required: ["targetText", "newText"]
+        }
+      },
+      {
         name: "relayout_mindmap",
         description: "Redesign, reorganize, and tidy up the mindmap layout to fix overlaps and make it beautiful and clean. Layout options: 'RADIAL' or 'TREE_HORIZONTAL'.",
         parameters: {

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { DomElementState } from '../types';
 import { QuizMultipleChoice } from './quiz/QuizMultipleChoice';
@@ -14,7 +13,20 @@ import { FlashcardTool } from './FlashcardTool';
 import { QuizApp } from './quiz/QuizApp';
 import { MarkmapTool } from './MarkmapTool';
 import { MermaidTool } from './MermaidTool';
-import { Printer } from 'lucide-react';
+import {
+  Printer, Maximize2, Minimize2, X, Download, FileText, Globe,
+  Code, Compass, BookOpen, Clock, Calculator, HelpCircle, Layers, Sparkles
+} from 'lucide-react';
+import {
+  printCleanDocument,
+  exportDocumentAsHtml,
+  exportDocumentAsMarkdown,
+  exportInteractiveAppAsHtml,
+  exportQuizAsPrintableWorksheet,
+  downloadFile,
+  slugify
+} from '../utils/smartExport';
+import { toast } from '../utils/toast';
 
 export const DomOverlay: React.FC = () => {
   const domElements = useStore(state => state.domElements);
@@ -22,13 +34,23 @@ export const DomOverlay: React.FC = () => {
   const isActing = useStore(state => state.isActing);
   const removeDomElement = useStore(state => state.removeDomElement);
 
-  const zoom = viewportTransform[0];
-  const panX = viewportTransform[4];
-  const panY = viewportTransform[5];
+  const [fullscreenWidgetId, setFullscreenWidgetId] = useState<string | null>(null);
+
+  // Keyboard shortcut: Escape exits fullscreen mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && fullscreenWidgetId) {
+        setFullscreenWidgetId(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fullscreenWidgetId]);
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+    if (fullscreenWidgetId === id) setFullscreenWidgetId(null);
     removeDomElement(id);
     const event = new CustomEvent('removeCanvasObject', { detail: { id } });
     window.dispatchEvent(event);
@@ -37,31 +59,48 @@ export const DomOverlay: React.FC = () => {
   const handlePrint = (el: DomElementState, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    
+
+    const title = el.config?.title || el.componentType || 'Trido Dokumen';
+    const type = el.componentType || '';
+
+    // Specialized print handlers
+    if (type.startsWith('QUIZ_')) {
+      exportQuizAsPrintableWorksheet({ title, type, config: el.config });
+      toast.success('Membuka lembar ujian siap cetak.');
+      return;
+    }
+
+    if (type === 'MARKDOWN_NOTE' || type === 'DOCUMENT_PAGE' || type === 'MARKMAP_MINDMAP') {
+      const ok = printCleanDocument(`widget-${el.id}`, title);
+      if (ok) {
+        toast.success('Membuka pratinjau cetak PDF bersih.');
+        return;
+      }
+    }
+
+    // Generic fallback print
     const elementNode = document.getElementById(`widget-${el.id}`);
     if (!elementNode) return;
 
-    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    const printWindow = window.open('', '_blank', 'width=900,height=1000');
     if (!printWindow) return;
 
     printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
-          <title>${el.componentType || 'Trido Document'}</title>
+          <title>${title}</title>
           <script src="https://cdn.tailwindcss.com"></script>
           <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" />
           <style>
             @media print {
               body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-              /* Hide elements with no-print class */
               .no-print { display: none !important; }
-              /* Ensure the content spans full width without weird scrollbars */
               .print-container { overflow: visible !important; height: auto !important; }
-              /* Remove rounded corners and shadows for cleaner print */
-              * { box-shadow: none !important; border-radius: 0 !important; }
+              * { box-shadow: none !important; }
             }
-            body { padding: 40px; font-family: 'Inter', sans-serif; }
-            .print-container { max-width: 800px; margin: 0 auto; }
+            body { padding: 30px; font-family: sans-serif; background: white; color: #1e293b; }
+            .print-container { max-width: 850px; margin: 0 auto; }
           </style>
         </head>
         <body>
@@ -69,16 +108,82 @@ export const DomOverlay: React.FC = () => {
             ${elementNode.innerHTML}
           </div>
           <script>
-            // Wait for Tailwind, KaTeX and images to render
             setTimeout(() => {
               window.print();
               window.close();
-            }, 1000);
+            }, 800);
           </script>
         </body>
       </html>
     `);
     printWindow.document.close();
+  };
+
+  const handleQuickExport = (el: DomElementState, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const type = el.componentType || '';
+    const config = el.config || {};
+    const title = config.title || type;
+
+    if (type === 'MARKDOWN_NOTE' || type === 'DOCUMENT_PAGE') {
+      exportDocumentAsHtml(title, config.markdown || config.content || '');
+      toast.success('Dokumen HTML berhasil diunduh.');
+    } else if (type === 'MARKMAP_MINDMAP') {
+      const svg = document.querySelector(`#widget-${el.id} svg`);
+      if (svg) {
+        const svgData = new XMLSerializer().serializeToString(svg);
+        downloadFile(svgData, `${slugify(title)}_markmap.svg`, 'image/svg+xml;charset=utf-8');
+        toast.success('Vektor SVG Markmap berhasil diunduh.');
+      } else {
+        exportDocumentAsMarkdown(title, config.markdown || config.content || '');
+        toast.success('Markdown berhasil diunduh.');
+      }
+    } else if (type === 'MERMAID_DIAGRAM') {
+      const svg = document.querySelector(`#widget-${el.id} svg`);
+      if (svg) {
+        const svgData = new XMLSerializer().serializeToString(svg);
+        downloadFile(svgData, `${slugify(title)}_diagram.svg`, 'image/svg+xml;charset=utf-8');
+        toast.success('Vektor SVG diagram berhasil diunduh.');
+      } else {
+        downloadFile(config.code || '', `${slugify(title)}.mmd`, 'text/plain;charset=utf-8');
+        toast.success('Kode Mermaid berhasil diunduh.');
+      }
+    } else if (type === 'INTERACTIVE_APP') {
+      exportInteractiveAppAsHtml({
+        title,
+        html: config.html || '',
+        css: config.css,
+        js: config.js
+      });
+      toast.success('Aplikasi web mandiri (.html) berhasil diunduh.');
+    } else if (type.startsWith('QUIZ_')) {
+      exportQuizAsPrintableWorksheet({ title, type, config });
+      toast.success('Membuka lembar ujian siswa.');
+    } else {
+      handlePrint(el, e);
+    }
+  };
+
+  const getComponentIcon = (type?: string) => {
+    switch (type) {
+      case 'MARKDOWN_NOTE':
+      case 'DOCUMENT_PAGE':
+        return <BookOpen size={14} className="text-indigo-600" />;
+      case 'MARKMAP_MINDMAP':
+        return <Compass size={14} className="text-blue-600" />;
+      case 'MERMAID_DIAGRAM':
+        return <Layers size={14} className="text-emerald-600" />;
+      case 'INTERACTIVE_APP':
+        return <Code size={14} className="text-purple-600" />;
+      case 'TIMER':
+        return <Clock size={14} className="text-amber-600" />;
+      case 'CALCULATOR':
+        return <Calculator size={14} className="text-slate-600" />;
+      default:
+        if (type?.startsWith('QUIZ')) return <HelpCircle size={14} className="text-rose-600" />;
+        return <Sparkles size={14} className="text-blue-600" />;
+    }
   };
 
   const renderContent = (el: DomElementState) => {
@@ -110,93 +215,123 @@ export const DomOverlay: React.FC = () => {
         case 'QUIZ_APP':
           return <QuizApp config={el.config} />;
         case 'IMAGE_URL':
-          // Raw image URL rendered in an iframe for isolation
           return (
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#f8fafc',
-                padding: '12px'
-              }}
-            >
+            <div className="w-full h-full flex items-center justify-center bg-slate-50 p-3">
               <img
-                src={el.html?.match(/src="([^"]+)"/)?.[1] || ''}
-                alt="AI Generated"
-                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '10px' }}
+                src={el.config?.url}
+                alt="Uploaded"
+                className="max-w-full max-h-full object-contain rounded-lg"
               />
             </div>
           );
-        // More sophisticated components can be added as raw items here
+        default:
+          return (
+            <div
+              className="w-full h-full"
+              dangerouslySetInnerHTML={{ __html: el.html || '<div>Konten widget</div>' }}
+            />
+          );
       }
     }
-    
-    // Fallback to traditional raw HTML injected into an iframe
     return (
-      <iframe
-        srcDoc={el.html}
-        title={el.id}
-        className={`absolute inset-0 h-full w-full border-0 ${isActing ? 'pointer-events-none' : 'pointer-events-auto'}`}
-        sandbox="allow-scripts allow-same-origin allow-forms"
+      <div
+        className="w-full h-full"
+        dangerouslySetInnerHTML={{ __html: el.html || '<div>Konten</div>' }}
       />
     );
   };
 
+  const activeFullscreenEl = fullscreenWidgetId ? domElements[fullscreenWidgetId] : null;
+
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden selection:bg-cyber-primary/30">
-      <div 
+    <div className="pointer-events-none absolute inset-0 overflow-hidden z-10">
+      {/* ── 1. REGULAR CANVAS-PINNED DOM ELEMENTS ── */}
+      <div
         className="absolute inset-0 will-change-transform"
-        style={{ 
+        style={{
           transform: `matrix(${viewportTransform.join(',')})`,
-          transformOrigin: '0 0',
+          transformOrigin: '0 0'
         }}
       >
         {Object.values(domElements).map((el: DomElementState) => {
-          const rotation = el.rotation;
+          if (fullscreenWidgetId === el.id) return null; // Rendered in fullscreen portal instead
+
+          const title = el.config?.title || el.componentType?.replace(/_/g, ' ') || 'KOMPONEN';
 
           return (
             <div
               key={el.id}
-              className={`absolute flex flex-col overflow-hidden rounded-xl bg-white shadow-[0_4px_30px_rgba(0,0,0,0.1)] ring-1 ring-black/5 transition-opacity duration-300 will-change-transform ${isActing ? 'opacity-50' : 'opacity-100'}`}
+              className={`absolute flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_12px_45px_rgba(0,0,0,0.12)] border border-slate-200/90 transition-opacity duration-300 will-change-transform select-none ${
+                isActing ? 'opacity-50' : 'opacity-100'
+              }`}
               style={{
                 width: `${el.width}px`,
                 height: `${el.height}px`,
                 left: el.x,
                 top: el.y,
-                transform: `translate(-50%, -50%) scale(${el.scaleX}, ${el.scaleY}) rotate(${rotation}deg)`,
+                transform: `translate(-50%, -50%) scale(${el.scaleX}, ${el.scaleY}) rotate(${el.rotation}deg)`,
                 transformOrigin: 'center center',
-                pointerEvents: 'auto',
+                pointerEvents: 'auto'
               }}
             >
-              {/* Header / Command Bar */}
-              <div className="flex h-10 w-full items-center gap-2 bg-[#f8fafc] px-3 border-b border-slate-200 shrink-0 select-none items-center justify-between">
-                <div className="flex items-center gap-2">
-                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 shadow-sm text-slate-500">
-                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
-                   </div>
-                   <div className="text-xs font-bold text-slate-600 font-sans tracking-wide">
-                     {el.componentType ? el.componentType.split('_').join(' ') : 'WEB APP'}
-                   </div>
+              {/* Desktop Header / PC Window Titlebar */}
+              <div
+                onDoubleClick={() => setFullscreenWidgetId(el.id)}
+                className="flex h-11 w-full items-center justify-between bg-slate-50/95 px-3.5 border-b border-slate-200/80 shrink-0 select-none cursor-move"
+                title="Klik ganda untuk Layar Penuh (Fullscreen)"
+              >
+                {/* Title & Icon */}
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0">
+                    {getComponentIcon(el.componentType)}
+                  </div>
+                  <div className="font-extrabold text-[12px] text-slate-800 tracking-tight truncate font-sans">
+                    {title}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 no-print">
-                  <button 
-                    onMouseDown={(e) => e.stopPropagation()} 
+
+                {/* PC Window Actions */}
+                <div className="flex items-center gap-1 shrink-0 no-print">
+                  {/* Print / PDF */}
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => handlePrint(el, e)}
-                    className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
-                    title="Cetak / Unduh PDF"
+                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-indigo-600 transition cursor-pointer"
+                    title="Cetak Dokumen / Unduh PDF Bersih"
                   >
-                    <Printer size={14} />
+                    <Printer size={13} />
                   </button>
-                  <button 
-                    onMouseDown={(e) => e.stopPropagation()} 
-                    onClick={(e) => handleDelete(el.id, e)}
-                    className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-slate-200 text-slate-400 hover:text-rose-600 transition cursor-pointer"
-                    title="Close"
+
+                  {/* Quick Export Artifact */}
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => handleQuickExport(el, e)}
+                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-blue-600 transition cursor-pointer"
+                    title="Unduh Berkas Objek Mandiri (HTML/SVG/MD)"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <Download size={13} />
+                  </button>
+
+                  {/* Fullscreen / Focus Mode */}
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => setFullscreenWidgetId(el.id)}
+                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-emerald-600 transition cursor-pointer"
+                    title="Layar Penuh (Fullscreen PC Focus)"
+                  >
+                    <Maximize2 size={13} />
+                  </button>
+
+                  <div className="w-[1px] h-3 bg-slate-200 mx-0.5" />
+
+                  {/* Close / Delete */}
+                  <button
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => handleDelete(el.id, e)}
+                    className="p-1.5 rounded-lg hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                    title="Tutup Komponen"
+                  >
+                    <X size={13} strokeWidth={2.5} />
                   </button>
                 </div>
               </div>
@@ -204,10 +339,10 @@ export const DomOverlay: React.FC = () => {
               {/* Application Content */}
               <div id={`widget-${el.id}`} className="flex-1 bg-white relative overflow-auto pointer-events-auto">
                 {renderContent(el)}
-                
+
                 {isActing && (
                   <div className="absolute inset-0 z-50 bg-[#00f0ff]/5 flex items-center justify-center backdrop-blur-[1px]">
-                    <div className="bg-black/90 px-3 py-1 rounded border border-cyber-primary/50 text-cyber-primary text-[10px] font-mono animate-pulse tracking-tighter">
+                    <div className="bg-black/90 px-3 py-1 rounded border border-cyan-400/50 text-cyan-300 text-[10px] font-mono animate-pulse tracking-tighter">
                       AGENT_INTERACTING...
                     </div>
                   </div>
@@ -217,6 +352,67 @@ export const DomOverlay: React.FC = () => {
           );
         })}
       </div>
+
+      {/* ── 2. FULLSCREEN PC FOCUS MODE OVERLAY ── */}
+      {activeFullscreenEl && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-auto p-4 sm:p-8 lg:p-12">
+          {/* Backdrop */}
+          <div
+            onClick={() => setFullscreenWidgetId(null)}
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+          />
+
+          {/* Desktop Fullscreen Window Card */}
+          <div className="relative w-full h-full max-w-6xl max-h-[92vh] bg-white rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.35)] border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Titlebar */}
+            <div className="flex h-13 px-6 items-center justify-between bg-slate-50 border-b border-slate-200/90 shrink-0 select-none">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white border border-slate-200 shadow-sm shrink-0">
+                  {getComponentIcon(activeFullscreenEl.componentType)}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight truncate">
+                    {activeFullscreenEl.config?.title || activeFullscreenEl.componentType?.replace(/_/g, ' ') || 'KOMPONEN'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Mode Fokus Layar Penuh (Tekan ESC untuk kembali)</p>
+                </div>
+              </div>
+
+              {/* Titlebar Actions */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => handlePrint(activeFullscreenEl, e)}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  title="Cetak Dokumen / Unduh PDF"
+                >
+                  <Printer size={14} /> Cetak / PDF
+                </button>
+
+                <button
+                  onClick={(e) => handleQuickExport(activeFullscreenEl, e)}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  title="Unduh Berkas Mandiri"
+                >
+                  <Download size={14} /> Unduh Berkas
+                </button>
+
+                <button
+                  onClick={() => setFullscreenWidgetId(null)}
+                  className="p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-700 transition cursor-pointer ml-1"
+                  title="Keluar Layar Penuh (ESC)"
+                >
+                  <Minimize2 size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Content Body in Fullscreen */}
+            <div id={`widget-${activeFullscreenEl.id}-fullscreen`} className="flex-1 bg-white relative overflow-auto p-4 sm:p-6">
+              {renderContent(activeFullscreenEl)}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -243,20 +243,56 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
     },
     {
         name: "update_component",
-        description: "Replace the content of an existing interactive widget — use this for 'next question', 'update timer', 'edit note', etc.",
+        description: "Replace or update the content of an existing component (Document note, Quiz, Markmap, Mermaid diagram, or App). Target by componentTitle (e.g. 'Catatan Materi') or objectId.",
         parameters: {
             type: Type.OBJECT,
             properties: {
+                componentTitle: {
+                    type: Type.STRING,
+                    description: "Title or text label of the component to update (e.g. 'Catatan Materi', 'Sistem Tata Surya')"
+                },
                 objectId: {
                     type: Type.STRING,
-                    description: "ID of the existing component from INTERACTIVE COMPONENTS list"
+                    description: "Optional exact ID of the component"
+                },
+                action: {
+                    type: Type.STRING,
+                    enum: ["REPLACE", "APPEND", "UPDATE_CONFIG"],
+                    description: "Update mode: REPLACE full config, or APPEND to existing text/markdown"
                 },
                 configJson: {
                     type: Type.STRING,
-                    description: "New JSON configuration — same schema as add_component.configJson for that component type"
+                    description: "New JSON configuration — same schema as add_component.configJson (e.g. {\"markdown\":\"...\"} or {\"code\":\"...\"})"
                 }
             },
-            required: ["objectId", "configJson"]
+            required: ["configJson"]
+        }
+    },
+    {
+        name: "update_mindmap_node",
+        description: "Update, rename, restyle, or edit an existing mindmap node on the board.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                targetText: {
+                    type: Type.STRING,
+                    description: "Current text label of the mindmap node to modify (e.g. 'Fotosintesis')"
+                },
+                newText: {
+                    type: Type.STRING,
+                    description: "New text label for the node"
+                },
+                newStyle: {
+                    type: Type.STRING,
+                    enum: ["CENTRAL", "MAIN_TOPIC", "SUBTOPIC", "DETAIL"],
+                    description: "Optional new style"
+                },
+                newParentNodeText: {
+                    type: Type.STRING,
+                    description: "Optional new parent node label to reconnect"
+                }
+            },
+            required: ["targetText", "newText"]
         }
     },
     {

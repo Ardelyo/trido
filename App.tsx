@@ -11,7 +11,6 @@ import { TemplatesView } from './components/TemplatesView';
 import { AiToolsView } from './components/AiToolsView';
 import { HistoryView } from './components/HistoryView';
 import { SettingsView } from './components/SettingsView';
-import { TelemetryView } from './components/TelemetryView';
 import { SaveMenu } from './components/SaveMenu';
 import { useSocketSync } from './hooks/useSocketSync';
 import { useAiStatus } from './hooks/useAiStatus';
@@ -40,7 +39,6 @@ const App: React.FC = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
@@ -299,7 +297,6 @@ const App: React.FC = () => {
             {/* Modals & Overlays */}
             <ShareDialog isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} roomId={roomId} />
             <ExportDialog isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} canvasRef={canvasRef} />
-            <TelemetryView isOpen={isTelemetryOpen} onClose={() => setIsTelemetryOpen(false)} />
             <ToolOverlay />
 
             {/* Mobile Sidebar Overlay */}
@@ -331,14 +328,13 @@ const App: React.FC = () => {
                       <SidebarItem
                         icon={Square}
                         label={t('whiteboard', 'Papan Tulis')}
-                        active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen && !isExportOpen && !isTelemetryOpen}
+                        active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen && !isExportOpen}
                         onClick={() => {
                           if (isTemplatesOpen) toggleTemplates();
                           if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
-                          setIsTelemetryOpen(false);
                         }}
                       />
 
@@ -353,7 +349,6 @@ const App: React.FC = () => {
                           if (isAiToolsOpen) toggleAiTools();
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
-                          setIsTelemetryOpen(false);
                         }}
                       />
 
@@ -368,26 +363,10 @@ const App: React.FC = () => {
                           if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
-                          setIsTelemetryOpen(false);
                         }}
                       />
 
-                      {/* 4. Telemetry & Google Sheets */}
-                      <SidebarItem
-                        icon={Database}
-                        label="Data & Telemetri"
-                        active={isTelemetryOpen}
-                        onClick={() => {
-                          setIsTelemetryOpen(v => !v);
-                          if (isTemplatesOpen) toggleTemplates();
-                          if (isAiToolsOpen) toggleAiTools();
-                          if (isHistoryOpen) toggleHistory();
-                          setIsSettingsOpen(false);
-                          setIsExportOpen(false);
-                        }}
-                      />
-
-                      {/* 5. Settings */}
+                      {/* 4. Settings */}
                       <SidebarItem
                         icon={Settings}
                         label={t('settings', 'Pengaturan')}
@@ -398,7 +377,6 @@ const App: React.FC = () => {
                           if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsExportOpen(false);
-                          setIsTelemetryOpen(false);
                         }}
                       />
 

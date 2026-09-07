@@ -722,9 +722,30 @@ ${mindmapContextStr}
 
         } else if (call.name === 'update_component') {
           actionType = 'EDIT_HTML';
-          let parsedUpdateConfig = {};
-          try { parsedUpdateConfig = JSON.parse(args.configJson); } catch (_) {}
-          payload = { objectId: args.objectId, config: parsedUpdateConfig };
+          let parsedUpdateConfig: any = {};
+          if (args.configJson) {
+            try {
+              parsedUpdateConfig = typeof args.configJson === 'string' ? JSON.parse(args.configJson) : args.configJson;
+            } catch (_) {
+              parsedUpdateConfig = {};
+            }
+          }
+          payload = {
+            objectId: args.objectId || args.componentId,
+            componentTitle: args.componentTitle,
+            action: args.action || 'REPLACE',
+            config: parsedUpdateConfig
+          };
+
+        } else if (call.name === 'update_mindmap_node') {
+          actionType = 'MODIFY_PROPERTY';
+          payload = {
+            elementText: args.targetText,
+            newText: args.newText,
+            newStyle: args.newStyle,
+            newParentNodeText: args.newParentNodeText,
+            property: 'mindmap_node'
+          };
 
         } else if (call.name === 'add_component') {
           actionType = 'RENDER_HTML';

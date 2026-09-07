@@ -97,11 +97,10 @@ class TelemetryService {
   private syncTimer: NodeJS.Timeout | null = null;
   private isSyncing = false;
 
+  private enabled = false;
+
   constructor() {
-    this.initStorage();
-    this.loadConfig();
-    this.loadRecords();
-    this.startPeriodicSync();
+    // Telemetry archived & stopped — zero disk writes and zero timers running
   }
 
   private initStorage() {
@@ -236,6 +235,31 @@ class TelemetryService {
     canvasObjectsCount?: number;
     domElementsCount?: number;
   }): TelemetryRecord {
+    if (!this.enabled) {
+      return {
+        id: `tel_archived_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        timestampLocal: new Date().toLocaleString('id-ID'),
+        sessionId: params.sessionId || 'session_archived',
+        endpoint: params.endpoint || '/api/ai/generate',
+        prompt: (params.prompt || '').slice(0, 100),
+        model: params.model || 'gemini-3.8-flash',
+        provider: params.provider || 'vertex',
+        promptTokens: 0,
+        outputTokens: 0,
+        thinkingTokens: 0,
+        totalTokens: 0,
+        costUsd: 0,
+        costIdr: 0,
+        latencyMs: params.latencyMs || 0,
+        status: params.status || 'success',
+        actionsCount: (params.functionCalls || []).length,
+        actionsSummary: '',
+        responseTextSnippet: '',
+        sheetSyncStatus: 'disabled'
+      };
+    }
+
     const now = new Date();
     const promptTok = Number(params.promptTokens || 0);
     const outputTok = Number(params.outputTokens || 0);

@@ -580,11 +580,34 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         }
 
         case 'EDIT_HTML': {
-          const { objectId, config } = action.payload;
-          const target = canvas.getObjects().find((o: any) => o.id === objectId);
-          if (target) {
-            await execute(target.left, target.top, 'Updating Component...', () => {
-              updateDomElement(objectId, { config });
+          const { objectId, componentTitle, config, action: editAction } = action.payload;
+          const storeState = useStore.getState();
+          const doms = storeState.domElements;
+
+          let targetDomId = objectId;
+          if (!targetDomId || !doms[targetDomId]) {
+            const entry = Object.entries(doms).find(([id, el]) => {
+              if (id === objectId) return true;
+              const title = el.config?.title || el.componentType || '';
+              return componentTitle && title.toLowerCase().includes(componentTitle.toLowerCase());
+            });
+            if (entry) targetDomId = entry[0];
+          }
+
+          if (targetDomId && doms[targetDomId]) {
+            const existingConfig = doms[targetDomId].config || {};
+            let mergedConfig = { ...existingConfig, ...config };
+            if (editAction === 'APPEND') {
+              if (config.markdown && existingConfig.markdown) {
+                mergedConfig.markdown = existingConfig.markdown + '\n\n' + config.markdown;
+              }
+            }
+            const target = canvas.getObjects().find((o: any) => o.id === targetDomId);
+            const posX = target ? target.left : doms[targetDomId].x;
+            const posY = target ? target.top : doms[targetDomId].y;
+
+            await execute(posX, posY, 'Mengedit komponen...', () => {
+              storeState.updateDomElement(targetDomId, { config: mergedConfig });
             });
           }
           break;
@@ -688,17 +711,18 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         }
 
         case 'MODIFY_PROPERTY': {
-           const { objectId, elementText, property, value } = action.payload;
+           const { objectId, elementText, property, value, newText, newStyle, newParentNodeText } = action.payload;
            const target = findTargetObject(objectId, elementText);
+           const resolvedText = newText || value;
            if (target) {
               await execute(target.left, target.top, `Updating...`, () => {
-                  if (property === 'text' && target.isType('group')) {
+                  if ((property === 'text' || property === 'mindmap_node') && target.isType('group')) {
                     target.getObjects().forEach((o: any) => {
-                       if (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') o.set('text', value);
+                       if (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox') o.set('text', resolvedText);
                     });
                     canvas.requestRenderAll();
-                 } else if (property === 'text') {
-                    target.set('text', value);
+                 } else if (property === 'text' || property === 'mindmap_node') {
+                    target.set('text', resolvedText);
                     canvas.requestRenderAll();
                  } else if (property === 'fill') {
                     if (target.isType('group')) {
@@ -713,7 +737,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                  }
 
                  // Synchronize mindmap node updates in store
-                 if (property === 'text') {
+                 if (property === 'text' || property === 'mindmap_node') {
                    const store = useStore.getState();
                    const oldLabel = elementText || '';
                    const matched = store.activeMindmapNodes.find(
@@ -723,14 +747,16 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                      const prevName = matched.text;
                      store.registerMindmapNode({
                        ...matched,
-                       text: value
+                       text: resolvedText,
+                       style: newStyle || matched.style,
+                       parentNodeText: newParentNodeText !== undefined ? newParentNodeText : matched.parentNodeText
                      });
                      // Update children referencing old parent name
                      store.activeMindmapNodes.forEach(ch => {
                        if (ch.parentNodeText?.toLowerCase() === prevName.toLowerCase()) {
                          store.registerMindmapNode({
                            ...ch,
-                           parentNodeText: value
+                           parentNodeText: resolvedText
                          });
                        }
                      });
