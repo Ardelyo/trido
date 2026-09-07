@@ -279,6 +279,38 @@ CRITICAL EXECUTION RULES:
             style: { type: "STRING", enum: ["AUTO_UNTANGLE", "GRID_ALIGNED", "SPREAD_OUT"], description: "Reorganization style" }
           }
         }
+      },
+      {
+        name: "render_markmap",
+        description: "Render an interactive D3 mindmap using Markmap from markdown bullet list. Features smooth pan/zoom, interactive branching, and zero overlap.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING", description: "Mindmap title" },
+            markdown: { type: "STRING", description: "Markdown hierarchical list starting with # Root heading and ## Subheadings or - bullets" },
+            gridPosition: {
+              type: "STRING",
+              enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
+            }
+          },
+          required: ["markdown"]
+        }
+      },
+      {
+        name: "render_mermaid",
+        description: "Render a clean science flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING", description: "Diagram title" },
+            code: { type: "STRING", description: "Mermaid syntax code, e.g. flowchart TD or mindmap or sequenceDiagram" },
+            gridPosition: {
+              type: "STRING",
+              enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
+            }
+          },
+          required: ["code"]
+        }
       }
     ];
 

@@ -134,7 +134,8 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
         functionCalls,
         textResponse,
         thought,
-        validationErrors: validation.errors
+        validationErrors: validation.errors,
+        usageMetadata: data.usageMetadata
     };
 };
 export const generateToolContentVertex = async (toolId, prompt, modelOverride) => {

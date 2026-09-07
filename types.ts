@@ -45,6 +45,15 @@ export interface VoiceConfig {
   language: 'id-ID' | 'en-US' | 'auto';
   silenceDetectionTimeout: number; // 0 = off, 1.5, 2, 3, 5 seconds
 }
+
+export interface ExperimentalConfig {
+  enabled: boolean;
+  markmapEnabled: boolean;
+  mermaidEnabled: boolean;
+  smoothInkingEnabled: boolean;
+  visualTimerEnabled: boolean;
+}
+
 export type CanvasJson = Record<string, unknown> | unknown[];
 export type ViewportTransform = number[];
 
@@ -120,6 +129,10 @@ export interface AgentState {
 export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
+  telemetryId?: string;
+  tokens?: number;
+  latencyMs?: number;
+  costIdr?: number;
 }
 
 export interface RoomState {
@@ -210,3 +223,55 @@ export interface MindmapNodeRecord {
   x: number;
   y: number;
 }
+
+export interface TelemetryRecord {
+  id: string;
+  timestamp: string;
+  timestampLocal: string;
+  sessionId: string;
+  endpoint: string;
+  provider: 'vertex' | 'gemini' | 'ollama' | 'unknown';
+  model: string;
+  prompt: string;
+  promptTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  thinkingTokens: number;
+  costUsd: number;
+  costIdr: number;
+  latencyMs: number;
+  status: 'success' | 'error';
+  errorCode?: string;
+  errorMessage?: string;
+  actionsCount: number;
+  actionsSummary: string;
+  responseTextSnippet: string;
+  userRating?: 'good' | 'bad' | 'neutral' | null;
+  userFeedback?: string | null;
+  canvasObjectsCount?: number;
+  domElementsCount?: number;
+  sheetSyncStatus: 'synced' | 'pending' | 'failed' | 'disabled';
+}
+
+export interface TelemetrySummary {
+  totalRequests: number;
+  totalPromptTokens: number;
+  totalOutputTokens: number;
+  totalTokens: number;
+  totalCostUsd: number;
+  totalCostIdr: number;
+  avgLatencyMs: number;
+  successRate: number;
+  providerCounts: Record<string, number>;
+  modelCounts: Record<string, number>;
+  syncedToSheetCount: number;
+  pendingSheetCount: number;
+}
+
+export interface TelemetryConfig {
+  googleSheetId?: string;
+  googleSheetName?: string;
+  googleSheetWebhookUrl?: string;
+  autoSync: boolean;
+}
+

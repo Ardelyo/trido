@@ -154,9 +154,23 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         const t = getNodeText(o);
         if (t === search) return o;
       }
+      const clean = (s: string) =>
+        s.toLowerCase().replace(/^\d+[\.\)]\s*/, '').replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      const cleanSearch = clean(search);
+      for (const o of objs) {
+        const t = getNodeText(o);
+        if (t && clean(t) === cleanSearch) return o;
+      }
       for (const o of objs) {
         const t = getNodeText(o);
         if (t && (t.includes(search) || search.includes(t))) return o;
+      }
+      for (const o of objs) {
+        const t = getNodeText(o);
+        if (t) {
+          const ct = clean(t);
+          if ((ct.length > 2 && cleanSearch.includes(ct)) || (cleanSearch.length > 2 && ct.includes(cleanSearch))) return o;
+        }
       }
       const domElements = useStore.getState().domElements;
       for (const [domId, dom] of Object.entries(domElements)) {
@@ -313,10 +327,11 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         }
 
         case 'CREATE_SHAPE': {
-          const { shapeType, x, y, width, height, fill, stroke, strokeWidth, text, textColor, fontSize } = action.payload;
+          const { shapeType, x, y, width, height, fill, stroke, strokeWidth, text, textColor, fontSize, nodeId } = action.payload;
           await execute(x, y, `Creating ${shapeType}...`, () => {
             let obj;
             const defaultColor = useStore.getState().theme === 'dark' ? '#ffffff' : '#000000';
+            const shapeId = nodeId || action.payload.id || `shape_${Date.now()}`;
             const common = {
               left: x, top: y, width, height,
               fill: fill || defaultColor,
@@ -329,7 +344,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                 offsetX: 0,
                 offsetY: 6
               }),
-              id: `shape_${Date.now()}`
+              id: shapeId
             };
 
             if (shapeType === 'RECTANGLE') {
@@ -382,7 +397,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
               obj = new window.fabric.Group([obj, textObj], {
                 left: x, top: y,
                 originX: 'center', originY: 'center',
-                id: `shape_${Date.now()}_group`
+                id: shapeId
               });
             }
 
@@ -607,6 +622,46 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
             
             setClicking(false);
             await wait(30);
+
+            // Synchronize mindmap node position in store if target is a mindmap node
+            const store = useStore.getState();
+            const matchedMindmap = store.activeMindmapNodes.find(
+              n => n.canvasObjectId === target.id || (elementText && n.text.toLowerCase() === elementText.toLowerCase())
+            );
+            if (matchedMindmap) {
+              store.registerMindmapNode({
+                ...matchedMindmap,
+                x: toX,
+                y: toY,
+                canvasObjectId: target.id
+              });
+
+              // Redraw connected mindmap paths so connector lines follow smoothly
+              if (store.activeMindmapNodes.length > 1) {
+                const updatedNodes = useStore.getState().activeMindmapNodes;
+                const existingPaths = canvas.getObjects().filter((o: any) => o.id && (o.id.startsWith('path_') || o.id.startsWith('arrow_')));
+                existingPaths.forEach((p: any) => canvas.remove(p));
+
+                updatedNodes.forEach(node => {
+                  if (node.parentNodeText) {
+                    const parent = updatedNodes.find(p => p.text.toLowerCase() === node.parentNodeText?.toLowerCase());
+                    if (parent) {
+                      const pathStr = `M ${parent.x} ${parent.y} L ${node.x} ${node.y}`;
+                      const path = new window.fabric.Path(pathStr, {
+                        fill: 'transparent',
+                        stroke: '#3B82F6',
+                        strokeWidth: 2.5,
+                        strokeLineCap: 'round',
+                        id: `path_${Date.now()}_${Math.random()}`
+                      });
+                      canvas.add(path);
+                      canvas.sendToBack(path);
+                    }
+                  }
+                });
+                canvas.requestRenderAll();
+              }
+            }
           }
           break;
         }
@@ -655,6 +710,31 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                       target.set('fill', value);
                     }
                     canvas.requestRenderAll();
+                 }
+
+                 // Synchronize mindmap node updates in store
+                 if (property === 'text') {
+                   const store = useStore.getState();
+                   const oldLabel = elementText || '';
+                   const matched = store.activeMindmapNodes.find(
+                     n => n.canvasObjectId === target.id || (oldLabel && n.text.toLowerCase() === oldLabel.toLowerCase())
+                   );
+                   if (matched) {
+                     const prevName = matched.text;
+                     store.registerMindmapNode({
+                       ...matched,
+                       text: value
+                     });
+                     // Update children referencing old parent name
+                     store.activeMindmapNodes.forEach(ch => {
+                       if (ch.parentNodeText?.toLowerCase() === prevName.toLowerCase()) {
+                         store.registerMindmapNode({
+                           ...ch,
+                           parentNodeText: value
+                         });
+                       }
+                     });
+                   }
                  }
               });
            }

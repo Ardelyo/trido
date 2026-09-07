@@ -94,7 +94,8 @@ export const generateAgentActionsGemini = async (prompt, canvasImageBase64, canv
         functionCalls,
         textResponse,
         thought,
-        validationErrors: validation.errors
+        validationErrors: validation.errors,
+        usageMetadata: response.usageMetadata
     };
 };
 export const generateToolContentGemini = async (toolId, prompt, customKey, modelOverride) => {

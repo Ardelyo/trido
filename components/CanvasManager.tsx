@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
+import { getStroke } from 'perfect-freehand';
 import { useStore } from '../store';
 import { useAgentProcessor } from '../hooks/useAgentProcessor';
 import { AgentCursor } from './AgentCursor';
@@ -415,6 +416,57 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     canvas.on('path:created', (e: any) => {
       const path = e.path;
       path.set({ id: `draw_${Date.now()}`, zIndex: 1 });
+
+      const exp = useStore.getState().experimentalConfig;
+      if (exp?.enabled && exp?.smoothInkingEnabled && path.path && path.path.length >= 4) {
+        try {
+          const points: [number, number][] = [];
+          path.path.forEach((cmd: any) => {
+            if (cmd[0] === 'M' || cmd[0] === 'L') {
+              points.push([cmd[1], cmd[2]]);
+            } else if (cmd[0] === 'Q') {
+              points.push([cmd[1], cmd[2]]);
+              points.push([cmd[3], cmd[4]]);
+            }
+          });
+
+          if (points.length >= 3) {
+            const strokeOutline = getStroke(points, {
+              size: path.strokeWidth || 4,
+              thinning: 0.5,
+              smoothing: 0.7,
+              streamline: 0.6
+            });
+            if (strokeOutline && strokeOutline.length) {
+              const d = strokeOutline.reduce(
+                (acc: any[], [x0, y0]: number[], i: number, arr: any[]) => {
+                  const [x1, y1] = arr[(i + 1) % arr.length];
+                  acc.push(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2);
+                  return acc;
+                },
+                ['M', ...strokeOutline[0], 'Q']
+              );
+              d.push('Z');
+              const svgD = d.join(' ');
+              if (svgD) {
+                const smoothPath = new window.fabric.Path(svgD, {
+                  fill: path.stroke || '#1e293b',
+                  stroke: 'transparent',
+                  id: path.id,
+                  zIndex: 1,
+                  selectable: true,
+                  evented: true
+                });
+                canvas.remove(path);
+                canvas.add(smoothPath);
+                canvas.requestRenderAll();
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Smooth inking fallback:', err);
+        }
+      }
     });
 
     // --- HISTORY LOGIC ---

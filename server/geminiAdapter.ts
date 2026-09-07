@@ -120,7 +120,8 @@ export const generateAgentActionsGemini = async (
     functionCalls, 
     textResponse, 
     thought,
-    validationErrors: validation.errors
+    validationErrors: validation.errors,
+    usageMetadata: (response as any).usageMetadata
   };
 };
 

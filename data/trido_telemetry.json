@@ -1,0 +1,26 @@
+[
+  {
+    "id": "tel_1788779803298_yb0yh",
+    "timestamp": "2026-09-07T11:16:43.298Z",
+    "timestampLocal": "07/09/2026, 18.16.43 WIB",
+    "sessionId": "test_session_1",
+    "endpoint": "/api/ai/generate",
+    "provider": "vertex",
+    "model": "gemini-3.8-flash",
+    "prompt": "Buat rangkuman materi fotosintesis beserta mind map 5 cabang",
+    "promptTokens": 420,
+    "outputTokens": 180,
+    "totalTokens": 600,
+    "thinkingTokens": 0,
+    "costUsd": 0.000171,
+    "costIdr": 2.79,
+    "latencyMs": 1250,
+    "status": "success",
+    "actionsCount": 1,
+    "actionsSummary": "createMindMap (1)",
+    "responseTextSnippet": "Berikut adalah peta konsep fotosintesis untuk kelas 7 SMP.",
+    "canvasObjectsCount": 0,
+    "domElementsCount": 0,
+    "sheetSyncStatus": "disabled"
+  }
+]

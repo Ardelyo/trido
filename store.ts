@@ -1,8 +1,9 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
+import { findMatchingMindmapNode } from './utils/mindmapLayout';
 
 interface AppStore extends AgentState {
   actionQueue: AgentAction[];
@@ -88,6 +89,8 @@ interface AppStore extends AgentState {
   setTranscribeMode: (mode: TranscribeMode) => void;
   voiceConfig: VoiceConfig;
   setVoiceConfig: (config: Partial<VoiceConfig>) => void;
+  experimentalConfig: ExperimentalConfig;
+  setExperimentalConfig: (config: Partial<ExperimentalConfig>) => void;
   chatInputText: string;
   setChatInputText: (txt: string) => void;
   interimInputText: string;
@@ -241,6 +244,22 @@ const getInitialVoiceConfig = (): VoiceConfig => {
     if (saved) return { ...defaultVoiceConfig, ...JSON.parse(saved) };
   } catch {}
   return defaultVoiceConfig;
+};
+
+export const defaultExperimentalConfig: ExperimentalConfig = {
+  enabled: false,
+  markmapEnabled: true,
+  mermaidEnabled: true,
+  smoothInkingEnabled: true,
+  visualTimerEnabled: true
+};
+
+const getInitialExperimentalConfig = (): ExperimentalConfig => {
+  try {
+    const saved = localStorage.getItem('trido_experimental_config');
+    if (saved) return { ...defaultExperimentalConfig, ...JSON.parse(saved) };
+  } catch {}
+  return defaultExperimentalConfig;
 };
 
 // ============================================================================
@@ -490,9 +509,7 @@ export const useStore = create<AppStore>((set, get) => ({
 
   getMindmapNodeByText: (text) => {
     const { activeMindmapNodes } = get();
-    return activeMindmapNodes.find(
-      n => n.text.toLowerCase().trim() === text.toLowerCase().trim()
-    );
+    return findMatchingMindmapNode(text, activeMindmapNodes);
   },
 
   cursorPosition: { x: 0, y: 0 },
@@ -517,6 +534,12 @@ export const useStore = create<AppStore>((set, get) => ({
     const updated = { ...get().voiceConfig, ...partial };
     localStorage.setItem('trido_voice_config', JSON.stringify(updated));
     set({ voiceConfig: updated });
+  },
+  experimentalConfig: getInitialExperimentalConfig(),
+  setExperimentalConfig: (partial) => {
+    const updated = { ...get().experimentalConfig, ...partial };
+    localStorage.setItem('trido_experimental_config', JSON.stringify(updated));
+    set({ experimentalConfig: updated });
   },
   zoom: 1,
   viewportTransform: [1, 0, 0, 1, 0, 0],

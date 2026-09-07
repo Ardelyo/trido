@@ -3,9 +3,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal } from 'lucide-react';
+import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal, ThumbsUp, ThumbsDown, Zap } from 'lucide-react';
 import { ChatMessage } from '../types';
 import { toast } from '../utils/toast';
+import { submitLogFeedback } from '../services/aiService';
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -21,6 +22,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   const isModel = message.role === 'model';
   const [copied, setCopied] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [rated, setRated] = useState<'good' | 'bad' | null>(null);
   
   // Real-time typewriter streaming state
   const [displayedLength, setDisplayedLength] = useState<number>(() => {
@@ -152,6 +154,12 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
           <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md border border-blue-200/60">
             gemini-3.8-flash
           </span>
+          {message.tokens && (
+            <span className="text-[10px] font-mono text-slate-400 flex items-center gap-0.5">
+              <Zap size={10} className="text-amber-500" /> {message.tokens} tok
+              {message.latencyMs && ` • ${(message.latencyMs / 1000).toFixed(1)}s`}
+            </span>
+          )}
           {isStreaming && (
             <span className="text-[10px] text-emerald-600 font-semibold animate-pulse flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> realtime
@@ -161,6 +169,40 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 
         {/* Action icons */}
         <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+          {message.telemetryId && (
+            <div className="flex items-center gap-0.5 mr-1 border-r border-slate-200 pr-1.5">
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setRated('good');
+                  await submitLogFeedback(message.telemetryId!, 'good');
+                  toast.success('Feedback positif dicatat ke Google Cloud / Sheets!');
+                }}
+                className={`p-1 rounded-lg transition-colors ${
+                  rated === 'good' ? 'bg-emerald-100 text-emerald-700' : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-100'
+                }`}
+                title="Puas / Bagus (Kirim ke Telemetri)"
+              >
+                <ThumbsUp size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setRated('bad');
+                  await submitLogFeedback(message.telemetryId!, 'bad');
+                  toast.success('Feedback dicatat untuk perbaikan.');
+                }}
+                className={`p-1 rounded-lg transition-colors ${
+                  rated === 'bad' ? 'bg-rose-100 text-rose-700' : 'text-slate-400 hover:text-rose-600 hover:bg-slate-100'
+                }`}
+                title="Kurang / Butuh perbaikan (Kirim ke Telemetri)"
+              >
+                <ThumbsDown size={12} />
+              </button>
+            </div>
+          )}
           <button
             type="button"
             onClick={(e) => {

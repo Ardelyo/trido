@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CONFIG } from './constants';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
+import { findMatchingMindmapNode } from './utils/mindmapLayout';
 let autoSaveTimeout;
 const getInitialAiPreference = () => {
     const saved = localStorage.getItem('ai_preference');
@@ -60,6 +61,22 @@ const getInitialVoiceConfig = () => {
     }
     catch { }
     return defaultVoiceConfig;
+};
+export const defaultExperimentalConfig = {
+    enabled: false,
+    markmapEnabled: true,
+    mermaidEnabled: true,
+    smoothInkingEnabled: true,
+    visualTimerEnabled: true
+};
+const getInitialExperimentalConfig = () => {
+    try {
+        const saved = localStorage.getItem('trido_experimental_config');
+        if (saved)
+            return { ...defaultExperimentalConfig, ...JSON.parse(saved) };
+    }
+    catch { }
+    return defaultExperimentalConfig;
 };
 // ============================================================================
 // ZERO-COST SIZE ESTIMATOR (Replaces JSON.stringify)
@@ -283,7 +300,7 @@ export const useStore = create((set, get) => ({
     }),
     getMindmapNodeByText: (text) => {
         const { activeMindmapNodes } = get();
-        return activeMindmapNodes.find(n => n.text.toLowerCase().trim() === text.toLowerCase().trim());
+        return findMatchingMindmapNode(text, activeMindmapNodes);
     },
     cursorPosition: { x: 0, y: 0 },
     spatialTarget: null,
@@ -307,6 +324,12 @@ export const useStore = create((set, get) => ({
         const updated = { ...get().voiceConfig, ...partial };
         localStorage.setItem('trido_voice_config', JSON.stringify(updated));
         set({ voiceConfig: updated });
+    },
+    experimentalConfig: getInitialExperimentalConfig(),
+    setExperimentalConfig: (partial) => {
+        const updated = { ...get().experimentalConfig, ...partial };
+        localStorage.setItem('trido_experimental_config', JSON.stringify(updated));
+        set({ experimentalConfig: updated });
     },
     zoom: 1,
     viewportTransform: [1, 0, 0, 1, 0, 0],

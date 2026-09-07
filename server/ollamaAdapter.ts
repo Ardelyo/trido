@@ -189,7 +189,12 @@ export const generateAgentActionsOllama = async (
     functionCalls,
     textResponse,
     thought,
-    validationErrors: validation.errors
+    validationErrors: validation.errors,
+    usageMetadata: {
+      promptTokenCount: data.prompt_eval_count || 0,
+      candidatesTokenCount: data.eval_count || 0,
+      totalTokenCount: (data.prompt_eval_count || 0) + (data.eval_count || 0)
+    }
   };
 };
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Pause, RotateCcw, Clock, Timer as TimerIcon, StopCircle, Bell } from 'lucide-react';
+import { Play, Pause, RotateCcw, Clock, Timer as TimerIcon, StopCircle, Bell, Eye, Volume2 } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { useTranslation } from '../utils/translations';
+import { useStore } from '../store';
 
 interface TimerToolProps {
   config: any;
@@ -12,25 +13,57 @@ type Mode = 'TIMER' | 'STOPWATCH' | 'CLOCK' | 'ALARM';
 
 export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
   const { t, language } = useTranslation();
+  const experimentalConfig = useStore(state => state.experimentalConfig);
   const parsedConfig = typeof config === 'string' ? JSON.parse(config) : config;
   const [mode, setMode] = useState<Mode>(parsedConfig.mode || 'TIMER');
   
   // States
-  const [timeLeft, setTimeLeft] = useState(parsedConfig.seconds || 300);
+  const totalSeconds = parsedConfig.seconds || 300;
+  const [timeLeft, setTimeLeft] = useState(totalSeconds);
   const [stopwatchTime, setStopwatchTime] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [alarmTime, setAlarmTime] = useState(parsedConfig.alarmAt || '');
   const [isAlarmActive, setIsAlarmActive] = useState(false);
+  const [isVisualPie, setIsVisualPie] = useState(experimentalConfig?.enabled && experimentalConfig?.visualTimerEnabled);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const playChime = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const now = ctx.currentTime;
+      
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(659.25, now);
+      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.8);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(783.99, now + 0.25);
+      gain2.gain.setValueAtTime(0.3, now + 0.25);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.25);
+      osc2.stop(now + 1.2);
+    } catch {}
+  };
 
   // Clock Update
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
       
-      // Check Alarm — use < 2 to be robust against browser event loop lag
+      // Check Alarm
       if (mode === 'ALARM' && isAlarmActive && alarmTime) {
         const now = new Date();
         const [hours, minutes] = alarmTime.split(':').map(Number);
@@ -39,6 +72,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
           now.getMinutes() === minutes &&
           now.getSeconds() < 2
         ) {
+          playChime();
           toast.warning(t('timerAlarmRinging', '⏰ Alarm berbunyi! Waktunya telah tiba!'));
           setIsAlarmActive(false);
         }
@@ -52,8 +86,10 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
     if (isActive && mode === 'TIMER') {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev: number) => {
-          if (prev <= 0) {
+          if (prev <= 1) {
             setIsActive(false);
+            playChime();
+            toast.success('Waktu habis! Sesi selesai.');
             return 0;
           }
           return prev - 1;
@@ -82,6 +118,17 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
     setIsActive(false);
     if (mode === 'TIMER') setTimeLeft(parsedConfig.seconds || 300);
     if (mode === 'STOPWATCH') setStopwatchTime(0);
+  };
+
+  const progressFraction = totalSeconds > 0 ? Math.max(0, Math.min(1, timeLeft / totalSeconds)) : 0;
+  const radius = 68;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference * (1 - progressFraction);
+
+  const getProgressColor = () => {
+    if (progressFraction > 0.5) return '#10b981'; // Emerald
+    if (progressFraction > 0.2) return '#f59e0b'; // Amber
+    return '#ef4444'; // Red
   };
 
   return (
@@ -124,10 +171,62 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
 
             {mode === 'TIMER' && (
               <div className="flex flex-col items-center">
-                <div className={`text-6xl font-black tracking-tighter font-mono ${timeLeft === 0 ? 'text-rose-500 animate-pulse' : 'text-slate-800'}`}>
-                  {formatTime(timeLeft)}
+                {isVisualPie ? (
+                  <div className="relative w-44 h-44 flex items-center justify-center my-2">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
+                      {/* Background Ring */}
+                      <circle
+                        cx="80"
+                        cy="80"
+                        r={radius}
+                        fill="transparent"
+                        stroke="#f1f5f9"
+                        strokeWidth="12"
+                      />
+                      {/* Animated Progress Ring */}
+                      <circle
+                        cx="80"
+                        cy="80"
+                        r={radius}
+                        fill="transparent"
+                        stroke={getProgressColor()}
+                        strokeWidth="12"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset}
+                        strokeLinecap="round"
+                        style={{ transition: 'stroke-dashoffset 0.8s ease, stroke 0.5s ease' }}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <div className={`text-3xl font-black font-mono tracking-tight ${timeLeft === 0 ? 'text-rose-500 animate-pulse' : 'text-slate-800'}`}>
+                        {formatTime(timeLeft)}
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                        Time Timer
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`text-6xl font-black tracking-tighter font-mono ${timeLeft === 0 ? 'text-rose-500 animate-pulse' : 'text-slate-800'}`}>
+                    {formatTime(timeLeft)}
+                  </div>
+                )}
+
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    onClick={() => setIsVisualPie(!isVisualPie)}
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition flex items-center gap-1.5 cursor-pointer ${
+                      isVisualPie
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                        : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700'
+                    }`}
+                    title="Beralih Mode Visual Lingkaran"
+                  >
+                    <Eye size={12} /> {isVisualPie ? 'Mode Visual' : 'Mode Angka'}
+                  </button>
                 </div>
-                <div className="mt-6 flex gap-4">
+
+                <div className="mt-5 flex gap-4">
                   <button onClick={() => setIsActive(!isActive)} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90 ${isActive ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white`}>
                     {isActive ? <Pause size={20} /> : <Play size={20} className="ml-1" />}
                   </button>

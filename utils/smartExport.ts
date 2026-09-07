@@ -411,17 +411,17 @@ export function detectBoardObjects(
     const type = el.componentType || '';
     const config = el.config || {};
 
-    if (type === 'MARKDOWN_NOTE' || type === 'DOCUMENT_PAGE' || config.markdown || config.content) {
+    if (type === 'MARKDOWN_NOTE' || type === 'DOCUMENT_PAGE' || type === 'MARKMAP_MINDMAP' || config.markdown || config.content) {
       documents.push({
         id,
-        title: config.title || 'Dokumen Materi',
+        title: config.title || (type === 'MARKMAP_MINDMAP' ? 'Peta Konsep Markmap' : 'Dokumen Materi'),
         markdown: config.markdown || config.content || '',
         elementNodeId: `widget-${id}`
       });
-    } else if (type === 'INTERACTIVE_APP' || config.html) {
+    } else if (type === 'INTERACTIVE_APP' || type === 'MERMAID_DIAGRAM' || config.html) {
       apps.push({
         id,
-        title: config.title || 'Aplikasi Web Interaktif',
+        title: config.title || (type === 'MERMAID_DIAGRAM' ? 'Diagram Mermaid' : 'Aplikasi Web Interaktif'),
         html: config.html || '',
         css: config.css,
         js: config.js

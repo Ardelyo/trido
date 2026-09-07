@@ -170,7 +170,8 @@ export const generateAgentActionsVertex = async (
     functionCalls,
     textResponse,
     thought,
-    validationErrors: validation.errors
+    validationErrors: validation.errors,
+    usageMetadata: data.usageMetadata
   };
 };
 

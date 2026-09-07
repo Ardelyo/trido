@@ -52,7 +52,7 @@ const parseAiError = async (response: Response): Promise<AiServiceError> => {
   return new AiServiceError(message, code, response.status, retryable);
 };
 
-const requestJson = async <T>(url: string, init: RequestInit, retries = CONFIG.ai.request.retryCount): Promise<T> => {
+const requestJson = async <T>(url: string, init: RequestInit = { method: 'GET' }, retries = CONFIG.ai.request.retryCount): Promise<T> => {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
     const timeoutMs = 120000;
@@ -157,4 +157,80 @@ export const generateToolContent = async (toolId: string, prompt: string): Promi
 
   return data.result;
 };
+
+// ── Telemetry & Google Sheets Client Helpers ─────────────────────────────────
+
+export interface TelemetryResponse {
+  summary: {
+    totalRequests: number;
+    totalPromptTokens: number;
+    totalOutputTokens: number;
+    totalTokens: number;
+    totalCostUsd: number;
+    totalCostIdr: number;
+    avgLatencyMs: number;
+    successRate: number;
+    providerCounts: Record<string, number>;
+    modelCounts: Record<string, number>;
+    syncedToSheetCount: number;
+    pendingSheetCount: number;
+  };
+  recentLogs: any[];
+  config: {
+    googleSheetId?: string;
+    googleSheetName?: string;
+    googleSheetWebhookUrl?: string;
+    autoSync: boolean;
+  };
+}
+
+export const fetchTelemetryData = async (limit = 100): Promise<TelemetryResponse> => {
+  const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+  return requestJson<TelemetryResponse>(`${apiUrl}/api/ai/telemetry?limit=${limit}`);
+};
+
+export const fetchTelemetryConfig = async (): Promise<{ config: any; appsScriptTemplate: string }> => {
+  const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+  return requestJson<{ config: any; appsScriptTemplate: string }>(`${apiUrl}/api/ai/telemetry/config`);
+};
+
+export const updateTelemetryConfig = async (config: {
+  googleSheetId?: string;
+  googleSheetName?: string;
+  googleSheetWebhookUrl?: string;
+  autoSync?: boolean;
+}): Promise<{ success: boolean; config: any }> => {
+  const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+  return requestJson<{ success: boolean; config: any }>(`${apiUrl}/api/ai/telemetry/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config)
+  });
+};
+
+export const triggerSheetSync = async (): Promise<{ success: boolean; synced: number; failed: number }> => {
+  const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+  return requestJson<{ success: boolean; synced: number; failed: number }>(`${apiUrl}/api/ai/telemetry/sync`, {
+    method: 'POST'
+  });
+};
+
+export const submitLogFeedback = async (
+  logId: string,
+  rating: 'good' | 'bad' | 'neutral',
+  feedback?: string
+): Promise<{ success: boolean }> => {
+  const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+  return requestJson<{ success: boolean }>(`${apiUrl}/api/ai/telemetry/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ logId, rating, feedback })
+  });
+};
+
+export const getTelemetryDownloadUrl = (format: 'csv' | 'json' = 'csv'): string => {
+  const apiUrl = (import.meta as any).env.VITE_API_URL || '';
+  return `${apiUrl}/api/ai/telemetry/download?format=${format}`;
+};
+
 

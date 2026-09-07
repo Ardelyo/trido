@@ -19,6 +19,7 @@ import {
 import { CONFIG } from "../constants";
 import { AiPreference } from "../types";
 import { createLogger } from "../utils/logger";
+import { telemetryService } from "./telemetryService";
 
 export const aiRouter = Router();
 const logger = createLogger('ai-router');
@@ -297,8 +298,13 @@ aiRouter.post("/status", async (req, res) => {
 });
 
 aiRouter.post("/generate", async (req, res) => {
+  const startTime = Date.now();
+  const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel, intent, forceTools, lessonContext, sessionId } = req.body;
+  const activeSessionId = sessionId || (req.headers['x-session-id'] as string) || 'session_default';
+  let activeMode: 'vertex' | 'gemini' | 'ollama' | 'unknown' = 'unknown';
+  let activeModel = 'unknown';
+
   try {
-    const { prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel, intent, forceTools, lessonContext } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel);
 
@@ -319,6 +325,18 @@ aiRouter.post("/generate", async (req, res) => {
         serviceName = 'Ollama';
       }
 
+      telemetryService.recordEvent({
+        sessionId: activeSessionId,
+        endpoint: '/api/ai/generate',
+        provider: 'unknown',
+        model: 'unavailable',
+        prompt: prompt || '',
+        latencyMs: Date.now() - startTime,
+        status: 'error',
+        errorCode: reason,
+        errorMessage: `Layanan ${serviceName} tidak tersedia.`
+      });
+
       return res.status(503).json({
         error: `Layanan ${serviceName} tidak tersedia.`,
         code: reason === 'invalid_key' || reason === 'missing_project' ? 'invalid_key' : 'no_internet',
@@ -326,7 +344,7 @@ aiRouter.post("/generate", async (req, res) => {
       });
     }
 
-    let result;
+    let result: any;
     let lastError: any = null;
     let success = false;
 
@@ -335,17 +353,21 @@ aiRouter.post("/generate", async (req, res) => {
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           logger.info(`Attempting /generate with mode: ${mode}${attempt > 0 ? ' (retry)' : ''}`);
+          activeMode = mode;
           if (mode === 'vertex') {
+            activeModel = selectedVertexModel || CONFIG.ai.vertex.model;
             result = await generateAgentActionsVertex(
               prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, intent, forceTools, lessonContext, selectedVertexModel
             );
           } else if (mode === 'gemini') {
+            activeModel = selectedGeminiModel || getGeminiModel();
             result = await generateAgentActionsGemini(
               prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, geminiApiKey, intent, forceTools, lessonContext, selectedGeminiModel
             );
           } else if (mode === 'ollama') {
+            activeModel = selectedOllamaModel || status.ollamaStatus?.activeModel || getOllamaModel();
             result = await generateAgentActionsOllama(
-              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl, intent, forceTools, lessonContext, selectedOllamaModel || status.ollamaStatus?.activeModel
+              prompt, canvasImageBase64, canvasObjects, viewport, highResInputImage, history, pageContext, domElements, ollamaBaseUrl, intent, forceTools, lessonContext, activeModel
             );
           }
           modeSuccess = true;
@@ -370,22 +392,86 @@ aiRouter.post("/generate", async (req, res) => {
       throw lastError || new Error(`Semua penyedia AI yang dikonfigurasi gagal memproses permintaan.${errDetail}`);
     }
 
-    res.json(result);
+    const duration = Date.now() - startTime;
+    const usage = result?.usageMetadata || {};
+    const promptTokens = usage.promptTokenCount || Math.round((prompt?.length || 0) / 4);
+    const outputTokens = usage.candidatesTokenCount || Math.round((result?.textResponse?.length || 0) / 4);
+
+    const teleRecord = telemetryService.recordEvent({
+      sessionId: activeSessionId,
+      endpoint: '/api/ai/generate',
+      provider: activeMode,
+      model: activeModel,
+      prompt: prompt || '',
+      promptTokens,
+      outputTokens,
+      thinkingTokens: result?.thought ? Math.round(result.thought.length / 4) : 0,
+      latencyMs: duration,
+      status: 'success',
+      functionCalls: result?.functionCalls || [],
+      responseText: result?.textResponse || '',
+      canvasObjectsCount: Array.isArray(canvasObjects) ? canvasObjects.length : 0,
+      domElementsCount: domElements ? Object.keys(domElements).length : 0
+    });
+
+    res.json({
+      ...result,
+      telemetry: {
+        id: teleRecord.id,
+        promptTokens: teleRecord.promptTokens,
+        outputTokens: teleRecord.outputTokens,
+        totalTokens: teleRecord.totalTokens,
+        costUsd: teleRecord.costUsd,
+        costIdr: teleRecord.costIdr,
+        latencyMs: teleRecord.latencyMs,
+        provider: teleRecord.provider,
+        model: teleRecord.model,
+        sheetSyncStatus: teleRecord.sheetSyncStatus
+      }
+    });
   } catch (error: any) {
+    const duration = Date.now() - startTime;
+    telemetryService.recordEvent({
+      sessionId: activeSessionId,
+      endpoint: '/api/ai/generate',
+      provider: activeMode,
+      model: activeModel,
+      prompt: prompt || '',
+      latencyMs: duration,
+      status: 'error',
+      errorCode: error?.code || 'server_error',
+      errorMessage: error?.message || String(error)
+    });
     logger.error("Generate error", error);
     sendAiError(res, error);
   }
 });
 
 aiRouter.post("/tool-content", async (req, res) => {
+  const startTime = Date.now();
+  const { toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel, sessionId } = req.body;
+  const activeSessionId = sessionId || (req.headers['x-session-id'] as string) || 'session_default';
+  let activeMode: 'vertex' | 'gemini' | 'ollama' | 'unknown' = 'unknown';
+  let activeModel = 'unknown';
+
   try {
-    const { toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel);
 
     const candidateModes = getCandidateModes(configuredMode, status, geminiApiKey);
 
     if (candidateModes.length === 0 || status.mode === 'unavailable') {
+      telemetryService.recordEvent({
+        sessionId: activeSessionId,
+        endpoint: `/api/ai/tool-content?tool=${toolId || ''}`,
+        provider: 'unknown',
+        model: 'unavailable',
+        prompt: prompt || '',
+        latencyMs: Date.now() - startTime,
+        status: 'error',
+        errorCode: 'no_internet',
+        errorMessage: 'Layanan AI belum tersedia.'
+      });
       return res.status(503).json({ error: 'Layanan AI belum tersedia.', code: 'no_internet', retryable: true });
     }
 
@@ -396,12 +482,16 @@ aiRouter.post("/tool-content", async (req, res) => {
     for (const mode of candidateModes) {
       try {
         logger.info(`Attempting /tool-content with mode: ${mode}`);
+        activeMode = mode;
         if (mode === 'vertex') {
+          activeModel = selectedVertexModel || CONFIG.ai.vertex.model;
           result = await generateToolContentVertex(toolId, prompt, selectedVertexModel);
         } else if (mode === 'gemini') {
+          activeModel = selectedGeminiModel || getGeminiModel();
           result = await generateToolContentGemini(toolId, prompt, geminiApiKey, selectedGeminiModel);
         } else if (mode === 'ollama') {
-          result = await generateToolContentOllama(toolId, prompt, ollamaBaseUrl, selectedOllamaModel || status.ollamaStatus?.activeModel);
+          activeModel = selectedOllamaModel || status.ollamaStatus?.activeModel || getOllamaModel();
+          result = await generateToolContentOllama(toolId, prompt, ollamaBaseUrl, activeModel);
         }
         success = true;
         break;
@@ -415,16 +505,61 @@ aiRouter.post("/tool-content", async (req, res) => {
       throw lastError || new Error("Semua penyedia AI yang dikonfigurasi gagal memproses konten alat.");
     }
 
-    res.json({ result });
+    const duration = Date.now() - startTime;
+    const promptTokens = Math.round((prompt?.length || 0) / 4);
+    const outputTokens = Math.round(JSON.stringify(result || '').length / 4);
+
+    const teleRecord = telemetryService.recordEvent({
+      sessionId: activeSessionId,
+      endpoint: `/api/ai/tool-content?tool=${toolId || ''}`,
+      provider: activeMode,
+      model: activeModel,
+      prompt: `[Tool: ${toolId}] ${prompt}`,
+      promptTokens,
+      outputTokens,
+      latencyMs: duration,
+      status: 'success',
+      responseText: typeof result === 'string' ? result : JSON.stringify(result)
+    });
+
+    res.json({
+      result,
+      telemetry: {
+        id: teleRecord.id,
+        totalTokens: teleRecord.totalTokens,
+        costUsd: teleRecord.costUsd,
+        costIdr: teleRecord.costIdr,
+        latencyMs: teleRecord.latencyMs,
+        provider: teleRecord.provider,
+        model: teleRecord.model
+      }
+    });
   } catch (error: any) {
+    const duration = Date.now() - startTime;
+    telemetryService.recordEvent({
+      sessionId: activeSessionId,
+      endpoint: `/api/ai/tool-content?tool=${toolId || ''}`,
+      provider: activeMode,
+      model: activeModel,
+      prompt: prompt || '',
+      latencyMs: duration,
+      status: 'error',
+      errorCode: error?.code || 'server_error',
+      errorMessage: error?.message || String(error)
+    });
     logger.error("Tool content error", error);
     sendAiError(res, error);
   }
 });
 
 aiRouter.post("/transcribe", async (req, res) => {
+  const startTime = Date.now();
+  const { base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel, sessionId } = req.body;
+  const activeSessionId = sessionId || (req.headers['x-session-id'] as string) || 'session_default';
+  let activeMode: 'vertex' | 'gemini' | 'ollama' | 'unknown' = 'unknown';
+  let activeModel = 'unknown';
+
   try {
-    const { base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = req.body;
     const configuredMode = getRuntimePreference(aiPreference);
     const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel);
 
@@ -441,12 +576,16 @@ aiRouter.post("/transcribe", async (req, res) => {
     for (const mode of candidateModes) {
       try {
         logger.info(`Attempting /transcribe with mode: ${mode}`);
+        activeMode = mode;
         if (mode === 'vertex') {
+          activeModel = selectedVertexModel || CONFIG.ai.vertex.model;
           text = await transcribeAudioVertex(base64Audio, selectedVertexModel);
         } else if (mode === 'gemini') {
+          activeModel = selectedGeminiModel || getGeminiModel();
           text = await transcribeAudioGemini(base64Audio, geminiApiKey, selectedGeminiModel);
         } else if (mode === 'ollama') {
-          text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl, selectedOllamaModel || status.ollamaStatus?.activeModel);
+          activeModel = selectedOllamaModel || status.ollamaStatus?.activeModel || getOllamaModel();
+          text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl, activeModel);
         }
         success = true;
         break;
@@ -460,9 +599,108 @@ aiRouter.post("/transcribe", async (req, res) => {
       throw lastError || new Error("Semua penyedia AI yang dikonfigurasi gagal melakukan transkripsi.");
     }
 
-    res.json({ text });
+    const duration = Date.now() - startTime;
+    const approxTokens = Math.round((text.length / 4) + 256);
+
+    const teleRecord = telemetryService.recordEvent({
+      sessionId: activeSessionId,
+      endpoint: '/api/ai/transcribe',
+      provider: activeMode,
+      model: activeModel,
+      prompt: '[Audio Recording Transcription]',
+      promptTokens: 256,
+      outputTokens: Math.round(text.length / 4),
+      latencyMs: duration,
+      status: 'success',
+      responseText: text
+    });
+
+    res.json({
+      text,
+      telemetry: {
+        id: teleRecord.id,
+        totalTokens: approxTokens,
+        costUsd: teleRecord.costUsd,
+        costIdr: teleRecord.costIdr,
+        latencyMs: teleRecord.latencyMs
+      }
+    });
   } catch (error: any) {
+    const duration = Date.now() - startTime;
+    telemetryService.recordEvent({
+      sessionId: activeSessionId,
+      endpoint: '/api/ai/transcribe',
+      provider: activeMode,
+      model: activeModel,
+      prompt: '[Audio Recording Transcription]',
+      latencyMs: duration,
+      status: 'error',
+      errorCode: error?.code || 'server_error',
+      errorMessage: error?.message || String(error)
+    });
     logger.error("Transcribe error", error);
     sendAiError(res, error);
   }
+});
+
+// ── TELEMETRY & GOOGLE SHEETS API ROUTES ───────────────────────────────────
+
+aiRouter.get("/telemetry", (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 100, 500);
+  res.json({
+    summary: telemetryService.getSummary(),
+    recentLogs: telemetryService.getRecentRecords(limit),
+    config: telemetryService.getConfig()
+  });
+});
+
+aiRouter.get("/telemetry/download", (req, res) => {
+  const format = req.query.format === 'json' ? 'json' : 'csv';
+  const dateStr = new Date().toISOString().slice(0, 10);
+
+  if (format === 'json') {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="trido_telemetry_${dateStr}.json"`);
+    return res.send(JSON.stringify(telemetryService.getAllRecords(), null, 2));
+  } else {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="trido_telemetry_${dateStr}.csv"`);
+    return res.send(telemetryService.generateCsv());
+  }
+});
+
+aiRouter.post("/telemetry/feedback", (req, res) => {
+  const { logId, rating, feedback } = req.body;
+  if (!logId || !rating) {
+    return res.status(400).json({ error: 'Missing logId or rating' });
+  }
+  const ok = telemetryService.recordFeedback(logId, rating, feedback);
+  res.json({ success: ok });
+});
+
+aiRouter.post("/telemetry/sync", async (req, res) => {
+  try {
+    const result = await telemetryService.syncPending();
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+aiRouter.get("/telemetry/config", (req, res) => {
+  res.json({
+    config: telemetryService.getConfig(),
+    appsScriptTemplate: telemetryService.getAppsScriptCode()
+  });
+});
+
+aiRouter.post("/telemetry/config", (req, res) => {
+  const { googleSheetId, googleSheetName, googleSheetWebhookUrl, autoSync } = req.body;
+  telemetryService.saveConfig({
+    ...(googleSheetId !== undefined ? { googleSheetId } : {}),
+    ...(googleSheetName !== undefined ? { googleSheetName } : {}),
+    ...(googleSheetWebhookUrl !== undefined ? { googleSheetWebhookUrl } : {}),
+    ...(autoSync !== undefined ? { autoSync: Boolean(autoSync) } : {})
+  });
+  res.json({ success: true, config: telemetryService.getConfig() });
 });

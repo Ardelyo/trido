@@ -41,7 +41,7 @@ const parseAiError = async (response) => {
     const retryable = Boolean(body?.retryable ?? (response.status === 429 || response.status >= 500 || response.status === 503));
     return new AiServiceError(message, code, response.status, retryable);
 };
-const requestJson = async (url, init, retries = CONFIG.ai.request.retryCount) => {
+const requestJson = async (url, init = { method: 'GET' }, retries = CONFIG.ai.request.retryCount) => {
     for (let attempt = 0; attempt <= retries; attempt++) {
         const controller = new AbortController();
         const timeoutMs = 120000;
@@ -112,4 +112,38 @@ export const generateToolContent = async (toolId, prompt) => {
         body: JSON.stringify({ toolId, prompt, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel })
     });
     return data.result;
+};
+export const fetchTelemetryData = async (limit = 100) => {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    return requestJson(`${apiUrl}/api/ai/telemetry?limit=${limit}`);
+};
+export const fetchTelemetryConfig = async () => {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    return requestJson(`${apiUrl}/api/ai/telemetry/config`);
+};
+export const updateTelemetryConfig = async (config) => {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    return requestJson(`${apiUrl}/api/ai/telemetry/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+    });
+};
+export const triggerSheetSync = async () => {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    return requestJson(`${apiUrl}/api/ai/telemetry/sync`, {
+        method: 'POST'
+    });
+};
+export const submitLogFeedback = async (logId, rating, feedback) => {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    return requestJson(`${apiUrl}/api/ai/telemetry/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logId, rating, feedback })
+    });
+};
+export const getTelemetryDownloadUrl = (format = 'csv') => {
+    const apiUrl = import.meta.env.VITE_API_URL || '';
+    return `${apiUrl}/api/ai/telemetry/download?format=${format}`;
 };

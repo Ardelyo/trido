@@ -5,7 +5,7 @@ import { Point, CanvasObjectData, AgentAction, LessonPlan } from '../types';
 import { CALCULATOR_TEMPLATE, TIMER_TEMPLATE } from '../services/componentTemplates';
 import { createLogger } from '../utils/logger';
 import { sounds } from '../utils/sounds';
-import { layoutMindmap, NODE_STYLE_CONFIG, MindmapInputNode } from '../utils/mindmapLayout';
+import { layoutMindmap, expandMindmapNodes, findMatchingMindmapNode, NODE_STYLE_CONFIG, MindmapInputNode, MindmapLayoutNode } from '../utils/mindmapLayout';
 
 const logger = createLogger('gemini-brain');
 
@@ -323,8 +323,15 @@ export const useGeminiBrain = () => {
             baseData.htmlContent = storeState.domElements[obj.id]?.html;
           } else if (obj.svgSource) {
             baseData.svgContent = obj.svgSource;
-          } else if (obj.type === 'i-text' || obj.type === 'text') {
+          } else if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
             baseData.textContent = obj.text;
+          } else if (obj.type === 'group' && typeof obj.getObjects === 'function') {
+            for (const inner of obj.getObjects()) {
+              if ((inner.type === 'i-text' || inner.type === 'text' || inner.type === 'textbox') && inner.text) {
+                baseData.textContent = inner.text;
+                break;
+              }
+            }
           }
           return baseData;
         })
@@ -365,8 +372,11 @@ ${activeMindmapNodes.map(n =>
   `- "${n.text}" (${n.style})${n.parentNodeText ? ` → child of "${n.parentNodeText}"` : ' → ROOT'}`
 ).join('\n')}
 
-To EXPAND this mindmap: use add_mindmap_node with parentNodeText matching exactly one of the above.
-To CREATE NEW mindmap: these nodes will be cleared first.
+INSTRUCTIONS FOR CONTINUING / EXPANDING / MODIFYING MINDMAP:
+- To EXPAND / CONTINUE this mindmap: call add_mindmap_node with text and parentNodeText set to the exact branch/node to extend.
+- To MODIFY a node: call modify_object with elementText (e.g. UPDATE_TEXT, CHANGE_COLOR) or drag_element.
+- To TIDY UP or REDESIGN layout: call relayout_mindmap.
+- To CREATE NEW mindmap: previous mindmap nodes will be cleared first.
 `
         : '';
 
@@ -422,7 +432,15 @@ ${mindmapContextStr}
       useStore.getState().setLastUploadedImage(null);
 
       const msg = textResponse?.trim() || synthesizeFallbackResponse(functionCalls, storeState.lessonPlan);
-      addMessage({ role: 'model', text: msg });
+      const tele = _aiResult?.telemetry;
+      addMessage({
+        role: 'model',
+        text: msg,
+        telemetryId: tele?.id,
+        tokens: tele?.totalTokens,
+        latencyMs: tele?.latencyMs,
+        costIdr: tele?.costIdr
+      });
       setAgentMessage(msg);
 
       // --- 4. POST-PROCESSING PIPELINE ---
@@ -540,74 +558,31 @@ ${mindmapContextStr}
         }));
 
         if (isExpanding) {
-          // EXPAND MODE: Hitung posisi hanya untuk new nodes
-          // Existing nodes tetap di posisi mereka
+          // EXPAND MODE: Smart dynamic expansion maintaining parent cluster & block area
+          logger.info(`[MindMap] Smart dynamic expansion: ${existingNodes.length} existing + ${inputNodes.length} new`);
           
-          logger.info(`[MindMap] Expanding existing mindmap: ${existingNodes.length} existing + ${inputNodes.length} new`);
-          
-          // Cari parent node position dari registry
-          const newNodeActions: AgentAction[] = [];
-          const newPathActions: AgentAction[] = [];
-          
-          inputNodes.forEach((newNode, idx) => {
-            // Find parent position
-            const parentRecord = newNode.parentNodeText 
-              ? storeState.getMindmapNodeByText(newNode.parentNodeText)
-              : null;
-            
-            // Calculate offset position from parent
-            let newX: number;
-            let newY: number;
-            
-            if (parentRecord) {
-              // Place new node relative to parent
-              // Count existing children of this parent
-              const existingChildren = existingNodes.filter(
-                n => n.parentNodeText?.toLowerCase() === parentRecord.text.toLowerCase()
-              );
-              
-              const childCount = existingChildren.length + idx;
-              const angleStep = Math.PI / 4.5;
-              const baseAngle = -Math.PI / 3;
-              let radius = newNode.style === 'DETAIL' ? 240 : 320;
-              
-              // Find parent's own angle from center to distribute children outward
-              const parentAngle = Math.atan2(
-                parentRecord.y - centerY, 
-                parentRecord.x - centerX
-              );
-              
-              const childAngle = parentAngle + baseAngle + (childCount * angleStep);
-              newX = parentRecord.x + radius * Math.cos(childAngle);
-              newY = parentRecord.y + radius * Math.sin(childAngle);
+          const existingLayoutNodes: MindmapLayoutNode[] = existingNodes.map(n => ({
+            text: n.text,
+            style: n.style as any,
+            parentNodeText: n.parentNodeText,
+            x: n.x,
+            y: n.y
+          }));
 
-              // Anti-collision check against all existing nodes
-              let attempts = 0;
-              while (attempts < 8) {
-                const collides = existingNodes.some(ex => Math.hypot(ex.x - newX, ex.y - newY) < 220);
-                if (!collides) break;
-                radius += 70;
-                newX = parentRecord.x + radius * Math.cos(childAngle);
-                newY = parentRecord.y + radius * Math.sin(childAngle);
-                attempts++;
-              }
-            } else {
-              // No parent found: place near center with offset
-              const angle = (idx / inputNodes.length) * Math.PI * 2;
-              newX = centerX + 300 * Math.cos(angle);
-              newY = centerY + 300 * Math.sin(angle);
-            }
-            
-            const s = NODE_STYLE_CONFIG[newNode.style] || NODE_STYLE_CONFIG.SUBTOPIC;
+          const laid = expandMindmapNodes(existingLayoutNodes, inputNodes, { x: centerX, y: centerY });
+          
+          laid.forEach((node, idx) => {
+            const s = NODE_STYLE_CONFIG[node.style] || NODE_STYLE_CONFIG.SUBTOPIC;
             const nodeId = `mm_${Date.now()}_${idx}`;
             
-            newNodeActions.push({
+            shapeActions.push({
               id: `action_mm_expand_${Date.now()}_${idx}`,
               type: 'CREATE_SHAPE',
               payload: {
                 shapeType: 'RECTANGLE',
-                x: newX, y: newY,
-                text: newNode.text,
+                x: node.x,
+                y: node.y,
+                text: node.text,
                 fill: s.fill,
                 width: s.width,
                 height: s.height,
@@ -619,31 +594,28 @@ ${mindmapContextStr}
             
             // Register new node in store
             storeState.registerMindmapNode({
-              text: newNode.text,
-              style: newNode.style as any,
-              parentNodeText: newNode.parentNodeText,
+              text: node.text,
+              style: node.style as any,
+              parentNodeText: node.parentNodeText,
               canvasObjectId: nodeId,
-              x: newX,
-              y: newY
+              x: node.x,
+              y: node.y
             });
             
             // Connection to parent
-            if (newNode.parentNodeText) {
-              newPathActions.push({
+            if (node.parentNodeText) {
+              pathActions.push({
                 id: `action_conn_expand_${Date.now()}_${idx}`,
                 type: 'DRAW_PATH',
                 payload: { 
-                  fromNodeText: newNode.parentNodeText, 
-                  toNodeText: newNode.text, 
+                  fromNodeText: node.parentNodeText, 
+                  toNodeText: node.text, 
                   lineStyle: 'ARROW_STRAIGHT' 
                 },
                 status: 'PENDING'
               });
             }
           });
-          
-          shapeActions.push(...newNodeActions);
-          pathActions.push(...newPathActions);
           
         } else {
           // FRESH MODE: Layout engine untuk mindmap baru
@@ -786,9 +758,37 @@ ${mindmapContextStr}
             html = CALCULATOR_TEMPLATE; pWidth = 350; pHeight = 500;
           } else if (cType === 'TIMER') {
             html = TIMER_TEMPLATE(configObj?.seconds || 300); pWidth = 300; pHeight = 250;
+          } else if (cType === 'MARKMAP_MINDMAP' || cType === 'MERMAID_DIAGRAM') {
+            pWidth = 680; pHeight = 540;
           }
 
           payload = { html, x: pos.x, y: pos.y, width: pWidth, height: pHeight, componentType: cType, config: configObj };
+
+        } else if (call.name === 'render_markmap') {
+          actionType = 'RENDER_HTML';
+          const pos = getGridPos(args.gridPosition || 'CENTER');
+          payload = {
+            html: '<div>MARKMAP</div>',
+            x: pos.x,
+            y: pos.y,
+            width: 700,
+            height: 550,
+            componentType: 'MARKMAP_MINDMAP',
+            config: { title: args.title || 'Peta Konsep Markmap', markdown: args.markdown }
+          };
+
+        } else if (call.name === 'render_mermaid') {
+          actionType = 'RENDER_HTML';
+          const pos = getGridPos(args.gridPosition || 'CENTER');
+          payload = {
+            html: '<div>MERMAID</div>',
+            x: pos.x,
+            y: pos.y,
+            width: 700,
+            height: 550,
+            componentType: 'MERMAID_DIAGRAM',
+            config: { title: args.title || 'Diagram Alur Mermaid', code: args.code }
+          };
 
         } else if (call.name === 'pan_camera') {
           actionType = 'PAN_CAMERA';

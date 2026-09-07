@@ -210,7 +210,9 @@ export const tools = [
                         "CALCULATOR",
                         "TIMER",
                         "MARKDOWN_NOTE",
-                        "DOCUMENT_PAGE"
+                        "DOCUMENT_PAGE",
+                        "MARKMAP_MINDMAP",
+                        "MERMAID_DIAGRAM"
                     ],
                     description: "Widget type to instantiate"
                 },
@@ -231,6 +233,8 @@ QUIZ_TRUE_FALSE: {"statement":"string","isTrue":true}
 QUIZ_DRAG_MATCH: {"pairs":[{"left":"term","right":"definition"}]}
 FLASHCARD: {"front":"string","back":"string"}
 TIMER: {"mode":"TIMER|STOPWATCH|CLOCK|ALARM","seconds":300,"alarmAt":"HH:MM"}
+MARKMAP_MINDMAP: {"title":"string","markdown":"# Root\\n## Branch 1\\n- Detail A\\n## Branch 2"}
+MERMAID_DIAGRAM: {"title":"string","code":"flowchart TD\\n  A-->B"}
 DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBody text. Math: $E=mc^2$"}`
                 }
             },
@@ -428,6 +432,38 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
                 text: { type: Type.STRING, description: "Optional text label inside shape" }
             },
             required: ["shapeType", "x", "y", "width", "height"]
+        }
+    },
+    {
+        name: "render_markmap",
+        description: "Render an interactive D3 mindmap using Markmap from markdown bullet list. Features smooth pan/zoom, interactive branching, and zero overlap.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                title: { type: Type.STRING, description: "Mindmap title" },
+                markdown: { type: Type.STRING, description: "Markdown hierarchical list starting with # Root heading and ## Subheadings or - bullets" },
+                gridPosition: {
+                    type: Type.STRING,
+                    enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
+                }
+            },
+            required: ["markdown"]
+        }
+    },
+    {
+        name: "render_mermaid",
+        description: "Render a clean science flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                title: { type: Type.STRING, description: "Diagram title" },
+                code: { type: Type.STRING, description: "Mermaid syntax code, e.g. flowchart TD or mindmap or sequenceDiagram" },
+                gridPosition: {
+                    type: Type.STRING,
+                    enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
+                }
+            },
+            required: ["code"]
         }
     }
 ];

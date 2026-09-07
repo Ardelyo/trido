@@ -11,6 +11,7 @@ import { TemplatesView } from './components/TemplatesView';
 import { AiToolsView } from './components/AiToolsView';
 import { HistoryView } from './components/HistoryView';
 import { SettingsView } from './components/SettingsView';
+import { TelemetryView } from './components/TelemetryView';
 import { SaveMenu } from './components/SaveMenu';
 import { useSocketSync } from './hooks/useSocketSync';
 import { useAiStatus } from './hooks/useAiStatus';
@@ -20,7 +21,7 @@ import {
   Image as ImageIcon, File, History, Settings, Mic, Monitor, Share, Download, Sparkles,
   CheckCircle2, ChevronDown, ChevronRight, Keyboard, Menu,
   Clock, CheckSquare, PencilRuler, ShieldCheck, HelpCircle, User,
-  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2, Archive
+  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2, Archive, Database
 } from 'lucide-react';
 import { SidebarItem } from './components/SidebarItem';
 import { AiStatusBadge } from './components/AiStatusBadge';
@@ -39,6 +40,7 @@ const App: React.FC = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
@@ -297,6 +299,7 @@ const App: React.FC = () => {
             {/* Modals & Overlays */}
             <ShareDialog isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} roomId={roomId} />
             <ExportDialog isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} canvasRef={canvasRef} />
+            <TelemetryView isOpen={isTelemetryOpen} onClose={() => setIsTelemetryOpen(false)} />
             <ToolOverlay />
 
             {/* Mobile Sidebar Overlay */}
@@ -328,13 +331,14 @@ const App: React.FC = () => {
                       <SidebarItem
                         icon={Square}
                         label={t('whiteboard', 'Papan Tulis')}
-                        active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen && !isExportOpen}
+                        active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen && !isExportOpen && !isTelemetryOpen}
                         onClick={() => {
                           if (isTemplatesOpen) toggleTemplates();
                           if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
+                          setIsTelemetryOpen(false);
                         }}
                       />
 
@@ -349,6 +353,7 @@ const App: React.FC = () => {
                           if (isAiToolsOpen) toggleAiTools();
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
+                          setIsTelemetryOpen(false);
                         }}
                       />
 
@@ -363,10 +368,26 @@ const App: React.FC = () => {
                           if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
+                          setIsTelemetryOpen(false);
                         }}
                       />
 
-                      {/* 4. Settings */}
+                      {/* 4. Telemetry & Google Sheets */}
+                      <SidebarItem
+                        icon={Database}
+                        label="Data & Telemetri"
+                        active={isTelemetryOpen}
+                        onClick={() => {
+                          setIsTelemetryOpen(v => !v);
+                          if (isTemplatesOpen) toggleTemplates();
+                          if (isAiToolsOpen) toggleAiTools();
+                          if (isHistoryOpen) toggleHistory();
+                          setIsSettingsOpen(false);
+                          setIsExportOpen(false);
+                        }}
+                      />
+
+                      {/* 5. Settings */}
                       <SidebarItem
                         icon={Settings}
                         label={t('settings', 'Pengaturan')}
@@ -377,6 +398,7 @@ const App: React.FC = () => {
                           if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsExportOpen(false);
+                          setIsTelemetryOpen(false);
                         }}
                       />
 

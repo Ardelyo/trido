@@ -12,6 +12,8 @@ import { CalculatorTool } from './CalculatorTool';
 import { AppBuilderTool } from './AppBuilderTool';
 import { FlashcardTool } from './FlashcardTool';
 import { QuizApp } from './quiz/QuizApp';
+import { MarkmapTool } from './MarkmapTool';
+import { MermaidTool } from './MermaidTool';
 import { Printer } from 'lucide-react';
 
 export const DomOverlay: React.FC = () => {
@@ -99,6 +101,10 @@ export const DomOverlay: React.FC = () => {
           return <CalculatorTool />;
         case 'FLASHCARD':
           return <FlashcardTool config={el.config} />;
+        case 'MARKMAP_MINDMAP':
+          return <MarkmapTool config={el.config} />;
+        case 'MERMAID_DIAGRAM':
+          return <MermaidTool config={el.config} />;
         case 'INTERACTIVE_APP':
           return <AppBuilderTool config={el.config} />;
         case 'QUIZ_APP':

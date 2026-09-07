@@ -171,7 +171,12 @@ export const generateAgentActionsOllama = async (prompt, canvasImageBase64, canv
         functionCalls,
         textResponse,
         thought,
-        validationErrors: validation.errors
+        validationErrors: validation.errors,
+        usageMetadata: {
+            promptTokenCount: data.prompt_eval_count || 0,
+            candidatesTokenCount: data.eval_count || 0,
+            totalTokenCount: (data.prompt_eval_count || 0) + (data.eval_count || 0)
+        }
     };
 };
 export const generateToolContentOllama = async (toolId, prompt, customUrl, modelOverride) => {

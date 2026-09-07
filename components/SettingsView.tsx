@@ -4,11 +4,12 @@ import {
   X, Key, Cpu, Globe, Moon, Sun, User, Save, CheckCircle2,
   Eye, EyeOff, ExternalLink, Wifi, WifiOff, Zap, Shield,
   ChevronRight, RotateCcw, Trash2, Volume2, VolumeX, Info,
-  Mic, Radio, Upload, Sparkles
+  Mic, Radio, Upload, Sparkles, Database, FileSpreadsheet, Download
 } from 'lucide-react';
 import { useStore } from '../store';
 import { toast } from '../utils/toast';
 import { useTranslation } from '../utils/translations';
+import { getTelemetryDownloadUrl } from '../services/aiService';
 
 interface SettingsViewProps {
   onClose: () => void;
@@ -48,6 +49,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     language, setLanguage,
     transcribeMode, setTranscribeMode,
     voiceConfig, setVoiceConfig,
+    experimentalConfig, setExperimentalConfig,
   } = useStore();
 
   // Local state — only commit to store/localStorage on Save
@@ -62,6 +64,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   });
   const [localTranscribeMode, setLocalTranscribeMode] = useState(transcribeMode);
   const [localVoiceConfig, setLocalVoiceConfig] = useState(voiceConfig);
+  const [localExpConfig, setLocalExpConfig] = useState(experimentalConfig);
   const [localName, setLocalName] = useState(userName);
   const [localAiPref, setLocalAiPref] = useState(aiPreference);
   const [localLang, setLocalLang] = useState(language);
@@ -111,6 +114,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     setSelectedVertexModel(localVertexModel);
     setTranscribeMode(localTranscribeMode);
     setVoiceConfig(localVoiceConfig);
+    setExperimentalConfig(localExpConfig);
     setUserName(localName);
     setAiPreference(localAiPref);
     setLanguage(localLang);
@@ -121,6 +125,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     localStorage.setItem('selected_vertex_model', localVertexModel);
     localStorage.setItem('trido_transcribe_mode', localTranscribeMode);
     localStorage.setItem('trido_voice_config', JSON.stringify(localVoiceConfig));
+    localStorage.setItem('trido_experimental_config', JSON.stringify(localExpConfig));
     localStorage.setItem('trido_user_name', localName);
     localStorage.setItem('ai_preference', localAiPref);
     localStorage.setItem('trido_sound', soundEnabled ? 'on' : 'off');
@@ -619,6 +624,143 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
             </div>
           </Section>
 
+          {/* Experimental Features Laboratory */}
+          <Section
+            title="🧪 Laboratorium Fitur Eksperimental (Next-Gen)"
+            subtitle="Pembaruan tool open-source mutakhir untuk mindmap, inking halus, diagram sains, dan timer"
+          >
+            <div className="space-y-4">
+              {/* Master Switch */}
+              <div className="p-4 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-purple-50/80 rounded-2xl border border-blue-200/80 flex items-center justify-between">
+                <div>
+                  <div className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                    <Sparkles size={16} className="text-indigo-600 animate-pulse" />
+                    Aktifkan Mode Eksperimental
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium mt-0.5">
+                    Mengaktifkan komponen dan engine open-source generasi berikutnya
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLocalExpConfig({ ...localExpConfig, enabled: !localExpConfig.enabled })}
+                  className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer p-0.5 ${
+                    localExpConfig.enabled ? 'bg-indigo-600' : 'bg-slate-300'
+                  }`}
+                >
+                  <div
+                    className={`w-5.5 h-5.5 rounded-full bg-white shadow-sm transition-transform ${
+                      localExpConfig.enabled ? 'translate-x-5.5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Sub features grid */}
+              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 transition-opacity ${localExpConfig.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                {/* 1. Markmap D3 */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-600" />
+                      Markmap D3 Mindmap
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      Peta konsep D3 berbasis Markdown: auto-layout anti-overlap dan cabang interaktif bisa di-click untuk buka/tutup materi.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, markmapEnabled: !localExpConfig.markmapEnabled })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.markmapEnabled
+                        ? 'bg-blue-50 border-blue-300 text-blue-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Engine</span>
+                    <span>{localExpConfig.markmapEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
+
+                {/* 2. Mermaid.js */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                      Mermaid.js Diagram
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      Diagram alur algoritma, siklus sains biologi, dan timeline sejarah langsung dirender dari sintaks Mermaid ke SVG jernih.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, mermaidEnabled: !localExpConfig.mermaidEnabled })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.mermaidEnabled
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Engine</span>
+                    <span>{localExpConfig.mermaidEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
+
+                {/* 3. Perfect-Freehand Inking */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                      Smooth Inking (Perfect-Freehand)
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      Simulasi tekanan pena realistis dan goresan tinta halus berujung lancip (tapering) layaknya Apple Pencil saat menulis di papan.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, smoothInkingEnabled: !localExpConfig.smoothInkingEnabled })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.smoothInkingEnabled
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Inking</span>
+                    <span>{localExpConfig.smoothInkingEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
+
+                {/* 4. Visual Pie Timer */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-600" />
+                      Visual Pie Timer (Time Timer)
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      Timer lingkaran visual yang menyusut (hijau-kuning-merah) untuk fokus siswa kelas inklusi + bel chime Web Audio saat waktu habis.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, visualTimerEnabled: !localExpConfig.visualTimerEnabled })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.visualTimerEnabled
+                        ? 'bg-amber-50 border-amber-300 text-amber-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Timer</span>
+                    <span>{localExpConfig.visualTimerEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Section>
+
           {/* Appearance */}
           <Section title={t('appearance', 'Tampilan')} subtitle={t('appearanceSubtitle', 'Tema dan preferensi visual papan tulis')}>
             <Field label={t('theme', 'Tema')}>
@@ -646,6 +788,44 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 {soundEnabled ? t('soundEnabled', 'Suara Aktif') : t('soundDisabled', 'Suara Nonaktif')}
               </button>
             </Field>
+          </Section>
+
+          {/* Google Sheets & Telemetry */}
+          <Section
+            title="Integrasi Data & Google Sheets (Live Telemetri)"
+            subtitle="Sinkronisasi prompt, output token, biaya, dan user logs langsung ke Google Cloud & Sheets"
+          >
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Database size={16} className="text-blue-600" />
+                  <span className="font-black text-slate-800 text-xs">Google Cloud Project & Live Analytics</span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-700">
+                  gemma4good-494311
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Seluruh aktivitas interaksi guru dan siswa di Trido (prompt, respon visual, output tokens, estimasi biaya rupiah/dolar, latensi ms, dan user experience feedback) dicatat secara otomatis dan dapat diekspor atau disinkronkan live ke Google Sheets.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                <a
+                  href={getTelemetryDownloadUrl('csv')}
+                  download
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-colors shadow-sm"
+                >
+                  <Download size={13} /> Unduh Data (CSV / Excel)
+                </a>
+                <a
+                  href={getTelemetryDownloadUrl('json')}
+                  download
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors"
+                >
+                  <Download size={13} /> Unduh Data (JSON)
+                </a>
+              </div>
+            </div>
           </Section>
 
           {/* About */}
