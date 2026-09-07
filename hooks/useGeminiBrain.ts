@@ -411,13 +411,16 @@ ${mindmapContextStr}
 
       const inputDocMedia = storeState.attachedDocument?.dataUrl || storeState.lastUploadedImage;
 
+      const expConfig = storeState.experimentalConfig;
+      const historyDepth = (expConfig?.enabled && expConfig?.breakTheLimitAi !== false) ? 20 : 8;
+
       const _aiResult = await generateAgentActions(
         enrichedPrompt,
         dataUrl,
         objectsJson,
         { width: br.x - tl.x, height: br.y - tl.y },
         inputDocMedia,
-        storeState.messages.slice(-8).map(m => ({ role: m.role, text: m.text })),
+        storeState.messages.slice(-historyDepth).map(m => ({ role: m.role, text: m.text })),
         { current: storeState.currentPageIndex, total: storeState.pages.length },
         storeState.domElements,
         intent,
@@ -471,8 +474,8 @@ ${mindmapContextStr}
         addLog(`Auto-corrected ${errors.length} AI argument errors.`);
       }
 
-      // Stage 1: Hard cap on total calls
-      const MAX_CALLS = 15;
+      // Stage 1: Hard cap on total calls (Break-The-Limit: 60 in experimental, 18 standard)
+      const MAX_CALLS = (expConfig?.enabled && expConfig?.breakTheLimitAi !== false) ? 60 : 18;
       if (functionCalls.length > MAX_CALLS) {
         logger.warn(`[Cap] Clamping ${functionCalls.length} calls to ${MAX_CALLS}`);
         functionCalls = functionCalls.slice(0, MAX_CALLS);
@@ -779,6 +782,10 @@ ${mindmapContextStr}
             html = CALCULATOR_TEMPLATE; pWidth = 350; pHeight = 500;
           } else if (cType === 'TIMER') {
             html = TIMER_TEMPLATE(configObj?.seconds || 300); pWidth = 300; pHeight = 250;
+          } else if (cType === 'ATTENDANCE' || cType === 'PRESENSI') {
+            pWidth = 440; pHeight = 520;
+          } else if (cType === 'TODOLIST') {
+            pWidth = 380; pHeight = 480;
           } else if (cType === 'MARKMAP_MINDMAP' || cType === 'MERMAID_DIAGRAM') {
             pWidth = 680; pHeight = 540;
           }
@@ -811,6 +818,88 @@ ${mindmapContextStr}
             config: { title: args.title || 'Diagram Alur Mermaid', code: args.code }
           };
 
+        } else if (call.name === 'mark_attendance') {
+          const doms = useStore.getState().domElements;
+          const attendEntry = Object.entries(doms).find(([_, el]) => el.componentType === 'ATTENDANCE' || el.componentType === 'PRESENSI');
+          if (attendEntry) {
+            actionType = 'EDIT_HTML';
+            const [id, el] = attendEntry;
+            const students = Array.isArray(el.config?.students) ? [...el.config.students] : [];
+            const idx = students.findIndex((s: any) => s.name?.toLowerCase().includes((args.studentName || '').toLowerCase()));
+            if (idx >= 0) {
+              students[idx] = { ...students[idx], status: args.status, note: args.note };
+            } else {
+              students.push({ id: `std_${Date.now()}`, name: args.studentName, status: args.status, note: args.note });
+            }
+            payload = { objectId: id, config: { ...el.config, students } };
+          } else {
+            actionType = 'RENDER_HTML';
+            payload = {
+              html: '<div>Presensi</div>',
+              x: 960,
+              y: 540,
+              width: 380,
+              height: 480,
+              componentType: 'ATTENDANCE',
+              config: {
+                title: 'Presensi Kelas',
+                students: [{ id: `std_${Date.now()}`, name: args.studentName, status: args.status, note: args.note }]
+              }
+            };
+          }
+
+        } else if (call.name === 'spin_wheel') {
+          actionType = 'RENDER_HTML';
+          payload = {
+            html: '<div>Roda</div>',
+            x: 960,
+            y: 540,
+            width: 440,
+            height: 480,
+            componentType: 'SPIN_WHEEL',
+            config: { title: args.title || 'Roda Acak Siswa', items: args.items }
+          };
+
+        } else if (call.name === 'plot_math_function') {
+          actionType = 'RENDER_HTML';
+          payload = {
+            html: '<div>Grafik</div>',
+            x: 960,
+            y: 540,
+            width: 460,
+            height: 440,
+            componentType: 'MATH_GRAPH',
+            config: { title: args.title || 'Grafik Matematika', type: args.type, a: args.a, b: args.b, c: args.c }
+          };
+
+        } else if (call.name === 'update_scoreboard') {
+          const doms = useStore.getState().domElements;
+          const scoreEntry = Object.entries(doms).find(([_, el]) => el.componentType === 'SCOREBOARD' || el.componentType === 'PAPAN_SKOR');
+          if (scoreEntry) {
+            actionType = 'EDIT_HTML';
+            const [id, el] = scoreEntry;
+            const teams = Array.isArray(el.config?.teams) ? [...el.config.teams] : [];
+            const idx = teams.findIndex((t: any) => t.name?.toLowerCase().includes((args.teamName || '').toLowerCase()));
+            if (idx >= 0) {
+              teams[idx] = { ...teams[idx], score: (teams[idx].score || 0) + args.deltaScore };
+            }
+            payload = { objectId: id, config: { ...el.config, teams } };
+          } else {
+            actionType = 'RENDER_HTML';
+            payload = {
+              html: '<div>Skor</div>',
+              x: 960,
+              y: 540,
+              width: 420,
+              height: 380,
+              componentType: 'SCOREBOARD',
+              config: {
+                title: 'Papan Skor Kelompok',
+                teams: [{ name: args.teamName, score: Math.max(0, args.deltaScore) }]
+              }
+            };
+          }
+
         } else if (call.name === 'pan_camera') {
           actionType = 'PAN_CAMERA';
           payload = { objectId: args.targetObjectId, direction: args.direction };
@@ -829,6 +918,9 @@ ${mindmapContextStr}
           } else if (args.action === 'CHANGE_COLOR') {
             actionType = 'MODIFY_PROPERTY';
             payload = { objectId: args.objectId, elementText: args.elementText, property: 'fill', value: args.value };
+          } else if (args.action === 'CHANGE_STROKE') {
+            actionType = 'MODIFY_PROPERTY';
+            payload = { objectId: args.objectId, elementText: args.elementText, property: 'stroke', value: args.value };
           } else if (args.action === 'RESIZE') {
             actionType = 'RESIZE_OBJECT';
             const parts = (args.value || '').split('x');
@@ -871,6 +963,8 @@ ${mindmapContextStr}
             width: args.width,
             height: args.height,
             fill: args.fill,
+            stroke: args.stroke || args.strokeColor,
+            strokeWidth: args.strokeWidth,
             text: args.text
           };
 

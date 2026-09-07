@@ -7,6 +7,7 @@ import { AttachedDocumentBadge } from './components/AttachedDocumentBadge';
 import { ShareDialog } from './components/ShareDialog';
 import { ExportDialog } from './components/ExportDialog';
 import { ToolOverlay } from './components/ToolOverlay';
+import { AssistiveDock } from './components/AssistiveDock';
 import { TemplatesView } from './components/TemplatesView';
 import { AiToolsView } from './components/AiToolsView';
 import { HistoryView } from './components/HistoryView';
@@ -298,6 +299,7 @@ const App: React.FC = () => {
             <ShareDialog isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} roomId={roomId} />
             <ExportDialog isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} canvasRef={canvasRef} />
             <ToolOverlay />
+            <AssistiveDock />
 
             {/* Mobile Sidebar Overlay */}
             <AnimatePresence>

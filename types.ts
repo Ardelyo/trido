@@ -52,6 +52,10 @@ export interface ExperimentalConfig {
   mermaidEnabled: boolean;
   smoothInkingEnabled: boolean;
   visualTimerEnabled: boolean;
+  smartShapesEnabled: boolean;
+  attendanceEnabled: boolean;
+  breakTheLimitAi: boolean;
+  autoTaskAutomation: boolean;
 }
 
 export type CanvasJson = Record<string, unknown> | unknown[];

@@ -6,7 +6,7 @@ import {
   ChevronRight, Star, Diamond, Heart, MessageSquare,
   Minus, Circle, Triangle, Pentagon, Hexagon,
   Calculator, Clock, FileText, HelpCircle, Activity,
-  FlaskConical, Users, CheckSquare, Bold,
+  FlaskConical, Users, CheckSquare, Bold, Dices, Trophy, FunctionSquare
 } from 'lucide-react';
 import { useStore } from '../store';
 import { CreatorTool, FontFamily } from '../types';
@@ -50,6 +50,9 @@ const APPS = [
   { label: 'Periodik',   icon: FlaskConical,key: 'togglePeriodicTable' as const, tKey: 'app_Periodic' },
   { label: 'Presensi',   icon: Users,       key: 'toggleAttendance' as const, tKey: 'app_Attendance' },
   { label: 'To-Do',      icon: CheckSquare, key: 'toggleTodoList' as const, tKey: 'app_Todo' },
+  { label: 'Roda Acak',  icon: Dices,       key: 'toggleSpinWheel' as const, tKey: 'app_SpinWheel' },
+  { label: 'Papan Skor', icon: Trophy,      key: 'toggleScoreboard' as const, tKey: 'app_Scoreboard' },
+  { label: 'Grafik MTK', icon: FunctionSquare, key: 'toggleMathGraph' as const, tKey: 'app_MathGraph' },
 ];
 
 type PanelId = 'draw' | 'shapes' | 'text' | 'apps';

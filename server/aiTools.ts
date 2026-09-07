@@ -34,43 +34,43 @@ export interface ModelCapability {
 export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
   'gemini-3.8-flash': {
     supportsComplexSchema: true,
-    maxToolCallsPerRequest: 25,
+    maxToolCallsPerRequest: 60,
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
   'gemini-3.7-flash': {
     supportsComplexSchema: true,
-    maxToolCallsPerRequest: 20,
+    maxToolCallsPerRequest: 45,
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
   'gemini-3.7-flash-preview': {
     supportsComplexSchema: true,
-    maxToolCallsPerRequest: 20,
+    maxToolCallsPerRequest: 45,
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
   'gemini-3.5-flash-lite': {
     supportsComplexSchema: true,
-    maxToolCallsPerRequest: 15,
+    maxToolCallsPerRequest: 35,
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
   'gemini-3.5-flash': {
     supportsComplexSchema: true,
-    maxToolCallsPerRequest: 15,
+    maxToolCallsPerRequest: 35,
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
   'gemini-3.1-flash-lite': {
     supportsComplexSchema: true,
-    maxToolCallsPerRequest: 15,
+    maxToolCallsPerRequest: 30,
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
   'gemini-2.0-flash-exp': {
     supportsComplexSchema: true,
-    maxToolCallsPerRequest: 15,
+    maxToolCallsPerRequest: 30,
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
@@ -219,7 +219,7 @@ export const tools: FunctionDeclaration[] = [
   },
   {
     name: "add_component",
-    description: "Add a pre-built interactive educational widget to the canvas. Use this for quizzes, documents, timers, calculators, and flashcards.",
+    description: "Add a pre-built interactive educational widget to the canvas. Use this for quizzes, documents, timers, attendance rosters, todo lists, calculators, and flashcards.",
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -233,6 +233,8 @@ export const tools: FunctionDeclaration[] = [
             "FLASHCARD",
             "CALCULATOR",
             "TIMER",
+            "ATTENDANCE",
+            "TODOLIST",
             "MARKDOWN_NOTE",
             "DOCUMENT_PAGE",
             "MARKMAP_MINDMAP",
@@ -256,7 +258,9 @@ QUIZ_ESSAY: {"question":"string","placeholder":"optional hint text"}
 QUIZ_TRUE_FALSE: {"statement":"string","isTrue":true}
 QUIZ_DRAG_MATCH: {"pairs":[{"left":"term","right":"definition"}]}
 FLASHCARD: {"front":"string","back":"string"}
-TIMER: {"mode":"TIMER|STOPWATCH|CLOCK|ALARM","seconds":300,"alarmAt":"HH:MM"}
+TIMER: {"mode":"TIMER|STOPWATCH|CLOCK|ALARM","seconds":300,"alarmAt":"HH:MM","isRunning":true,"isVisualPie":true}
+ATTENDANCE: {"title":"Presensi Siswa","className":"Kelas 8A","students":[{"name":"Budi Santoso","status":"H"}]}
+TODOLIST: {"tasks":[{"text":"Bahas materi","completed":false}]}
 MARKMAP_MINDMAP: {"title":"string","markdown":"# Root\\n## Branch 1\\n- Detail A\\n## Branch 2"}
 MERMAID_DIAGRAM: {"title":"string","code":"flowchart TD\\n  A-->B"}
 DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBody text. Math: $E=mc^2$"}`
@@ -267,13 +271,13 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
   },
   {
     name: "update_component",
-    description: "Replace or update the content of an existing component (Document note, Quiz, Markmap, Mermaid diagram, or App). Target by componentTitle (e.g. 'Catatan Materi') or objectId.",
+    description: "Replace or update the content of an existing component (Document note, Quiz, Markmap, Mermaid diagram, Timer, Attendance roster, or App). Target by componentTitle (e.g. 'Absensi', 'Catatan', 'Timer') or objectId.",
     parameters: {
       type: Type.OBJECT,
       properties: {
         componentTitle: {
           type: Type.STRING,
-          description: "Title or text label of the component to update (e.g. 'Catatan Materi', 'Sistem Tata Surya')"
+          description: "Title or text label of the component to update (e.g. 'Catatan Materi', 'Absensi Kelas', 'Timer')"
         },
         objectId: {
           type: Type.STRING,
@@ -282,11 +286,11 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
         action: {
           type: Type.STRING,
           enum: ["REPLACE", "APPEND", "UPDATE_CONFIG"],
-          description: "Update mode: REPLACE full config, or APPEND to existing text/markdown"
+          description: "Update mode: REPLACE full config, APPEND to existing text/markdown/students, or UPDATE_CONFIG"
         },
         configJson: {
           type: Type.STRING,
-          description: "New JSON configuration — same schema as add_component.configJson (e.g. {\"markdown\":\"...\"} or {\"code\":\"...\"})"
+          description: "New JSON configuration — same schema as add_component.configJson (e.g. {\"markdown\":\"...\"}, {\"code\":\"...\"}, {\"seconds\":180}, or {\"students\":[...]})"
         }
       },
       required: ["configJson"]
@@ -321,7 +325,7 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
   },
   {
     name: "modify_object",
-    description: "Modify, recolor, resize, rename, or delete ANY object or element on the canvas. Target by elementText (label) or objectId.",
+    description: "Modify, recolor, resize, rename, restyle border, or delete ANY object or element on the canvas. Target by elementText (label) or objectId.",
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -335,12 +339,12 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
         },
         action: {
           type: Type.STRING,
-          enum: ["UPDATE_TEXT", "CHANGE_COLOR", "RESIZE", "DELETE", "MOVE_TO_GRID"],
+          enum: ["UPDATE_TEXT", "CHANGE_COLOR", "CHANGE_STROKE", "RESIZE", "DELETE", "MOVE_TO_GRID"],
           description: "Operation to perform"
         },
         value: {
           type: Type.STRING,
-          description: "New value: new text for UPDATE_TEXT, hex color code for CHANGE_COLOR (e.g. #10B981), dimensions (e.g. '500x400') for RESIZE, or grid position"
+          description: "New value: new text for UPDATE_TEXT, hex fill color for CHANGE_COLOR (e.g. #10B981), hex border for CHANGE_STROKE (e.g. #3B82F6), dimensions (e.g. '500x400') for RESIZE, or grid position"
         }
       },
       required: ["action"]
@@ -475,13 +479,16 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
   },
   {
     name: "create_shape",
-    description: "Draw a geometric shape (RECTANGLE, CIRCLE, TRIANGLE) with customizable dimensions, fill color, and label text.",
+    description: "Draw a geometric shape with customizable dimensions, fill color, stroke border, and label text. Supports all 11 shapes.",
     parameters: {
       type: Type.OBJECT,
       properties: {
         shapeType: {
           type: Type.STRING,
-          enum: ["RECTANGLE", "CIRCLE", "TRIANGLE"],
+          enum: [
+            "RECTANGLE", "CIRCLE", "TRIANGLE", "STAR", "DIAMOND",
+            "HEART", "PENTAGON", "POLYGON", "SPEECH_BUBBLE", "LINE", "ARROW"
+          ],
           description: "Shape geometry"
         },
         x: { type: Type.NUMBER, description: "Center X position" },
@@ -489,6 +496,8 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
         width: { type: Type.NUMBER, description: "Width in pixels" },
         height: { type: Type.NUMBER, description: "Height in pixels" },
         fill: { type: Type.STRING, description: "Hex fill color (e.g. #3b82f6)" },
+        strokeColor: { type: Type.STRING, description: "Hex stroke/border color (optional)" },
+        strokeWidth: { type: Type.NUMBER, description: "Stroke line width in pixels (optional)" },
         text: { type: Type.STRING, description: "Optional text label inside shape" }
       },
       required: ["shapeType", "x", "y", "width", "height"]
@@ -524,6 +533,56 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
         }
       },
       required: ["code"]
+    }
+  },
+  {
+    name: "mark_attendance",
+    description: "Mark or update attendance status for a student in the classroom attendance roster.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        studentName: { type: Type.STRING, description: "Name of the student" },
+        status: { type: Type.STRING, enum: ["H", "I", "S", "A"], description: "Status: H (Hadir), I (Izin), S (Sakit), A (Alpa)" },
+        note: { type: Type.STRING, description: "Optional note (e.g. 'Izin lomba', 'Flu')" }
+      },
+      required: ["studentName", "status"]
+    }
+  },
+  {
+    name: "spin_wheel",
+    description: "Spawn or trigger a fair random student picker / Wheel of Fortune to engage students in classroom questions.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING, description: "Wheel title, e.g. 'Giliran Menjawab Kuis'" },
+        items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Optional list of student names or choices" }
+      }
+    }
+  },
+  {
+    name: "plot_math_function",
+    description: "Spawn an interactive 2D mathematical function graphing tool with Cartesian plane for quadratic, linear, or trigonometric curves.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING, description: "Graph title" },
+        type: { type: Type.STRING, enum: ["QUADRATIC", "LINEAR", "SIN"], description: "Function family" },
+        a: { type: Type.NUMBER, description: "Leading coefficient a" },
+        b: { type: Type.NUMBER, description: "Coefficient b" },
+        c: { type: Type.NUMBER, description: "Constant c" }
+      }
+    }
+  },
+  {
+    name: "update_scoreboard",
+    description: "Add or deduct points on the classroom team scoreboard widget for student gamification.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        teamName: { type: Type.STRING, description: "Target team name, e.g. 'Kelompok 1' or 'Kelompok 2'" },
+        deltaScore: { type: Type.NUMBER, description: "Point change (e.g. 10, 5, -5)" }
+      },
+      required: ["teamName", "deltaScore"]
     }
   }
 ];
@@ -673,13 +732,43 @@ Generate quiz based on current lesson topic (not generic)
 ## VISUAL SELECTION GUIDE
 | Request | Use This |
 |---------|----------|
-| Konsep, hubungan, struktur | add_mindmap_node |
+| Konsep, hubungan, struktur | add_mindmap_node atau render_markmap |
+| Flowchart sains, siklus, urutan proses | render_mermaid atau add_component → MERMAID_DIAGRAM |
+| Absensi, daftar kehadiran kelas | add_component → ATTENDANCE |
+| Timer waktu pengerjaan / hitung mundur | add_component → TIMER |
+| Daftar tugas / agenda kelas | add_component → TODOLIST |
+| Bentuk geometris, panah sorotan, diagram bentuk | create_shape (RECTANGLE, CIRCLE, TRIANGLE, STAR, DIAMOND, HEART, SPEECH_BUBBLE, etc.) |
 | Proses bertahap, alur, langkah | add_component → DOCUMENT_PAGE with flowchart in markdown |
 | Urutan waktu, sejarah | add_component → DOCUMENT_PAGE with timeline |
 | Perbandingan 2-3 hal | add_component → MARKDOWN_NOTE with table |
-| Penjelasan panjang | add_component → DOCUMENT_PAGE |
-| Latihan soal | add_component → QUIZ_* |
-| Simulasi/game | add_interactive_app |
+| Penjelasan panjang & rumus | add_component → DOCUMENT_PAGE |
+| Latihan soal interaktif | add_component → QUIZ_* |
+| Simulasi interaktif / game | add_interactive_app |
+
+## FULL WHITEBOARD EDITING & EXPERIMENTAL CAPABILITIES ("MENGEDIT SEMUA ELEMEN")
+You have full capability to mutate and update ANY object on the whiteboard without deleting and recreating it:
+1. **Mengedit Komponen Interaktif (update_component)**:
+   - Target by componentTitle (e.g. 'Absensi', 'Catatan', 'Timer', 'Peta Konsep') or objectId.
+   - Action REPLACE: Replace full config.
+   - Action APPEND: Append text/markdown/students without losing previous content.
+   - **Editing Presensi / Absensi**: To update student status or add students, call update_component with new students array or mark statuses ('H' Hadir, 'I' Izin, 'S' Sakit, 'A' Alpa).
+   - **Editing Timer**: To change countdown duration, switch mode (TIMER, STOPWATCH, CLOCK, ALARM), or start/pause, call update_component with configJson: '{"seconds": 180, "mode": "TIMER", "isRunning": true, "isVisualPie": true}'.
+   - **Editing Markmap / Mermaid**: Update or append branches/flowchart nodes using update_component.
+   - **Editing Dokumen & Catatan**: Append additional sections, math formulas, or summaries using action: 'APPEND'.
+
+2. **Mengedit Bentuk & Shape (modify_object)**:
+   - Recolor fill: action "CHANGE_COLOR", value "#10B981"
+   - Restyle stroke/border: action "CHANGE_STROKE", value "#3B82F6"
+   - Edit text label: action "UPDATE_TEXT", value "Teks Baru"
+   - Resize geometry: action "RESIZE", value "600x400"
+   - Reposition: action "MOVE_TO_GRID", value "TOP_RIGHT"
+
+3. **Melanjutkan & Meneruskan Sesi (CONTINUE / LANJUTKAN)**:
+   - When teacher prompts "lanjutkan", "teruskan", or "berikutnya", inspect the existing canvas state and advance the lesson forward sequentially (e.g. after concept mindmap, provide in-depth notes, interactive practice quiz, and a countdown timer).
+   - NEVER reset the canvas unless explicitly requested.
+
+4. **Multi-Task & Multi-Step Turn Orchestration**:
+   - You can execute comprehensive multi-component setups in a single turn. For example, simultaneously generate an attendance list (TOP_LEFT), a timer (TOP_RIGHT), a mindmap/diagram (CENTER), and a lesson document (BOTTOM_CENTER).
 
 ## MINDMAP RULES
 - MAIN_TOPIC: exactly ONE per mindmap, always center

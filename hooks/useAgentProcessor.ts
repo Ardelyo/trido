@@ -350,16 +350,61 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
             if (shapeType === 'RECTANGLE') {
               obj = new window.fabric.Rect({ ...common, rx: 12, ry: 12 });
             } else if (shapeType === 'CIRCLE') {
-              obj = new window.fabric.Circle({ ...common, radius: width / 2 });
+              obj = new window.fabric.Circle({ ...common, radius: (width || height || 100) / 2 });
             } else if (shapeType === 'TRIANGLE') {
               obj = new window.fabric.Triangle(common);
+            } else if (shapeType === 'STAR') {
+              const numPoints = 5;
+              const rad = (width || 120) / 2;
+              const innerRadius = rad * 0.45;
+              const points = [];
+              for (let i = 0; i < numPoints * 2; i++) {
+                const r = i % 2 === 0 ? rad : innerRadius;
+                const angle = (Math.PI * i) / numPoints - Math.PI / 2;
+                points.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) });
+              }
+              obj = new window.fabric.Polygon(points, common);
+            } else if (shapeType === 'DIAMOND') {
+              const hw = (width || 120) / 2;
+              const hh = (height || 120) / 2;
+              obj = new window.fabric.Polygon([
+                { x: 0, y: -hh }, { x: hw, y: 0 }, { x: 0, y: hh }, { x: -hw, y: 0 }
+              ], common);
+            } else if (shapeType === 'HEART') {
+              obj = new window.fabric.Path('M 0 25 C -5 20 -50 -5 -50 -25 C -50 -45 -25 -55 0 -30 C 25 -55 50 -45 50 -25 C 50 -5 5 20 0 25 Z', {
+                ...common,
+                scaleX: (width || 100) / 100,
+                scaleY: (height || 100) / 100
+              });
+            } else if (shapeType === 'PENTAGON') {
+              const pPoints = [];
+              const pRad = (width || 110) / 2;
+              for (let i = 0; i < 5; i++) {
+                const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                pPoints.push({ x: pRad * Math.cos(angle), y: pRad * Math.sin(angle) });
+              }
+              obj = new window.fabric.Polygon(pPoints, common);
+            } else if (shapeType === 'POLYGON') {
+              const hPoints = [];
+              const hRad = (width || 110) / 2;
+              for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI * 2 * i) / 6;
+                hPoints.push({ x: hRad * Math.cos(angle), y: hRad * Math.sin(angle) });
+              }
+              obj = new window.fabric.Polygon(hPoints, common);
+            } else if (shapeType === 'SPEECH_BUBBLE') {
+              obj = new window.fabric.Path('M -70 -40 Q -70 -70 -40 -70 L 40 -70 Q 70 -70 70 -40 L 70 15 Q 70 45 40 45 L -10 45 L -30 70 L -20 45 L -40 45 Q -70 45 -70 15 Z', {
+                ...common,
+                scaleX: (width || 140) / 140,
+                scaleY: (height || 110) / 110
+              });
             } else if (shapeType === 'ARROW') {
               const arrowPath = `M ${-width/2} 0 L ${width/2} 0 M ${width/2 - 16} -10 L ${width/2} 0 L ${width/2 - 16} 10`;
               obj = new window.fabric.Path(arrowPath, {
                 ...common,
                 fill: 'transparent',
                 stroke: fill || defaultColor,
-                strokeWidth: 3,
+                strokeWidth: strokeWidth || 3,
                 strokeLineCap: 'round',
                 strokeLineJoin: 'round'
               });
@@ -367,7 +412,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
               obj = new window.fabric.Line([-width/2, 0, width/2, 0], {
                 ...common,
                 stroke: fill || defaultColor,
-                strokeWidth: 3,
+                strokeWidth: strokeWidth || 3,
                 strokeLineCap: 'round'
               });
             }
@@ -601,6 +646,12 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
               if (config.markdown && existingConfig.markdown) {
                 mergedConfig.markdown = existingConfig.markdown + '\n\n' + config.markdown;
               }
+              if (config.code && existingConfig.code) {
+                mergedConfig.code = existingConfig.code + '\n  ' + config.code;
+              }
+              if (config.students && Array.isArray(config.students) && existingConfig.students && Array.isArray(existingConfig.students)) {
+                mergedConfig.students = [...existingConfig.students, ...config.students];
+              }
             }
             const target = canvas.getObjects().find((o: any) => o.id === targetDomId);
             const posX = target ? target.left : doms[targetDomId].x;
@@ -727,11 +778,32 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                  } else if (property === 'fill') {
                     if (target.isType('group')) {
                       const shape = target.getObjects().find((o: any) => 
-                        o.type === 'rect' || o.type === 'circle' || o.type === 'triangle' || o.type === 'path'
+                        o.type === 'rect' || o.type === 'circle' || o.type === 'triangle' || o.type === 'path' || o.type === 'polygon'
                       );
                       if (shape) shape.set('fill', value);
                     } else {
                       target.set('fill', value);
+                    }
+                    canvas.requestRenderAll();
+                 } else if (property === 'stroke' || property === 'strokeColor') {
+                    if (target.isType('group')) {
+                      const shape = target.getObjects().find((o: any) => 
+                        o.type === 'rect' || o.type === 'circle' || o.type === 'triangle' || o.type === 'path' || o.type === 'polygon' || o.type === 'line'
+                      );
+                      if (shape) shape.set('stroke', value);
+                    } else {
+                      target.set('stroke', value);
+                    }
+                    canvas.requestRenderAll();
+                 } else if (property === 'strokeWidth') {
+                    const sw = Number(value) || 2;
+                    if (target.isType('group')) {
+                      const shape = target.getObjects().find((o: any) => 
+                        o.type === 'rect' || o.type === 'circle' || o.type === 'triangle' || o.type === 'path' || o.type === 'polygon' || o.type === 'line'
+                      );
+                      if (shape) shape.set('strokeWidth', sw);
+                    } else {
+                      target.set('strokeWidth', sw);
                     }
                     canvas.requestRenderAll();
                  }

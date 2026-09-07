@@ -145,13 +145,17 @@ CRITICAL EXECUTION RULES:
           properties: {
             componentType: {
               type: "STRING",
-              enum: ["QUIZ_MULTIPLE_CHOICE", "QUIZ_APP", "QUIZ_TRUE_FALSE", "QUIZ_ESSAY", "DOCUMENT_PAGE", "MARKDOWN_NOTE", "TIMER", "CALCULATOR"],
+              enum: [
+                "QUIZ_MULTIPLE_CHOICE", "QUIZ_APP", "QUIZ_TRUE_FALSE", "QUIZ_ESSAY",
+                "DOCUMENT_PAGE", "MARKDOWN_NOTE", "TIMER", "ATTENDANCE", "TODOLIST",
+                "MARKMAP_MINDMAP", "MERMAID_DIAGRAM", "CALCULATOR"
+              ],
               description: "Component type. For quizzes use QUIZ_MULTIPLE_CHOICE or QUIZ_APP."
             },
             title: { type: "STRING", description: "Header title displayed on top of the widget" },
             configJson: {
               type: "STRING",
-              description: "JSON configuration string. For QUIZ_MULTIPLE_CHOICE: {\"question\":\"Teks soal lengkap\",\"options\":[\"Opsi A\",\"Opsi B\",\"Opsi C\",\"Opsi D\"],\"correctIndex\":0,\"explanation\":\"Penjelasan pembahasan\"}. For QUIZ_TRUE_FALSE: {\"statement\":\"Pernyataan sains/fakta\",\"isTrue\":true,\"explanation\":\"Penjelasan\"}. For DOCUMENT_PAGE/MARKDOWN_NOTE: {\"markdown\":\"# Judul\\n\\nTeks pembahasan materi...\"}."
+              description: "JSON configuration string. For QUIZ_MULTIPLE_CHOICE: {\"question\":\"Teks soal lengkap\",\"options\":[\"Opsi A\",\"Opsi B\",\"Opsi C\",\"Opsi D\"],\"correctIndex\":0,\"explanation\":\"Penjelasan pembahasan\"}. For ATTENDANCE: {\"title\":\"Presensi Siswa\",\"className\":\"Kelas 8A\",\"students\":[{\"name\":\"Budi Santoso\",\"status\":\"H\"}]}. For TIMER: {\"mode\":\"TIMER\",\"seconds\":300}. For DOCUMENT_PAGE/MARKDOWN_NOTE: {\"markdown\":\"# Judul\\n\\nTeks pembahasan materi...\"}."
             },
             x: { type: "NUMBER", description: "X coordinate (e.g. 1100)" },
             y: { type: "NUMBER", description: "Y coordinate (e.g. 100)" }
@@ -175,16 +179,25 @@ CRITICAL EXECUTION RULES:
       },
       {
         name: "create_shape",
-        description: "Draw a geometric shape on the canvas.",
+        description: "Draw a geometric shape on the canvas. Supports 11 shapes.",
         parameters: {
           type: "OBJECT",
           properties: {
-            shapeType: { type: "STRING", enum: ["RECTANGLE", "CIRCLE", "TRIANGLE", "ARROW", "LINE"], description: "Geometry" },
+            shapeType: {
+              type: "STRING",
+              enum: [
+                "RECTANGLE", "CIRCLE", "TRIANGLE", "STAR", "DIAMOND",
+                "HEART", "PENTAGON", "POLYGON", "SPEECH_BUBBLE", "LINE", "ARROW"
+              ],
+              description: "Geometry"
+            },
             x: { type: "NUMBER", description: "X coordinate" },
             y: { type: "NUMBER", description: "Y coordinate" },
             width: { type: "NUMBER", description: "Width" },
             height: { type: "NUMBER", description: "Height" },
             color: { type: "STRING", description: "Hex color" },
+            strokeColor: { type: "STRING", description: "Hex stroke/border color" },
+            strokeWidth: { type: "NUMBER", description: "Stroke width" },
             label: { type: "STRING", description: "Optional text label" }
           },
           required: ["shapeType", "x", "y"]
@@ -252,8 +265,8 @@ CRITICAL EXECUTION RULES:
           properties: {
             elementText: { type: "STRING", description: "Text or label of the element to modify" },
             objectId: { type: "STRING", description: "Optional ID of the object" },
-            action: { type: "STRING", enum: ["UPDATE_TEXT", "CHANGE_COLOR", "RESIZE", "DELETE", "MOVE_TO_GRID"], description: "Operation to perform" },
-            value: { type: "STRING", description: "New value: new text for UPDATE_TEXT, hex color code for CHANGE_COLOR (e.g. #10B981), dimensions (e.g. '500x400') for RESIZE, or grid position" }
+            action: { type: "STRING", enum: ["UPDATE_TEXT", "CHANGE_COLOR", "CHANGE_STROKE", "RESIZE", "DELETE", "MOVE_TO_GRID"], description: "Operation to perform" },
+            value: { type: "STRING", description: "New value: new text for UPDATE_TEXT, hex color code for CHANGE_COLOR, hex stroke code for CHANGE_STROKE, dimensions (e.g. '500x400') for RESIZE, or grid position" }
           },
           required: ["action"]
         }
@@ -338,6 +351,56 @@ CRITICAL EXECUTION RULES:
             }
           },
           required: ["code"]
+        }
+      },
+      {
+        name: "mark_attendance",
+        description: "Mark or update attendance status for a student in the classroom attendance roster.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            studentName: { type: "STRING", description: "Name of the student" },
+            status: { type: "STRING", enum: ["H", "I", "S", "A"], description: "Status: H, I, S, A" },
+            note: { type: "STRING", description: "Optional note" }
+          },
+          required: ["studentName", "status"]
+        }
+      },
+      {
+        name: "spin_wheel",
+        description: "Spawn a fair random student picker / Wheel of Fortune to engage students in classroom questions.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING", description: "Wheel title" },
+            items: { type: "ARRAY", items: { type: "STRING" }, description: "Optional list of student names or choices" }
+          }
+        }
+      },
+      {
+        name: "plot_math_function",
+        description: "Spawn an interactive 2D mathematical function graphing tool with Cartesian plane for quadratic, linear, or trigonometric curves.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            title: { type: "STRING", description: "Graph title" },
+            type: { type: "STRING", enum: ["QUADRATIC", "LINEAR", "SIN"], description: "Function family" },
+            a: { type: "NUMBER", description: "Leading coefficient a" },
+            b: { type: "NUMBER", description: "Coefficient b" },
+            c: { type: "NUMBER", description: "Constant c" }
+          }
+        }
+      },
+      {
+        name: "update_scoreboard",
+        description: "Add or deduct points on the classroom team scoreboard widget for student gamification.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            teamName: { type: "STRING", description: "Target team name, e.g. 'Kelompok 1'" },
+            deltaScore: { type: "NUMBER", description: "Point change (e.g. 10, 5, -5)" }
+          },
+          required: ["teamName", "deltaScore"]
         }
       }
     ];

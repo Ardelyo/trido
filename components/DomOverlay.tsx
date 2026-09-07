@@ -13,9 +13,14 @@ import { FlashcardTool } from './FlashcardTool';
 import { QuizApp } from './quiz/QuizApp';
 import { MarkmapTool } from './MarkmapTool';
 import { MermaidTool } from './MermaidTool';
+import { AttendanceTool } from './AttendanceTool';
+import { TodoListTool } from './TodoListTool';
+import { SpinWheelTool } from './SpinWheelTool';
+import { ScoreboardTool } from './ScoreboardTool';
+import { MathGraphTool } from './MathGraphTool';
 import {
   Printer, Maximize2, Minimize2, X, Download, FileText, Globe,
-  Code, Compass, BookOpen, Clock, Calculator, HelpCircle, Layers, Sparkles
+  Code, Compass, BookOpen, Clock, Calculator, HelpCircle, Layers, Sparkles, Users, SquareCheckBig
 } from 'lucide-react';
 import {
   printCleanDocument,
@@ -180,6 +185,11 @@ export const DomOverlay: React.FC = () => {
         return <Clock size={14} className="text-amber-600" />;
       case 'CALCULATOR':
         return <Calculator size={14} className="text-slate-600" />;
+      case 'ATTENDANCE':
+      case 'PRESENSI':
+        return <Users size={14} className="text-blue-600" />;
+      case 'TODOLIST':
+        return <SquareCheckBig size={14} className="text-emerald-600" />;
       default:
         if (type?.startsWith('QUIZ')) return <HelpCircle size={14} className="text-rose-600" />;
         return <Sparkles size={14} className="text-blue-600" />;
@@ -204,6 +214,20 @@ export const DomOverlay: React.FC = () => {
           return <TimerTool config={el.config} />;
         case 'CALCULATOR':
           return <CalculatorTool />;
+        case 'ATTENDANCE':
+        case 'PRESENSI':
+          return <AttendanceTool config={el.config} />;
+        case 'TODOLIST':
+          return <TodoListTool />;
+        case 'SPIN_WHEEL':
+        case 'RODA_ACAK':
+          return <SpinWheelTool config={el.config} />;
+        case 'SCOREBOARD':
+        case 'PAPAN_SKOR':
+          return <ScoreboardTool config={el.config} />;
+        case 'MATH_GRAPH':
+        case 'GRAFIK_MATEMATIKA':
+          return <MathGraphTool config={el.config} />;
         case 'FLASHCARD':
           return <FlashcardTool config={el.config} />;
         case 'MARKMAP_MINDMAP':

@@ -4,7 +4,8 @@ import {
   X, Key, Cpu, Globe, Moon, Sun, User, Save, CheckCircle2,
   Eye, EyeOff, ExternalLink, Wifi, WifiOff, Zap, Shield,
   ChevronRight, RotateCcw, Trash2, Volume2, VolumeX, Info,
-  Mic, Radio, Upload, Sparkles, Database, FileSpreadsheet, Download
+  Mic, Radio, Upload, Sparkles, Database, FileSpreadsheet, Download,
+  Shapes, Users, Flame, Workflow, HeartHandshake
 } from 'lucide-react';
 import { useStore } from '../store';
 import { toast } from '../utils/toast';
@@ -50,6 +51,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     transcribeMode, setTranscribeMode,
     voiceConfig, setVoiceConfig,
     experimentalConfig, setExperimentalConfig,
+    isAssistiveMode, toggleAssistiveMode,
   } = useStore();
 
   // Local state — only commit to store/localStorage on Save
@@ -757,8 +759,151 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     <span>{localExpConfig.visualTimerEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
                   </button>
                 </div>
+
+                {/* 5. Smart Shapes & Dynamic Geometry */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Shapes size={14} className="text-pink-600" />
+                      Smart Shapes & Geometri AI
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      11 bentuk geometris lengkap (Bintang, Hati, Berlian, Balon Kata, Hexagon). AI dapat membuat, mengubah warna, border, dan mengedit label teks.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, smartShapesEnabled: !localExpConfig.smartShapesEnabled })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.smartShapesEnabled
+                        ? 'bg-pink-50 border-pink-300 text-pink-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Shapes</span>
+                    <span>{localExpConfig.smartShapesEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
+
+                {/* 6. Smart Presensi & Attendance Hub */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Users size={14} className="text-blue-600" />
+                      Presensi Cerdas & Absensi Kelas
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      Widget kehadiran siswa interaktif di kanvas. Mendukung status Hadir (H), Izin (I), Sakit (S), Alpa (A), bar persentase, dan salin laporan.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, attendanceEnabled: !localExpConfig.attendanceEnabled })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.attendanceEnabled
+                        ? 'bg-blue-50 border-blue-300 text-blue-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Presensi</span>
+                    <span>{localExpConfig.attendanceEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
+
+                {/* 7. Break-The-Limit AI Engine */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Flame size={14} className="text-rose-600 animate-bounce" />
+                      Break-The-Limit AI (Multi-Turn & Uncapped)
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      Membuka batas hingga 60 actions/turn, eksekusi multi-langkah otonom, kemampuan mengedit semua elemen kanvas, dan penjelasan pedagogis mendalam.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, breakTheLimitAi: !localExpConfig.breakTheLimitAi })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.breakTheLimitAi
+                        ? 'bg-rose-50 border-rose-300 text-rose-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Engine</span>
+                    <span>{localExpConfig.breakTheLimitAi ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
+
+                {/* 8. Auto Task Automation & Workflow Chaining */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Workflow size={14} className="text-violet-600" />
+                      Otomasi Alur Pembelajaran (Auto-Chain)
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      Kelanjutan sesi otomatis saat guru meminta 'lanjutkan': menghubungkan peta konsep, catatan rumus, kuis latihan, timer, dan evaluasi.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, autoTaskAutomation: !localExpConfig.autoTaskAutomation })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.autoTaskAutomation
+                        ? 'bg-violet-50 border-violet-300 text-violet-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Otomasi</span>
+                    <span>{localExpConfig.autoTaskAutomation ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
               </div>
+
+              {localExpConfig.enabled && (
+                <div className="p-3 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl border border-indigo-200/80 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <Flame size={16} />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-black text-indigo-950">
+                      Break-The-Limit Mode Aktif 🚀
+                    </h5>
+                    <p className="text-[11px] text-indigo-700 font-medium leading-tight mt-0.5">
+                      AI dapat mengedit bentuk, timer, presensi, diagram, dan catatan secara penuh, dengan kapasitas hingga 60 tindakan dan multi-tasking tanpa batas.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
+          </Section>
+
+          {/* Assistive / Inclusivity Suite (Pak Damar Mode) */}
+          <Section
+            title="♿ Aksesibilitas & Mode Guru Inklusif (Pak Damar Suite)"
+            subtitle="Dirancang untuk guru dengan disabilitas motorik fisik (Bandung)"
+          >
+            <Field
+              label="Mode Guru Inklusif (Large-Target Assistive Dock)"
+              hint="Menampilkan dermaga tombol sentuh besar 56px di pojok layar untuk presensi, timer, roda acak, dan kontrol tanpa gerakan motorik halus."
+            >
+              <button
+                type="button"
+                onClick={() => toggleAssistiveMode()}
+                className={`py-3 px-4 rounded-2xl text-xs font-bold border-2 transition-all cursor-pointer flex items-center justify-between w-full ${
+                  isAssistiveMode
+                    ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-sm'
+                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <HeartHandshake size={18} className={isAssistiveMode ? 'text-amber-600' : 'text-slate-400'} />
+                  <span>{isAssistiveMode ? 'Mode Inklusif Aktif (Dermaga 56px Muncul)' : 'Aktifkan Mode Guru Inklusif'}</span>
+                </div>
+                <span className="font-mono text-xs">{isAssistiveMode ? 'AKTIF ✓' : 'MATI ✕'}</span>
+              </button>
+            </Field>
           </Section>
 
           {/* Appearance */}

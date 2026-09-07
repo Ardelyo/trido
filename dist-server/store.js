@@ -67,7 +67,11 @@ export const defaultExperimentalConfig = {
     markmapEnabled: true,
     mermaidEnabled: true,
     smoothInkingEnabled: true,
-    visualTimerEnabled: true
+    visualTimerEnabled: true,
+    smartShapesEnabled: true,
+    attendanceEnabled: true,
+    breakTheLimitAi: true,
+    autoTaskAutomation: true
 };
 const getInitialExperimentalConfig = () => {
     try {
@@ -359,6 +363,64 @@ export const useStore = create((set, get) => ({
     toggleAttendance: () => set((state) => ({ isAttendanceOpen: !state.isAttendanceOpen })),
     isTodoListOpen: false,
     toggleTodoList: () => set((state) => ({ isTodoListOpen: !state.isTodoListOpen })),
+    toggleSpinWheel: () => {
+        const id = `wheel_${Date.now()}`;
+        get().updateDomElement(id, {
+            id,
+            html: '<div>Roda</div>',
+            componentType: 'SPIN_WHEEL',
+            config: { title: 'Roda Acak Siswa' },
+            x: 960,
+            y: 540,
+            width: 440,
+            height: 480,
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            zIndex: 10
+        });
+    },
+    toggleScoreboard: () => {
+        const id = `score_${Date.now()}`;
+        get().updateDomElement(id, {
+            id,
+            html: '<div>Skor</div>',
+            componentType: 'SCOREBOARD',
+            config: { title: 'Papan Skor Kelompok' },
+            x: 960,
+            y: 540,
+            width: 420,
+            height: 380,
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            zIndex: 10
+        });
+    },
+    toggleMathGraph: () => {
+        const id = `math_${Date.now()}`;
+        get().updateDomElement(id, {
+            id,
+            html: '<div>Grafik</div>',
+            componentType: 'MATH_GRAPH',
+            config: { title: 'Grafik Matematika Interaktif', type: 'QUADRATIC', a: 1, b: -2, c: -3 },
+            x: 960,
+            y: 540,
+            width: 460,
+            height: 440,
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            zIndex: 10
+        });
+    },
+    isAssistiveMode: typeof window !== 'undefined' && localStorage.getItem('trido_assistive_mode') === 'true',
+    toggleAssistiveMode: (enabled) => set((state) => {
+        const nextVal = enabled !== undefined ? enabled : !state.isAssistiveMode;
+        if (typeof window !== 'undefined')
+            localStorage.setItem('trido_assistive_mode', String(nextVal));
+        return { isAssistiveMode: nextVal };
+    }),
     isBoardSettingsOpen: false,
     toggleBoardSettings: () => set((state) => ({ isBoardSettingsOpen: !state.isBoardSettingsOpen })),
     isTemplatesOpen: false,

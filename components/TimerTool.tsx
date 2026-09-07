@@ -29,6 +29,30 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Sync when config updates dynamically from AI
+  useEffect(() => {
+    if (!config) return;
+    try {
+      const cfg = typeof config === 'string' ? JSON.parse(config) : config;
+      if (cfg.mode) setMode(cfg.mode);
+      if (typeof cfg.seconds === 'number') {
+        setTimeLeft(cfg.seconds);
+      }
+      if (typeof cfg.isActive === 'boolean') {
+        setIsActive(cfg.isActive);
+      } else if (typeof cfg.isRunning === 'boolean') {
+        setIsActive(cfg.isRunning);
+      }
+      if (cfg.alarmAt) {
+        setAlarmTime(cfg.alarmAt);
+        setIsAlarmActive(true);
+      }
+      if (typeof cfg.isVisualPie === 'boolean') {
+        setIsVisualPie(cfg.isVisualPie);
+      }
+    } catch {}
+  }, [config]);
+
   const playChime = () => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -223,6 +247,40 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
                     title="Beralih Mode Visual Lingkaran"
                   >
                     <Eye size={12} /> {isVisualPie ? 'Mode Visual' : 'Mode Angka'}
+                  </button>
+                </div>
+
+                {/* Classroom Presets */}
+                <div className="flex flex-wrap items-center justify-center gap-1 mt-2.5">
+                  <button
+                    onClick={() => { setIsActive(false); setTimeLeft(1500); }}
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                  >
+                    🍅 25m
+                  </button>
+                  <button
+                    onClick={() => { setIsActive(false); setTimeLeft(600); }}
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                  >
+                    🗣️ 10m
+                  </button>
+                  <button
+                    onClick={() => { setIsActive(false); setTimeLeft(300); }}
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                  >
+                    🎤 5m
+                  </button>
+                  <button
+                    onClick={() => { setIsActive(false); setTimeLeft(180); }}
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                  >
+                    ⚖️ 3m
+                  </button>
+                  <button
+                    onClick={() => { setIsActive(false); setTimeLeft(60); }}
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                  >
+                    ⚡ 1m
                   </button>
                 </div>
 
