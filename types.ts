@@ -187,6 +187,7 @@ declare global {
     fabric: any;
     SpeechRecognition: any;
     webkitSpeechRecognition: any;
+    mermaid: any;
   }
 }
 
