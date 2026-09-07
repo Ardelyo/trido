@@ -98,3 +98,78 @@
     @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
   }
 }
+
+/* ── TRIDO PRINT ISOLATION ENGINE ─────────────────────────────────────────────
+ * Ensures that when printing a Document, Quiz, or Mindmap, 100% of the website UI
+ * (header, canvas dots, sidebar, toolbar, floating buttons) is hidden, and ONLY the
+ * pristine A4 document content is sent to the printer.
+ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 1. Hide the entire application chrome when printing an isolated component */
+  body.printing-isolated header,
+  body.printing-isolated aside,
+  body.printing-isolated nav,
+  body.printing-isolated canvas,
+  body.printing-isolated .fabric-canvas,
+  body.printing-isolated .chat-interface,
+  body.printing-isolated .drawing-toolbar,
+  body.printing-isolated .tool-overlay,
+  body.printing-isolated .agent-cursor,
+  body.printing-isolated .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* 2. Hide everything except the print target */
+  body.printing-isolated * {
+    visibility: hidden;
+  }
+
+  body.printing-isolated .trido-print-target,
+  body.printing-isolated .trido-print-target * {
+    visibility: visible !important;
+  }
+
+  /* 3. Position the printable card at top of page with clean document styles */
+  body.printing-isolated .trido-print-target {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  body.printing-isolated .trido-print-target .sticky {
+    position: static !important;
+  }
+
+  body.printing-isolated .trido-print-target .overflow-y-auto,
+  body.printing-isolated .trido-print-target .overflow-auto {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+}

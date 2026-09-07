@@ -96,71 +96,32 @@ export function exportDocumentAsMarkdown(title: string, markdown: string) {
 
 /**
  * ── 3. EXPORT CLEAN DOCUMENT / WIDGET AS PRINTABLE PDF ─────────────────────
+ * Uses the CSS print-isolation engine to hide 100% of the website UI and print
+ * ONLY the pristine document/quiz onto A4 paper.
  */
+export function triggerPrintComponent(target: HTMLElement | string) {
+  const el = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!el) {
+    window.print();
+    return;
+  }
+
+  document.body.classList.add('printing-isolated');
+  el.classList.add('trido-print-target');
+
+  const cleanup = () => {
+    document.body.classList.remove('printing-isolated');
+    el.classList.remove('trido-print-target');
+    window.removeEventListener('afterprint', cleanup);
+  };
+
+  window.addEventListener('afterprint', cleanup);
+  window.print();
+  setTimeout(cleanup, 2500);
+}
+
 export function printCleanDocument(elementId: string, title?: string) {
-  const elementNode = document.getElementById(elementId);
-  if (!elementNode) return false;
-
-  const printWindow = window.open('', '_blank', 'width=900,height=1000');
-  if (!printWindow) return false;
-
-  const cleanTitle = title || 'Trido Dokumen Pembelajaran';
-
-  printWindow.document.write(`<!DOCTYPE html>
-<html>
-  <head>
-    <title>${cleanTitle}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-    <style>
-      @page {
-        size: A4;
-        margin: 18mm 16mm;
-      }
-      body {
-        font-family: 'Merriweather', serif;
-        color: #1e293b;
-        background: white;
-        padding: 0;
-        margin: 0;
-      }
-      h1, h2, h3, h4, .font-sans {
-        font-family: 'Inter', sans-serif !important;
-      }
-      .no-print { display: none !important; }
-      @media print {
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .print-container { overflow: visible !important; height: auto !important; width: 100% !important; max-width: 100% !important; box-shadow: none !important; }
-        * { box-shadow: none !important; }
-      }
-      .print-container { max-width: 800px; margin: 0 auto; }
-    </style>
-  </head>
-  <body class="p-6 md:p-10">
-    <div class="print-container">
-      <div class="border-b-2 border-slate-900 pb-4 mb-8 flex justify-between items-end font-sans">
-        <div>
-          <div class="text-[10px] font-black tracking-widest text-blue-600 uppercase">TRIDO DIGITAL BOARD ARTIFACT</div>
-          <h1 class="text-2xl font-black text-slate-900">${cleanTitle}</h1>
-        </div>
-        <div class="text-right text-[11px] text-slate-500 font-medium">
-          Tanggal: ${new Date().toLocaleDateString('id-ID')}
-        </div>
-      </div>
-      <div class="content-body">
-        ${elementNode.innerHTML}
-      </div>
-    </div>
-    <script>
-      setTimeout(() => {
-        window.print();
-        window.close();
-      }, 800);
-    </script>
-  </body>
-</html>`);
-  printWindow.document.close();
+  triggerPrintComponent(elementId);
   return true;
 }
 

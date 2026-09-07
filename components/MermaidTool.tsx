@@ -104,6 +104,25 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ config }) => {
         }
       } catch (err: any) {
         console.error('Mermaid render error:', err);
+        if (err?.message?.includes('dynamically imported') || err?.message?.includes('Failed to fetch')) {
+          // Auto-heal stale browser cache with direct CDN bundle
+          mermaidPromise = null;
+          try {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js';
+            script.onload = async () => {
+              if ((window as any).mermaid && isMounted) {
+                const mm2 = (window as any).mermaid;
+                mm2.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+                const { svg } = await mm2.render(`mermaid_heal_${Date.now()}`, rawCode);
+                setSvgHtml(svg);
+                setError(null);
+              }
+            };
+            document.head.appendChild(script);
+            return;
+          } catch (_) {}
+        }
         if (isMounted) {
           setError(err?.message || 'Sintaks Mermaid tidak valid');
         }

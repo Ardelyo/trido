@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useStore } from '../store';
 import { DomElementState } from '../types';
 import { QuizMultipleChoice } from './quiz/QuizMultipleChoice';
@@ -377,21 +378,21 @@ export const DomOverlay: React.FC = () => {
         })}
       </div>
 
-      {/* ── 2. FULLSCREEN PC FOCUS MODE OVERLAY ── */}
-      {activeFullscreenEl && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-auto p-4 sm:p-8 lg:p-12">
-          {/* Backdrop */}
+      {/* ── 2. TRUE FULLSCREEN PC FOCUS MODE OVERLAY (MOUNTED DIRECTLY TO BODY VIA PORTAL) ── */}
+      {activeFullscreenEl && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center pointer-events-auto p-3 sm:p-6 lg:p-8 font-sans select-none">
+          {/* Dark Backdrop */}
           <div
             onClick={() => setFullscreenWidgetId(null)}
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
           />
 
           {/* Desktop Fullscreen Window Card */}
-          <div className="relative w-full h-full max-w-6xl max-h-[92vh] bg-white rounded-3xl shadow-[0_25px_80px_rgba(0,0,0,0.35)] border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full h-full max-w-7xl max-h-[95vh] bg-white rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.6)] border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 z-10">
             {/* Titlebar */}
-            <div className="flex h-13 px-6 items-center justify-between bg-slate-50 border-b border-slate-200/90 shrink-0 select-none">
+            <div className="flex h-14 px-6 items-center justify-between bg-slate-50 border-b border-slate-200/90 shrink-0 select-none">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white border border-slate-200 shadow-sm shrink-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-slate-200 shadow-sm shrink-0">
                   {getComponentIcon(activeFullscreenEl.componentType)}
                 </div>
                 <div>
@@ -406,15 +407,15 @@ export const DomOverlay: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={(e) => handlePrint(activeFullscreenEl, e)}
-                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
-                  title="Cetak Dokumen / Unduh PDF"
+                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  title="Cetak Dokumen Bersih / PDF"
                 >
                   <Printer size={14} /> Cetak / PDF
                 </button>
 
                 <button
                   onClick={(e) => handleQuickExport(activeFullscreenEl, e)}
-                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
                   title="Unduh Berkas Mandiri"
                 >
                   <Download size={14} /> Unduh Berkas
@@ -422,7 +423,7 @@ export const DomOverlay: React.FC = () => {
 
                 <button
                   onClick={() => setFullscreenWidgetId(null)}
-                  className="p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-700 transition cursor-pointer ml-1"
+                  className="p-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition cursor-pointer ml-1"
                   title="Keluar Layar Penuh (ESC)"
                 >
                   <Minimize2 size={16} />
@@ -431,11 +432,12 @@ export const DomOverlay: React.FC = () => {
             </div>
 
             {/* Content Body in Fullscreen */}
-            <div id={`widget-${activeFullscreenEl.id}-fullscreen`} className="flex-1 bg-white relative overflow-auto p-4 sm:p-6">
+            <div id={`widget-${activeFullscreenEl.id}-fullscreen`} className="flex-1 bg-white relative overflow-auto p-4 sm:p-8">
               {renderContent(activeFullscreenEl)}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
