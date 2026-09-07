@@ -514,22 +514,29 @@ export function getBoardContentBoundingBox(
 }
 
 /**
- * ── 9. EXPORT SMART CROPPED CANVAS (PNG) WITH COMPOSITE OVERLAYS ───────────
+ * ── 9. EXPORT SMART CROPPED CANVAS (PNG) WITH SOLID BACKGROUND PLATE ────────
+ * Solves the black background issue in Windows/mobile photo viewers by inserting
+ * a solid white or dark plate behind the transparent alpha layer.
  */
-export async function exportSmartCroppedCanvasPNG(
+export async function exportSafeCompositePNG(
   canvas: any,
   domElements: Record<string, DomElementState>,
-  multiplier = 2
+  options: {
+    backgroundColor?: string;
+    multiplier?: number;
+  } = {}
 ): Promise<string> {
   if (!canvas) throw new Error('Canvas not found');
+
+  const bg = options.backgroundColor || '#ffffff';
+  const multiplier = options.multiplier || 2;
 
   canvas.discardActiveObject();
   canvas.requestRenderAll();
 
   const bounds = getBoardContentBoundingBox(canvas, domElements);
 
-  // Generate cropped dataURL directly using Fabric's native window cropping
-  const dataURL = canvas.toDataURL({
+  const canvasDataUrl = canvas.toDataURL({
     format: 'png',
     left: bounds.left,
     top: bounds.top,
@@ -538,5 +545,196 @@ export async function exportSmartCroppedCanvasPNG(
     multiplier
   });
 
-  return dataURL;
+  const offscreen = document.createElement('canvas');
+  offscreen.width = Math.round(bounds.width * multiplier);
+  offscreen.height = Math.round(bounds.height * multiplier);
+  const ctx = offscreen.getContext('2d');
+  if (!ctx) return canvasDataUrl;
+
+  if (bg !== 'transparent') {
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, offscreen.width, offscreen.height);
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0);
+      resolve();
+    };
+    img.onerror = reject;
+    img.src = canvasDataUrl;
+  });
+
+  return offscreen.toDataURL('image/png');
+}
+
+export async function exportSmartCroppedCanvasPNG(
+  canvas: any,
+  domElements: Record<string, DomElementState>,
+  multiplier = 2
+): Promise<string> {
+  return exportSafeCompositePNG(canvas, domElements, { backgroundColor: '#ffffff', multiplier });
+}
+
+/**
+ * ── 10. COPY IMAGE DIRECTLY TO CLIPBOARD (Zero-File Workflow) ──────────────
+ */
+export async function copyImageToClipboard(dataURL: string): Promise<boolean> {
+  try {
+    const res = await fetch(dataURL);
+    const blob = await res.blob();
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': blob })
+    ]);
+    return true;
+  } catch (err) {
+    console.error('Failed to copy image to clipboard:', err);
+    return false;
+  }
+}
+
+/**
+ * ── 11. EXPORT MINDMAP TO MERMAID DECLARATIVE SYNTAX ────────────────────────
+ */
+export function exportMindmapToMermaid(nodes: (MindmapLayoutNode | MindmapNodeRecord)[]): string {
+  if (!nodes || nodes.length === 0) return '';
+  const root = nodes.find(n => !n.parentNodeText) || nodes[0];
+  let mmd = `mindmap\n  root(("${root.text.replace(/[()"]/g, '')}"))\n`;
+
+  const childMap = new Map<string, any[]>();
+  nodes.forEach(n => {
+    if (n.parentNodeText) {
+      const p = n.parentNodeText.toLowerCase().trim();
+      if (!childMap.has(p)) childMap.set(p, []);
+      childMap.get(p)!.push(n);
+    }
+  });
+
+  function appendChildren(parentText: string, depth: number) {
+    const children = childMap.get(parentText.toLowerCase().trim()) || [];
+    children.forEach(c => {
+      const indent = '    '.repeat(depth);
+      const cleanLabel = c.text.replace(/["()]/g, '');
+      mmd += `${indent}${cleanLabel}\n`;
+      appendChildren(c.text, depth + 1);
+    });
+  }
+
+  appendChildren(root.text, 1);
+  return mmd;
+}
+
+/**
+ * ── 12. EXPORT MINDMAP TO CANVA-COMPATIBLE LAYERED VECTOR SVG ──────────────
+ */
+export function exportMindmapToCanvaSVG(
+  nodes: (MindmapLayoutNode | MindmapNodeRecord)[],
+  bgColor = '#ffffff'
+): string {
+  if (!nodes || nodes.length === 0) return '';
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    const nx = n.x || 0;
+    const ny = n.y || 0;
+    minX = Math.min(minX, nx - 140);
+    minY = Math.min(minY, ny - 60);
+    maxX = Math.max(maxX, nx + 140);
+    maxY = Math.max(maxY, ny + 60);
+  });
+
+  const width = Math.max(800, (maxX - minX) + 120);
+  const height = Math.max(600, (maxY - minY) + 120);
+  const offsetX = minX - 60;
+  const offsetY = minY - 60;
+
+  let svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <!-- Canva Compatible Solid Background Plate -->
+  <rect width="100%" height="100%" fill="${bgColor}" />
+  <g id="connections" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linecap="round">
+`;
+
+  nodes.forEach(n => {
+    if (n.parentNodeText) {
+      const parent = nodes.find(p => p.text.toLowerCase() === n.parentNodeText?.toLowerCase());
+      if (parent) {
+        const x1 = (parent.x || 0) - offsetX;
+        const y1 = (parent.y || 0) - offsetY;
+        const x2 = (n.x || 0) - offsetX;
+        const y2 = (n.y || 0) - offsetY;
+        svg += `    <path d="M ${x1} ${y1} Q ${(x1 + x2) / 2} ${y1} ${x2} ${y2}" />\n`;
+      }
+    }
+  });
+
+  svg += `  </g>\n  <g id="mindmap-nodes">\n`;
+
+  nodes.forEach((n, idx) => {
+    const nx = (n.x || 0) - offsetX;
+    const ny = (n.y || 0) - offsetY;
+    const isRoot = !n.parentNodeText;
+    const rectW = isRoot ? 220 : (n.style === 'SUBTOPIC' ? 180 : 160);
+    const rectH = isRoot ? 60 : 44;
+    const fill = isRoot ? '#2563eb' : (n.style === 'SUBTOPIC' ? '#f0fdf4' : '#ffffff');
+    const stroke = isRoot ? '#1d4ed8' : (n.style === 'SUBTOPIC' ? '#10b981' : '#cbd5e1');
+    const textColor = isRoot ? '#ffffff' : (n.style === 'SUBTOPIC' ? '#065f46' : '#1e293b');
+
+    svg += `    <g id="node-${idx}" class="canva-layer" transform="translate(${nx - rectW / 2}, ${ny - rectH / 2})">
+      <rect width="${rectW}" height="${rectH}" rx="12" fill="${fill}" stroke="${stroke}" stroke-width="1.5" />
+      <text x="${rectW / 2}" y="${rectH / 2 + 5}" fill="${textColor}" font-family="Inter, sans-serif" font-size="${isRoot ? 14 : 12}" font-weight="${isRoot ? 700 : 600}" text-anchor="middle">${n.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text>
+    </g>\n`;
+  });
+
+  svg += `  </g>\n</svg>`;
+  return svg;
+}
+
+/**
+ * ── 13. EXPORT QUIZZES TO GIFT FORMAT (Moodle & Canvas LMS) ────────────────
+ */
+export function exportQuizToGIFT(quizzes: any[]): string {
+  let output = `// Kuis Pembelajaran Trido AI\n// Diekspor pada: ${new Date().toLocaleString('id-ID')}\n\n`;
+
+  quizzes.forEach((q, index) => {
+    const cfg = q.config || {};
+    const title = (q.title || `Soal ${index + 1}`).replace(/[:{}]/g, '');
+    const question = (cfg.question || 'Pertanyaan').replace(/[{}]/g, '');
+
+    if (cfg.options && Array.isArray(cfg.options)) {
+      output += `::${title}:: ${question} {\n`;
+      cfg.options.forEach((opt: string, idx: number) => {
+        const isCorrect = idx === cfg.answerIndex || idx === cfg.correctIndex;
+        const prefix = isCorrect ? '=' : '~';
+        output += `  ${prefix}${opt.replace(/[=~#]/g, '')}\n`;
+      });
+      output += '}\n\n';
+    } else if (q.type === 'QUIZ_TRUE_FALSE') {
+      const isTrue = cfg.answer === true || cfg.answer === 'BENAR';
+      output += `::${title}:: ${question} {${isTrue ? 'TRUE' : 'FALSE'}}\n\n`;
+    } else {
+      output += `::${title}:: ${question} {}\n\n`;
+    }
+  });
+
+  return output;
+}
+
+/**
+ * ── 14. EXPORT QUIZZES TO QUIZIZZ / KAHOOT CSV ────────────────────────────
+ */
+export function exportQuizToQuizizzCSV(quizzes: any[]): string {
+  let csv = 'Question,Option 1,Option 2,Option 3,Option 4,Correct Answer,Time in seconds\n';
+
+  quizzes.forEach(q => {
+    const cfg = q.config || {};
+    const question = `"${(cfg.question || '').replace(/"/g, '""')}"`;
+    const opts = (cfg.options || []).map((o: string) => `"${o.replace(/"/g, '""')}"`);
+    while (opts.length < 4) opts.push('""');
+    const correctNum = ((cfg.answerIndex !== undefined ? cfg.answerIndex : cfg.correctIndex) || 0) + 1;
+    csv += `${question},${opts[0]},${opts[1]},${opts[2]},${opts[3]},${correctNum},30\n`;
+  });
+
+  return csv;
 }
