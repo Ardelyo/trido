@@ -56,7 +56,7 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
         const trimmed = rawUri.trim();
         if (!trimmed)
             return null;
-        const match = trimmed.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
+        const match = trimmed.match(/^data:([a-zA-Z0-9+.-]+\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
         if (match) {
             return { mimeType: match[1], data: match[2].trim() };
         }
@@ -85,7 +85,7 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
             parts: [
                 ...(canvasPayload?.data ? [{ inlineData: { mimeType: canvasPayload.mimeType, data: canvasPayload.data } }] : []),
                 ...(inputImagePayload?.data ? [{ inlineData: { mimeType: inputImagePayload.mimeType, data: inputImagePayload.data } }] : []),
-                { text: `User request: ${prompt}\n\nRemember: Use function calls, not descriptions. Batch all actions together.` }
+                { text: `User request: ${prompt}\n\nRemember: Thoroughly address the entire request. Use function calls for all visual artifacts, batching actions together, and explain in clear text.` }
             ]
         }
     ];
@@ -99,7 +99,7 @@ export const generateAgentActionsVertex = async (prompt, canvasImageBase64, canv
             temperature: 0.2,
             maxOutputTokens: 8192,
             thinkingConfig: {
-                thinkingBudget: 0
+                thinkingBudget: (prompt.length > 300) ? 1024 : 0
             }
         },
         tools: [{ functionDeclarations: tools }],

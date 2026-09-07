@@ -26,7 +26,7 @@ export const generateAgentActionsGemini = async (
     if (!rawUri || typeof rawUri !== 'string') return null;
     const trimmed = rawUri.trim();
     if (!trimmed) return null;
-    const match = trimmed.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
+    const match = trimmed.match(/^data:([a-zA-Z0-9+.-]+\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
     if (match) {
       return { mimeType: match[1], data: match[2].trim() };
     }
@@ -59,7 +59,7 @@ export const generateAgentActionsGemini = async (
       parts: [
         ...(canvasPayload?.data ? [{ inlineData: { mimeType: canvasPayload.mimeType, data: canvasPayload.data } }] : []),
         ...(inputImagePayload?.data ? [{ inlineData: { mimeType: inputImagePayload.mimeType, data: inputImagePayload.data } }] : []),
-        { text: `User request: ${prompt}\n\nRemember: Use function calls, not descriptions. Batch all actions together.` }
+        { text: `User request: ${prompt}\n\nRemember: Thoroughly address the entire request. Use function calls for all visual artifacts, batching actions together, and explain in clear text.` }
       ]
     }
   ];
@@ -68,8 +68,8 @@ export const generateAgentActionsGemini = async (
 
   const ai = getAiClient(customKey);
 
-  // Use a dedicated generate timeout — 90s is enough for complex multi-tool requests
-  const generateTimeoutMs = (CONFIG.ai.gemini as any).generateTimeoutMs ?? 90_000;
+  // Use a dedicated generate timeout — 120s is enough for complex multi-tool requests
+  const generateTimeoutMs = (CONFIG.ai.gemini as any).generateTimeoutMs ?? 120_000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), generateTimeoutMs);
 
@@ -89,7 +89,7 @@ export const generateAgentActionsGemini = async (
         temperature: CONFIG.ai.gemini.generation.temperature,
         maxOutputTokens: CONFIG.ai.gemini.generation.maxOutputTokens,
         thinkingConfig: {
-          thinkingBudget: 0
+          thinkingBudget: (prompt.length > 300) ? 1024 : (CONFIG.ai.gemini.generation.thinkingBudget ?? 0)
         }
       }
     });

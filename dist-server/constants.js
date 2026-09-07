@@ -9,7 +9,7 @@ export const CONFIG = {
             model: GEMINI_MODEL,
             apiBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
             probeTimeoutMs: 3000,
-            generateTimeoutMs: 90000,
+            generateTimeoutMs: 120000,
             generation: {
                 temperature: 0.2,
                 maxOutputTokens: 8192,
@@ -24,13 +24,15 @@ export const CONFIG = {
             thinkingMode: OLLAMA_THINKING_MODE,
             defaultBaseUrl: 'http://localhost:11434',
             probeTimeoutMs: 1500,
-            numCtx: 8192,
+            numCtx: 16384,
+            generateTimeoutMs: 180000,
         },
         vertex: {
             model: 'gemini-3.8-flash',
             location: 'global',
             projectId: 'gemma4good-494311',
             probeTimeoutMs: 3000,
+            generateTimeoutMs: 120000,
             generation: {
                 temperature: 0.2,
                 maxOutputTokens: 8192,

@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 
 interface AppStore extends AgentState {
@@ -11,6 +11,8 @@ interface AppStore extends AgentState {
   viewportTransform: number[];
   domElements: Record<string, DomElementState>;
   lastUploadedImage: string | null; // Base64
+  attachedDocument: AttachedDocument | null;
+  setAttachedDocument: (doc: AttachedDocument | null) => void;
   theme: 'dark' | 'light';
   
   // App UI State
@@ -520,6 +522,11 @@ export const useStore = create<AppStore>((set, get) => ({
   viewportTransform: [1, 0, 0, 1, 0, 0],
   domElements: {},
   lastUploadedImage: null,
+  attachedDocument: null,
+  setAttachedDocument: (doc) => set({
+    attachedDocument: doc,
+    lastUploadedImage: doc?.dataUrl || null
+  }),
   theme: 'light',
   
   isAiDrawerOpen: false,
@@ -688,7 +695,10 @@ export const useStore = create<AppStore>((set, get) => ({
   setClicking: (clicking) => set({ isClicking: clicking }),
   setCurrentAction: (action) => set({ currentAction: action }),
   setAgentMessage: (msg) => set({ agentMessage: msg }),
-  setLastUploadedImage: (img) => set({ lastUploadedImage: img }),
+  setLastUploadedImage: (img) => set((state) => ({
+    lastUploadedImage: img,
+    attachedDocument: img ? state.attachedDocument : null
+  })),
   toggleTheme: () => set((state) => {
     const newTheme = state.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.className = newTheme;

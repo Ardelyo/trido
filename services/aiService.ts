@@ -55,7 +55,8 @@ const parseAiError = async (response: Response): Promise<AiServiceError> => {
 const requestJson = async <T>(url: string, init: RequestInit, retries = CONFIG.ai.request.retryCount): Promise<T> => {
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutMs = 120000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(url, {
@@ -77,7 +78,7 @@ const requestJson = async <T>(url: string, init: RequestInit, retries = CONFIG.a
       
       if (error.name === 'AbortError') {
         throw new AiServiceError(
-          'Permintaan AI melebihi batas waktu (timeout 60 detik). Silakan coba lagi.',
+          'Permintaan AI melebihi batas waktu (timeout 120 detik). Silakan coba lagi.',
           'server_error',
           408,
           false

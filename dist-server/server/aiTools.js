@@ -257,25 +257,59 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
     },
     {
         name: "modify_object",
-        description: "Move, rename, or delete an existing canvas shape or text object.",
+        description: "Modify, recolor, resize, rename, or delete ANY object or element on the canvas. Target by elementText (label) or objectId.",
         parameters: {
             type: Type.OBJECT,
             properties: {
+                elementText: {
+                    type: Type.STRING,
+                    description: "Text or label of the element to modify"
+                },
                 objectId: {
                     type: Type.STRING,
-                    description: "ID of the object from the EXISTING OBJECTS list"
+                    description: "Optional ID of the object from the EXISTING OBJECTS list"
                 },
                 action: {
                     type: Type.STRING,
-                    enum: ["MOVE_TO_GRID", "UPDATE_TEXT", "DELETE", "CHANGE_STYLE"],
+                    enum: ["UPDATE_TEXT", "CHANGE_COLOR", "RESIZE", "DELETE", "MOVE_TO_GRID"],
                     description: "Operation to perform"
                 },
                 value: {
                     type: Type.STRING,
-                    description: "Grid position for MOVE_TO_GRID, new text for UPDATE_TEXT, style enum for CHANGE_STYLE"
+                    description: "New value: new text for UPDATE_TEXT, hex color code for CHANGE_COLOR (e.g. #10B981), dimensions (e.g. '500x400') for RESIZE, or grid position"
                 }
             },
-            required: ["objectId", "action"]
+            required: ["action"]
+        }
+    },
+    {
+        name: "relayout_mindmap",
+        description: "Redesign, reorganize, and tidy up the mindmap layout to fix overlaps and make it beautiful and clean. Layout options: 'RADIAL' (circular outward) or 'TREE_HORIZONTAL' (clean left-to-right hierarchy).",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                layoutType: {
+                    type: Type.STRING,
+                    enum: ["RADIAL", "TREE_HORIZONTAL", "TREE_VERTICAL"],
+                    description: "Target layout style. Default RADIAL."
+                },
+                centerX: { type: Type.NUMBER, description: "Optional new center X coordinate" },
+                centerY: { type: Type.NUMBER, description: "Optional new center Y coordinate" }
+            }
+        }
+    },
+    {
+        name: "reorganize_canvas",
+        description: "Tidy up and reorganize all elements on the canvas (shapes, widgets, notes, mindmap) to eliminate all overlaps and distribute space cleanly.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                style: {
+                    type: Type.STRING,
+                    enum: ["AUTO_UNTANGLE", "GRID_ALIGNED", "SPREAD_OUT"],
+                    description: "Reorganization style"
+                }
+            }
         }
     },
     {
@@ -544,19 +578,27 @@ IPS/Sejarah: timeline, tabel perbandingan
 Bahasa Indonesia: mindmap unsur intrinsik, document struktur teks
 Bahasa Inggris: flashcard vocabulary, quiz grammar
 
+## HANDLING LONG & DETAILED PROMPTS
+When the user provides a long, detailed, or multi-step prompt:
+1. Deconstruct the prompt: Identify all distinct objectives, questions, constraints, and requested artifacts (e.g. concept maps, formulas, step-by-step notes, diagrams, comparisons, practice questions).
+2. Comprehensive execution: Do NOT truncate your response or omit subsequent instructions. Address every requirement specified in the prompt.
+3. Hybrid balance: If the user asks for both explanations and whiteboard visuals, deliver a thorough, high-depth pedagogical explanation in chat AND execute all necessary tool calls to construct the visuals on canvas.
+4. Rich structure: Organize explanations using clear markdown headings, bullet points, numbered steps, and LaTeX/KaTeX formulas where appropriate.
+5. Canvas layout for multi-part requests: Distribute visual elements logically across grid zones (e.g. central concept at CENTER, sub-components at CENTER_LEFT / CENTER_RIGHT, summaries or notes at BOTTOM_CENTER) so the canvas remains clean and readable.
+
 ## RESPONSE RULES
-- Language: Always match teacher's language (Indonesian → respond Indonesian)
-- Length: 2-5 sentences in chat
-- Tone: Helpful teacher's aide, warm and practical
-- Always end with what's available next OR a teaching tip
+- Language: Always match user's language (Indonesian → respond Indonesian)
+- Length & Depth: Calibrate response depth to the prompt. For simple/exploratory questions ("apa itu fotosintesis"), provide a concise answer (2-4 sentences) and offer next steps. For long, detailed, or multi-step prompts, provide a complete, in-depth explanation covering all requested aspects.
+- Tone: Helpful, authoritative teacher's aide and pedagogical partner
+- Always end with what's available next OR a practical teaching tip
 - NEVER just say "Menjalankan tindakan"
-- NEVER dump everything at once — build the lesson incrementally
+- Incremental vs Full Execution: For simple exploratory topics, build incrementally. But when the user explicitly provides a detailed multi-step prompt, syllabus, or comprehensive outline, execute the full requested scope immediately.
 
 ## CONSTRAINTS
 - Max ${capability.maxToolCallsPerRequest} tool calls per response
-- Max 5 subtopics per mindmap request
 - Max 1 quiz widget per response
 - First object always at CENTER
+- Arrange multiple elements across grid zones (TOP_LEFT, TOP_RIGHT, CENTER_LEFT, CENTER_RIGHT, BOTTOM_CENTER) to avoid visual overlapping
 `;
 };
 export const validateFunctionCalls = (calls, canvasObjects, domElements = {}) => {

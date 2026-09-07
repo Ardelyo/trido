@@ -51,7 +51,7 @@ export const generateAgentActionsOllama = async (
     ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.text })),
     { 
       role: "user", 
-      content: `User request: ${prompt}\n\nRemember: Use function calls, not descriptions. Batch all actions together.`,
+      content: `User request: ${prompt}\n\nRemember: Thoroughly address the entire request. Use function calls for all visual artifacts, batching actions together, and explain in clear text.`,
       images: [cleanCanvasBase64]
     }
   ];
@@ -76,7 +76,7 @@ export const generateAgentActionsOllama = async (
   }
 
   const controller = new AbortController();
-  const timeoutMs = (CONFIG.ai.ollama as any).generateTimeoutMs || 120_000;
+  const timeoutMs = (CONFIG.ai.ollama as any).generateTimeoutMs || 180_000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   let response: Response;

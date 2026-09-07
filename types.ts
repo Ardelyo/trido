@@ -21,6 +21,20 @@ export type AiPreference = 'auto' | 'gemini' | 'ollama' | 'vertex';
 export type AiRuntimeMode = 'gemini' | 'ollama' | 'vertex' | 'unavailable';
 export type TranscribeMode = 'webspeech' | 'record_gemini' | 'gemini_live' | 'upload_audio';
 
+export type DocumentCategory = 'pdf' | 'document' | 'spreadsheet' | 'presentation' | 'text' | 'code' | 'image' | 'other';
+
+export interface AttachedDocument {
+  name: string;
+  type: string;
+  size: number;
+  category: DocumentCategory;
+  text: string;
+  pageCount?: number;
+  dataUrl?: string | null;
+  previewSnippet?: string;
+  wordCount?: number;
+}
+
 export interface VoiceConfig {
   autoStopSeconds: number; // 0 = manual, 5, 10, 15, 20, 30, 60
   autoSubmit: boolean; // true = auto send to AI, false = paste to input box for review
@@ -86,7 +100,7 @@ export interface BoardSession {
 
 export interface AgentAction {
   id: string;
-  type: 'MOVE_CURSOR' | 'CLICK_ELEMENT' | 'DRAG_OBJECT' | 'DRAG_ALL_ELEMENTS' | 'CREATE_SHAPE' | 'CREATE_SVG' | 'EDIT_SVG' | 'RENDER_HTML' | 'EDIT_HTML' | 'CREATE_IMAGE' | 'WRITE_TEXT' | 'DRAW_PATH' | 'RESIZE_OBJECT' | 'MODIFY_PROPERTY' | 'DELETE_OBJECT' | 'REORDER_OBJECT' | 'SELECT_OBJECTS' | 'PAN_CAMERA';
+  type: 'MOVE_CURSOR' | 'CLICK_ELEMENT' | 'DRAG_OBJECT' | 'DRAG_ALL_ELEMENTS' | 'CREATE_SHAPE' | 'CREATE_SVG' | 'EDIT_SVG' | 'RENDER_HTML' | 'EDIT_HTML' | 'CREATE_IMAGE' | 'WRITE_TEXT' | 'DRAW_PATH' | 'RESIZE_OBJECT' | 'MODIFY_PROPERTY' | 'DELETE_OBJECT' | 'REORDER_OBJECT' | 'SELECT_OBJECTS' | 'PAN_CAMERA' | 'RELAYOUT_MINDMAP' | 'REORGANIZE_CANVAS';
   payload: any;
   status: 'PENDING' | 'EXECUTING' | 'COMPLETED' | 'FAILED';
 }

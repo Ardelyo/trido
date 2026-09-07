@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { AudioVisualizer } from './AudioVisualizer';
 import { FileUploadButton } from './FileUploadButton';
+import { AttachedDocumentBadge } from './AttachedDocumentBadge';
 import { DrawingToolbar } from './DrawingToolbar';
 import { sounds } from '../utils/sounds';
 import { useTranslation } from '../utils/translations';
@@ -363,7 +364,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         // Wait up to 600ms for final SpeechRecognition results to flush
         await new Promise(r => setTimeout(r, 600));
         const finalLocalTranscript = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
-        if (finalLocalTranscript || useStore.getState().lastUploadedImage) {
+        if (finalLocalTranscript || useStore.getState().attachedDocument || useStore.getState().lastUploadedImage) {
           if (voiceConfig.autoSubmit) {
             handleSubmitInternal(finalLocalTranscript);
           } else {
@@ -536,7 +537,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     const isWebSpeech = transcribeMode === 'webspeech';
     if (isWebSpeech) {
       const finalInput = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();
-      if (finalInput || useStore.getState().lastUploadedImage) {
+      if (finalInput || useStore.getState().attachedDocument || useStore.getState().lastUploadedImage) {
         handleSubmitInternal(finalInput);
         transcriptBufferRef.current = '';
         interimBufferRef.current = '';
@@ -596,7 +597,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   };
 
   const handleSubmitInternal = async (text: string) => {
-    const finalTxt = text.trim() || (useStore.getState().lastUploadedImage ? t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.') : '');
+    const attachedDoc = useStore.getState().attachedDocument;
+    const defaultPrompt = attachedDoc 
+      ? (attachedDoc.category === 'image' 
+          ? t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.') 
+          : t('pleaseAnalyzeDocument', 'Tolong analisa dokumen ini dan jelaskan poin-poin pentingnya di whiteboard.'))
+      : (useStore.getState().lastUploadedImage ? t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.') : '');
+    const finalTxt = text.trim() || defaultPrompt;
     if (!finalTxt || isThinking) return;
     setInput('');
     useStore.getState().addMessage({ role: 'user', text: finalTxt });
@@ -755,21 +762,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                  </div>
 
                  <div className="flex items-center gap-1.5 border-l-2 border-slate-200/60 pl-4">
-                    {lastUploadedImage && (
-                      <div className="relative mr-2">
-                         <img src={lastUploadedImage} alt="Uploaded" className="h-10 w-10 object-cover rounded-[0.85rem] border-2 border-white shadow-sm" />
-                         <button
-                           onClick={() => setLastUploadedImage(null)}
-                           className="absolute -top-2 -right-2 bg-rose-500 text-white p-1 rounded-full shadow-md hover:bg-rose-600 active:scale-95 transition-transform"
-                         >
-                           <X size={12} strokeWidth={3} />
-                         </button>
-                      </div>
-                    )}
+                    <AttachedDocumentBadge compact className="mr-2" />
                     <FileUploadButton
                       className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95"
                       icon={<Plus size={22} />}
-                      title={t('uploadImage', 'Unggah Gambar')}
+                      title={t('uploadFileOrImage', 'Unggah file / dokumen / gambar')}
                     />
 
                     <button

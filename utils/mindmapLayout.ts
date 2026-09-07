@@ -140,6 +140,45 @@ export function layoutMindmap(
     }
 
     place(root, centerX, centerY, -Math.PI, Math.PI, 0);
+
+    // Collision resolution & relaxation pass: prevent overlapping bounding boxes
+    const RELAXATION_PASSES = 6;
+    for (let pass = 0; pass < RELAXATION_PASSES; pass++) {
+      for (let i = 0; i < output.length; i++) {
+        for (let j = i + 1; j < output.length; j++) {
+          const n1 = output[i];
+          const n2 = output[j];
+          const w1 = NODE_STYLE_CONFIG[n1.style]?.width || 210;
+          const h1 = NODE_STYLE_CONFIG[n1.style]?.height || 80;
+          const w2 = NODE_STYLE_CONFIG[n2.style]?.width || 210;
+          const h2 = NODE_STYLE_CONFIG[n2.style]?.height || 80;
+
+          const minDx = (w1 + w2) / 2 + 35;
+          const minDy = (h1 + h2) / 2 + 25;
+
+          const dx = n2.x - n1.x;
+          const dy = n2.y - n1.y;
+
+          if (Math.abs(dx) < minDx && Math.abs(dy) < minDy) {
+            const overlapX = minDx - Math.abs(dx);
+            const overlapY = minDy - Math.abs(dy);
+
+            if (overlapX < overlapY) {
+              const sign = dx >= 0 ? 1 : -1;
+              const shift = (overlapX / 2) * sign;
+              if (n1 !== root) n1.x -= shift;
+              if (n2 !== root) n2.x += shift;
+            } else {
+              const sign = dy >= 0 ? 1 : -1;
+              const shift = (overlapY / 2) * sign;
+              if (n1 !== root) n1.y -= shift;
+              if (n2 !== root) n2.y += shift;
+            }
+          }
+        }
+      }
+    }
+
     return output;
 
   } catch (error) {
@@ -151,9 +190,59 @@ export function layoutMindmap(
       const row = Math.floor(idx / 5);
       return {
         ...node,
-        x: centerX + (col - 2) * 220,
-        y: centerY + (row - 1) * 160
+        x: centerX + (col - 2) * 240,
+        y: centerY + (row - 1) * 180
       };
     });
   }
+}
+
+/**
+ * Sequential left-to-right tree layout for mind maps.
+ * Guaranteed collision-free vertical distribution.
+ */
+export function layoutMindmapTreeHorizontal(
+  nodes: MindmapInputNode[],
+  startX: number,
+  startY: number
+): MindmapLayoutNode[] {
+  if (nodes.length === 0) return [];
+  const root = nodes.find(n => !n.parentNodeText) ?? nodes[0];
+  const output: MindmapLayoutNode[] = nodes.map(n => ({ ...n, x: startX, y: startY }));
+
+  const childMap = new Map<string, MindmapLayoutNode[]>();
+  output.forEach(n => {
+    const p = n.parentNodeText;
+    if (p) {
+      const parent = output.find(o => o.text.toLowerCase() === p.toLowerCase()) || root;
+      if (!childMap.has(parent.text)) childMap.set(parent.text, []);
+      childMap.get(parent.text)!.push(n);
+    }
+  });
+
+  let currentY = startY;
+  const LEVEL_WIDTH = 320;
+  const VERTICAL_GAP = 120;
+
+  function layoutSubtree(node: MindmapLayoutNode, level: number): number {
+    const children = childMap.get(node.text) ?? [];
+    node.x = startX + level * LEVEL_WIDTH;
+
+    if (children.length === 0) {
+      node.y = currentY;
+      currentY += VERTICAL_GAP;
+      return node.y;
+    }
+
+    const childYs: number[] = [];
+    children.forEach(c => {
+      childYs.push(layoutSubtree(c, level + 1));
+    });
+
+    node.y = (childYs[0] + childYs[childYs.length - 1]) / 2;
+    return node.y;
+  }
+
+  layoutSubtree(root as MindmapLayoutNode, 0);
+  return output;
 }

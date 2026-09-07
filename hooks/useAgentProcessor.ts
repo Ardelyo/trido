@@ -612,17 +612,17 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         }
 
         case 'RESIZE_OBJECT': {
-          const { objectId, width, height } = action.payload;
-          const target = canvas.getObjects().find((o: any) => o.id === objectId);
+          const { objectId, elementText, width, height } = action.payload;
+          const target = findTargetObject(objectId, elementText);
           if (target) {
             await execute(target.left, target.top, 'Resizing...', () => {
               if (target.isDomPlaceholder) {
                 target.set({ width, height, scaleX: 1, scaleY: 1 });
-                updateDomElement(objectId, { width, height });
+                updateDomElement(target.id, { width, height });
               } else {
                 target.set({ 
-                  scaleX: width / target.width, 
-                  scaleY: height / target.height 
+                  scaleX: width / (target.width || width), 
+                  scaleY: height / (target.height || height) 
                 });
               }
               target.setCoords();
@@ -633,8 +633,8 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         }
 
         case 'MODIFY_PROPERTY': {
-           const { objectId, property, value } = action.payload;
-           const target = canvas.getObjects().find((o: any) => o.id === objectId);
+           const { objectId, elementText, property, value } = action.payload;
+           const target = findTargetObject(objectId, elementText);
            if (target) {
               await execute(target.left, target.top, `Updating...`, () => {
                   if (property === 'text' && target.isType('group')) {
@@ -647,9 +647,8 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                     canvas.requestRenderAll();
                  } else if (property === 'fill') {
                     if (target.isType('group')) {
-                      // Find the shape in the group (usually the first object)
                       const shape = target.getObjects().find((o: any) => 
-                        o.type === 'rect' || o.type === 'circle' || o.type === 'triangle'
+                        o.type === 'rect' || o.type === 'circle' || o.type === 'triangle' || o.type === 'path'
                       );
                       if (shape) shape.set('fill', value);
                     } else {
@@ -663,16 +662,115 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
         }
 
         case 'DELETE_OBJECT': {
-           const { objectId } = action.payload;
-           const target = canvas.getObjects().find((o: any) => o.id === objectId);
+           const { objectId, elementText } = action.payload;
+           const target = findTargetObject(objectId, elementText);
            if (target) {
              await execute(target.left, target.top, 'Deleting...', () => {
                canvas.remove(target);
-               if(target.isDomPlaceholder) removeDomElement(objectId);
+               if (target.isDomPlaceholder) removeDomElement(target.id);
                canvas.requestRenderAll();
              });
            }
            break;
+        }
+
+        case 'RELAYOUT_MINDMAP': {
+          const { layoutType = 'RADIAL', centerX = canvas.width / 2, centerY = canvas.height / 2 } = action.payload;
+          const storeState = useStore.getState();
+          const activeNodes = storeState.activeMindmapNodes;
+          if (activeNodes.length > 0) {
+            await execute(centerX, centerY, 'Reorganizing Mindmap...', async () => {
+              const { layoutMindmap, layoutMindmapTreeHorizontal } = await import('../utils/mindmapLayout');
+              const inputNodes = activeNodes.map(n => ({
+                text: n.text,
+                style: n.style as any,
+                parentNodeText: n.parentNodeText
+              }));
+
+              const laid = layoutType === 'TREE_HORIZONTAL'
+                ? layoutMindmapTreeHorizontal(inputNodes, centerX - 300, centerY)
+                : layoutMindmap(inputNodes, centerX, centerY);
+
+              laid.forEach(node => {
+                const origRecord = activeNodes.find(a => a.text.toLowerCase() === node.text.toLowerCase());
+                const target = findTargetObject(origRecord?.canvasObjectId, node.text);
+                if (target) {
+                  target.set({ left: node.x, top: node.y });
+                  target.setCoords();
+                  storeState.registerMindmapNode({
+                    text: node.text,
+                    style: node.style as any,
+                    parentNodeText: node.parentNodeText,
+                    canvasObjectId: target.id,
+                    x: node.x,
+                    y: node.y
+                  });
+                }
+              });
+
+              // Redraw connections cleanly
+              const existingPaths = canvas.getObjects().filter((o: any) => o.id && (o.id.startsWith('path_') || o.id.startsWith('arrow_')));
+              existingPaths.forEach((p: any) => canvas.remove(p));
+
+              laid.forEach(node => {
+                if (node.parentNodeText) {
+                  const parent = laid.find(p => p.text.toLowerCase() === node.parentNodeText?.toLowerCase());
+                  if (parent) {
+                    const pathStr = `M ${parent.x} ${parent.y} L ${node.x} ${node.y}`;
+                    const path = new window.fabric.Path(pathStr, {
+                      fill: 'transparent',
+                      stroke: '#3B82F6',
+                      strokeWidth: 2.5,
+                      strokeLineCap: 'round',
+                      id: `path_${Date.now()}_${Math.random()}`
+                    });
+                    canvas.add(path);
+                    canvas.sendToBack(path);
+                  }
+                }
+              });
+
+              canvas.requestRenderAll();
+            });
+          }
+          break;
+        }
+
+        case 'REORGANIZE_CANVAS': {
+          await execute(canvas.width / 2, canvas.height / 2, 'Untangling Canvas Elements...', () => {
+            const objs = canvas.getObjects().filter((o: any) => !o.id?.startsWith('path_') && !o.id?.startsWith('arrow_'));
+            for (let pass = 0; pass < 8; pass++) {
+              for (let i = 0; i < objs.length; i++) {
+                for (let j = i + 1; j < objs.length; j++) {
+                  const o1 = objs[i];
+                  const o2 = objs[j];
+                  const w1 = (o1.width || 100) * (o1.scaleX || 1);
+                  const h1 = (o1.height || 60) * (o1.scaleY || 1);
+                  const w2 = (o2.width || 100) * (o2.scaleX || 1);
+                  const h2 = (o2.height || 60) * (o2.scaleY || 1);
+
+                  const minDx = (w1 + w2) / 2 + 35;
+                  const minDy = (h1 + h2) / 2 + 25;
+
+                  const dx = o2.left - o1.left;
+                  const dy = o2.top - o1.top;
+
+                  if (Math.abs(dx) < minDx && Math.abs(dy) < minDy) {
+                    const shiftX = ((minDx - Math.abs(dx)) / 2) * (dx >= 0 ? 1 : -1);
+                    const shiftY = ((minDy - Math.abs(dy)) / 2) * (dy >= 0 ? 1 : -1);
+                    o1.set({ left: o1.left - shiftX, top: o1.top - shiftY });
+                    o2.set({ left: o2.left + shiftX, top: o2.top + shiftY });
+                    o1.setCoords();
+                    o2.setCoords();
+                    if (o1.isDomPlaceholder) updateDomElement(o1.id, { x: o1.left, y: o1.top });
+                    if (o2.isDomPlaceholder) updateDomElement(o2.id, { x: o2.left, y: o2.top });
+                  }
+                }
+              }
+            }
+            canvas.requestRenderAll();
+          });
+          break;
         }
       }
     } catch (err) {

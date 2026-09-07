@@ -312,6 +312,11 @@ export const useStore = create((set, get) => ({
     viewportTransform: [1, 0, 0, 1, 0, 0],
     domElements: {},
     lastUploadedImage: null,
+    attachedDocument: null,
+    setAttachedDocument: (doc) => set({
+        attachedDocument: doc,
+        lastUploadedImage: doc?.dataUrl || null
+    }),
     theme: 'light',
     isAiDrawerOpen: false,
     toggleAiDrawer: () => set((state) => ({ isAiDrawerOpen: !state.isAiDrawerOpen })),
@@ -452,7 +457,10 @@ export const useStore = create((set, get) => ({
     setClicking: (clicking) => set({ isClicking: clicking }),
     setCurrentAction: (action) => set({ currentAction: action }),
     setAgentMessage: (msg) => set({ agentMessage: msg }),
-    setLastUploadedImage: (img) => set({ lastUploadedImage: img }),
+    setLastUploadedImage: (img) => set((state) => ({
+        lastUploadedImage: img,
+        attachedDocument: img ? state.attachedDocument : null
+    })),
     toggleTheme: () => set((state) => {
         const newTheme = state.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.className = newTheme;

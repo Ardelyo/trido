@@ -50,7 +50,7 @@ export default async function handler(req: any, res: any) {
       if (!rawUri || typeof rawUri !== 'string') return null;
       const trimmed = rawUri.trim();
       if (!trimmed) return null;
-      const match = trimmed.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
+      const match = trimmed.match(/^data:([a-zA-Z0-9+.-]+\/[a-zA-Z0-9+.-]+);base64,(.*)$/s);
       if (match) {
         return { mimeType: match[1], data: match[2].trim() };
       }
@@ -241,6 +241,42 @@ CRITICAL EXECUTION RULES:
             objectId: { type: "STRING", description: "Optional object ID" },
             x: { type: "NUMBER", description: "Target X coordinate" },
             y: { type: "NUMBER", description: "Target Y coordinate" }
+          }
+        }
+      },
+      {
+        name: "modify_object",
+        description: "Modify, recolor, resize, rename, or delete ANY object or element on the canvas. Target by elementText (label) or objectId.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            elementText: { type: "STRING", description: "Text or label of the element to modify" },
+            objectId: { type: "STRING", description: "Optional ID of the object" },
+            action: { type: "STRING", enum: ["UPDATE_TEXT", "CHANGE_COLOR", "RESIZE", "DELETE", "MOVE_TO_GRID"], description: "Operation to perform" },
+            value: { type: "STRING", description: "New value: new text for UPDATE_TEXT, hex color code for CHANGE_COLOR (e.g. #10B981), dimensions (e.g. '500x400') for RESIZE, or grid position" }
+          },
+          required: ["action"]
+        }
+      },
+      {
+        name: "relayout_mindmap",
+        description: "Redesign, reorganize, and tidy up the mindmap layout to fix overlaps and make it beautiful and clean. Layout options: 'RADIAL' or 'TREE_HORIZONTAL'.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            layoutType: { type: "STRING", enum: ["RADIAL", "TREE_HORIZONTAL", "TREE_VERTICAL"], description: "Target layout style. Default RADIAL." },
+            centerX: { type: "NUMBER", description: "Optional new center X coordinate" },
+            centerY: { type: "NUMBER", description: "Optional new center Y coordinate" }
+          }
+        }
+      },
+      {
+        name: "reorganize_canvas",
+        description: "Tidy up and reorganize all elements on the canvas (shapes, widgets, notes, mindmap) to eliminate all overlaps and distribute space cleanly.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            style: { type: "STRING", enum: ["AUTO_UNTANGLE", "GRID_ALIGNED", "SPREAD_OUT"], description: "Reorganization style" }
           }
         }
       }

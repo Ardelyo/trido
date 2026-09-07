@@ -152,12 +152,13 @@ const validateAndFixToolCall = (call: any): { valid: boolean; fixed?: any; error
 
 const classifyIntent = (prompt: string): 'question' | 'creation' | 'modification' | 'navigation' => {
   const modificationWords = /ubah|edit|hapus|delete|pindah|move|update|ganti|change|geser|drag|geserkan|pindahkan|reposition|align/i;
-  const creationWords = /buat|create|gambar|draw|tambah|add|tulis|write|bikin|generate|tarik|garis|panah|arrow|line|hubungkan|connect|shape|kotak|lingkaran|segitiga/i;
+  const creationWords = /buat|create|gambar|draw|tambah|add|tulis|write|bikin|generate|tarik|garis|panah|arrow|line|hubungkan|connect|shape|kotak|lingkaran|segitiga|mindmap|diagram|peta konsep|tabel|rangkum|susun|visual/i;
   const navigationWords = /pergi|go|zoom|pan|navigasi|navigate|ke halaman|page/i;
-  const questionWords = /^(apa|bagaimana|mengapa|kapan|siapa|berapa|what|how|why|when|who)/i;
+  const questionWords = /(apa|bagaimana|mengapa|kapan|siapa|berapa|what|how|why|when|who|jelaskan|terangkan)/i;
 
-  if (modificationWords.test(prompt)) return 'modification';
+  // If prompt explicitly asks to create or draw visual artifacts, prioritize creation even if it contains questions
   if (creationWords.test(prompt)) return 'creation';
+  if (modificationWords.test(prompt)) return 'modification';
   if (navigationWords.test(prompt)) return 'navigation';
   if (questionWords.test(prompt.trim())) return 'question';
   return 'creation'; // default
@@ -211,20 +212,25 @@ const detectLessonStart = (prompt: string): ParsedLesson => {
     if (prompt.toLowerCase().includes('sma')) detectedGrade += ' SMA';
   }
   
-  // Extract topic (remove subject and grade words)
-  let topic = prompt
+  // Extract topic cleanly from the first line or sentence to prevent bloated topic strings
+  const firstLineOrSentence = prompt.split(/[\n.?!]/)[0];
+  let topic = firstLineOrSentence
     .replace(subjectPattern, '')
     .replace(gradePattern, '')
     .replace(lessonStartWords, '')
     .replace(/kelas|hari ini|materi|topik|untuk/gi, '')
     .trim();
   
-  if (!topic) topic = prompt;
+  if (!topic || topic.length < 3) {
+    topic = prompt.split('\n')[0].slice(0, 60).trim();
+  } else if (topic.length > 70) {
+    topic = topic.slice(0, 70).trim() + '...';
+  }
   
   return {
     isLessonStart: true,
     subject: detectedSubject,
-    topic,
+    topic: topic || 'Materi Pembelajaran',
     gradeLevel: detectedGrade || 'Tidak ditentukan'
   };
 };
@@ -327,7 +333,17 @@ export const useGeminiBrain = () => {
       // --- 3. AI REQUEST ---
       const intent = classifyIntent(prompt);
       const currentStoreState = useStore.getState();
-      const { lessonPlan, activeMindmapNodes } = currentStoreState;
+      const { lessonPlan, activeMindmapNodes, attachedDocument } = currentStoreState;
+
+      // Build document context if user attached a document/PDF/file
+      const docContextStr = attachedDocument ? `
+[ATTACHED FILE/DOCUMENT: ${attachedDocument.name}]
+[TYPE: ${attachedDocument.category.toUpperCase()} | SIZE: ${(attachedDocument.size / 1024).toFixed(1)} KB${attachedDocument.pageCount ? ` | PAGES: ${attachedDocument.pageCount}` : ''}${attachedDocument.wordCount ? ` | WORDS: ${attachedDocument.wordCount}` : ''}]
+--- DOCUMENT CONTENT START ---
+${attachedDocument.text.slice(0, 60000)}
+--- DOCUMENT CONTENT END ---
+NOTE: The user has attached this document. Use its factual details, structure, and text to fulfill their request (such as answering questions, generating whiteboard mindmaps, summaries, diagrams, or explanations).
+` : '';
 
       // Build lesson context string
       const lessonContextStr = lessonPlan 
@@ -354,7 +370,18 @@ To CREATE NEW mindmap: these nodes will be cleared first.
 `
         : '';
 
+      const isLongPrompt = prompt.length > 200 || prompt.includes('\n') || prompt.split(/\s+/).length > 30;
+      const longPromptDirective = isLongPrompt ? `
+[MULTI-STEP / LONG PROMPT DIRECTIVE]
+The user provided a detailed, multi-step, or structured request.
+1. Fulfill EVERY item, question, and visual requirement specified in the user message.
+2. Do not stop after the first step or truncate output; deliver both complete textual explanation and all required visual tool calls.
+3. Use clear markdown formatting with headings and bullet points.
+` : '';
+
       const enrichedPrompt = `
+${docContextStr}
+${longPromptDirective}
 ${lessonContextStr}
 ${mindmapContextStr}
 [USER INTENT: ${intent.toUpperCase()}]
@@ -372,12 +399,14 @@ ${mindmapContextStr}
         completedSteps: lessonPlan.completedSteps
       } : undefined;
 
+      const inputDocMedia = storeState.attachedDocument?.dataUrl || storeState.lastUploadedImage;
+
       const _aiResult = await generateAgentActions(
         enrichedPrompt,
         dataUrl,
         objectsJson,
         { width: br.x - tl.x, height: br.y - tl.y },
-        storeState.lastUploadedImage,
+        inputDocMedia,
         storeState.messages.slice(-8).map(m => ({ role: m.role, text: m.text })),
         { current: storeState.currentPageIndex, total: storeState.pages.length },
         storeState.domElements,
@@ -389,6 +418,7 @@ ${mindmapContextStr}
       const { textResponse, thought } = _aiResult;
 
       if (thought) addLog(`AI Thoughts: ${thought}`);
+      useStore.getState().setAttachedDocument(null);
       useStore.getState().setLastUploadedImage(null);
 
       const msg = textResponse?.trim() || synthesizeFallbackResponse(functionCalls, storeState.lessonPlan);
@@ -537,9 +567,9 @@ ${mindmapContextStr}
               );
               
               const childCount = existingChildren.length + idx;
-              const angleStep = Math.PI / 6; // 30 degrees between siblings
-              const baseAngle = -Math.PI / 3; // Start angle
-              const radius = newNode.style === 'DETAIL' ? 140 : 200;
+              const angleStep = Math.PI / 4.5;
+              const baseAngle = -Math.PI / 3;
+              let radius = newNode.style === 'DETAIL' ? 240 : 320;
               
               // Find parent's own angle from center to distribute children outward
               const parentAngle = Math.atan2(
@@ -550,11 +580,22 @@ ${mindmapContextStr}
               const childAngle = parentAngle + baseAngle + (childCount * angleStep);
               newX = parentRecord.x + radius * Math.cos(childAngle);
               newY = parentRecord.y + radius * Math.sin(childAngle);
+
+              // Anti-collision check against all existing nodes
+              let attempts = 0;
+              while (attempts < 8) {
+                const collides = existingNodes.some(ex => Math.hypot(ex.x - newX, ex.y - newY) < 220);
+                if (!collides) break;
+                radius += 70;
+                newX = parentRecord.x + radius * Math.cos(childAngle);
+                newY = parentRecord.y + radius * Math.sin(childAngle);
+                attempts++;
+              }
             } else {
               // No parent found: place near center with offset
               const angle = (idx / inputNodes.length) * Math.PI * 2;
-              newX = centerX + 250 * Math.cos(angle);
-              newY = centerY + 250 * Math.sin(angle);
+              newX = centerX + 300 * Math.cos(angle);
+              newY = centerY + 300 * Math.sin(angle);
             }
             
             const s = NODE_STYLE_CONFIG[newNode.style] || NODE_STYLE_CONFIG.SUBTOPIC;
@@ -757,16 +798,36 @@ ${mindmapContextStr}
           if (args.action === 'MOVE_TO_GRID') {
             actionType = 'DRAG_OBJECT';
             const pos = getGridPos(args.value);
-            payload = { objectId: args.objectId, toX: pos.x, toY: pos.y };
+            payload = { objectId: args.objectId, elementText: args.elementText, toX: pos.x, toY: pos.y };
           } else if (args.action === 'DELETE') {
             actionType = 'DELETE_OBJECT';
-            payload = { objectId: args.objectId };
+            payload = { objectId: args.objectId, elementText: args.elementText };
           } else if (args.action === 'UPDATE_TEXT') {
             actionType = 'MODIFY_PROPERTY';
-            payload = { objectId: args.objectId, property: 'text', value: args.value };
-          } else {
+            payload = { objectId: args.objectId, elementText: args.elementText, property: 'text', value: args.value };
+          } else if (args.action === 'CHANGE_COLOR') {
+            actionType = 'MODIFY_PROPERTY';
+            payload = { objectId: args.objectId, elementText: args.elementText, property: 'fill', value: args.value };
+          } else if (args.action === 'RESIZE') {
             actionType = 'RESIZE_OBJECT';
+            const parts = (args.value || '').split('x');
+            payload = { objectId: args.objectId, elementText: args.elementText, width: Number(parts[0]) || 400, height: Number(parts[1]) || 300 };
+          } else {
+            actionType = 'MODIFY_PROPERTY';
+            payload = { objectId: args.objectId, elementText: args.elementText, property: 'style', value: args.value };
           }
+
+        } else if (call.name === 'relayout_mindmap') {
+          actionType = 'RELAYOUT_MINDMAP';
+          payload = {
+            layoutType: args.layoutType || 'RADIAL',
+            centerX: args.centerX || centerX,
+            centerY: args.centerY || centerY
+          };
+
+        } else if (call.name === 'reorganize_canvas') {
+          actionType = 'REORGANIZE_CANVAS';
+          payload = { style: args.style || 'AUTO_UNTANGLE' };
 
         } else if (call.name === 'drag_element') {
           actionType = 'DRAG_OBJECT';

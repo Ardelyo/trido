@@ -3,6 +3,7 @@ import { CanvasManager } from './components/CanvasManager';
 import { ChatInterface } from './components/ChatInterface';
 import { useGeminiBrain } from './hooks/useGeminiBrain';
 import { FileUploadButton } from './components/FileUploadButton';
+import { AttachedDocumentBadge } from './components/AttachedDocumentBadge';
 import { ShareDialog } from './components/ShareDialog';
 import { ExportDialog } from './components/ExportDialog';
 import { ToolOverlay } from './components/ToolOverlay';
@@ -52,6 +53,7 @@ const App: React.FC = () => {
   const {
     logs, inputMode, setInputMode, messages, isAiDrawerOpen, toggleAiDrawer,
     language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage,
+    attachedDocument, setAttachedDocument,
     userName, setUserName,
     pages, currentPageIndex, switchPage, addPage, isThinking, isActing
   } = useStore();
@@ -671,51 +673,77 @@ const App: React.FC = () => {
 
                   {/* Input Bar */}
                   <div className="p-4 lg:p-5 border-t border-slate-100 bg-white/90 backdrop-blur-xl shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10 font-sans relative shrink-0">
+                    <AttachedDocumentBadge className="mb-2" />
                     <form
                       onSubmit={async (e) => {
                         e.preventDefault();
                         if (isThinking) return;
-                        if(!chatInputText.trim() && !lastUploadedImage) return;
-                        const text = chatInputText.trim() || t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.');
+                        if (!chatInputText.trim() && !attachedDocument && !lastUploadedImage) return;
+                        const defaultText = attachedDocument
+                          ? (attachedDocument.category === 'image'
+                              ? t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.')
+                              : t('pleaseAnalyzeDocument', 'Tolong analisa dokumen ini dan jelaskan poin-poin pentingnya di whiteboard.'))
+                          : (lastUploadedImage ? t('pleaseAnalyzeImage', 'Tolong analisa gambar ini.') : '');
+                        const text = chatInputText.trim() || defaultText;
                         setChatInputText('');
                         useStore.getState().addMessage({ role: 'user', text });
                         await processUserPrompt(text, canvasRef);
                       }}
-                      className="flex items-center gap-2 w-full border-[1.5px] border-slate-200 rounded-3xl p-1.5 bg-slate-50/50 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-inner"
+                      className="flex items-end gap-2 w-full border-[1.5px] border-slate-200 rounded-3xl p-1.5 bg-slate-50/50 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-inner"
                     >
-                        <FileUploadButton
-                          className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 ml-0.5 active:scale-95"
-                          icon={<Plus size={20} />}
-                          title={t('uploadFileOrImage', 'Unggah file / gambar')}
-                          disabled={isThinking}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            useStore.getState().toggleAiDrawer();
-                            setTimeout(() => window.dispatchEvent(new Event('start-mic')), 300);
-                          }}
-                          disabled={isThinking}
-                          className={`text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 active:scale-95 ${isThinking ? 'opacity-40 pointer-events-none' : ''}`}
-                          title={t('switchToVoice', 'Beralih ke mode suara')}
-                        >
-                          <Mic size={20} />
-                        </button>
-                        <input
-                          type="text"
+                        <div className="flex items-center pb-0.5">
+                          <FileUploadButton
+                            className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 ml-0.5 active:scale-95"
+                            icon={<Plus size={20} />}
+                            title={t('uploadFileOrImage', 'Unggah file / dokumen / gambar')}
+                            disabled={isThinking}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              useStore.getState().toggleAiDrawer();
+                              setTimeout(() => window.dispatchEvent(new Event('start-mic')), 300);
+                            }}
+                            disabled={isThinking}
+                            className={`text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 active:scale-95 ${isThinking ? 'opacity-40 pointer-events-none' : ''}`}
+                            title={t('switchToVoice', 'Beralih ke mode suara')}
+                          >
+                            <Mic size={20} />
+                          </button>
+                        </div>
+                        <textarea
                           value={chatInputText}
-                          onChange={(e) => setChatInputText(e.target.value)}
+                          onChange={(e) => {
+                            setChatInputText(e.target.value);
+                            e.target.style.height = 'auto';
+                            e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              e.currentTarget.form?.requestSubmit();
+                            }
+                          }}
+                          rows={1}
                           disabled={isThinking}
-                          placeholder={isThinking ? t('tridoIsThinking', 'Trido sedang berpikir...') : t('askSomething', 'Tanya sesuatu...')}
-                          className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-slate-800 placeholder-slate-400 h-10 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          placeholder={isThinking 
+                            ? t('tridoIsThinking', 'Trido sedang berpikir...') 
+                            : (attachedDocument 
+                                ? (attachedDocument.category === 'pdf' 
+                                    ? 'Tanya tentang PDF ini...' 
+                                    : 'Tanya tentang dokumen ini...') 
+                                : t('askSomething', 'Tanya sesuatu atau masukkan instruksi lengkap...'))}
+                          className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-slate-800 placeholder-slate-400 px-2 py-2 resize-none max-h-40 min-h-[38px] leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed overflow-y-auto"
                         />
-                         <button
-                           type="submit"
-                           disabled={isThinking || (!chatInputText.trim() && !lastUploadedImage)}
-                           className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${isThinking ? 'bg-slate-100 text-slate-400 scale-95 pointer-events-none opacity-50' : (chatInputText.trim() || lastUploadedImage ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none')}`}
-                         >
-                           <Send size={18} />
-                         </button>
+                         <div className="pb-0.5">
+                           <button
+                             type="submit"
+                             disabled={isThinking || (!chatInputText.trim() && !attachedDocument && !lastUploadedImage)}
+                             className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${isThinking ? 'bg-slate-100 text-slate-400 scale-95 pointer-events-none opacity-50' : (chatInputText.trim() || attachedDocument || lastUploadedImage ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none')}`}
+                           >
+                             <Send size={18} />
+                           </button>
+                         </div>
                     </form>
                   </div>
                 </motion.aside>
