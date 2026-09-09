@@ -3,6 +3,8 @@
   "private": false,
   "license": "MIT",
   "version": "1.0.0",
+  "author": "Ardellio Satria Anindito",
+  "copyright": "Copyright by Ardellio Satria Anindito",
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
@@ -24,7 +26,7 @@
   "build": {
     "appId": "ai.trido.classroom",
     "productName": "Trido",
-    "copyright": "Copyright © 2025 Trido",
+    "copyright": "Copyright by Ardellio Satria Anindito",
     "directories": {
       "output": "dist-release",
       "buildResources": "public"
