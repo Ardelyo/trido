@@ -8,7 +8,7 @@ export interface AiStatus {
   online: boolean;
   reason?: string;
   checkedAt?: number;
-  ollamaStatus?: { online: boolean; hasModel: boolean; models: string[] };
+  ollamaStatus?: { online: boolean; hasModel: boolean; models: string[]; activeModel?: string };
   geminiStatus?: { online: boolean; reason: string };
   vertexStatus?: { online: boolean; reason: string };
 }

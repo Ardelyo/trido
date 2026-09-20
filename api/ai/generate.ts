@@ -65,7 +65,15 @@ export default async function handler(req: any, res: any) {
       : '  (Canvas is currently empty)';
 
     const domContext = domElements && Object.keys(domElements).length > 0
-      ? Object.entries(domElements).map(([id, d]: any) => `  - [Widget ID: ${id}] ${d.componentType || 'Widget'} at X=${d.x || 0}, Y=${d.y || 0} title="${d.config?.title || d.title || ''}"`).join('\n')
+      ? Object.entries(domElements).map(([id, d]: any) => {
+          const cfg = d.config || {};
+          let detail = '';
+          if (d.componentType === 'MERMAID_DIAGRAM' || d.componentType === 'MARKMAP_MINDMAP') {
+            const code = cfg.code ? ` code="${cfg.code.replace(/\n/g, ' ')}"` : cfg.markdown ? ` markdown="${cfg.markdown.replace(/\n/g, ' ')}"` : '';
+            detail = `${code}`;
+          }
+          return `  - [Widget ID: ${id}] ${d.componentType || 'Widget'} at X=${d.x || 0}, Y=${d.y || 0} title="${cfg.title || d.title || ''}"${detail}`;
+        }).join('\n')
       : '  (None)';
 
     const systemInstruction = `You are Trido, an autonomous agentic interactive whiteboard and pedagogical AI.
@@ -339,12 +347,12 @@ CRITICAL EXECUTION RULES:
       },
       {
         name: "render_mermaid",
-        description: "Render a clean science flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax.",
+        description: "Render an interactive mindmap, flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For mindmaps, use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Fotosintesis))\\n    Reaksi Terang\\n      Tilakoid\\n    Siklus Calvin').",
         parameters: {
           type: "OBJECT",
           properties: {
             title: { type: "STRING", description: "Diagram title" },
-            code: { type: "STRING", description: "Mermaid syntax code, e.g. flowchart TD or mindmap or sequenceDiagram" },
+            code: { type: "STRING", description: "Mermaid syntax code, e.g. mindmap or flowchart TD or sequenceDiagram" },
             gridPosition: {
               type: "STRING",
               enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]

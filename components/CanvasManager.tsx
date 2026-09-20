@@ -1,11 +1,15 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { getStroke } from 'perfect-freehand';
 import { useStore } from '../store';
 import { useAgentProcessor } from '../hooks/useAgentProcessor';
 import { AgentCursor } from './AgentCursor';
 import { DomOverlay } from './DomOverlay';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from '../utils/toast';
+import { parseDocumentFile } from '../utils/documentParser';
+import { markdownToMermaidMindmap } from './MermaidTool';
+import { UploadCloud, FileText, Image as ImageIcon, Sparkles } from 'lucide-react';
 
 interface CanvasManagerProps {
   onCanvasReady: (canvas: any) => void;
@@ -15,6 +19,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<any>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   
   const addLog = useStore(state => state.addLog);
   const setViewport = useStore(state => state.setViewport);
@@ -550,6 +555,35 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     // Set initial center coordinates
     const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     
+    // Expose snapshot function on window for clean persistence
+    const snapshotCurrentCanvas = () => {
+      if (!canvas) return;
+      const prevState = canvas.toJSON(['id', 'zIndex', 'isDomPlaceholder']);
+      const prevDom = useStore.getState().domElements;
+      const prevMindmap = useStore.getState().activeMindmapNodes;
+      try {
+        const previewUrl = canvas.toDataURL({ format: 'png', multiplier: 0.2 });
+        useStore.getState().updatePageData(useStore.getState().currentPageIndex, prevState, prevDom, previewUrl, prevMindmap);
+      } catch (e) {
+        useStore.getState().updatePageData(useStore.getState().currentPageIndex, prevState, prevDom, undefined, prevMindmap);
+      }
+    };
+
+    (window as any).__snapshotCanvas = snapshotCurrentCanvas;
+
+    // Debounced continuous auto-save whenever canvas content changes
+    let autoSaveTimer: any = null;
+    const triggerDebouncedSnapshot = () => {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => {
+        snapshotCurrentCanvas();
+      }, 1200);
+    };
+
+    canvas.on('object:modified', triggerDebouncedSnapshot);
+    canvas.on('object:added', triggerDebouncedSnapshot);
+    canvas.on('object:removed', triggerDebouncedSnapshot);
+
     onCanvasReady(fabricRef);
     addLog('Pemetaan kanvas aktif.');
 
@@ -557,6 +591,11 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
       clearTimeout(resizeTimeout);
+      clearTimeout(autoSaveTimer);
+      delete (window as any).__snapshotCanvas;
+      canvas.off('object:modified', triggerDebouncedSnapshot);
+      canvas.off('object:added', triggerDebouncedSnapshot);
+      canvas.off('object:removed', triggerDebouncedSnapshot);
       canvas.dispose();
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('orientationchange', resizeCanvas);
@@ -811,11 +850,254 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     canvas.requestRenderAll();
   }, [brushColor, fontFamily, fontSize]);
 
+  // Handle Drag & Drop Ingestion
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDraggingOver) setIsDraggingOver(true);
+  }, [isDraggingOver]);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+
+    if (!fabricRef.current || !containerRef.current) return;
+    const canvas = fabricRef.current;
+
+    // Convert drop coordinates from screen to canvas world coordinates
+    const rect = containerRef.current.getBoundingClientRect();
+    const screenX = e.clientX - rect.left;
+    const screenY = e.clientY - rect.top;
+    const invVpt = window.fabric.util.invertTransform(canvas.viewportTransform);
+    const worldPos = window.fabric.util.transformPoint({ x: screenX, y: screenY }, invVpt);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      for (const file of files) {
+        const type = file.type.toLowerCase();
+        const ext = file.name.split('.').pop()?.toLowerCase() || '';
+
+        // 1. Images
+        if (type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext)) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const dataUrl = ev.target?.result as string;
+            window.fabric.Image.fromURL(dataUrl, (img: any) => {
+              const maxDim = 550;
+              let scale = 1;
+              if (img.width > maxDim || img.height > maxDim) {
+                scale = Math.min(maxDim / img.width, maxDim / img.height);
+              }
+              img.set({
+                left: worldPos.x,
+                top: worldPos.y,
+                originX: 'center',
+                originY: 'center',
+                scaleX: scale,
+                scaleY: scale,
+                id: `img_${Date.now()}`
+              });
+              canvas.add(img);
+              canvas.setActiveObject(img);
+              canvas.requestRenderAll();
+              toast.success(`Gambar "${file.name}" ditambahkan.`);
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+        // 2. Markdown or Text (Mermaid Mindmap or Notes)
+        else if (type.includes('markdown') || type.includes('text') || ['md', 'txt', 'mmd'].includes(ext)) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const rawText = (ev.target?.result as string) || '';
+            const isMindmapOrOutline = rawText.includes('#') || rawText.includes('- ') || rawText.includes('mindmap') || rawText.includes('flowchart');
+            const code = isMindmapOrOutline
+              ? (rawText.trim().startsWith('mindmap') || rawText.trim().startsWith('flowchart')
+                  ? rawText.trim()
+                  : markdownToMermaidMindmap(rawText, file.name.replace(/\.[^/.]+$/, '')))
+              : rawText;
+
+            const id = `mermaid_${Date.now()}`;
+            const width = 720;
+            const height = 560;
+            const rect = new window.fabric.Rect({
+              left: worldPos.x, top: worldPos.y, width, height,
+              fill: 'rgba(255,255,255,0.01)',
+              stroke: '#6366f1', strokeWidth: 1,
+              originX: 'center', originY: 'center',
+              id, isDomPlaceholder: true
+            });
+            canvas.add(rect);
+            updateDomElement(id, {
+              id,
+              html: '<div>MERMAID</div>',
+              x: worldPos.x,
+              y: worldPos.y,
+              width,
+              height,
+              scaleX: 1,
+              scaleY: 1,
+              rotation: 0,
+              zIndex: 10,
+              componentType: 'MERMAID_DIAGRAM',
+              config: {
+                title: file.name.replace(/\.[^/.]+$/, '') || 'Peta Konsep',
+                code
+              }
+            });
+            canvas.setActiveObject(rect);
+            canvas.requestRenderAll();
+            toast.success(`Peta konsep Mermaid dibuat dari "${file.name}".`);
+          };
+          reader.readAsText(file);
+        }
+        // 3. Documents (PDF, DOCX)
+        else if (['pdf', 'docx'].includes(ext)) {
+          try {
+            const doc = await parseDocumentFile(file);
+            useStore.getState().setAttachedDocument(doc);
+            const id = `doc_${Date.now()}`;
+            const width = 640;
+            const height = 500;
+            const rect = new window.fabric.Rect({
+              left: worldPos.x, top: worldPos.y, width, height,
+              fill: 'rgba(255,255,255,0.01)',
+              stroke: '#3b82f6', strokeWidth: 1,
+              originX: 'center', originY: 'center',
+              id, isDomPlaceholder: true
+            });
+            canvas.add(rect);
+            updateDomElement(id, {
+              id,
+              html: '<div>DOCUMENT</div>',
+              x: worldPos.x,
+              y: worldPos.y,
+              width,
+              height,
+              scaleX: 1,
+              scaleY: 1,
+              rotation: 0,
+              zIndex: 10,
+              componentType: 'DOCUMENT_PAGE',
+              config: {
+                title: doc.name,
+                markdown: `# ${doc.name}\n\n${doc.text.slice(0, 3000)}${doc.text.length > 3000 ? '\n\n*(Teks dipersingkat)*' : ''}`
+              }
+            });
+            canvas.setActiveObject(rect);
+            canvas.requestRenderAll();
+            toast.success(`Dokumen "${doc.name}" siap di kanvas.`);
+          } catch (err) {
+            toast.error(`Gagal membaca dokumen: ${(err as any)?.message}`);
+          }
+        }
+      }
+      return;
+    }
+
+    // Text drag & drop
+    const rawText = e.dataTransfer.getData('text/plain');
+    if (rawText && rawText.trim()) {
+      const isMindmapOrOutline = rawText.includes('#') || rawText.includes('- ') || rawText.includes('mindmap');
+      if (isMindmapOrOutline) {
+        const id = `mermaid_${Date.now()}`;
+        const width = 720;
+        const height = 560;
+        const code = rawText.trim().startsWith('mindmap')
+          ? rawText.trim()
+          : markdownToMermaidMindmap(rawText, 'Catatan Peta Konsep');
+        const rect = new window.fabric.Rect({
+          left: worldPos.x, top: worldPos.y, width, height,
+          fill: 'rgba(255,255,255,0.01)',
+          stroke: '#6366f1', strokeWidth: 1,
+          originX: 'center', originY: 'center',
+          id, isDomPlaceholder: true
+        });
+        canvas.add(rect);
+        updateDomElement(id, {
+          id,
+          html: '<div>MERMAID</div>',
+          x: worldPos.x,
+          y: worldPos.y,
+          width,
+          height,
+          scaleX: 1,
+          scaleY: 1,
+          rotation: 0,
+          zIndex: 10,
+          componentType: 'MERMAID_DIAGRAM',
+          config: { title: 'Peta Konsep', code }
+        });
+        canvas.setActiveObject(rect);
+        canvas.requestRenderAll();
+        toast.success('Peta konsep Mermaid dibuat dari teks.');
+      } else {
+        const textObj = new window.fabric.IText(rawText.trim(), {
+          left: worldPos.x,
+          top: worldPos.y,
+          fontFamily,
+          fontSize,
+          fill: brushColor,
+          id: `text_${Date.now()}`
+        });
+        canvas.add(textObj);
+        canvas.setActiveObject(textObj);
+        canvas.requestRenderAll();
+        toast.success('Teks ditambahkan ke kanvas.');
+      }
+    }
+  }, [fontFamily, fontSize, brushColor, updateDomElement]);
+
   return (
-    <div ref={containerRef} className="absolute inset-0 overflow-hidden bg-transparent rounded-2xl border-none">
+    <div
+      ref={containerRef}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className="absolute inset-0 overflow-hidden bg-transparent rounded-2xl border-none"
+    >
       <canvas ref={canvasRef} className="block" />
       <DomOverlay />
       <AgentCursor />
+
+      {/* Drag & Drop Visual Dropzone Overlay */}
+      <AnimatePresence>
+        {isDraggingOver && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            className="absolute inset-4 z-50 pointer-events-none rounded-3xl border-3 border-dashed border-indigo-500 bg-indigo-50/80 backdrop-blur-md flex flex-col items-center justify-center gap-4 text-indigo-950 shadow-2xl"
+          >
+            <div className="w-16 h-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 animate-bounce">
+              <UploadCloud size={32} />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-xl font-extrabold text-indigo-900 font-sans">
+                Lepaskan File di Kanvas
+              </h3>
+              <p className="text-xs text-indigo-700 font-medium max-w-sm">
+                Tarik gambar (.png, .jpg), dokumen (.pdf, .docx), atau catatan (.md) untuk ditaruh langsung ke posisi kursor.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] font-bold text-indigo-600 bg-white/80 px-4 py-1.5 rounded-full border border-indigo-200">
+              <span className="flex items-center gap-1"><ImageIcon size={12} /> Gambar</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><Sparkles size={12} /> Mermaid Mindmap</span>
+              <span>•</span>
+              <span className="flex items-center gap-1"><FileText size={12} /> Dokumen</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

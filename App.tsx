@@ -100,12 +100,54 @@ const App: React.FC = () => {
 
   const { processUserPrompt } = useGeminiBrain();
   const aiStatus = useAiStatus();
+  const [isBrowserOnline, setIsBrowserOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsBrowserOnline(true);
+    const handleOffline = () => setIsBrowserOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const getStatusConfig = () => {
     const storeState = useStore.getState();
+    const isUsingOllama = aiStatus.mode === 'ollama' || storeState.aiPreference === 'ollama';
+
+    // 1. Explicit Ollama mode OR browser is offline but local Ollama is ready
+    if (isUsingOllama || (!isBrowserOnline && aiStatus.ollamaStatus?.online && aiStatus.ollamaStatus?.hasModel)) {
+      const activeModel = storeState.selectedOllamaModel || aiStatus.ollamaStatus?.activeModel || aiStatus.model || 'gemma4:e2b';
+      return {
+        mode: 'ollama' as const,
+        text: !isBrowserOnline ? 'Mode Offline (Ollama Aktif)' : t('modeLuring', 'Mode Offline (Ollama)'),
+        detail: `Ollama: ${activeModel} • Tanpa Internet & 100% Privat`,
+        color: 'text-emerald-800 bg-emerald-100/90 border-emerald-300',
+        dot: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]',
+        statusColor: 'text-emerald-600',
+        action: null
+      };
+    }
+
+    // 2. Browser is offline and local Ollama is NOT running / ready
+    if (!isBrowserOnline) {
+      return {
+        mode: 'unavailable' as const,
+        text: t('modeOfflineWarning', 'Offline (Gunakan Opsi Ollama)'),
+        detail: 'Internet terputus. Klik di sini untuk mengaktifkan opsi Ollama lokal di laptop.',
+        color: 'text-amber-800 bg-amber-100/90 border-amber-300',
+        dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse',
+        statusColor: 'text-amber-600',
+        action: 'OPEN_SETTINGS'
+      };
+    }
+
     if (aiStatus.mode === 'gemini') {
       const activeModel = storeState.selectedGeminiModel || (aiStatus.model === 'gemini-3.7-flash' ? 'gemini-3.8-flash' : aiStatus.model) || 'gemini-3.8-flash';
       return {
+        mode: 'gemini' as const,
         text: t('modeCloud', 'Mode Cloud'),
         detail: `Gemini: ${activeModel}`,
         color: 'text-blue-700 bg-blue-100/80 border-blue-200/50',
@@ -117,6 +159,7 @@ const App: React.FC = () => {
     if (aiStatus.mode === 'vertex') {
       const activeModel = storeState.selectedVertexModel || (aiStatus.model === 'gemini-3.7-flash' ? 'gemini-3.8-flash' : aiStatus.model) || 'gemini-3.8-flash';
       return {
+        mode: 'vertex' as const,
         text: t('modeCloudVertex', 'Mode Cloud (Vertex AI)'),
         detail: `Vertex: ${activeModel}`,
         color: 'text-purple-700 bg-purple-100/80 border-purple-200/50',
@@ -125,20 +168,11 @@ const App: React.FC = () => {
         action: null
       };
     }
-    if (aiStatus.mode === 'ollama') {
-      return {
-        text: t('modeLuring', 'Mode Luring'),
-        detail: `Ollama lokal: ${aiStatus.model}`,
-        color: 'text-emerald-700 bg-emerald-100/80 border-emerald-200/50',
-        dot: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]',
-        statusColor: 'text-emerald-600',
-        action: null
-      };
-    }
 
     // Unavailable cases
     if (aiStatus.ollamaStatus?.online && !aiStatus.ollamaStatus?.hasModel) {
       return {
+        mode: 'unavailable' as const,
         text: t('localModelMissing', 'Model Lokal Hilang'),
         detail: t('localModelMissingDetail', 'Ollama aktif tapi model belum diunduh'),
         color: 'text-amber-700 bg-amber-100/80 border-amber-200/50',
@@ -149,12 +183,13 @@ const App: React.FC = () => {
     }
 
     return {
+      mode: 'unavailable' as const,
       text: t('aiUnavailable', 'AI Tidak Tersedia'),
       detail: aiStatus.reason === 'invalid_key' ? t('invalidApiKey', 'Kunci API perlu diperiksa') : aiStatus.reason === 'missing_project' ? t('missingProject', 'Project ID Vertex belum diatur') : t('notConnected', 'Gemini/Ollama/Vertex belum terhubung'),
       color: 'text-amber-700 bg-amber-100/80 border-amber-200/50',
       dot: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]',
       statusColor: 'text-amber-600',
-      action: null
+      action: 'OPEN_SETTINGS'
     };
   };
 
@@ -262,7 +297,7 @@ const App: React.FC = () => {
 
             {/* Mode Indicator (Center) */}
             <div className="flex-none hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <AiStatusBadge status={statusConfig} onPullModel={pullOllamaModel} />
+              <AiStatusBadge status={statusConfig} onPullModel={pullOllamaModel} onClick={() => setIsSettingsOpen(true)} />
             </div>
 
             <div className="flex flex-1 justify-end items-center gap-2 lg:gap-3">

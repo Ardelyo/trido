@@ -52,6 +52,110 @@ const synthesizeFallbackResponse = (
 };
 
 // ============================================================================
+// JEV SYSTEM 1 REFLEX CLASSIFIER (<15ms INSTANT DECISION ENGINE)
+// ============================================================================
+export interface JevReflexResult {
+  handled: boolean;
+  message?: string;
+  actionTaken?: string;
+  lockIntent?: 'modification' | 'creation' | 'question';
+  targetObjectId?: string;
+}
+
+export function evaluateJevSystemOne(
+  prompt: string,
+  storeState: any,
+  canvas: any
+): JevReflexResult {
+  const norm = prompt.toLowerCase().trim();
+
+  // 1. Instant Reflex Handlers (<15ms, zero LLM roundtrip)
+  if (/^(buka|tampilkan|nyalakan|start|show|open)\s+(timer|penghitung waktu|stopwatch)/i.test(norm)) {
+    if (!storeState.isTimerOpen) storeState.toggleTimer();
+    return { handled: true, actionTaken: 'TOGGLE_TIMER', message: '⏱️ Timer telah dibuka seketika oleh Jev-1.' };
+  }
+  if (/^(tutup|close|sembunyikan|hide)\s+(timer|stopwatch)/i.test(norm)) {
+    if (storeState.isTimerOpen) storeState.toggleTimer();
+    return { handled: true, actionTaken: 'CLOSE_TIMER', message: '⏱️ Timer telah ditutup.' };
+  }
+  if (/^(buka|tampilkan|hitung|open)\s+(kalkulator|calculator)/i.test(norm)) {
+    if (!storeState.isCalculatorOpen) storeState.toggleCalculator();
+    return { handled: true, actionTaken: 'TOGGLE_CALCULATOR', message: '🧮 Kalkulator telah dibuka oleh Jev-1.' };
+  }
+  if (/^(tutup|close)\s+(kalkulator|calculator)/i.test(norm)) {
+    if (storeState.isCalculatorOpen) storeState.toggleCalculator();
+    return { handled: true, actionTaken: 'CLOSE_CALCULATOR', message: '🧮 Kalkulator ditutup.' };
+  }
+  if (/^(buka|tampilkan|open)\s+(catatan|notes|note)/i.test(norm)) {
+    if (!storeState.isNotesOpen) storeState.toggleNotes();
+    return { handled: true, actionTaken: 'TOGGLE_NOTES', message: '📝 Catatan dibuka seketika.' };
+  }
+  if (/^(buka|tampilkan|open)\s+(absensi|presensi|kehadiran|roster)/i.test(norm)) {
+    if (!storeState.isAttendanceOpen) storeState.toggleAttendance();
+    return { handled: true, actionTaken: 'TOGGLE_ATTENDANCE', message: '📋 Daftar presensi dibuka oleh Jev-1.' };
+  }
+  if (/^(buka|tampilkan|open)\s+(todo|daftar tugas|agenda)/i.test(norm)) {
+    if (!storeState.isTodoListOpen) storeState.toggleTodoList();
+    return { handled: true, actionTaken: 'TOGGLE_TODOLIST', message: '✅ Agenda kelas dibuka.' };
+  }
+  if (/^(buka|putar|spin|roll)\s+(roda|spin wheel|wheel|roda keberuntungan)/i.test(norm)) {
+    storeState.toggleSpinWheel();
+    return { handled: true, actionTaken: 'TOGGLE_SPIN_WHEEL', message: '🎡 Roda acak siswa dibuka oleh Jev-1.' };
+  }
+  if (/^(buka|tampilkan)\s+(papan skor|scoreboard|skor)/i.test(norm)) {
+    storeState.toggleScoreboard();
+    return { handled: true, actionTaken: 'TOGGLE_SCOREBOARD', message: '🏆 Papan skor dibuka.' };
+  }
+  if (/^(undo|batalkan|kembali)/i.test(norm)) {
+    if (typeof (window as any).__tridoUndo === 'function') (window as any).__tridoUndo();
+    return { handled: true, actionTaken: 'UNDO', message: '↩️ Aksi terakhir dibatalkan oleh Jev-1.' };
+  }
+  if (/^(redo|ulangi)/i.test(norm)) {
+    if (typeof (window as any).__tridoRedo === 'function') (window as any).__tridoRedo();
+    return { handled: true, actionTaken: 'REDO', message: '↪️ Aksi diulangi oleh Jev-1.' };
+  }
+  if (/^(zoom in|perbesar|zoom dekat)/i.test(norm)) {
+    if (canvas) {
+      canvas.setZoom(Math.min(canvas.getZoom() * 1.25, 4));
+      canvas.requestRenderAll();
+    }
+    return { handled: true, actionTaken: 'ZOOM_IN', message: '🔍 Zoom diperbesar oleh Jev-1.' };
+  }
+  if (/^(zoom out|perkecil|zoom jauh)/i.test(norm)) {
+    if (canvas) {
+      canvas.setZoom(Math.max(canvas.getZoom() * 0.8, 0.2));
+      canvas.requestRenderAll();
+    }
+    return { handled: true, actionTaken: 'ZOOM_OUT', message: '🔍 Zoom diperkecil oleh Jev-1.' };
+  }
+  if (/^(reset zoom|fit view|pusatkan|reset kanvas)/i.test(norm)) {
+    if (canvas) {
+      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+      canvas.requestRenderAll();
+    }
+    return { handled: true, actionTaken: 'RESET_ZOOM', message: '🎯 Tampilan kanvas dipusatkan oleh Jev-1.' };
+  }
+
+  // 2. In-Place Target Element Locking for System 2
+  const isModification = /ubah|ganti|edit|tambah cabang|subtopik|perbarui|update|revisi/i.test(norm);
+  if (isModification) {
+    const doms = storeState.domElements || {};
+    const diagrams = Object.entries(doms).filter(([_, el]: any) => {
+      const ct = (el.componentType || '').toLowerCase();
+      return ct.includes('mermaid') || ct.includes('markmap');
+    });
+    const targetId = diagrams.length > 0 ? diagrams[diagrams.length - 1][0] : undefined;
+    return {
+      handled: false,
+      lockIntent: 'modification',
+      targetObjectId: targetId
+    };
+  }
+
+  return { handled: false };
+}
+
+// ============================================================================
 // TOOL CALL VALIDATION & AUTO-CORRECTION
 // ============================================================================
 interface ToolCallError {
@@ -264,6 +368,30 @@ export const useGeminiBrain = () => {
     const canvas = canvasRef.current;
     const storeState = useStore.getState();
 
+    // ── JEV SYSTEM 1 REFLEX GATE (Instant Classifier <15ms) ───────────
+    const isJevActive = storeState.experimentalConfig?.enabled && storeState.experimentalConfig?.jevModeEnabled !== false;
+    let jevLockedTargetId: string | undefined = undefined;
+
+    if (isJevActive) {
+      const jevResult = evaluateJevSystemOne(prompt, storeState, canvas);
+      if (jevResult.handled) {
+        sounds.play('pop');
+        const reply = jevResult.message || 'Perintah instan telah dijalankan.';
+        addMessage({
+          role: 'model',
+          text: reply
+        });
+        setAgentMessage(reply);
+        addLog(`⚡ Jev System 1 Reflex: ${jevResult.actionTaken} (<15ms)`);
+        isProcessingGlobal = false;
+        isProcessingRef.current = false;
+        return;
+      }
+      if (jevResult.lockIntent === 'modification') {
+        jevLockedTargetId = jevResult.targetObjectId;
+      }
+    }
+
     setThinking(true);
     sounds.play('thinking');
     addLog(`Pemindaian neural dimulai...`);
@@ -389,11 +517,18 @@ The user provided a detailed, multi-step, or structured request.
 3. Use clear markdown formatting with headings and bullet points.
 ` : '';
 
+      const jevDirective = jevLockedTargetId ? `
+[JEV SYSTEM 1 DECISION: IN-PLACE MUTATION ONLY]
+Target Component ID: "${jevLockedTargetId}".
+DO NOT create a new widget. Call update_component targeting "${jevLockedTargetId}" with the updated code.
+` : '';
+
       const enrichedPrompt = `
 ${docContextStr}
 ${longPromptDirective}
 ${lessonContextStr}
 ${mindmapContextStr}
+${jevDirective}
 [USER INTENT: ${intent.toUpperCase()}]
 [USER MESSAGE]: ${prompt}
 `.trim();
@@ -796,13 +931,16 @@ ${mindmapContextStr}
           actionType = 'RENDER_HTML';
           const pos = getGridPos(args.gridPosition || 'CENTER');
           payload = {
-            html: '<div>MARKMAP</div>',
+            html: '<div>MERMAID</div>',
             x: pos.x,
             y: pos.y,
-            width: 700,
-            height: 550,
-            componentType: 'MARKMAP_MINDMAP',
-            config: { title: args.title || 'Peta Konsep Markmap', markdown: args.markdown }
+            width: 720,
+            height: 560,
+            componentType: 'MERMAID_DIAGRAM',
+            config: {
+              title: args.title || 'Peta Konsep Mermaid',
+              markdown: args.markdown
+            }
           };
 
         } else if (call.name === 'render_mermaid') {
@@ -812,10 +950,10 @@ ${mindmapContextStr}
             html: '<div>MERMAID</div>',
             x: pos.x,
             y: pos.y,
-            width: 700,
-            height: 550,
+            width: 720,
+            height: 560,
             componentType: 'MERMAID_DIAGRAM',
-            config: { title: args.title || 'Diagram Alur Mermaid', code: args.code }
+            config: { title: args.title || 'Diagram Mermaid', code: args.code }
           };
 
         } else if (call.name === 'mark_attendance') {

@@ -262,7 +262,8 @@ export const defaultExperimentalConfig: ExperimentalConfig = {
   smartShapesEnabled: true,
   attendanceEnabled: true,
   breakTheLimitAi: true,
-  autoTaskAutomation: true
+  autoTaskAutomation: true,
+  jevModeEnabled: true
 };
 
 const getInitialExperimentalConfig = (): ExperimentalConfig => {
@@ -313,7 +314,16 @@ export const useStore = create<AppStore>((set, get) => ({
   },
   
   saveCurrentSession: async (title) => {
-    const { currentSessionId, pages, domElements, sessions } = get();
+    // Snapshot current active canvas state if running in browser
+    if (typeof window !== 'undefined' && typeof (window as any).__snapshotCanvas === 'function') {
+      try {
+        (window as any).__snapshotCanvas();
+      } catch (err) {
+        console.warn('Canvas snapshot before save failed:', err);
+      }
+    }
+
+    const { currentSessionId, pages, domElements, sessions, messages, lessonPlan } = get();
     const id = currentSessionId || Date.now().toString();
     const now = Date.now();
     
@@ -335,7 +345,9 @@ export const useStore = create<AppStore>((set, get) => ({
       createdAt: currentSessionId ? (sessions.find(s => s.id === currentSessionId)?.createdAt || now) : now,
       thumbnail: pages[0]?.previewDataUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=500&q=80',
       sizeBytes: estimateSessionSize(pages), // ⚡ INSTANT
-      pages: pages
+      pages: pages,
+      messages: messages,
+      lessonPlan: lessonPlan
     };
     
     await saveSessionToDb(session);
@@ -365,8 +377,11 @@ export const useStore = create<AppStore>((set, get) => ({
         currentPageIndex: 0,
         domElements: initialPage?.dom || {},
         isHistoryOpen: false,
-        lessonPlan: null,
-        activeMindmapNodes: initialPage?.mindmapNodes || []
+        lessonPlan: session.lessonPlan || null,
+        activeMindmapNodes: initialPage?.mindmapNodes || [],
+        messages: session.messages && session.messages.length > 0 
+          ? session.messages 
+          : [{ role: 'model', text: `Memuat sesi "${session.title}". Ada yang bisa saya bantu?` }]
       });
       // the canvas engine will need to detect this change and load
     }
@@ -423,7 +438,10 @@ export const useStore = create<AppStore>((set, get) => ({
         domElements: initialDom,
         activeMindmapNodes: initialMindmap,
         isHistoryOpen: false,
-        lessonPlan: null
+        lessonPlan: data.lessonPlan || null,
+        messages: Array.isArray(data.messages) && data.messages.length > 0
+          ? data.messages
+          : [{ role: 'model', text: 'Sesi papan berhasil diimpor.' }]
       });
 
       const title = data.title || `Papan Impor ${new Date().toLocaleDateString('id-ID')}`;

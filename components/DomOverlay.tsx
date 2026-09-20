@@ -216,9 +216,8 @@ export const DomOverlay: React.FC = () => {
         case 'FLASHCARD':
           return <FlashcardTool config={el.config} />;
         case 'MARKMAP_MINDMAP':
-          return <MarkmapTool config={el.config} />;
         case 'MERMAID_DIAGRAM':
-          return <MermaidTool config={el.config} />;
+          return <MermaidTool id={el.id} config={el.config} />;
         case 'INTERACTIVE_APP':
           return <AppBuilderTool config={el.config} />;
         case 'QUIZ_APP':

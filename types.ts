@@ -56,6 +56,7 @@ export interface ExperimentalConfig {
   attendanceEnabled: boolean;
   breakTheLimitAi: boolean;
   autoTaskAutomation: boolean;
+  jevModeEnabled: boolean;
 }
 
 export type CanvasJson = Record<string, unknown> | unknown[];
@@ -109,6 +110,8 @@ export interface BoardSession {
   thumbnail: string;
   sizeBytes: number;
   pages: PageState[];
+  messages?: ChatMessage[];
+  lessonPlan?: LessonPlan | null;
 }
 
 export interface AgentAction {

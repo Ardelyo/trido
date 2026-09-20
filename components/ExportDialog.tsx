@@ -205,7 +205,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
       exportedAt: Date.now(),
       title: `Trido Board Backup - ${new Date().toLocaleDateString('id-ID')}`,
       pages: updatedPages,
-      currentPageIndex
+      currentPageIndex,
+      messages: useStore.getState().messages,
+      lessonPlan: useStore.getState().lessonPlan
     };
 
     downloadFile(JSON.stringify(exportData, null, 2), `trido_proyek_${Date.now()}.trido.json`, 'application/json');

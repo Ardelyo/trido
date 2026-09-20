@@ -521,12 +521,12 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
   },
   {
     name: "render_mermaid",
-    description: "Render a clean science flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax.",
+    description: "Render an interactive mindmap, flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For mindmaps, use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Fotosintesis))\\n    Reaksi Terang\\n      Tilakoid\\n    Siklus Calvin').",
     parameters: {
       type: Type.OBJECT,
       properties: {
         title: { type: Type.STRING, description: "Diagram title" },
-        code: { type: Type.STRING, description: "Mermaid syntax code, e.g. flowchart TD or mindmap or sequenceDiagram" },
+        code: { type: Type.STRING, description: "Mermaid syntax code, e.g. mindmap or flowchart TD or sequenceDiagram" },
         gridPosition: {
           type: Type.STRING,
           enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
@@ -632,9 +632,34 @@ export const buildSystemInstruction = (
         .join('\n')
     : '  (empty)';
 
-  // DOM components
+  // DOM components with rich semantic content for continuous multi-turn awareness
   const domEntries = Object.entries(domElements)
-    .map(([id, el]) => `  - [${id}] ${el.componentType || 'Widget'}`)
+    .map(([id, el]) => {
+      const type = el.componentType || 'Widget';
+      const cfg = el.config || {};
+      let detail = '';
+      if (type === 'MERMAID_DIAGRAM' || type === 'MARKMAP_MINDMAP') {
+        const title = cfg.title ? ` "${cfg.title}"` : '';
+        const code = cfg.code ? `\n    Code: ${cfg.code.replace(/\n/g, ' ')}` : cfg.markdown ? `\n    Markdown: ${cfg.markdown.replace(/\n/g, ' ')}` : '';
+        detail = `${title}${code}`;
+      } else if (type === 'DOCUMENT_PAGE' || type === 'MARKDOWN_NOTE') {
+        const title = cfg.title ? ` "${cfg.title}"` : '';
+        const snippet = cfg.markdown ? ` | Preview: ${cfg.markdown.slice(0, 150).replace(/\n/g, ' ')}...` : '';
+        detail = `${title}${snippet}`;
+      } else if (String(type).startsWith('QUIZ')) {
+        const q = cfg.question || cfg.statement || '';
+        detail = q ? ` | Question: "${q}"` : '';
+      } else if (type === 'ATTENDANCE' || type === 'PRESENSI') {
+        const count = Array.isArray(cfg.students) ? cfg.students.length : 0;
+        detail = ` | ${count} students`;
+      } else if (type === 'TODOLIST') {
+        const count = Array.isArray(cfg.tasks) ? cfg.tasks.length : 0;
+        detail = ` | ${count} tasks`;
+      } else if (cfg.title) {
+        detail = ` "${cfg.title}"`;
+      }
+      return `  - [${id}] ${type}${detail}`;
+    })
     .join('\n') || '  (none)';
 
   // Lesson context block
@@ -722,9 +747,14 @@ Answer in 2-3 sentences → offer to visualize
 Example: "Fotosintesis mengubah cahaya matahari menjadi glukosa melalui 2 tahap utama: 
 reaksi terang dan siklus Calvin. Mau saya visualisasikan sebagai diagram alur?"
 
-### When teacher says TAMBAH DETAIL / EXPAND:
-Use add_mindmap_node with parentNodeText from existing nodes
-DO NOT recreate the whole mindmap
+### When teacher asks to EDIT / UBAH / TAMBAH DETAIL / EXPAND an existing diagram or mindmap:
+- **CRITICAL CONTINUOUS RULE**: DO NOT create a new widget (render_mermaid / add_component) if a diagram/mindmap is already on the canvas!
+- For Mermaid mindmap / diagram already on canvas (see EXISTING OBJECTS / INTERACTIVE COMPONENTS):
+  Call update_component targeting the component objectId (e.g. "web_123") or componentTitle.
+  Provide the complete, updated Mermaid code in configJson: '{"code": "mindmap\\n  root((...))\\n    ..."}'.
+  Keep all existing nodes and only modify, rename, or append the requested branch/node.
+- For Fabric shapes / labels:
+  Call modify_object (action UPDATE_TEXT, CHANGE_COLOR, etc.).
 
 ### When teacher says QUIZ / SOAL:
 Generate quiz based on current lesson topic (not generic)
@@ -732,8 +762,8 @@ Generate quiz based on current lesson topic (not generic)
 ## VISUAL SELECTION GUIDE
 | Request | Use This |
 |---------|----------|
-| Konsep, hubungan, struktur | add_mindmap_node atau render_markmap |
-| Flowchart sains, siklus, urutan proses | render_mermaid atau add_component → MERMAID_DIAGRAM |
+| Konsep, hubungan, struktur, mind map | render_mermaid (syntax: mindmap) atau add_mindmap_node |
+| Flowchart sains, siklus, urutan proses | render_mermaid (syntax: flowchart TD) atau add_component → MERMAID_DIAGRAM |
 | Absensi, daftar kehadiran kelas | add_component → ATTENDANCE |
 | Timer waktu pengerjaan / hitung mundur | add_component → TIMER |
 | Daftar tugas / agenda kelas | add_component → TODOLIST |

@@ -859,6 +859,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     <span>{localExpConfig.autoTaskAutomation ? 'Aktif ✓' : 'Mati ✕'}</span>
                   </button>
                 </div>
+
+                {/* 9. Jev-Mode System 1 Fast Classifier */}
+                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Zap size={14} className="text-amber-500" />
+                      Jev-Mode (System 1 Reflex Engine)
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                      Engine refleks sub-50ms berbasis klasifikasi intent cepat. Mengeksekusi perintah UI instan tanpa jeda LLM dan mengunci pengeditan diagram in-place agar tidak menduplikasi widget.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocalExpConfig({ ...localExpConfig, jevModeEnabled: !localExpConfig.jevModeEnabled })}
+                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                      localExpConfig.jevModeEnabled
+                        ? 'bg-amber-50 border-amber-300 text-amber-700'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <span>Status Jev-Mode</span>
+                    <span>{localExpConfig.jevModeEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
+                  </button>
+                </div>
               </div>
 
               {localExpConfig.enabled && (

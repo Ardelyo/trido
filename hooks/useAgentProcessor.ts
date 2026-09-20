@@ -631,12 +631,38 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
 
           let targetDomId = objectId;
           if (!targetDomId || !doms[targetDomId]) {
+            const search = (componentTitle || '').toLowerCase().trim();
             const entry = Object.entries(doms).find(([id, el]) => {
               if (id === objectId) return true;
-              const title = el.config?.title || el.componentType || '';
-              return componentTitle && title.toLowerCase().includes(componentTitle.toLowerCase());
+              const title = (el.config?.title || '').toLowerCase();
+              const cType = (el.componentType || '').toLowerCase();
+              if (!search) return false;
+              if (title.includes(search) || search.includes(title)) return true;
+              if (cType.includes(search)) return true;
+
+              // Smart educational aliases
+              const isDiagramSearch = search.includes('mindmap') || search.includes('peta') || search.includes('konsep') || search.includes('diagram') || search.includes('alur') || search.includes('mermaid');
+              if (isDiagramSearch && (cType.includes('mermaid') || cType.includes('markmap'))) return true;
+
+              const isDocSearch = search.includes('catatan') || search.includes('materi') || search.includes('dokumen') || search.includes('note');
+              if (isDocSearch && (cType.includes('document') || cType.includes('markdown'))) return true;
+
+              const isAttendanceSearch = search.includes('absensi') || search.includes('presensi') || search.includes('kehadiran') || search.includes('siswa');
+              if (isAttendanceSearch && (cType.includes('attendance') || cType.includes('presensi'))) return true;
+
+              return false;
             });
-            if (entry) targetDomId = entry[0];
+
+            if (entry) {
+              targetDomId = entry[0];
+            } else if (search.includes('mindmap') || search.includes('diagram') || search.includes('peta') || search.includes('alur')) {
+              // Fallback to the existing diagram if only one exists
+              const diagrams = Object.entries(doms).filter(([_, el]) => {
+                const ct = (el.componentType || '').toLowerCase();
+                return ct.includes('mermaid') || ct.includes('markmap');
+              });
+              if (diagrams.length > 0) targetDomId = diagrams[diagrams.length - 1][0];
+            }
           }
 
           if (targetDomId && doms[targetDomId]) {
