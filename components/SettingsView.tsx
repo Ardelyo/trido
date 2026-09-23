@@ -11,6 +11,7 @@ import { useStore } from '../store';
 import { toast } from '../utils/toast';
 import { useTranslation } from '../utils/translations';
 import { getTelemetryDownloadUrl } from '../services/aiService';
+import { useAiStatus } from '../hooks/useAiStatus';
 
 interface SettingsViewProps {
   onClose: () => void;
@@ -71,6 +72,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   const [localAiPref, setLocalAiPref] = useState(aiPreference);
   const [localLang, setLocalLang] = useState(language);
   const [showKey, setShowKey] = useState(false);
+  const liveAiStatus = useAiStatus();
+  const detectedOllamaModels = liveAiStatus.ollamaStatus?.models || [];
   const [saved, setSaved] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('trido_sound') !== 'off');
 
@@ -363,11 +366,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     onChange={e => setLocalOllamaModel(e.target.value)}
                     className={inputCls}
                   >
-                    <option value="gemma4:31b">gemma4:31b (Gemma 4 31B IT - Recommended Offline)</option>
-                    <option value="gemma-4-31b-it">gemma-4-31b-it (Gemma 4 31B Alternate Name)</option>
-                    <option value="gemma4:e2b">gemma4:e2b (Lightweight Gemma 4 - Default)</option>
-                    <option value="gemma:7b">gemma:7b (Gemma 1.1 7B)</option>
-                    <option value="gemma:2b">gemma:2b (Gemma 1.1 2B)</option>
+                    {detectedOllamaModels.length > 0 && (
+                      <optgroup label="✅ Model yang Terpasang di Laptop Anda">
+                        {detectedOllamaModels.map(m => (
+                          <option key={m} value={m}>
+                            {m} {m.includes('qwen') ? '(Qwen - Cerdas & Lengkap)' : m.includes('gemma') ? '(Gemma - Cepat & Ringan)' : '(Lokal)'}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    <optgroup label="Rekomendasi Model Trido">
+                      <option value="gemma4:e2b">gemma4:e2b (Gemma 2B - Default Cepat & Ringan)</option>
+                      <option value="qwen2.5:7b">qwen2.5:7b (Qwen 7B - Cerdas & Mendalam)</option>
+                      <option value="gemma4:31b">gemma4:31b (Gemma 4 31B IT)</option>
+                      <option value="gemma2:2b">gemma2:2b (Gemma 2 2B)</option>
+                    </optgroup>
                   </select>
                 </Field>
               </>
