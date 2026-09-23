@@ -253,17 +253,9 @@ const getCandidateModes = (
   const geminiKeyExists = !!(customGeminiKey || process.env.GEMINI_API_KEY || process.env.API_KEY);
 
   if (configuredMode !== 'auto') {
+    // STRICT MODE: When user explicitly chooses a provider (e.g. 'ollama'),
+    // DO NOT secretly fallback to cloud (Vertex/Gemini). Respect the user's explicit choice!
     candidateModes.push(configuredMode as AiMode);
-    // Add other modes as fallbacks if configured/online
-    if (configuredMode !== 'vertex' && status.vertexStatus?.online) {
-      candidateModes.push('vertex');
-    }
-    if (configuredMode !== 'gemini' && (status.geminiStatus?.online || geminiKeyExists)) {
-      candidateModes.push('gemini');
-    }
-    if (configuredMode !== 'ollama' && status.ollamaStatus?.online && status.ollamaStatus?.hasModel) {
-      candidateModes.push('ollama');
-    }
   } else {
     // Under 'auto', start with the probed preferred mode, then others
     if (status.mode !== 'unavailable') {
@@ -586,6 +578,12 @@ aiRouter.post("/transcribe", async (req, res) => {
         } else if (mode === 'ollama') {
           activeModel = selectedOllamaModel || status.ollamaStatus?.activeModel || getOllamaModel();
           text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl, activeModel);
+          if (!text) {
+            return res.status(400).json({
+              error: 'Transkripsi suara AI saat ini memerlukan koneksi internet (Gemini Cloud Audio). Model Ollama lokal memproses teks dan tools, tetapi belum memiliki engine Speech-to-Text lokal.',
+              code: 'offline_audio_unsupported'
+            });
+          }
         }
         success = true;
         break;

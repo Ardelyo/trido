@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AiServiceError } from '../services/aiService';
 import {
   MousePointer2, Pencil, Type, Square, Circle, Trash2, Triangle, PaintBucket,
-  Mic, Image as ImageIcon, Send, Layers, ChevronUp, ChevronDown, X,
+  Mic, Image as ImageIcon, Send, Layers, ChevronUp, ChevronDown, X, AlertCircle,
   Activity, Cpu, MessageSquare, Sun, Moon, Minus, Plus, Maximize, ChevronLeft, ChevronRight, Undo2, Redo2, Sparkles, Network, Star,
   Square as StopIcon,
   CircleStop,
@@ -305,9 +305,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
         recognitionRef.current.onerror = (event: any) => {
           console.error("STT Error detailed:", event.error, event.message);
-          if (event.error === 'not-allowed') {
+          if (event.error === 'network') {
+            const msg = 'Pengenalan suara browser (Web Speech API) membutuhkan koneksi internet di Chrome/Windows. Saat offline, silakan ketik di kolom teks atau pilih template.';
+            setVoiceNotice(msg);
+            toast.warning(msg);
+          } else if (event.error === 'not-allowed') {
+            const msg = 'Izin mikrofon belum diberikan. Silakan izinkan akses mikrofon di peramban Anda.';
+            setVoiceNotice(msg);
+            toast.warning(msg);
             setMicPermission('denied');
+          } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
+            const msg = `Perekaman suara terhenti (${event.error}).`;
+            setVoiceNotice(msg);
           }
+
           if (event.error !== 'no-speech' && event.error !== 'aborted') {
             setIsListening(false);
             stopVisualizer();
@@ -469,9 +480,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
             const reader = new FileReader();
             reader.readAsDataURL(audioBlob);
             reader.onloadend = async () => {
+              const storeState = useStore.getState() as any;
               try {
                 const base64 = (reader.result as string).split(',')[1];
-                const storeState = useStore.getState() as any;
                 const aiPreference = storeState.aiPreference || 'auto';
                 const geminiApiKey = storeState.geminiApiKey || undefined;
                 const ollamaBaseUrl = storeState.ollamaBaseUrl || undefined;
@@ -506,7 +517,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 }
               } catch (err: any) {
                 console.error("Transcription error:", err);
-                setVoiceNotice("Gagal mentranskripsi suara: " + (err.message || String(err)));
+                const isOfflineOllama = storeState.aiPreference === 'ollama' || (typeof navigator !== 'undefined' && !navigator.onLine);
+                const fallbackNotice = isOfflineOllama
+                  ? 'Transkripsi audio AI membutuhkan koneksi internet (Gemini Cloud Audio). Model Ollama lokal di laptop memproses teks dan tools secara offline. Silakan ketik perintah di kolom input.'
+                  : `Gagal mentranskripsi suara: ${err.message || String(err)}`;
+                setVoiceNotice(fallbackNotice);
+                toast.warning(fallbackNotice);
               } finally {
                 setIsTranscribing(false);
               }
@@ -669,6 +685,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
 
         {/* Center: AI Status & Voice Control */}
         <div className="relative flex flex-col items-center gap-2">
+
+          {/* Persistent Voice Notice / Error Banner */}
+          <AnimatePresence>
+            {voiceNotice && (
+              <motion.div
+                initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                className="pointer-events-auto w-[min(90vw,480px)] bg-amber-50/95 backdrop-blur-md rounded-2xl border border-amber-200/90 shadow-lg p-3 text-xs text-amber-900 flex items-start gap-2.5 z-50 mb-1"
+              >
+                <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex-1 font-medium leading-relaxed">
+                  {voiceNotice}
+                </div>
+                <button
+                  onClick={() => setVoiceNotice(null)}
+                  className="text-amber-500 hover:text-amber-800 p-0.5 rounded cursor-pointer transition-colors"
+                  title="Tutup"
+                >
+                  <X size={14} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Transcript bubble — expands UPWARD above the bar */}
           <AnimatePresence>

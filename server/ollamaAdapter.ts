@@ -46,19 +46,25 @@ export const generateAgentActionsOllama = async (
     }
   }));
 
+  const isVisionModel = /vision|llava|bakllava|moondream|minicpm-v|cogvlm|qwen-vl/i.test(modelName);
+  const userMessage: any = {
+    role: "user",
+    content: `User request: ${prompt}\n\nRemember: Thoroughly address the entire request. Use function calls for all visual artifacts, batching actions together, and explain in clear text.`
+  };
+
+  if (isVisionModel && (cleanCanvasBase64 || highResInputImage)) {
+    userMessage.images = [];
+    if (cleanCanvasBase64) userMessage.images.push(cleanCanvasBase64);
+    if (highResInputImage) {
+      userMessage.images.push(highResInputImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, ""));
+    }
+  }
+
   const messages = [
     { role: "system", content: systemInstruction },
     ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.text })),
-    { 
-      role: "user", 
-      content: `User request: ${prompt}\n\nRemember: Thoroughly address the entire request. Use function calls for all visual artifacts, batching actions together, and explain in clear text.`,
-      images: [cleanCanvasBase64]
-    }
+    userMessage
   ];
-
-  if (highResInputImage) {
-      messages[messages.length - 1].images.push(highResInputImage.replace(/^data:image\/(png|jpeg|jpg);base64,/, ""));
-  }
 
   const payload = {
     model: modelName,
@@ -98,6 +104,57 @@ export const generateAgentActionsOllama = async (
   let thought = "";
 
   if (data.error) {
+    // If the model does not support native function calling tools in Ollama (e.g. gemma2),
+    // automatically fall back to prompt-based JSON tool generation without failing or jumping to cloud!
+    if (typeof data.error === 'string' && data.error.includes("does not support tools")) {
+      logger.warn(`Model ${modelName} does not support native tools. Retrying with prompt-based JSON tool calling...`);
+      const fallbackPayload = {
+        model: modelName,
+        messages: [
+          {
+            role: "system",
+            content: `${systemInstruction}\n\nCRITICAL: You must output ONLY a valid JSON object with your response and tool calls in this format:\n{"textResponse": "Your explanation here", "functionCalls": [{"name": "tool_name", "args": {...}}]}`
+          },
+          ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.text })),
+          userMessage
+        ],
+        stream: false,
+        format: "json",
+        options: {
+          num_ctx: CONFIG.ai.ollama.numCtx
+        }
+      };
+
+      const fallbackRes = await fetch(`${getOllamaUrl(customUrl)}/api/chat`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(fallbackPayload)
+      });
+      const fallbackData = await fallbackRes.json();
+      if (!fallbackData.error && fallbackData.message?.content) {
+        try {
+          const parsed = JSON.parse(fallbackData.message.content);
+          return {
+            functionCalls: Array.isArray(parsed.functionCalls) ? parsed.functionCalls : [],
+            textResponse: parsed.textResponse || fallbackData.message.content,
+            thought: "",
+            telemetry: {
+              id: `tel_ollama_${Date.now()}`,
+              promptTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+              costUsd: 0,
+              costIdr: 0,
+              latencyMs: 1000,
+              provider: "ollama",
+              model: modelName,
+              sheetSyncStatus: "disabled"
+            }
+          };
+        } catch (_) {}
+      }
+    }
+
     logger.error("Ollama API Error", { error: data.error });
     throw new Error(`Ollama Error: ${data.error}`);
   }

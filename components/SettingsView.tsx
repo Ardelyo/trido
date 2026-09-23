@@ -5,7 +5,7 @@ import {
   Eye, EyeOff, ExternalLink, Wifi, WifiOff, Zap, Shield,
   ChevronRight, RotateCcw, Trash2, Volume2, VolumeX, Info,
   Mic, Radio, Upload, Sparkles, Database, FileSpreadsheet, Download,
-  Shapes, Users, Flame, Workflow, HeartHandshake
+  Shapes, Users, Flame, Workflow, HeartHandshake, AlertCircle
 } from 'lucide-react';
 import { useStore } from '../store';
 import { toast } from '../utils/toast';
@@ -426,7 +426,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Transkripsi suara instan langsung di peramban. Sangat cepat, tanpa kuota cloud, dan zero-latency.
+                  Transkripsi suara bawaan peramban (Chrome/Edge). Memerlukan koneksi internet di Windows karena audio diolah oleh server speech peramban.
                 </p>
               </button>
 
@@ -445,11 +445,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     <Sparkles size={15} className="text-purple-600" /> Rekam & Kirim Gemini
                   </span>
                   <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
-                    Akurat
+                    Akurat (Cloud)
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Rekam audio microphone berkualitas tinggi, lalu kirimkan ke Gemini Cloud untuk transkripsi istilah akurat.
+                  Rekam audio microphone berkualitas tinggi, lalu kirimkan ke Gemini Cloud untuk transkripsi istilah akurat (memerlukan internet).
                 </p>
               </button>
 
@@ -468,11 +468,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     <Radio size={15} className="text-emerald-600" /> Gemini Live Transcribe
                   </span>
                   <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
-                    Realtime
+                    Realtime (Cloud)
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Streaming audio live berkelanjutan dengan potongan rekaman mikro ke Gemini Flash API.
+                  Streaming audio live berkelanjutan dengan potongan rekaman mikro ke Gemini Flash API (memerlukan internet).
                 </p>
               </button>
 
@@ -495,9 +495,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Pilih dan unggah file audio (.mp3, .wav, .m4a, .webm) dari rekaman ceramah untuk dianalisis AI.
+                  Pilih file rekaman suara dari komputer untuk ditranskripsi ke kanvas.
                 </p>
               </button>
+            </div>
+
+            {/* Catatan Teknis Jujur Mengenai Perekaman Suara Saat Offline */}
+            <div className="p-3.5 bg-amber-50/90 rounded-2xl border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2.5">
+              <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-amber-950">Catatan Kejujuran Teknis Suara Saat Offline:</span>
+                <p className="mt-0.5 text-slate-600 leading-normal">
+                  Model Ollama lokal di laptop Anda (seperti <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono text-[10.5px]">gemma4:e2b</code> dan <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono text-[10.5px]">qwen2.5:7b</code>) memproses <strong>penalaran teks, pembuatan mindmap, dan alat kelas secara 100% offline</strong> di GPU RTX 5050. Namun, engine transkripsi audio suara mikrofon (Speech-to-Text) pada Google Chrome di Windows dan Gemini memerlukan koneksi internet. Saat offline, gunakan input teks di kolom chat atau drag & drop file/catatan.
+                </p>
+              </div>
             </div>
 
             {/* Technical Voice Recording Settings */}
