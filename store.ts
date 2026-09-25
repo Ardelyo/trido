@@ -254,7 +254,7 @@ const getInitialVoiceConfig = (): VoiceConfig => {
 };
 
 export const defaultExperimentalConfig: ExperimentalConfig = {
-  enabled: false,
+  enabled: true,
   markmapEnabled: true,
   mermaidEnabled: true,
   smoothInkingEnabled: true,

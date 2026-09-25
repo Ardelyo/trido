@@ -105,26 +105,19 @@ export const getCapability = (modelName: string): ModelCapability => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const tools: FunctionDeclaration[] = [
   {
-    name: "add_mindmap_node",
-    description: "Add a node to a mind map or concept diagram. Connections are generated automatically from parentNodeText — do NOT call connect_nodes for mind maps.",
+    name: "render_mermaid",
+    description: "Render an interactive mindmap, science flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For ALL mindmaps and concept maps, ALWAYS use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Bahasa Indonesia))\\n    Tata Bahasa\\n      Morfologi\\n      Sintaksis\\n    Kesusastraan\\n      Puisi\\n      Prosa').",
     parameters: {
       type: Type.OBJECT,
       properties: {
-        text: {
+        title: { type: Type.STRING, description: "Diagram or mindmap title" },
+        code: { type: Type.STRING, description: "Mermaid syntax code, e.g. mindmap or flowchart TD or sequenceDiagram" },
+        gridPosition: {
           type: Type.STRING,
-          description: "Label text shown inside the node"
-        },
-        style: {
-          type: Type.STRING,
-          enum: ["MAIN_TOPIC", "SUBTOPIC", "DETAIL", "HIGHLIGHT"],
-          description: "Visual style. MAIN_TOPIC = central concept (use exactly once). SUBTOPIC = main branches. DETAIL = leaf nodes."
-        },
-        parentNodeText: {
-          type: Type.STRING,
-          description: "Exact text of the parent node. Omit or set null for the root (MAIN_TOPIC) node only."
+          enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
         }
       },
-      required: ["text", "style"]
+      required: ["code"]
     }
   },
   {
@@ -294,33 +287,6 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
         }
       },
       required: ["configJson"]
-    }
-  },
-  {
-    name: "update_mindmap_node",
-    description: "Update, rename, restyle, or edit an existing mindmap node on the board.",
-    parameters: {
-      type: Type.OBJECT,
-      properties: {
-        targetText: {
-          type: Type.STRING,
-          description: "Current text label of the mindmap node to modify (e.g. 'Fotosintesis')"
-        },
-        newText: {
-          type: Type.STRING,
-          description: "New text label for the node"
-        },
-        newStyle: {
-          type: Type.STRING,
-          enum: ["CENTRAL", "MAIN_TOPIC", "SUBTOPIC", "DETAIL"],
-          description: "Optional new style"
-        },
-        newParentNodeText: {
-          type: Type.STRING,
-          description: "Optional new parent node label to reconnect"
-        }
-      },
-      required: ["targetText", "newText"]
     }
   },
   {
@@ -517,22 +483,6 @@ DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBod
         }
       },
       required: ["markdown"]
-    }
-  },
-  {
-    name: "render_mermaid",
-    description: "Render an interactive mindmap, flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For mindmaps, use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Fotosintesis))\\n    Reaksi Terang\\n      Tilakoid\\n    Siklus Calvin').",
-    parameters: {
-      type: Type.OBJECT,
-      properties: {
-        title: { type: Type.STRING, description: "Diagram title" },
-        code: { type: Type.STRING, description: "Mermaid syntax code, e.g. mindmap or flowchart TD or sequenceDiagram" },
-        gridPosition: {
-          type: Type.STRING,
-          enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
-        }
-      },
-      required: ["code"]
     }
   },
   {

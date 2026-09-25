@@ -102,7 +102,7 @@ FULL AUTONOMOUS COMPUTER USE CAPABILITIES:
 5. KLIK ELEMEN (Click):
    - Call \`click_element\` with \`elementText\` or coordinates to click buttons, interactive quiz options, or select objects.
 6. MIND MAP:
-   - Call \`add_mindmap_node\` with \`text\`, \`style\` ("MAIN_TOPIC", "SUBTOPIC", "DETAIL"), and \`parentNodeText\`.
+   - For ALL mindmaps and concept maps, call \`render_mermaid\` with 'mindmap' syntax: mindmap\\n  root((Topik))\\n    Cabang 1\\n      Detail A.
 7. WIDGET & KUIS:
    - Call \`add_component\` for quizzes, markdown notes, timer, calculator.
 8. APP MINI INTERAKTIF:
@@ -115,16 +115,19 @@ CRITICAL EXECUTION RULES:
 
     const toolsDeclarations = [
       {
-        name: "add_mindmap_node",
-        description: "Add a node to a mind map or concept diagram. Connections are generated automatically from parentNodeText.",
+        name: "render_mermaid",
+        description: "Render an interactive mindmap, flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For ALL mindmaps and concept maps, ALWAYS use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Fotosintesis))\\n    Reaksi Terang\\n      Tilakoid\\n    Siklus Calvin').",
         parameters: {
           type: "OBJECT",
           properties: {
-            text: { type: "STRING", description: "Label text shown inside the node" },
-            style: { type: "STRING", enum: ["MAIN_TOPIC", "SUBTOPIC", "DETAIL", "HIGHLIGHT"], description: "Visual style" },
-            parentNodeText: { type: "STRING", description: "Exact text of the parent node" }
+            title: { type: "STRING", description: "Diagram title" },
+            code: { type: "STRING", description: "Mermaid syntax code, e.g. mindmap or flowchart TD or sequenceDiagram" },
+            gridPosition: {
+              type: "STRING",
+              enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
+            }
           },
-          required: ["text", "style"]
+          required: ["code"]
         }
       },
       {
@@ -294,20 +297,6 @@ CRITICAL EXECUTION RULES:
         }
       },
       {
-        name: "update_mindmap_node",
-        description: "Update, rename, restyle, or edit an existing mindmap node on the board.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            targetText: { type: "STRING", description: "Current text label of the mindmap node to modify" },
-            newText: { type: "STRING", description: "New text label for the node" },
-            newStyle: { type: "STRING", enum: ["CENTRAL", "MAIN_TOPIC", "SUBTOPIC", "DETAIL"], description: "Optional new style" },
-            newParentNodeText: { type: "STRING", description: "Optional new parent node label to reconnect" }
-          },
-          required: ["targetText", "newText"]
-        }
-      },
-      {
         name: "relayout_mindmap",
         description: "Redesign, reorganize, and tidy up the mindmap layout to fix overlaps and make it beautiful and clean. Layout options: 'RADIAL' or 'TREE_HORIZONTAL'.",
         parameters: {
@@ -343,22 +332,6 @@ CRITICAL EXECUTION RULES:
             }
           },
           required: ["markdown"]
-        }
-      },
-      {
-        name: "render_mermaid",
-        description: "Render an interactive mindmap, flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For mindmaps, use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Fotosintesis))\\n    Reaksi Terang\\n      Tilakoid\\n    Siklus Calvin').",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            title: { type: "STRING", description: "Diagram title" },
-            code: { type: "STRING", description: "Mermaid syntax code, e.g. mindmap or flowchart TD or sequenceDiagram" },
-            gridPosition: {
-              type: "STRING",
-              enum: ["TOP_LEFT", "TOP_CENTER", "TOP_RIGHT", "CENTER_LEFT", "CENTER", "CENTER_RIGHT", "BOTTOM_LEFT", "BOTTOM_CENTER", "BOTTOM_RIGHT"]
-            }
-          },
-          required: ["code"]
         }
       },
       {

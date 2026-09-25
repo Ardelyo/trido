@@ -577,7 +577,9 @@ ${jevDirective}
         telemetryId: tele?.id,
         tokens: tele?.totalTokens,
         latencyMs: tele?.latencyMs,
-        costIdr: tele?.costIdr
+        costIdr: tele?.costIdr,
+        model: tele?.model || _aiResult?.model || storeState.selectedOllamaModel || storeState.selectedGeminiModel || storeState.selectedVertexModel,
+        provider: tele?.provider || _aiResult?.provider || storeState.aiPreference
       });
       setAgentMessage(msg);
 
@@ -680,132 +682,36 @@ ${jevDirective}
       const pathActions: AgentAction[] = [];
       const otherActions: AgentAction[] = [];
 
-      // ── Mind map via layout engine ──────────────────────────────────────────
+      // ── Mind map via Mermaid Engine (Pure Interactive Diagram) ─────────────
       if (mindmapCalls.length > 0) {
-        const storeState = useStore.getState();
+        const rootCall = mindmapCalls.find(c => c.args.style === 'MAIN_TOPIC' || !c.args.parentNodeText) || mindmapCalls[0];
+        const rootTitle = (rootCall.args.text || 'Peta Konsep').replace(/["'()\[\]{}]/g, '').trim();
         
-        // ── Get existing mindmap nodes dari registry ───────────────────────
-        const existingNodes = storeState.activeMindmapNodes;
-        const isExpanding = existingNodes.length > 0;
+        let mermaidCode = `mindmap\n  root((${rootTitle}))\n`;
+        const otherNodes = mindmapCalls.filter(c => c !== rootCall);
         
-        // ── Build input nodes, merge dengan existing ───────────────────────
-        const inputNodes: MindmapInputNode[] = mindmapCalls.map(c => ({
-          text: c.args.text,
-          style: (c.args.style || 'SUBTOPIC') as MindmapInputNode['style'],
-          parentNodeText: c.args.parentNodeText || null,
-        }));
-
-        if (isExpanding) {
-          // EXPAND MODE: Smart dynamic expansion maintaining parent cluster & block area
-          logger.info(`[MindMap] Smart dynamic expansion: ${existingNodes.length} existing + ${inputNodes.length} new`);
-          
-          const existingLayoutNodes: MindmapLayoutNode[] = existingNodes.map(n => ({
-            text: n.text,
-            style: n.style as any,
-            parentNodeText: n.parentNodeText,
-            x: n.x,
-            y: n.y
-          }));
-
-          const laid = expandMindmapNodes(existingLayoutNodes, inputNodes, { x: centerX, y: centerY });
-          
-          laid.forEach((node, idx) => {
-            const s = NODE_STYLE_CONFIG[node.style] || NODE_STYLE_CONFIG.SUBTOPIC;
-            const nodeId = `mm_${Date.now()}_${idx}`;
-            
-            shapeActions.push({
-              id: `action_mm_expand_${Date.now()}_${idx}`,
-              type: 'CREATE_SHAPE',
-              payload: {
-                shapeType: 'RECTANGLE',
-                x: node.x,
-                y: node.y,
-                text: node.text,
-                fill: s.fill,
-                width: s.width,
-                height: s.height,
-                textColor: '#FFFFFF',
-                nodeId, // Pass ID for registration
-              },
-              status: 'PENDING'
-            });
-            
-            // Register new node in store
-            storeState.registerMindmapNode({
-              text: node.text,
-              style: node.style as any,
-              parentNodeText: node.parentNodeText,
-              canvasObjectId: nodeId,
-              x: node.x,
-              y: node.y
-            });
-            
-            // Connection to parent
-            if (node.parentNodeText) {
-              pathActions.push({
-                id: `action_conn_expand_${Date.now()}_${idx}`,
-                type: 'DRAW_PATH',
-                payload: { 
-                  fromNodeText: node.parentNodeText, 
-                  toNodeText: node.text, 
-                  lineStyle: 'ARROW_STRAIGHT' 
-                },
-                status: 'PENDING'
-              });
-            }
-          });
-          
-        } else {
-          // FRESH MODE: Layout engine untuk mindmap baru
-          const laid = layoutMindmap(inputNodes, centerX, centerY);
-          
-          laid.forEach((node, idx) => {
-            const s = NODE_STYLE_CONFIG[node.style] || NODE_STYLE_CONFIG.SUBTOPIC;
-            const nodeId = `mm_${Date.now()}_${idx}`;
-            
-            shapeActions.push({
-              id: `action_mm_${Date.now()}_${idx}`,
-              type: 'CREATE_SHAPE',
-              payload: {
-                shapeType: 'RECTANGLE',
-                x: node.x, y: node.y,
-                text: node.text,
-                fill: s.fill,
-                width: s.width,
-                height: s.height,
-                textColor: '#FFFFFF',
-                nodeId,
-              },
-              status: 'PENDING'
-            });
-            
-            // Register semua nodes ke store untuk expand nanti
-            storeState.registerMindmapNode({
-              text: node.text,
-              style: node.style as any,
-              parentNodeText: node.parentNodeText,
-              canvasObjectId: nodeId,
-              x: node.x,
-              y: node.y
-            });
-            
-            // Auto-generate connection
-            if (node.parentNodeText) {
-              pathActions.push({
-                id: `action_conn_${Date.now()}_${idx}`,
-                type: 'DRAW_PATH',
-                payload: { 
-                  fromNodeText: node.parentNodeText, 
-                  toNodeText: node.text, 
-                  lineStyle: 'ARROW_STRAIGHT' 
-                },
-                status: 'PENDING'
-              });
-            }
-          });
-
-          logger.info(`[MindMap] Fresh layout: ${laid.length} nodes, ${pathActions.length} connections`);
+        for (const node of otherNodes) {
+          const cleanText = (node.args.text || 'Cabang').replace(/["'()\[\]{}]/g, '').trim();
+          mermaidCode += `    ${cleanText}\n`;
         }
+
+        otherActions.push({
+          id: `action_mermaid_mindmap_${Date.now()}`,
+          type: 'RENDER_HTML',
+          payload: {
+            html: '<div>MERMAID</div>',
+            x: centerX,
+            y: centerY,
+            width: 760,
+            height: 580,
+            componentType: 'MERMAID_DIAGRAM',
+            config: {
+              title: `Peta Konsep ${rootTitle}`,
+              code: mermaidCode
+            }
+          },
+          status: 'PENDING'
+        });
       }
 
       // ── Freeform connect_nodes (non-mindmap) ───────────────────────────────

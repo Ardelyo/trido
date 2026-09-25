@@ -22,7 +22,7 @@ import { MathGraphTool } from './MathGraphTool';
 import {
   Printer, Maximize2, Minimize2, X, Download, FileText, Globe,
   Code, Compass, BookOpen, Clock, Calculator, HelpCircle, Layers, Sparkles, Users, SquareCheckBig,
-  Image as ImageIcon, Copy
+  Image as ImageIcon, Copy, GripVertical
 } from 'lucide-react';
 import {
   triggerPrintComponent,
@@ -45,6 +45,48 @@ export const DomOverlay: React.FC = () => {
   const removeDomElement = useStore(state => state.removeDomElement);
 
   const [fullscreenWidgetId, setFullscreenWidgetId] = useState<string | null>(null);
+  const [draggingWidget, setDraggingWidget] = useState<{ id: string; startMouseX: number; startMouseY: number; startElX: number; startElY: number } | null>(null);
+
+  const handleTitlebarMouseDown = (el: DomElementState, e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Only drag on left click
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingWidget({
+      id: el.id,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      startElX: el.x,
+      startElY: el.y
+    });
+  };
+
+  useEffect(() => {
+    if (!draggingWidget) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const scale = viewportTransform[0] || 1;
+      const deltaX = (e.clientX - draggingWidget.startMouseX) / scale;
+      const deltaY = (e.clientY - draggingWidget.startMouseY) / scale;
+
+      const newX = Math.round(draggingWidget.startElX + deltaX);
+      const newY = Math.round(draggingWidget.startElY + deltaY);
+
+      useStore.getState().updateDomElement(draggingWidget.id, { x: newX, y: newY });
+      const event = new CustomEvent('moveCanvasPlaceholder', { detail: { id: draggingWidget.id, x: newX, y: newY } });
+      window.dispatchEvent(event);
+    };
+
+    const handleMouseUp = () => {
+      setDraggingWidget(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [draggingWidget, viewportTransform]);
 
   // Keyboard shortcut: Escape exits fullscreen mode
   useEffect(() => {
@@ -282,14 +324,20 @@ export const DomOverlay: React.FC = () => {
                 pointerEvents: 'auto'
               }}
             >
-              {/* Desktop Header / PC Window Titlebar */}
+              {/* Desktop Header / PC Window Titlebar with Grip Handle */}
               <div
+                onMouseDown={(e) => handleTitlebarMouseDown(el, e)}
                 onDoubleClick={() => setFullscreenWidgetId(el.id)}
-                className="flex h-11 w-full items-center justify-between bg-slate-50/95 px-3.5 border-b border-slate-200/80 shrink-0 select-none cursor-move"
-                title="Klik ganda untuk Layar Penuh (Fullscreen)"
+                className={`flex h-11 w-full items-center justify-between px-3 border-b border-slate-200/80 shrink-0 select-none transition-colors ${
+                  draggingWidget?.id === el.id ? 'bg-indigo-100/90 cursor-grabbing' : 'bg-slate-100/95 hover:bg-slate-200/90 cursor-grab'
+                }`}
+                title="Tahan dan geser untuk memindahkan widget • Klik ganda untuk Layar Penuh"
               >
-                {/* Title & Icon */}
-                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                {/* Title & Icon & Grip Handle */}
+                <div className="flex items-center gap-2 min-w-0 pr-2">
+                  <div className="flex items-center justify-center text-slate-400 group-hover:text-slate-600">
+                    <GripVertical size={14} />
+                  </div>
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0">
                     {getComponentIcon(el.componentType)}
                   </div>

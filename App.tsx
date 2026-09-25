@@ -634,12 +634,14 @@ const App: React.FC = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-extrabold text-slate-900 text-[16px]">Trido AI</span>
-                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 flex items-center gap-1 shadow-2xs">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              gemini-3.8-flash
+                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${statusConfig.color} flex items-center gap-1 shadow-2xs`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
+                              {statusConfig.detail.split('•')[0].trim()}
                             </span>
                           </div>
-                          <div className="text-[11px] text-blue-600 font-bold tracking-tight">Cloud • Real-time • Zero Latency</div>
+                          <div className={`text-[11px] ${statusConfig.statusColor} font-bold tracking-tight`}>
+                            {statusConfig.text} • {statusConfig.detail.includes('•') ? statusConfig.detail.split('•')[1].trim() : (statusConfig.mode === 'ollama' ? '100% Offline Lokal' : 'Cloud AI Engine')}
+                          </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">

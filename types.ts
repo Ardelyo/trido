@@ -140,6 +140,8 @@ export interface ChatMessage {
   tokens?: number;
   latencyMs?: number;
   costIdr?: number;
+  model?: string;
+  provider?: string;
 }
 
 export interface RoomState {

@@ -12,6 +12,7 @@ describe('Experimental Mode & Break-The-Limit Capabilities', () => {
     expect(defaultExperimentalConfig).toHaveProperty('markmapEnabled', true);
     expect(defaultExperimentalConfig).toHaveProperty('mermaidEnabled', true);
     expect(defaultExperimentalConfig).toHaveProperty('jevModeEnabled', true);
+    expect(defaultExperimentalConfig).toHaveProperty('enabled', true);
   });
 
   it('MODEL_CAPABILITIES unlocks up to 60 tool calls for Gemini 3.8 Flash', () => {

@@ -7,6 +7,7 @@ import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal, ThumbsUp, Thum
 import { ChatMessage } from '../types';
 import { toast } from '../utils/toast';
 import { submitLogFeedback } from '../services/aiService';
+import { useStore } from '../store';
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -23,6 +24,18 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   const [copied, setCopied] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [rated, setRated] = useState<'good' | 'bad' | null>(null);
+
+  const aiPref = useStore(state => state.aiPreference);
+  const selOllama = useStore(state => state.selectedOllamaModel);
+  const selGemini = useStore(state => state.selectedGeminiModel);
+  const selVertex = useStore(state => state.selectedVertexModel);
+
+  const displayModel = useMemo(() => {
+    if (message.model) return message.model;
+    if (aiPref === 'ollama') return selOllama || 'gemma4:e2b';
+    if (aiPref === 'vertex') return selVertex || 'gemini-3.8-flash';
+    return selGemini || 'gemini-3.8-flash';
+  }, [message.model, aiPref, selOllama, selGemini, selVertex]);
   
   // Real-time typewriter streaming state
   const [displayedLength, setDisplayedLength] = useState<number>(() => {
@@ -151,8 +164,12 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             <Sparkles size={11} />
           </div>
           <span className="text-[11px] font-bold text-slate-700">Trido AI</span>
-          <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-md border border-blue-200/60">
-            gemini-3.8-flash
+          <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border ${
+            (message.provider === 'ollama' || aiPref === 'ollama' || displayModel.includes('gemma') || displayModel.includes('qwen'))
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+              : 'bg-blue-50 text-blue-600 border-blue-200/60'
+          }`}>
+            {displayModel}
           </span>
           {message.tokens && (
             <span className="text-[10px] font-mono text-slate-400 flex items-center gap-0.5">

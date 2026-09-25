@@ -355,6 +355,17 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     };
     window.addEventListener('clearCanvas', handleClearCanvas);
 
+    const handleMovePlaceholder = (e: any) => {
+      const { id, x, y } = e.detail || {};
+      if (!id) return;
+      const obj = canvas.getObjects().find((o: any) => o.id === id);
+      if (obj) {
+        obj.set({ left: x, top: y });
+        canvas.requestRenderAll();
+      }
+    };
+    window.addEventListener('moveCanvasPlaceholder', handleMovePlaceholder);
+
     const updateDomFromObject = (obj: any) => {
        if (obj.isDomPlaceholder) {
          updateDomElement(obj.id, {
@@ -603,6 +614,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('removeCanvasObject', handleRemoteRemove);
       window.removeEventListener('clearCanvas', handleClearCanvas);
+      window.removeEventListener('moveCanvasPlaceholder', handleMovePlaceholder);
     };
   }, []);
 
