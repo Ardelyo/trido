@@ -657,7 +657,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
           >
             <div className="space-y-4">
               {/* Master Switch */}
-              <div className="p-4 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-purple-50/80 rounded-2xl border border-blue-200/80 flex items-center justify-between">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                 <div>
                   <div className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                     <Sparkles size={16} className="text-indigo-600 animate-pulse" />
@@ -911,7 +911,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
               </div>
 
               {localExpConfig.enabled && (
-                <div className="p-3 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl border border-indigo-200/80 flex items-center gap-3">
+                <div className="p-3 bg-indigo-50/80 rounded-2xl border border-indigo-200/80 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                     <Flame size={16} />
                   </div>

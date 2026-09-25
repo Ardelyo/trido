@@ -339,7 +339,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
           </div>
 
           {/* Google Sheets Status & Cloud Banner */}
-          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-5 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="bg-slate-900 text-white p-5 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 border border-slate-800">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-emerald-400">
                 <FileSpreadsheet size={26} />

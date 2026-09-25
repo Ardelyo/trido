@@ -305,7 +305,7 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({ onClose, onApplyTe
                     }`}
                   >
                     {/* Icon */}
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border mb-4 transition-transform group-hover:scale-110 group-hover:rotate-3 bg-gradient-to-br ${item.gradient}`}>
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center border border-slate-200 mb-4 transition-transform group-hover:scale-110 group-hover:rotate-3 bg-slate-50">
                       <Icon size={22} className={item.color} strokeWidth={2.5} />
                     </div>
 
@@ -339,7 +339,7 @@ export const TemplatesView: React.FC<TemplatesViewProps> = ({ onClose, onApplyTe
                         initial={{ x: '-100%' }}
                         animate={{ x: '200%' }}
                         transition={{ duration: 0.6 }}
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-100/50 to-transparent pointer-events-none"
+                        className="absolute inset-0 bg-blue-100/30 pointer-events-none"
                       />
                     )}
                   </motion.div>

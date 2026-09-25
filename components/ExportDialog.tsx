@@ -484,7 +484,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   {/* 1-Click Clipboard Copy */}
                   <button
                     onClick={handleCopyImage}
-                    className="flex items-center gap-3.5 px-4 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl transition-all shadow-md group text-left cursor-pointer"
+                    className="flex items-center gap-3.5 px-4 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl transition-all shadow-md group text-left cursor-pointer"
                   >
                     <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                       {copiedImage ? <Check size={22} className="text-emerald-300" /> : <Copy size={22} />}
@@ -548,7 +548,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
               {activeTab === 'tools' && (
                 <div className="flex flex-col gap-3.5">
                   {/* Canva Compatibility Card */}
-                  <div className="bg-gradient-to-r from-teal-50/70 to-blue-50/70 border border-teal-200/80 rounded-2xl p-4 flex flex-col gap-3">
+                  <div className="bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-sm">

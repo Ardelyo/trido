@@ -173,7 +173,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
       </div>
 
       {/* Main Display */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-white to-slate-50/30">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-slate-50/50">
         <AnimatePresence mode="wait">
           <motion.div
             key={mode}

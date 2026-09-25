@@ -628,8 +628,8 @@ const App: React.FC = () => {
                   {/* Header */}
                   <div className="h-16 lg:h-20 border-b border-slate-100/80 flex items-center justify-between px-6 font-sans bg-white/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-[1.1rem] bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/20 text-white">
-                          <Sparkles size={20} />
+                        <div className="w-10 h-10 rounded-[1.1rem] bg-white border border-slate-200/80 shadow-sm flex items-center justify-center p-2">
+                          <img src="/logo.png" alt="Trido Logo" className="w-6 h-6 object-contain" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">

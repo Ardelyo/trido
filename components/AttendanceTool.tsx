@@ -287,7 +287,7 @@ export const AttendanceTool: React.FC<AttendanceToolProps> = ({ config }) => {
 
       {/* Random Winner Spotlight */}
       {selectedRandomStudent && (
-        <div className="mx-3 mt-3 p-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 animate-in zoom-in-95 duration-200">
+        <div className="mx-3 mt-3 p-3 bg-amber-500 text-white rounded-2xl shadow-md flex items-center justify-between gap-3 animate-in zoom-in-95 duration-200">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
               <Trophy size={16} />
