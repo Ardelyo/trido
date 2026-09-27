@@ -840,7 +840,7 @@ export const useStore = create<AppStore>((set, get) => ({
 
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
   
-  clearMessages: () => set({ messages: [{ role: 'model', text: 'Halo! Saya Trido AI ditenagai model **Gemini 3.8 Flash** Cloud. Ada yang bisa saya bantu di papan tulis?' }] }),
+  clearMessages: () => set({ messages: [{ role: 'model', text: 'Halo! Saya Trido AI. Ada yang bisa dibantu?' }] }),
   
   addLog: (log) => set((state) => {
     const newLogs = [log, ...state.logs].slice(0, 50);

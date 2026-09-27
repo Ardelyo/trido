@@ -20,6 +20,7 @@ import { DrawingToolbar } from './DrawingToolbar';
 import { sounds } from '../utils/sounds';
 import { useTranslation } from '../utils/translations';
 import { toast } from '../utils/toast';
+import { useAiStatus } from '../hooks/useAiStatus';
 
 interface ChatInterfaceProps {
   canvasRef: React.MutableRefObject<any>;
@@ -63,8 +64,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     isAiDrawerOpen, isViewerUrl,
     toggleTimer, toggleCalculator, toggleNotes, toggleQuiz,
     toggleUnitConverter, togglePeriodicTable, toggleAttendance, toggleTodoList, toggleBoardSettings,
-    transcribeMode, selectedVertexModel, selectedGeminiModel, geminiApiKey, voiceConfig
+    transcribeMode, selectedVertexModel, selectedGeminiModel, selectedOllamaModel, geminiApiKey, voiceConfig
   } = useStore();
+
+  const liveAiStatus = useAiStatus();
+  const isOfflineMode = liveAiStatus.mode === 'ollama';
+  const activeModelDisplay = isOfflineMode
+    ? (selectedOllamaModel || 'Ornith 9B (Lokal)')
+    : liveAiStatus.mode === 'vertex'
+    ? (selectedVertexModel || 'Vertex AI')
+    : (selectedGeminiModel || 'Gemini Cloud');
 
   const handleAudioFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -782,7 +791,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                     </div>
                     <div className="flex flex-col">
                        <span className="text-[13.5px] font-bold text-slate-800 leading-tight whitespace-nowrap">
-                         {isThinking ? t('processingWithModel', 'Memproses...') :
+                         {isThinking ? `${t('processingWithModel', 'Memproses dengan AI...')} (${activeModelDisplay})` :
                           isTranscribing ? t('transcribingVoice', 'Menerjemahkan...') :
                           isListening ? (speechSupported ? t('listening', 'Mendengarkan...') : t('recordingVoice', 'Merekam...')) :
                           voiceNotice ? '⚠️ Perhatian' :
@@ -791,16 +800,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                        <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
                          {isListening || isThinking ? (
                             <span className="flex gap-1.5 items-center">
-                              {t('tridoAiActive', 'Trido AI Aktif')}
+                              <span className={isOfflineMode ? "text-emerald-600 font-bold" : "text-blue-600 font-bold"}>
+                                {activeModelDisplay} • {isOfflineMode ? 'Mode Offline (Ollama)' : 'Cloud Realtime'}
+                              </span>
                               <div className="flex gap-1">
-                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" />
-                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}} />
-                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} style={{animationDelay: '0.1s'}} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} style={{animationDelay: '0.2s'}} />
                               </div>
                             </span>
                          ) : voiceNotice ? (
                             <span className="text-amber-500">{voiceNotice.slice(0, 40)}{voiceNotice.length > 40 ? '…' : ''}</span>
-                         ) : speechSupported ? t('standbyMode', 'Mode Siaga') : t('limitedVoiceDesc', 'Gunakan teks')}
+                         ) : speechSupported ? (
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                              <span>{activeModelDisplay}</span>
+                              <span className="text-slate-400">•</span>
+                              <span className={isOfflineMode ? 'text-emerald-600 font-semibold' : 'text-slate-500'}>
+                                {isOfflineMode ? '100% Offline' : t('standbyMode', 'Mode Siaga')}
+                              </span>
+                            </span>
+                         ) : t('limitedVoiceDesc', 'Gunakan teks')}
                        </span>
                     </div>
                  </div>
