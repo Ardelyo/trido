@@ -107,6 +107,37 @@ function extractToolsAndCleanText(rawText: string): { functionCalls: any[]; clea
     }
   }
 
+  // Case C: Direct Regex Extractor for individual tool calls (if outer JSON was malformed or nested)
+  if (functionCalls.length === 0) {
+    const toolRegex = /"(?:name|tool)"\s*:\s*"([a-zA-Z0-9_]+)"\s*,\s*"(?:args|parameters)"\s*:\s*(\{[\s\S]*?\})(?=\s*\}|\s*\]|\s*,\s*")/g;
+    for (const match of cleanText.matchAll(toolRegex)) {
+      try {
+        const name = match[1];
+        const args = parseLenientJson(match[2]);
+        if (name && args) {
+          functionCalls.push({ name, args });
+        }
+      } catch (_) {}
+    }
+  }
+
+  // Case D: Direct Mermaid Diagram Block (model directly emitted mermaid markdown)
+  if (functionCalls.length === 0) {
+    const mermaidMatch = cleanText.match(/```mermaid\s*([\s\S]*?)\s*```/i);
+    if (mermaidMatch && mermaidMatch[1].trim()) {
+      const mermaidCode = mermaidMatch[1].trim();
+      const titleMatch = cleanText.match(/\*\*Judul:\*\*\s*([^\n*]+)|\*\*Title:\*\*\s*([^\n*]+)/i);
+      const title = titleMatch ? (titleMatch[1] || titleMatch[2]).trim() : "Diagram Konsep";
+      functionCalls.push({
+        name: "render_mermaid",
+        args: {
+          title,
+          code: mermaidCode
+        }
+      });
+    }
+  }
+
   // If function calls were extracted, purge technical JSON and schemas from user-facing text
   if (functionCalls.length > 0) {
     if (extractedConversationalText) {
@@ -116,6 +147,7 @@ function extractToolsAndCleanText(rawText: string): { functionCalls: any[]; clea
         .replace(/```(?:json)?[\s\S]*?```/gi, '')
         .replace(/\{[\s\S]*\}/g, '')
         .replace(/\[[\s\S]*\]/g, '')
+        .replace(/\*\*3\.\s*JSON Output:\*\*[\s\S]*$/gi, '')
         .replace(/Explanation:[\s\S]*$/gi, '')
         .replace(/Note: I've included JSON format[\s\S]*$/gi, '')
         .trim();
