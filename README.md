@@ -248,7 +248,14 @@ The technology — Gemma 4, function calling, Fabric.js, Socket.IO — is the sc
 
 ---
 
-## License
+## License & Copyright
+
+```text
+TRIDO 2026
+Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia
+(Ministry of Law, Republic of Indonesia)
+Copyright (c) 2026 TRIDO by Ardellio Satria Anindito
+```
 
 - **Code & Software:** Licensed under the [MIT License](LICENSE).
 - **Documentation, Writeups & Competition Deliverables:** Licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) License.
@@ -256,5 +263,6 @@ The technology — Gemma 4, function calling, Fabric.js, Socket.IO — is the sc
 
 ---
 
-*Built in Indonesia. Tested in a real classroom in Bandung.*
-*For Pak Damar, and every teacher like him.*
+*Built in Indonesia. Tested in a real classroom in Bandung.*  
+*For Pak Damar, and every teacher like him.*  
+*TRIDO 2026 • Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia (Ministry of Law, Republic of Indonesia)*

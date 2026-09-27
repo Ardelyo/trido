@@ -1040,8 +1040,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
             <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-2xl">
               <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
               <p className="text-xs font-semibold text-blue-700 leading-relaxed">
-                {t('aboutTridoDesc', 'Trido adalah papan tulis AI untuk guru Indonesia yang dirancang bersama Pak Damar — guru Bahasa Indonesia dengan disabilitas fisik di Bandung. Teknologi ini bukan hanya tentang kecerdasan buatan; tapi tentang inklusivitas.')}
+                {t('aboutTridoDesc', 'Trido adalah papan tulis AI inklusif untuk guru yang mendukung ratusan bahasa internasional dan beroperasi penuh secara offline.')}
               </p>
+            </div>
+            <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] leading-relaxed text-slate-500 font-medium">
+              <div className="font-bold text-slate-700">TRIDO 2026</div>
+              <div>Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia</div>
+              <div className="text-[10px] text-slate-400">(Ministry of Law, Republic of Indonesia)</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">Copyright © 2026 TRIDO by Ardellio Satria Anindito</div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500">
               <div className="bg-slate-50 rounded-xl p-3">
@@ -1049,7 +1055,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 <div>{t('appVersion', 'Versi Aplikasi')}</div>
               </div>
               <div className="bg-slate-50 rounded-xl p-3">
-                <div className="text-slate-800 font-black text-base">gemma-4-31b-it</div>
+                <div className="text-slate-800 font-black text-base">Trido AI Core</div>
                 <div>{t('aiModel', 'Model AI')}</div>
               </div>
             </div>
