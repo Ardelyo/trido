@@ -92,11 +92,14 @@ const probeOllama = async (customUrl?: string, customModel?: string) => {
     const models = (data.models || []).map((m: any) => m.name);
     const configuredModel = customModel || getOllamaModel();
     
-    // Check configured model, and alternative fallbacks requested by user: gemma-4-31b-it or gemma4:31b, or default gemma4:e2b
-    const candidateModels = [configuredModel, 'gemma-4-31b-it', 'gemma4:31b', 'gemma4:e2b'];
-    const activeModel = candidateModels.find(candidate => 
+    // Check configured model, installed models including qwen3.5 and gemma4, or fallback to first available model
+    const candidateModels = [configuredModel, 'qwen3.5-aggressive:9b', 'gemma4:e2b', 'gemma4:latest', 'gemma2:2b', 'ornith-1.5:9b'];
+    let activeModel = candidateModels.find(candidate => 
       models.includes(candidate) || models.some((m: string) => m.startsWith(candidate + ':'))
     );
+    if (!activeModel && models.length > 0) {
+      activeModel = models[0];
+    }
     const hasRequiredModel = !!activeModel;
 
     return {

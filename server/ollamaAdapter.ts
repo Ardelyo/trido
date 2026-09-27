@@ -7,6 +7,21 @@ import { createLogger } from "../utils/logger";
 const logger = createLogger('ollama-adapter');
 const getOllamaUrl = (customUrl?: string) => customUrl || process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
 
+function toOllamaJsonSchema(schema: any): any {
+  if (!schema || typeof schema !== 'object') return schema;
+  if (Array.isArray(schema)) return schema.map(toOllamaJsonSchema);
+
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(schema)) {
+    if (key === 'type' && typeof value === 'string') {
+      result[key] = value.toLowerCase();
+    } else {
+      result[key] = toOllamaJsonSchema(value);
+    }
+  }
+  return result;
+}
+
 export const generateAgentActionsOllama = async (
   prompt: string,
   canvasImageBase64: string,
@@ -42,7 +57,7 @@ export const generateAgentActionsOllama = async (
     function: {
       name: t.name,
       description: t.description || "",
-      parameters: t.parameters as any
+      parameters: toOllamaJsonSchema(t.parameters)
     }
   }));
 

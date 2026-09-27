@@ -167,6 +167,16 @@ interface ToolCallError {
 const validateAndFixToolCall = (call: any): { valid: boolean; fixed?: any; error?: string } => {
   const args = call.args || {};
   switch (call.name) {
+    case 'render_mermaid':
+      if (!args.code) {
+        return {
+          valid: false,
+          error: 'Missing required code for render_mermaid',
+          fixed: { ...args, code: 'mindmap\n  root((Peta Konsep))\n    Cabang 1\n    Cabang 2' }
+        };
+      }
+      return { valid: true };
+
     case 'add_mindmap_node':
       if (!args.text) {
         return {
