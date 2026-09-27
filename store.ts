@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig, SupportedLanguage } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 import { findMatchingMindmapNode } from './utils/mindmapLayout';
 
@@ -66,8 +66,8 @@ interface AppStore extends AgentState {
   userName: string;
   setUserName: (name: string) => void;
 
-  language: 'id' | 'en';
-  setLanguage: (lang: 'id' | 'en') => void;
+  language: SupportedLanguage;
+  setLanguage: (lang: SupportedLanguage) => void;
 
   aiPreference: AiPreference;
   setAiPreference: (pref: AiPreference) => void;
@@ -219,9 +219,10 @@ const getInitialSelectedVertexModel = (): string => {
   return saved;
 };
 
-const getInitialLanguage = (): 'id' | 'en' => {
-  const saved = localStorage.getItem('trido_language');
-  return (saved === 'id' || saved === 'en') ? saved : 'id';
+const getInitialLanguage = (): SupportedLanguage => {
+  const saved = localStorage.getItem('trido_language') as SupportedLanguage;
+  const validLanguages: SupportedLanguage[] = ['id', 'en', 'ar', 'zh', 'fr', 'ru', 'es', 'ja', 'ko', 'de', 'pt'];
+  return (saved && validLanguages.includes(saved)) ? saved : 'id';
 };
 
 const getInitialUserName = (): string => {

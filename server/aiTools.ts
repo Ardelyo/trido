@@ -587,13 +587,14 @@ export const buildSystemInstruction = (
     .map(([id, el]) => {
       const type = el.componentType || 'Widget';
       const cfg = el.config || {};
+      const elTitle = el.title || cfg.title || '';
       let detail = '';
       if (type === 'MERMAID_DIAGRAM' || type === 'MARKMAP_MINDMAP') {
-        const title = cfg.title ? ` "${cfg.title}"` : '';
+        const title = elTitle ? ` "${elTitle}"` : '';
         const code = cfg.code ? `\n    Code: ${cfg.code.replace(/\n/g, ' ')}` : cfg.markdown ? `\n    Markdown: ${cfg.markdown.replace(/\n/g, ' ')}` : '';
         detail = `${title}${code}`;
       } else if (type === 'DOCUMENT_PAGE' || type === 'MARKDOWN_NOTE') {
-        const title = cfg.title ? ` "${cfg.title}"` : '';
+        const title = elTitle ? ` "${elTitle}"` : '';
         const snippet = cfg.markdown ? ` | Preview: ${cfg.markdown.slice(0, 150).replace(/\n/g, ' ')}...` : '';
         detail = `${title}${snippet}`;
       } else if (String(type).startsWith('QUIZ')) {
@@ -605,8 +606,8 @@ export const buildSystemInstruction = (
       } else if (type === 'TODOLIST') {
         const count = Array.isArray(cfg.tasks) ? cfg.tasks.length : 0;
         detail = ` | ${count} tasks`;
-      } else if (cfg.title) {
-        detail = ` "${cfg.title}"`;
+      } else if (elTitle) {
+        detail = ` "${elTitle}"`;
       }
       return `  - [${id}] ${type}${detail}`;
     })
@@ -647,7 +648,17 @@ RULES:
 Execute the request now.`;
   }
 
-  return `You are Trido — an AI teaching assistant in a smart digital whiteboard for Indonesian teachers.
+  return `You are Trido — an intelligent, continuous AI teaching assistant and smartboard copilot for educators worldwide.
+
+## CORE CONTINUITY PRINCIPLES (MANDATORY)
+1. **MULTI-TURN SESSION & WHITEBOARD AWARENESS**:
+   - You MUST maintain strict awareness of all objects, interactive widgets, mindmaps, notes, and timers currently on the whiteboard.
+   - When the user asks to continue, explain further, branch out, or modify something, DO NOT repeat or duplicate existing items. Reference and build directly upon what is already on the board.
+   - If a mindmap is already rendered on the whiteboard, continuing the mindmap MUST be done via \`update_component\` to expand branches in-place, keeping existing root and parent nodes intact.
+
+2. **MULTILINGUAL & GLOBAL INCLUSIVITY**:
+   - Speak and respond fluently in whatever language the teacher asks in (Indonesian, English, Arabic, Chinese, French, Russian, Spanish, Japanese, Korean, German, Portuguese, or any global language).
+   - Generate all diagram text, mindmap labels, quiz questions, and markdown notes in the language requested by the teacher.
 
 ## CANVAS STATE
 Viewport: ${vw}×${vh}px
@@ -656,7 +667,7 @@ Page: ${pageContext ? `${pageContext.current + 1} / ${pageContext.total}` : '1'}
 Existing shapes/text:
 ${existingObjects}
 
-Interactive components:
+Interactive components on canvas:
 ${domEntries}
 
 ## GRID POSITIONS

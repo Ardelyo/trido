@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { toast } from '../utils/toast';
-import { useTranslation } from '../utils/translations';
+import { useTranslation, SUPPORTED_LANGUAGES } from '../utils/translations';
+import { SupportedLanguage } from '../types';
 import { getTelemetryDownloadUrl } from '../services/aiService';
 import { useAiStatus } from '../hooks/useAiStatus';
 
@@ -212,11 +213,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
             <Field label={t('interfaceLanguage', 'Bahasa Antarmuka')}>
               <select
                 value={localLang}
-                onChange={e => setLocalLang(e.target.value as 'id' | 'en')}
+                onChange={e => setLocalLang(e.target.value as SupportedLanguage)}
                 className={inputCls}
               >
-                <option value="id">🇮🇩 Bahasa Indonesia</option>
-                <option value="en">🇺🇸 English</option>
+                <optgroup label="United Nations (UN) Official Languages">
+                  {SUPPORTED_LANGUAGES.filter(l => l.isUN).map(l => (
+                    <option key={l.code} value={l.code}>
+                      {l.flag} {l.nativeName} ({l.name}) - UN Official
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Global & Regional Languages">
+                  {SUPPORTED_LANGUAGES.filter(l => !l.isUN).map(l => (
+                    <option key={l.code} value={l.code}>
+                      {l.flag} {l.nativeName} ({l.name})
+                    </option>
+                  ))}
+                </optgroup>
               </select>
             </Field>
           </Section>
