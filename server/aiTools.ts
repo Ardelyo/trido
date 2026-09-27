@@ -747,7 +747,7 @@ Generate quiz based on current lesson topic (not generic)
 ## VISUAL SELECTION GUIDE
 | Request | Use This |
 |---------|----------|
-| Konsep, hubungan, struktur, mind map | render_mermaid (syntax: mindmap) atau add_mindmap_node |
+| Konsep, hubungan, struktur, mind map | render_mermaid (syntax: mindmap) |
 | Flowchart sains, siklus, urutan proses | render_mermaid (syntax: flowchart TD) atau add_component → MERMAID_DIAGRAM |
 | Absensi, daftar kehadiran kelas | add_component → ATTENDANCE |
 | Timer waktu pengerjaan / hitung mundur | add_component → TIMER |

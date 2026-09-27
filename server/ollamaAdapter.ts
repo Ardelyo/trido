@@ -137,20 +137,21 @@ export const generateAgentActionsOllama = async (
     // automatically fall back to prompt-based JSON tool generation without failing or jumping to cloud!
     if (typeof data.error === 'string' && data.error.includes("does not support tools")) {
       logger.warn(`Model ${modelName} does not support native tools. Retrying with prompt-based JSON tool calling...`);
-      const fallbackPayload = {
+      const fallbackPayload: any = {
         model: modelName,
         messages: [
           {
             role: "system",
-            content: `${systemInstruction}\n\nCRITICAL: You must output ONLY a valid JSON object with your response and tool calls in this format:\n{"textResponse": "Your explanation here", "functionCalls": [{"name": "tool_name", "args": {...}}]}`
+            content: `${systemInstruction}\n\nCRITICAL OUTPUT REQUIREMENT:\nYou MUST output your actions as a JSON block formatted exactly like this:\n\`\`\`json\n{\n  "textResponse": "Penjelasan singkat",\n  "functionCalls": [\n    {"name": "render_mermaid", "args": {"title": "Judul", "code": "mindmap\\n  root((Topik))\\n    Cabang"}}\n  ]\n}\n\`\`\``
           },
           ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.text })),
           userMessage
         ],
         stream: false,
-        format: "json",
         options: {
-          num_ctx: CONFIG.ai.ollama.numCtx
+          num_ctx: 16384,
+          temperature: 0.15,
+          repeat_penalty: 1.05
         }
       };
 
@@ -161,26 +162,30 @@ export const generateAgentActionsOllama = async (
       });
       const fallbackData = await fallbackRes.json();
       if (!fallbackData.error && fallbackData.message?.content) {
-        try {
-          const parsed = JSON.parse(fallbackData.message.content);
-          return {
-            functionCalls: Array.isArray(parsed.functionCalls) ? parsed.functionCalls : [],
-            textResponse: parsed.textResponse || fallbackData.message.content,
-            thought: "",
-            telemetry: {
-              id: `tel_ollama_${Date.now()}`,
-              promptTokens: 0,
-              outputTokens: 0,
-              totalTokens: 0,
-              costUsd: 0,
-              costIdr: 0,
-              latencyMs: 1000,
-              provider: "ollama",
-              model: modelName,
-              sheetSyncStatus: "disabled"
-            }
-          };
-        } catch (_) {}
+        const rawContent = fallbackData.message.content.trim();
+        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            return {
+              functionCalls: Array.isArray(parsed.functionCalls) ? parsed.functionCalls : [],
+              textResponse: parsed.textResponse || rawContent.replace(jsonMatch[0], '').trim(),
+              thought: "",
+              telemetry: {
+                id: `tel_ollama_${Date.now()}`,
+                promptTokens: 0,
+                outputTokens: 0,
+                totalTokens: 0,
+                costUsd: 0,
+                costIdr: 0,
+                latencyMs: 1200,
+                provider: "ollama",
+                model: modelName,
+                sheetSyncStatus: "disabled"
+              }
+            };
+          } catch (_) {}
+        }
       }
     }
 
