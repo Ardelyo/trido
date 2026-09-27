@@ -324,90 +324,57 @@ export const DomOverlay: React.FC = () => {
                 pointerEvents: 'auto'
               }}
             >
-              {/* Desktop Header / PC Window Titlebar with Grip Handle */}
+              {/* Desktop Header / PC Window Titlebar with Generous Drag Area */}
               <div
                 onMouseDown={(e) => handleTitlebarMouseDown(el, e)}
                 onDoubleClick={() => setFullscreenWidgetId(el.id)}
-                className={`flex h-11 w-full items-center justify-between px-3 border-b border-slate-200/80 shrink-0 select-none transition-colors ${
-                  draggingWidget?.id === el.id ? 'bg-indigo-100/90 cursor-grabbing' : 'bg-slate-100/95 hover:bg-slate-200/90 cursor-grab'
+                className={`flex h-11 w-full items-center justify-between px-3 border-b border-slate-200/80 shrink-0 select-none transition-colors cursor-grab active:cursor-grabbing ${
+                  draggingWidget?.id === el.id ? 'bg-indigo-100/90' : 'bg-slate-100/95 hover:bg-slate-200/80'
                 }`}
-                title="Tahan dan geser untuk memindahkan widget • Klik ganda untuk Layar Penuh"
+                title="Tahan dan geser di mana saja pada judul untuk memindahkan widget • Klik ganda untuk Layar Penuh"
               >
-                {/* Title & Icon & Grip Handle */}
-                <div className="flex items-center gap-2 min-w-0 pr-2">
-                  <div className="flex items-center justify-center text-slate-400 group-hover:text-slate-600">
-                    <GripVertical size={14} />
+                {/* Title & Icon & Drag Hitbox (Flex-1 so touching/clicking anywhere drags) */}
+                <div className="flex-1 flex items-center gap-2.5 min-w-0 pr-3 py-1 cursor-grab active:cursor-grabbing">
+                  <div className="flex items-center justify-center text-slate-400 group-hover:text-slate-600 shrink-0">
+                    <GripVertical size={16} />
                   </div>
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0">
                     {getComponentIcon(el.componentType)}
                   </div>
-                  <div className="font-extrabold text-[12px] text-slate-800 tracking-tight truncate font-sans">
+                  <div className="font-extrabold text-[12.5px] text-slate-800 tracking-tight truncate font-sans">
                     {title}
                   </div>
                 </div>
 
-                {/* PC Window Actions */}
-                <div className="flex items-center gap-1 shrink-0 no-print">
-                  {/* Unduh PNG */}
-                  <button
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => handleExportComponentPNG(el, e)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-blue-600 transition cursor-pointer"
-                    title="Unduh Gambar PNG HD Objek (2x Retina)"
-                  >
-                    <ImageIcon size={13} />
-                  </button>
-
-                  {/* Salin Gambar */}
-                  <button
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => handleCopyComponentImage(el, e)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-emerald-600 transition cursor-pointer"
-                    title="Salin Gambar ke Clipboard (Siap Paste ke Canva/Word/WA)"
-                  >
-                    <Copy size={13} />
-                  </button>
-
-                  {/* Print / PDF */}
-                  <button
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={(e) => handlePrint(el, e)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-indigo-600 transition cursor-pointer"
-                    title="Cetak Dokumen Bersih / PDF"
-                  >
-                    <Printer size={13} />
-                  </button>
-
+                {/* PC Window Actions: Clean, non-redundant controls */}
+                <div className="flex items-center gap-1 shrink-0 no-print" onMouseDown={(e) => e.stopPropagation()}>
                   {/* Quick Export Artifact */}
                   <button
-                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => handleQuickExport(el, e)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-amber-600 transition cursor-pointer"
-                    title="Unduh Berkas Mandiri (HTML/SVG/MD/CSV)"
+                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-blue-600 transition cursor-pointer"
+                    title="Unduh Berkas Mandiri (SVG/MD/HTML)"
                   >
-                    <Download size={13} />
+                    <Download size={14} />
                   </button>
 
                   {/* Fullscreen / Focus Mode */}
                   <button
-                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={() => setFullscreenWidgetId(el.id)}
                     className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-purple-600 transition cursor-pointer"
                     title="Layar Penuh (Fullscreen PC Focus)"
                   >
-                    <Maximize2 size={13} />
+                    <Maximize2 size={14} />
                   </button>
 
-                  <div className="w-[1px] h-3 bg-slate-200 mx-0.5" />
+                  <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
 
-                  {/* Close / Delete */}
+                  {/* Sole Close / Delete Button */}
                   <button
-                    onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => handleDelete(el.id, e)}
                     className="p-1.5 rounded-lg hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition cursor-pointer"
                     title="Tutup Komponen"
                   >
-                    <X size={13} strokeWidth={2.5} />
+                    <X size={15} strokeWidth={2.5} />
                   </button>
                 </div>
               </div>

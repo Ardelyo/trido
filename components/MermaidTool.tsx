@@ -274,97 +274,10 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
   };
 
   return (
-    <div className="flex flex-col w-full h-full bg-[#fafafa] text-slate-800 overflow-hidden font-sans select-none">
-      {/* Top Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-slate-200/90 text-xs shrink-0">
-        <div className="flex items-center gap-2">
-          {isMindmap ? (
-            <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
-          ) : (
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
-          )}
-          <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider line-clamp-1">
-            {title}
-          </span>
-          <span
-            className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-              isMindmap
-                ? 'bg-indigo-50 text-indigo-600 border border-indigo-200/60'
-                : isFlowchart
-                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                : 'bg-blue-50 text-blue-700 border border-blue-200/60'
-            }`}
-          >
-            {isMindmap ? (
-              <>
-                <Brain size={11} /> Mindmap
-              </>
-            ) : isFlowchart ? (
-              <>
-                <GitBranch size={11} /> Flowchart
-              </>
-            ) : (
-              'Mermaid'
-            )}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className={`p-1.5 rounded-lg text-slate-600 transition cursor-pointer flex items-center gap-1 ${
-              isEditing ? 'bg-indigo-100 text-indigo-700 font-semibold' : 'hover:bg-slate-100'
-            }`}
-            title="Edit Kode Mermaid"
-          >
-            {isEditing ? <Eye size={13} /> : <Edit3 size={13} />}
-            <span className="text-[10px] hidden sm:inline">{isEditing ? 'Lihat' : 'Edit'}</span>
-          </button>
-          
-          <div className="w-[1px] h-3 bg-slate-200 mx-0.5" />
-
-          <button
-            onClick={() => setZoom(z => Math.max(0.4, z - 0.15))}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition cursor-pointer"
-            title="Perkecil"
-          >
-            <ZoomOut size={13} />
-          </button>
-          <button
-            onClick={() => setZoom(1)}
-            className="px-1.5 py-1 text-[10px] font-mono rounded hover:bg-slate-100 text-slate-600 transition cursor-pointer"
-            title="Reset Zoom"
-          >
-            {Math.round(zoom * 100)}%
-          </button>
-          <button
-            onClick={() => setZoom(z => Math.min(2.5, z + 0.15))}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition cursor-pointer"
-            title="Perbesar"
-          >
-            <ZoomIn size={13} />
-          </button>
-          <div className="w-[1px] h-3 bg-slate-200 mx-0.5" />
-          <button
-            onClick={handleCopyCode}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition cursor-pointer"
-            title="Salin Kode Mermaid"
-          >
-            {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-          </button>
-          <button
-            onClick={handleExportSvg}
-            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 transition cursor-pointer"
-            title="Unduh Vektor SVG"
-          >
-            <Download size={13} />
-          </button>
-        </div>
-      </div>
-
+    <div className="flex flex-col w-full h-full bg-[#fafafa] text-slate-800 overflow-hidden font-sans select-none relative">
       {/* Code Editor Drawer */}
       {isEditing && (
-        <div className="bg-slate-900 text-slate-100 p-3 border-b border-slate-800 text-xs flex flex-col gap-2 shrink-0">
+        <div className="bg-slate-900 text-slate-100 p-3 border-b border-slate-800 text-xs flex flex-col gap-2 shrink-0 z-30">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[11px] text-slate-400 flex items-center gap-1.5">
               <Sparkles size={12} className="text-indigo-400" /> Editor Kode Mermaid:
@@ -400,7 +313,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
         </div>
       )}
 
-      {/* Body Area */}
+      {/* Main Diagram Canvas Area */}
       <div ref={containerRef} className="flex-1 w-full h-full relative overflow-auto p-6 flex items-center justify-center bg-white/70">
         {error ? (
           <div className="max-w-md p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 text-xs flex flex-col gap-2.5">
@@ -433,6 +346,57 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
             className="max-w-full flex items-center justify-center"
           />
         )}
+      </div>
+
+      {/* Floating Canvas Controls (Figma/Canva style) */}
+      <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1 bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-slate-200/90 shadow-md select-none">
+        <button
+          onClick={() => setIsEditing(!isEditing)}
+          className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer ${
+            isEditing ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
+          }`}
+          title="Edit Kode Mermaid"
+        >
+          {isEditing ? <Eye size={13} /> : <Edit3 size={13} />}
+          <span className="text-[11px]">{isEditing ? 'Lihat' : 'Edit'}</span>
+        </button>
+        <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
+        <button
+          onClick={() => setZoom(z => Math.max(0.4, z - 0.15))}
+          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+          title="Perkecil"
+        >
+          <ZoomOut size={13} />
+        </button>
+        <button
+          onClick={() => setZoom(1)}
+          className="px-1.5 py-0.5 text-[10px] font-bold font-mono text-slate-600 hover:bg-slate-100 rounded transition cursor-pointer"
+          title="Reset Zoom (100%)"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          onClick={() => setZoom(z => Math.min(2.5, z + 0.15))}
+          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+          title="Perbesar"
+        >
+          <ZoomIn size={13} />
+        </button>
+        <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
+        <button
+          onClick={handleCopyCode}
+          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+          title="Salin Kode Mermaid"
+        >
+          {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+        </button>
+        <button
+          onClick={handleExportSvg}
+          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+          title="Unduh Vektor SVG"
+        >
+          <Download size={13} />
+        </button>
       </div>
     </div>
   );

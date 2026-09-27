@@ -98,6 +98,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     img.src = deleteIcon;
 
     function renderIcon(ctx: CanvasRenderingContext2D, left: number, top: number, styleOverride: any, fabricObject: any) {
+      if (fabricObject?.isDomPlaceholder) return; // Do NOT render duplicate red 'X' control on DOM widgets (they have their own titlebar close button)
       const size = 20;
       ctx.save();
       ctx.translate(left, top);
@@ -391,19 +392,13 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       
       const handleScaling = (o: any) => {
         if (o.isDomPlaceholder) {
-          const newWidth = o.width * o.scaleX;
-          const newHeight = o.height * o.scaleY;
-          o.set({
-            width: newWidth,
-            height: newHeight,
-            scaleX: 1,
-            scaleY: 1
-          });
+          const currentWidth = Math.max(250, Math.round(o.width * o.scaleX));
+          const currentHeight = Math.max(160, Math.round(o.height * o.scaleY));
           updateDomElement(o.id, {
-            width: newWidth,
-            height: newHeight,
-            x: o.left,
-            y: o.top,
+            width: currentWidth,
+            height: currentHeight,
+            x: Math.round(o.left),
+            y: Math.round(o.top),
             scaleX: 1,
             scaleY: 1,
             rotation: o.angle
@@ -415,6 +410,35 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
 
       if (obj.type === 'activeSelection') obj.getObjects().forEach((o: any) => handleScaling(o));
       else handleScaling(obj);
+    });
+
+    canvas.on('object:modified', (e: any) => {
+      const obj = e.target;
+      if (!obj) return;
+      const handleModified = (o: any) => {
+        if (o.isDomPlaceholder) {
+          const finalWidth = Math.max(250, Math.round(o.width * o.scaleX));
+          const finalHeight = Math.max(160, Math.round(o.height * o.scaleY));
+          o.set({
+            width: finalWidth,
+            height: finalHeight,
+            scaleX: 1,
+            scaleY: 1
+          });
+          o.setCoords();
+          updateDomElement(o.id, {
+            width: finalWidth,
+            height: finalHeight,
+            x: Math.round(o.left),
+            y: Math.round(o.top),
+            scaleX: 1,
+            scaleY: 1,
+            rotation: o.angle
+          });
+        }
+      };
+      if (obj.type === 'activeSelection') obj.getObjects().forEach((o: any) => handleModified(o));
+      else handleModified(obj);
     });
 
     canvas.on('object:rotating', (e: any) => {

@@ -119,7 +119,7 @@ const App: React.FC = () => {
 
     // 1. Explicit Ollama mode OR browser is offline but local Ollama is ready
     if (isUsingOllama || (!isBrowserOnline && aiStatus.ollamaStatus?.online && aiStatus.ollamaStatus?.hasModel)) {
-      const activeModel = storeState.selectedOllamaModel || aiStatus.ollamaStatus?.activeModel || aiStatus.model || 'gemma4:e2b';
+      const activeModel = storeState.selectedOllamaModel || aiStatus.ollamaStatus?.activeModel || aiStatus.model || 'trido-model:latest';
       return {
         mode: 'ollama' as const,
         text: !isBrowserOnline ? 'Mode Offline (Ollama Aktif)' : t('modeLuring', 'Mode Offline (Ollama)'),
