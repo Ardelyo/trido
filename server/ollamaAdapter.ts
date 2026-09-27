@@ -186,6 +186,25 @@ export const generateAgentActionsOllama = async (
             };
           } catch (_) {}
         }
+
+        // Graceful non-tool text response
+        return {
+          functionCalls: [],
+          textResponse: rawContent,
+          thought: "",
+          telemetry: {
+            id: `tel_ollama_${Date.now()}`,
+            promptTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+            costUsd: 0,
+            costIdr: 0,
+            latencyMs: 1200,
+            provider: "ollama",
+            model: modelName,
+            sheetSyncStatus: "disabled"
+          }
+        };
       }
     }
 
