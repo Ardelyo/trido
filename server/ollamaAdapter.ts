@@ -22,6 +22,113 @@ function toOllamaJsonSchema(schema: any): any {
   return result;
 }
 
+// Lenient JSON parser for small SLMs that output literal newlines or trailing commas
+function parseLenientJson(jsonStr: string): any {
+  if (!jsonStr || typeof jsonStr !== 'string') return null;
+  // 1. Direct parse attempt
+  try {
+    return JSON.parse(jsonStr.trim());
+  } catch (_) {}
+
+  // 2. Escape literal unescaped control characters inside string quotes
+  try {
+    let inString = false;
+    let escaped = false;
+    let sanitized = "";
+    for (let i = 0; i < jsonStr.length; i++) {
+      const char = jsonStr[i];
+      if (char === '"' && !escaped) {
+        inString = !inString;
+      }
+      if (inString) {
+        if (char === '\n') {
+          sanitized += '\\n';
+          continue;
+        } else if (char === '\r') {
+          sanitized += '\\r';
+          continue;
+        } else if (char === '\t') {
+          sanitized += '\\t';
+          continue;
+        }
+      }
+      escaped = (char === '\\' && !escaped);
+      sanitized += char;
+    }
+    // Remove trailing commas before } or ]
+    sanitized = sanitized.replace(/,\s*([\}\]])/g, '$1');
+    return JSON.parse(sanitized.trim());
+  } catch (_) {}
+
+  return null;
+}
+
+// Extracts functionCalls and purges raw JSON/code blocks from chat textResponse
+function extractToolsAndCleanText(rawText: string): { functionCalls: any[]; cleanText: string } {
+  if (!rawText) return { functionCalls: [], cleanText: "" };
+  
+  let cleanText = rawText
+    .replace(/<think>[\s\S]*?<\/think>/g, '')
+    .replace(/<thought>[\s\S]*?<\/thought>/g, '')
+    .trim();
+
+  const functionCalls: any[] = [];
+  let extractedConversationalText = "";
+
+  const inspectParsedObject = (parsed: any) => {
+    if (!parsed) return;
+    if (parsed.textResponse && typeof parsed.textResponse === 'string') {
+      extractedConversationalText = parsed.textResponse.trim();
+    }
+    if (Array.isArray(parsed.functionCalls)) {
+      functionCalls.push(...parsed.functionCalls);
+    } else if (Array.isArray(parsed.calls)) {
+      functionCalls.push(...parsed.calls);
+    } else if (parsed.name && parsed.args) {
+      functionCalls.push(parsed);
+    } else if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.name) {
+      functionCalls.push(...parsed);
+    }
+  };
+
+  // Case A: Fenced markdown blocks ```json ... ```
+  const fencedMatches = [...cleanText.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)];
+  for (const match of fencedMatches) {
+    const parsed = parseLenientJson(match[1]);
+    inspectParsedObject(parsed);
+  }
+
+  // Case B: Bare JSON object or array { ... }
+  if (functionCalls.length === 0) {
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const parsed = parseLenientJson(jsonMatch[0]);
+      inspectParsedObject(parsed);
+    }
+  }
+
+  // If function calls were extracted, purge technical JSON and schemas from user-facing text
+  if (functionCalls.length > 0) {
+    if (extractedConversationalText) {
+      cleanText = extractedConversationalText;
+    } else {
+      cleanText = cleanText
+        .replace(/```(?:json)?[\s\S]*?```/gi, '')
+        .replace(/\{[\s\S]*\}/g, '')
+        .replace(/\[[\s\S]*\]/g, '')
+        .replace(/Explanation:[\s\S]*$/gi, '')
+        .replace(/Note: I've included JSON format[\s\S]*$/gi, '')
+        .trim();
+    }
+
+    if (!cleanText) {
+      cleanText = "Tentu! Saya telah menyiapkan komponen di papan tulis pintar untuk Anda.";
+    }
+  }
+
+  return { functionCalls, cleanText };
+}
+
 export const generateAgentActionsOllama = async (
   prompt: string,
   canvasImageBase64: string,
@@ -162,35 +269,10 @@ export const generateAgentActionsOllama = async (
       });
       const fallbackData = await fallbackRes.json();
       if (!fallbackData.error && fallbackData.message?.content) {
-        const rawContent = fallbackData.message.content.trim();
-        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            const parsed = JSON.parse(jsonMatch[0]);
-            return {
-              functionCalls: Array.isArray(parsed.functionCalls) ? parsed.functionCalls : [],
-              textResponse: parsed.textResponse || rawContent.replace(jsonMatch[0], '').trim(),
-              thought: "",
-              telemetry: {
-                id: `tel_ollama_${Date.now()}`,
-                promptTokens: 0,
-                outputTokens: 0,
-                totalTokens: 0,
-                costUsd: 0,
-                costIdr: 0,
-                latencyMs: 1200,
-                provider: "ollama",
-                model: modelName,
-                sheetSyncStatus: "disabled"
-              }
-            };
-          } catch (_) {}
-        }
-
-        // Graceful non-tool text response
+        const { functionCalls: extractedCalls, cleanText } = extractToolsAndCleanText(fallbackData.message.content);
         return {
-          functionCalls: [],
-          textResponse: rawContent,
+          functionCalls: extractedCalls,
+          textResponse: cleanText,
           thought: "",
           telemetry: {
             id: `tel_ollama_${Date.now()}`,
@@ -236,56 +318,10 @@ export const generateAgentActionsOllama = async (
         return parsed.success ? parsed.data : null;
       }).filter(Boolean);
     } else {
-      // Fallback: extract JSON tool calls from text (model didn't use native tool_calls)
-      // Only attempt extraction on reasonably short responses to avoid catastrophic regex
-      if (textResponse.length < 8000) {
-        try {
-          // Strip thinking tags first
-          const cleanText = textResponse
-            .replace(/<think>[\s\S]*?<\/think>/g, '')
-            .replace(/<thought>[\s\S]*?<\/thought>/g, '')
-            .trim();
-
-          // Match fenced JSON blocks first (safest)
-          const fencedMatches = [...cleanText.matchAll(/```json\s*([\s\S]*?)\s*```/g)];
-          for (const match of fencedMatches) {
-            try {
-              const rawJson = JSON.parse(match[1]);
-              // Case: { "calls": [...] }
-              const legacyResult = LegacyResponseSchema.safeParse(rawJson);
-              if (legacyResult.success) { functionCalls.push(...legacyResult.data.calls); continue; }
-              // Case: single tool call object
-              const singleResult = ToolCallSchema.safeParse(rawJson);
-              if (singleResult.success) { functionCalls.push(singleResult.data); continue; }
-              // Case: array of tool calls
-              const arrayResult = z.array(ToolCallSchema).safeParse(rawJson);
-              if (arrayResult.success) { functionCalls.push(...arrayResult.data); continue; }
-            } catch { /* skip invalid JSON */ }
-          }
-
-          // Only try bare JSON if no fenced blocks found and response looks JSON-like
-          if (functionCalls.length === 0) {
-            const trimmed = cleanText.trim();
-            if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.length < 4000) {
-              try {
-                const rawJson = JSON.parse(trimmed);
-                const legacyResult = LegacyResponseSchema.safeParse(rawJson);
-                if (legacyResult.success) { functionCalls.push(...legacyResult.data.calls); }
-                else {
-                  const arrayResult = z.array(ToolCallSchema).safeParse(rawJson);
-                  if (arrayResult.success) { functionCalls.push(...arrayResult.data); }
-                  else {
-                    const singleResult = ToolCallSchema.safeParse(rawJson);
-                    if (singleResult.success) { functionCalls.push(singleResult.data); }
-                  }
-                }
-              } catch { /* not valid JSON */ }
-            }
-          }
-        } catch (e) {
-          logger.warn('[Ollama Adapter] JSON extraction failed', e);
-        }
-      }
+      // Fallback: extract JSON tool calls from text and clean conversational message
+      const { functionCalls: extractedCalls, cleanText } = extractToolsAndCleanText(textResponse);
+      functionCalls = extractedCalls;
+      textResponse = cleanText;
     }
   }
 

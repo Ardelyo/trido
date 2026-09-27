@@ -579,7 +579,24 @@ ${jevDirective}
       useStore.getState().setAttachedDocument(null);
       useStore.getState().setLastUploadedImage(null);
 
-      const msg = textResponse?.trim() || synthesizeFallbackResponse(functionCalls, storeState.lessonPlan);
+      let cleanMsg = textResponse?.trim() || "";
+
+      // Defense-in-depth: If raw JSON or markdown JSON blocks leak into textResponse, sanitize them
+      if (cleanMsg.startsWith('{') || cleanMsg.startsWith('```json') || cleanMsg.includes('"functionCalls"') || cleanMsg.includes('"textResponse"')) {
+        try {
+          const jsonMatch = cleanMsg.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const innerMatch = jsonMatch[0].match(/"textResponse"\s*:\s*"([\s\S]*?)(?<!\\)"/);
+            if (innerMatch && innerMatch[1]) {
+              cleanMsg = innerMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+            } else {
+              cleanMsg = cleanMsg.replace(/```(?:json)?[\s\S]*?```/gi, '').replace(/\{[\s\S]*\}/g, '').trim();
+            }
+          }
+        } catch (_) {}
+      }
+
+      const msg = cleanMsg.trim() || synthesizeFallbackResponse(functionCalls, storeState.lessonPlan);
       const tele = _aiResult?.telemetry;
       addMessage({
         role: 'model',
