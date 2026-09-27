@@ -595,19 +595,10 @@ aiRouter.post("/transcribe", async (req, res) => {
           text = await transcribeAudioGemini(base64Audio, geminiApiKey, selectedGeminiModel);
         } else if (mode === 'ollama') {
           activeModel = selectedOllamaModel || status.ollamaStatus?.activeModel || getOllamaModel();
-          // Priority 1: Faster-Whisper 100% offline local transcription
           logger.info(`[Router] Attempting offline Faster-Whisper transcription for language: ${req.body.language || 'auto'}...`);
           text = await transcribeAudioWhisper(base64Audio, req.body.language || 'auto');
-          
-          if (!text) {
-            text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl, activeModel);
-          }
-          if (!text) {
-            return res.status(400).json({
-              error: 'Transkripsi suara offline membutuhkan Faster-Whisper. Pastikan faster-whisper terpasang (pip install faster-whisper).',
-              code: 'offline_audio_unsupported'
-            });
-          }
+          success = true;
+          break;
         }
         success = true;
         break;
