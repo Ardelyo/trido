@@ -14,7 +14,7 @@ export interface AiStatus {
 }
 
 export const useAiStatus = () => {
-  const { geminiApiKey, ollamaBaseUrl, selectedVertexModel, selectedGeminiModel } = useStore();
+  const { aiPreference, geminiApiKey, ollamaBaseUrl, selectedOllamaModel, selectedVertexModel, selectedGeminiModel } = useStore();
   const [status, setStatus] = useState<AiStatus>({
     mode: 'unavailable',
     model: '',
@@ -28,7 +28,7 @@ export const useAiStatus = () => {
         const res = await fetch(`${apiUrl}/api/ai/status`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ geminiApiKey, ollamaBaseUrl, selectedVertexModel, selectedGeminiModel })
+          body: JSON.stringify({ aiPreference, geminiApiKey, ollamaBaseUrl, selectedOllamaModel, selectedVertexModel, selectedGeminiModel })
         });
 
         if (res.ok) {
@@ -51,7 +51,7 @@ export const useAiStatus = () => {
       window.removeEventListener('online', fetchStatus);
       window.removeEventListener('offline', fetchStatus);
     };
-  }, [geminiApiKey, ollamaBaseUrl]);
+  }, [aiPreference, selectedOllamaModel, selectedGeminiModel, selectedVertexModel, geminiApiKey, ollamaBaseUrl]);
 
   return status;
 };

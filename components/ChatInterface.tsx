@@ -64,14 +64,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     isAiDrawerOpen, isViewerUrl,
     toggleTimer, toggleCalculator, toggleNotes, toggleQuiz,
     toggleUnitConverter, togglePeriodicTable, toggleAttendance, toggleTodoList, toggleBoardSettings,
-    transcribeMode, selectedVertexModel, selectedGeminiModel, selectedOllamaModel, geminiApiKey, voiceConfig
+    transcribeMode, selectedVertexModel, selectedGeminiModel, selectedOllamaModel, geminiApiKey, voiceConfig,
+    aiPreference
   } = useStore();
 
   const liveAiStatus = useAiStatus();
-  const isOfflineMode = liveAiStatus.mode === 'ollama';
+  const isOfflineMode = aiPreference === 'ollama' || liveAiStatus.mode === 'ollama';
   const activeModelDisplay = isOfflineMode
-    ? (selectedOllamaModel || 'Ornith 9B (Lokal)')
-    : liveAiStatus.mode === 'vertex'
+    ? (selectedOllamaModel || (liveAiStatus.mode === 'ollama' ? liveAiStatus.model : 'trido-model:latest') || 'trido-model:latest')
+    : (aiPreference === 'vertex' || liveAiStatus.mode === 'vertex')
     ? (selectedVertexModel || 'Vertex AI')
     : (selectedGeminiModel || 'Gemini Cloud');
 

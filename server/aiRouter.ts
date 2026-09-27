@@ -286,9 +286,22 @@ aiRouter.get("/status", async (req, res) => {
 });
 
 aiRouter.post("/status", async (req, res) => {
-  const { geminiApiKey, ollamaBaseUrl, selectedOllamaModel, selectedVertexModel, selectedGeminiModel } = req.body;
+  const { aiPreference, geminiApiKey, ollamaBaseUrl, selectedOllamaModel, selectedVertexModel, selectedGeminiModel } = req.body;
   const status = await getAvailableMode(geminiApiKey, ollamaBaseUrl, selectedOllamaModel);
-  if (selectedVertexModel && status.mode === 'vertex') {
+
+  // Strictly honor explicit user preference if the preferred backend is available
+  if (aiPreference === 'ollama' && status.ollamaStatus?.online) {
+    status.mode = 'ollama';
+    status.model = selectedOllamaModel || status.ollamaStatus?.activeModel || 'trido-model:latest';
+    status.online = true;
+    status.reason = 'ok';
+  } else if (aiPreference === 'vertex' && status.vertexStatus?.online) {
+    status.mode = 'vertex';
+    status.model = selectedVertexModel || status.model;
+  } else if (aiPreference === 'gemini' && (status.geminiStatus?.online || geminiApiKey)) {
+    status.mode = 'gemini';
+    status.model = selectedGeminiModel || status.model;
+  } else if (selectedVertexModel && status.mode === 'vertex') {
     status.model = selectedVertexModel;
   } else if (selectedGeminiModel && status.mode === 'gemini') {
     status.model = selectedGeminiModel;

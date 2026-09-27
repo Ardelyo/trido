@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { ChevronDown, Timer } from 'lucide-react';
+import { useTranslation } from '../utils/translations';
 
 export const AgentCursor: React.FC = () => {
+  const { t } = useTranslation();
   const { cursorPosition, isThinking, isActing, isClicking, currentAction, viewportTransform, agentMessage } = useStore();
   const [displayMessage, setDisplayMessage] = useState<string | null>(null);
   const [thinkTime, setThinkTime] = useState(0);
@@ -120,7 +122,7 @@ export const AgentCursor: React.FC = () => {
           <div className="flex flex-col items-start gap-1">
              <div className="flex items-center gap-2">
                 <div className="h-2 w-2 animate-bounce rounded-full bg-white" />
-                <span>{currentAction || 'Thinking...'}</span>
+                <span>{currentAction || t('thinking', 'Berpikir...')}</span>
              </div>
              <div className={`flex items-center gap-1.5 ${timeColor} text-[10px] w-full font-mono bg-black/20 px-1.5 py-0.5 rounded`}>
                 <Timer size={10} />
