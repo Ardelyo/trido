@@ -92,8 +92,8 @@ const probeOllama = async (customUrl?: string, customModel?: string) => {
     const models = (data.models || []).map((m: any) => m.name);
     const configuredModel = customModel || getOllamaModel();
     
-    // Check configured model, installed models including qwen3.5 and gemma4, or fallback to first available model
-    const candidateModels = [configuredModel, 'qwen3.5-aggressive:9b', 'gemma4:e2b', 'gemma4:latest', 'gemma2:2b', 'ornith-1.5:9b'];
+    // Check configured model, prioritized by highest capability (ornith-1.5:9b with native tools/thinking/vision), then qwen and gemma
+    const candidateModels = [configuredModel, 'ornith-1.5:9b', 'qwen3.5-aggressive:9b', 'gemma4:e2b', 'gemma4:latest', 'gemma2:2b'];
     let activeModel = candidateModels.find(candidate => 
       models.includes(candidate) || models.some((m: string) => m.startsWith(candidate + ':'))
     );

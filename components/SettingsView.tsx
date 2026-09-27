@@ -383,7 +383,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                       <optgroup label="✅ Model yang Terpasang di Laptop Anda">
                         {detectedOllamaModels.map(m => (
                           <option key={m} value={m}>
-                            {m} {m.includes('qwen') ? '(Qwen - Cerdas & Lengkap)' : m.includes('gemma') ? '(Gemma - Cepat & Ringan)' : '(Lokal)'}
+                            {m} {m.includes('ornith') ? '⭐ (Ornith 9B - Model Terbaik Trido: Native Tools & Vision)' : m.includes('qwen') ? '(Qwen - Cerdas & Lengkap)' : m.includes('gemma') ? '(Gemma - Cepat & Ringan)' : '(Lokal)'}
                           </option>
                         ))}
                       </optgroup>
