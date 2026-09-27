@@ -85,6 +85,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
               base64Audio,
               selectedVertexModel: storeState.selectedVertexModel,
               selectedGeminiModel: storeState.selectedGeminiModel,
+              selectedOllamaModel: storeState.selectedOllamaModel,
+              language: storeState.language || 'id',
               geminiApiKey: storeState.geminiApiKey,
               aiPreference: storeState.aiPreference
             })
@@ -496,7 +498,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                     geminiApiKey,
                     ollamaBaseUrl,
                     selectedVertexModel: storeState.selectedVertexModel,
-                    selectedGeminiModel: storeState.selectedGeminiModel
+                    selectedGeminiModel: storeState.selectedGeminiModel,
+                    selectedOllamaModel: storeState.selectedOllamaModel,
+                    language: storeState.language || 'id'
                   })
                 });
 

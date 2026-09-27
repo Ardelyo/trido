@@ -16,6 +16,10 @@ import {
   generateToolContentVertex,
   transcribeAudioVertex
 } from "./vertexAdapter";
+import {
+  transcribeAudioWhisper,
+  isWhisperAvailable
+} from "./whisperAdapter";
 import { CONFIG } from "../constants";
 import { AiPreference } from "../types";
 import { createLogger } from "../utils/logger";
@@ -290,6 +294,17 @@ aiRouter.post("/status", async (req, res) => {
     status.model = selectedGeminiModel;
   }
   res.json(status);
+});
+
+aiRouter.get("/whisper-status", async (_req, res) => {
+  const available = await isWhisperAvailable();
+  res.json({
+    available,
+    engine: "faster-whisper",
+    model: "base",
+    device: "cpu",
+    supportedLanguages: ["id", "en", "ar", "zh", "fr", "ru", "es", "ja", "ko", "de", "pt"]
+  });
 });
 
 aiRouter.post("/generate", async (req, res) => {
@@ -580,10 +595,16 @@ aiRouter.post("/transcribe", async (req, res) => {
           text = await transcribeAudioGemini(base64Audio, geminiApiKey, selectedGeminiModel);
         } else if (mode === 'ollama') {
           activeModel = selectedOllamaModel || status.ollamaStatus?.activeModel || getOllamaModel();
-          text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl, activeModel);
+          // Priority 1: Faster-Whisper 100% offline local transcription
+          logger.info(`[Router] Attempting offline Faster-Whisper transcription for language: ${req.body.language || 'auto'}...`);
+          text = await transcribeAudioWhisper(base64Audio, req.body.language || 'auto');
+          
+          if (!text) {
+            text = await transcribeAudioOllama(base64Audio, ollamaBaseUrl, activeModel);
+          }
           if (!text) {
             return res.status(400).json({
-              error: 'Transkripsi suara AI saat ini memerlukan koneksi internet (Gemini Cloud Audio). Model Ollama lokal memproses teks dan tools, tetapi belum memiliki engine Speech-to-Text lokal.',
+              error: 'Transkripsi suara offline membutuhkan Faster-Whisper. Pastikan faster-whisper terpasang (pip install faster-whisper).',
               code: 'offline_audio_unsupported'
             });
           }

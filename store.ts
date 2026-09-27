@@ -230,9 +230,9 @@ const getInitialUserName = (): string => {
 };
 
 const getInitialTranscribeMode = (): TranscribeMode => {
-  const saved = localStorage.getItem('trido_transcribe_mode');
-  if (saved === 'record_gemini' || saved === 'gemini_live' || saved === 'upload_audio') return saved;
-  return 'webspeech';
+  const saved = localStorage.getItem('trido_transcribe_mode') as TranscribeMode;
+  if (saved === 'faster_whisper' || saved === 'record_gemini' || saved === 'gemini_live' || saved === 'upload_audio' || saved === 'webspeech') return saved;
+  return 'faster_whisper';
 };
 
 const defaultVoiceConfig: VoiceConfig = {

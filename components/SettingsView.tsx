@@ -433,6 +433,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
             subtitle="Pilih metode perekaman suara guru dan transkripsi AI"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* 0. Faster-Whisper (100% Offline Lokal) */}
+              <button
+                type="button"
+                onClick={() => setLocalTranscribeMode('faster_whisper')}
+                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer col-span-1 sm:col-span-2 ${
+                  localTranscribeMode === 'faster_whisper'
+                    ? 'border-emerald-600 bg-emerald-50/50 shadow-xs'
+                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
+                    <Zap size={15} className="text-emerald-600" /> Faster-Whisper (100% Offline Lokal Multibahasa)
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                    ⭐ Rekomendasi Offline (99+ Bahasa)
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  Engine transkripsi suara lokal berbasis CTranslate2 tanpa koneksi internet sama sekali. Sangat cepat, hemat memori, dan mendukung bahasa Indonesia serta seluruh bahasa PBB secara otomatis.
+                </p>
+              </button>
+
               {/* 1. Web Speech API (Default) */}
               <button
                 type="button"
