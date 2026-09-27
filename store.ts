@@ -54,12 +54,6 @@ interface AppStore extends AgentState {
   isBoardSettingsOpen: boolean;
   toggleBoardSettings: () => void;
 
-  isTemplatesOpen: boolean;
-  toggleTemplates: () => void;
-
-  isAiToolsOpen: boolean;
-  toggleAiTools: () => void;
-
   isHistoryOpen: boolean;
   toggleHistory: () => void;
 
@@ -673,12 +667,6 @@ export const useStore = create<AppStore>((set, get) => ({
   isBoardSettingsOpen: false,
   toggleBoardSettings: () => set((state) => ({ isBoardSettingsOpen: !state.isBoardSettingsOpen })),
 
-  isTemplatesOpen: false,
-  toggleTemplates: () => set((state) => ({ isTemplatesOpen: !state.isTemplatesOpen })),
-
-  isAiToolsOpen: false,
-  toggleAiTools: () => set((state) => ({ isAiToolsOpen: !state.isAiToolsOpen })),
-  
   isHistoryOpen: false,
   toggleHistory: () => set((state) => ({ isHistoryOpen: !state.isHistoryOpen })),
   

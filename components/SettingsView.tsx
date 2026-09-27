@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, Key, Cpu, Globe, Moon, Sun, User, Save, CheckCircle2,
-  Eye, EyeOff, ExternalLink, Wifi, WifiOff, Zap, Shield,
+  Eye, EyeOff, ExternalLink, Wifi, WifiOff, Zap, Shield, HardDrive,
   ChevronRight, RotateCcw, Trash2, Volume2, VolumeX, Info,
   Mic, Radio, Upload, Sparkles, Database, FileSpreadsheet, Download,
   Shapes, Users, Flame, Workflow, HeartHandshake, AlertCircle
@@ -18,25 +18,27 @@ interface SettingsViewProps {
   onClose: () => void;
 }
 
+type SettingsTab = 'ai' | 'features' | 'audio' | 'language' | 'data';
+
 const Section: React.FC<{ title: string; subtitle?: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
-  <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-    <div className="px-6 py-4 border-b border-slate-50">
-      <h3 className="font-black text-slate-800 text-sm tracking-tight">{title}</h3>
-      {subtitle && <p className="text-xs text-slate-400 font-medium mt-0.5">{subtitle}</p>}
+  <div className="bg-white rounded-3xl border border-slate-200/70 shadow-xs overflow-hidden">
+    <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+      <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">{title}</h3>
+      {subtitle && <p className="text-xs text-slate-500 font-medium mt-0.5">{subtitle}</p>}
     </div>
-    <div className="p-5 space-y-4">{children}</div>
+    <div className="p-6 space-y-4">{children}</div>
   </div>
 );
 
 const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
   <div className="space-y-1.5">
-    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
+    <label className="text-[11px] font-extrabold text-slate-500 uppercase tracking-widest">{label}</label>
     {children}
-    {hint && <p className="text-[10px] text-slate-400 font-medium leading-relaxed">{hint}</p>}
+    {hint && <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{hint}</p>}
   </div>
 );
 
-const inputCls = "w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all";
+const inputCls = "w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 transition-all";
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   const { t } = useTranslation();
@@ -55,6 +57,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     experimentalConfig, setExperimentalConfig,
     isAssistiveMode, toggleAssistiveMode,
   } = useStore();
+
+  const [activeTab, setActiveTab] = useState<SettingsTab>('ai');
 
   // Local state — only commit to store/localStorage on Save
   const [localKey, setLocalKey] = useState(geminiApiKey);
@@ -80,7 +84,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
 
   // AI status probe
   const [aiStatus, setAiStatus] = useState<'checking' | 'online' | 'offline' | null>(null);
-  const [serverEnvGeminiModel, setServerEnvGeminiModel] = useState<string | null>(null);
 
   const handleProbe = async () => {
     setAiStatus('checking');
@@ -91,18 +94,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
         body: JSON.stringify({ 
           geminiApiKey: localKey, 
           ollamaBaseUrl: localOllamaUrl,
-          selectedOllamaModel: localOllamaModel 
+          selectedOllamaModel: localOllamaModel,
+          aiPreference: localAiPref
         })
       });
       const data = await res.json();
       setAiStatus(data.online !== false && data.mode !== 'unavailable' ? 'online' : 'offline');
-      if (data.envGeminiModel) {
-        setServerEnvGeminiModel(data.envGeminiModel);
-        // If the local model is still the default, and we have a server env model override, let's sync it!
-        if (localGeminiModel === 'gemini-3.5-flash-lite') {
-          setLocalGeminiModel(data.envGeminiModel);
-        }
-      }
     } catch {
       setAiStatus('offline');
     }
@@ -110,7 +107,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
 
   useEffect(() => {
     handleProbe();
-  }, []);
+  }, [localAiPref, localOllamaModel]);
 
   const handleSave = () => {
     setGeminiApiKey(localKey);
@@ -136,7 +133,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     localStorage.setItem('ai_preference', localAiPref);
     localStorage.setItem('trido_sound', soundEnabled ? 'on' : 'off');
     setSaved(true);
-    toast.success(t('saved', 'Tersimpan') + '!');
+    toast.success(t('saved', 'Pengaturan berhasil disimpan') + '!');
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -151,25 +148,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   const isOllamaMode = localAiPref === 'ollama' || localAiPref === 'auto';
   const isVertexMode = localAiPref === 'vertex' || localAiPref === 'auto';
 
+  const TABS: { id: SettingsTab; label: string; icon: any }[] = [
+    { id: 'ai', label: 'Kecerdasan AI', icon: Cpu },
+    { id: 'features', label: 'Fitur Smartboard', icon: Sparkles },
+    { id: 'audio', label: 'Audio & Inklusif', icon: Mic },
+    { id: 'language', label: 'Bahasa & Tema', icon: Globe },
+    { id: 'data', label: 'Data & Hak Cipta', icon: Database },
+  ];
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.98 }}
+      initial={{ opacity: 0, y: 20, scale: 0.99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 20, scale: 0.98 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="absolute inset-0 z-40 bg-slate-50 flex flex-col overflow-hidden"
+      exit={{ opacity: 0, y: 20, scale: 0.99 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+      className="absolute inset-0 z-40 bg-[#f8fafc] flex flex-col overflow-hidden font-sans"
     >
       {/* Header */}
-      <div className="h-20 lg:h-24 px-8 lg:px-12 flex justify-between items-center bg-white border-b border-slate-100 shrink-0">
+      <div className="h-20 lg:h-22 px-6 lg:px-12 flex justify-between items-center bg-white border-b border-slate-200/80 shrink-0">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{t('settingsTitle', 'Pengaturan')}</h2>
-          <p className="text-sm font-semibold text-slate-400 mt-0.5">{t('settingsSubtitle', 'Konfigurasi AI, tampilan, dan akun Anda')}</p>
+          <h2 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">{t('settingsTitle', 'Pengaturan')}</h2>
+          <p className="text-xs lg:text-sm font-semibold text-slate-500 mt-0.5">{t('settingsSubtitle', 'Konfigurasi AI cerdas, fitur kelas, dan preferensi smartboard')}</p>
         </div>
         <div className="flex items-center gap-3">
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
             onClick={handleSave}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-full font-bold text-sm shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-600/20 hover:bg-blue-700 transition-colors cursor-pointer"
           >
             <AnimatePresence mode="wait">
               {saved ? (
@@ -185,916 +190,585 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
           </motion.button>
           <button
             onClick={onClose}
-            className="w-11 h-11 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
-        <div className="max-w-2xl mx-auto space-y-6">
-
-          {/* Profile */}
-          <Section title={t('userProfile', 'Profil Pengguna')} subtitle={t('userProfileSubtitle', 'Nama ditampilkan di sudut papan tulis')}>
-            <Field label={t('yourName', 'Nama Anda')}>
-              <div className="relative">
-                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={localName}
-                  onChange={e => setLocalName(e.target.value)}
-                  placeholder={t('teacherFacilitator', 'Nama Guru / Fasilitator')}
-                  className={`${inputCls} pl-10`}
-                />
-              </div>
-            </Field>
-            <Field label={t('interfaceLanguage', 'Bahasa Antarmuka')}>
-              <select
-                value={localLang}
-                onChange={e => setLocalLang(e.target.value as SupportedLanguage)}
-                className={inputCls}
+      {/* Modern Horizontal Navigation Tabs */}
+      <div className="bg-white border-b border-slate-200/80 px-6 lg:px-12 shrink-0">
+        <div className="flex items-center gap-2 overflow-x-auto py-2.5 custom-scrollbar">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
               >
-                <optgroup label="United Nations (UN) Official Languages">
-                  {SUPPORTED_LANGUAGES.filter(l => l.isUN).map(l => (
-                    <option key={l.code} value={l.code}>
-                      {l.flag} {l.nativeName} ({l.name}) - UN Official
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Global & Regional Languages">
-                  {SUPPORTED_LANGUAGES.filter(l => !l.isUN).map(l => (
-                    <option key={l.code} value={l.code}>
-                      {l.flag} {l.nativeName} ({l.name})
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
-            </Field>
-          </Section>
+                <Icon size={15} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-          {/* AI Provider */}
-          <Section title={t('aiConfig', 'Konfigurasi AI')} subtitle={t('aiConfigSubtitle', 'Pilih dan konfigurasi penyedia model AI')}>
-            <Field label={t('aiMode', 'Mode AI')}>
-              <div className="grid grid-cols-2 gap-2">
-                {([
-                  { val: 'auto', label: t('aiModeAuto', '⚡ Otomatis'), desc: t('aiModeAutoDesc', 'Pilih terbaik yang tersedia') },
-                  { val: 'gemini', label: t('aiModeGemini', '✨ Gemini'), desc: t('aiModeGeminiDesc', 'Google AI (Cloud)') },
-                  { val: 'ollama', label: t('aiModeOllama', '🏠 Ollama'), desc: t('aiModeOllamaDesc', 'Lokal & privat') },
-                  { val: 'vertex', label: t('aiModeVertex', '🌐 Vertex AI'), desc: t('aiModeVertexDesc', 'Google Cloud Enterprise') },
-                ] as const).map(opt => (
-                  <button
-                    key={opt.val}
-                    onClick={() => setLocalAiPref(opt.val)}
-                    className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all ${
-                      localAiPref === opt.val
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <span className={`font-black text-sm ${localAiPref === opt.val ? 'text-blue-700' : 'text-slate-700'}`}>
-                      {opt.label}
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-6 lg:p-10 custom-scrollbar">
+        <div className="max-w-3xl mx-auto space-y-6">
+
+          {/* ════════ TAB 1: KECERDASAN AI ════════ */}
+          {activeTab === 'ai' && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <Section title={t('aiConfig', 'Penyedia Model AI (Dualitas Lokal & Cloud)')} subtitle={t('aiConfigSubtitle', 'Pilih antara mode offline privat lokal (Ollama) atau mode cloud berkecepatan tinggi')}>
+                
+                {/* AI Mode Selector */}
+                <Field label={t('aiMode', 'Mode AI')}>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {([
+                      { val: 'ollama', label: '🏠 Ollama Lokal', desc: '100% Offline & Privat' },
+                      { val: 'auto', label: '⚡ Otomatis', desc: 'Pilih yang tersedia' },
+                      { val: 'gemini', label: '✨ Gemini Cloud', desc: 'Google AI Studio' },
+                      { val: 'vertex', label: '🌐 Vertex Cloud', desc: 'Google Enterprise' },
+                    ] as const).map(opt => (
+                      <button
+                        key={opt.val}
+                        onClick={() => setLocalAiPref(opt.val)}
+                        className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                          localAiPref === opt.val
+                            ? 'border-blue-600 bg-blue-50/50 shadow-xs'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <div className={`font-bold text-xs ${localAiPref === opt.val ? 'text-blue-700' : 'text-slate-800'}`}>
+                          {opt.label}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">
+                          {opt.desc}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+
+                {/* Status Indicator */}
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-2.5 h-2.5 rounded-full ${
+                      aiStatus === 'online' ? 'bg-emerald-500' : aiStatus === 'checking' ? 'bg-amber-500 animate-pulse' : 'bg-rose-500'
+                    }`} />
+                    <span className="text-xs font-bold text-slate-700">
+                      {aiStatus === 'online' ? 'Layanan AI Terhubung & Siap' : aiStatus === 'checking' ? 'Memeriksa koneksi...' : 'Layanan AI Tidak Terhubung'}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium mt-0.5">{opt.desc}</span>
+                  </div>
+                  <button
+                    onClick={handleProbe}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                  >
+                    Uji Ulang Koneksi
                   </button>
-                ))}
-              </div>
-            </Field>
+                </div>
 
-            {/* Gemini Key & Model */}
-            {isGeminiMode && (
-              <>
-                <Field
-                  label={t('geminiApiKey', 'Kunci API Gemini')}
-                  hint={t('geminiApiKeyHint', 'Kunci disimpan di browser Anda saja — tidak pernah dikirim ke server kami.')}
-                >
-                  <div className="relative">
-                    <Key size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type={showKey ? 'text' : 'password'}
-                      value={localKey}
-                      onChange={e => setLocalKey(e.target.value)}
-                      placeholder="AIzaSy..."
-                      className={`${inputCls} pl-10 pr-10`}
-                    />
+                {/* Ollama Section */}
+                {isOllamaMode && (
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="font-extrabold text-xs text-slate-900 flex items-center gap-2">
+                        <HardDrive size={15} className="text-emerald-600" />
+                        Konfigurasi Model Lokal (Ollama)
+                      </div>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                        100% Offline
+                      </span>
+                    </div>
+
+                    <Field label="URL Server Ollama" hint="Default URL Ollama pada mesin lokal (http://localhost:11434)">
+                      <input
+                        type="text"
+                        value={localOllamaUrl}
+                        onChange={e => setLocalOllamaUrl(e.target.value)}
+                        placeholder="http://localhost:11434"
+                        className={inputCls}
+                      />
+                    </Field>
+
+                    <Field label="Pilihan Model Ollama Terdaftar" hint="Model lokal yang digunakan untuk eksekusi perintah dan visualisasi smartboard">
+                      <select
+                        value={localOllamaModel}
+                        onChange={e => setLocalOllamaModel(e.target.value)}
+                        className={inputCls}
+                      >
+                        <optgroup label="Model Rekomendasi Trido">
+                          <option value="trido-model:latest">trido-model:latest (Flagship 9B - 256K Context & Multimodal Vision)</option>
+                          <option value="trido-gemma:2b">trido-gemma:2b (Gemma 4 E2B - Ringan, Cepat & Hemat VRAM)</option>
+                        </optgroup>
+                        {detectedOllamaModels.length > 0 && (
+                          <optgroup label="Model Lain Terdeteksi di Laptop">
+                            {detectedOllamaModels.map(m => (
+                              <option key={m} value={m}>{m} (Lokal Terpasang)</option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </select>
+                    </Field>
+                  </div>
+                )}
+
+                {/* Gemini / Vertex Cloud Section */}
+                {(isGeminiMode || isVertexMode) && (
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
+                    <div className="font-extrabold text-xs text-slate-900 flex items-center gap-2">
+                      <Sparkles size={15} className="text-blue-600" />
+                      Konfigurasi Cloud Frontier (Google AI)
+                    </div>
+
+                    {isGeminiMode && (
+                      <Field label="Google AI Studio API Key" hint="Kunci API Gemini untuk mode cloud publik (tersimpan aman di browser lokal Anda)">
+                        <div className="relative">
+                          <input
+                            type={showKey ? "text" : "password"}
+                            value={localKey}
+                            onChange={e => setLocalKey(e.target.value)}
+                            placeholder="AIzaSy..."
+                            className={`${inputCls} pr-10`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowKey(!showKey)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                          </button>
+                        </div>
+                      </Field>
+                    )}
+
+                    <Field label="Model Cloud Aktif">
+                      <select
+                        value={isVertexMode ? localVertexModel : localGeminiModel}
+                        onChange={e => isVertexMode ? setLocalVertexModel(e.target.value) : setLocalGeminiModel(e.target.value)}
+                        className={inputCls}
+                      >
+                        <option value="gemini-3.8-flash">gemini-3.8-flash (Frontier Ultra-Fast Multimodal)</option>
+                        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                        <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                      </select>
+                    </Field>
+                  </div>
+                )}
+              </Section>
+            </motion.div>
+          )}
+
+          {/* ════════ TAB 2: FITUR CERDAS SMARTBOARD (CORE ENGINE) ════════ */}
+          {activeTab === 'features' && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <Section
+                title="✨ Fitur Cerdas Smartboard (Core Engine)"
+                subtitle="Kemampuan bawaan papan tulis: Diagram Mermaid, Jev System 1 Reflex, Inking Halus, Timer Visual, Presensi, dan Otomasi Multi-Task"
+              >
+                <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-black text-blue-950">
+                      Seluruh Fitur Smartboard Aktif Penuh (Full Production Core)
+                    </h5>
+                    <p className="text-[11px] text-blue-800 font-medium leading-tight mt-0.5">
+                      Trido dirancang dengan kemampuan spasial lengkap: mutasi in-place, formula LaTeX KaTeX, presensi kelas, dan pembuatan materi otomatis tanpa batas.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* 1. Mermaid.js Diagram */}
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-blue-600" />
+                        Mermaid Diagram & Mindmap
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                        Peta konsep dan diagram alur dirender murni dalam format SVG tajam dengan zoom, pan, dan ekspor instan.
+                      </p>
+                    </div>
                     <button
-                      onClick={() => setShowKey(v => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      type="button"
+                      onClick={() => setLocalExpConfig({ ...localExpConfig, mermaidEnabled: !localExpConfig.mermaidEnabled })}
+                      className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                        localExpConfig.mermaidEnabled
+                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          : 'bg-white border-slate-200 text-slate-400'
+                      }`}
                     >
-                      {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      <span>Status Engine</span>
+                      <span>{localExpConfig.mermaidEnabled ? 'Aktif ✓' : 'Nonaktif ✕'}</span>
                     </button>
                   </div>
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:underline mt-1"
-                  >
-                    <ExternalLink size={11} /> {t('getFreeApiKey', 'Dapatkan kunci API gratis di Google AI Studio')}
-                  </a>
-                </Field>
 
-                <Field
-                  label={t('geminiModel', 'Model Gemini / Gemma')}
-                  hint={t('geminiModelHint', 'Pilih model yang ingin digunakan saat terhubung ke Google AI Cloud.')}
-                >
+                  {/* 2. Jev-Mode System 1 Reflex */}
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Zap size={14} className="text-amber-500" />
+                        Jev-Mode (System 1 Reflex & In-Place Mutation)
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                        Pengambilan keputusan sub-15ms: mengunci pengeditan diagram in-place agar tidak menduplikasi widget saat guru meminta revisi.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLocalExpConfig({ ...localExpConfig, jevModeEnabled: !localExpConfig.jevModeEnabled })}
+                      className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                        localExpConfig.jevModeEnabled
+                          ? 'bg-amber-50 border-amber-300 text-amber-700'
+                          : 'bg-white border-slate-200 text-slate-400'
+                      }`}
+                    >
+                      <span>Status Jev-Mode</span>
+                      <span>{localExpConfig.jevModeEnabled ? 'Aktif ✓' : 'Nonaktif ✕'}</span>
+                    </button>
+                  </div>
+
+                  {/* 3. Smooth Inking */}
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                        Smooth Inking (Goresan Halus)
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                        Goresan pena realistis dengan interpolasi kurva halus berujung lancip (tapering) untuk smartboard sentuh.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLocalExpConfig({ ...localExpConfig, smoothInkingEnabled: !localExpConfig.smoothInkingEnabled })}
+                      className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                        localExpConfig.smoothInkingEnabled
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                          : 'bg-white border-slate-200 text-slate-400'
+                      }`}
+                    >
+                      <span>Status Inking</span>
+                      <span>{localExpConfig.smoothInkingEnabled ? 'Aktif ✓' : 'Nonaktif ✕'}</span>
+                    </button>
+                  </div>
+
+                  {/* 4. Visual Pie Timer */}
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                        Visual Countdown Timer
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                        Timer lingkaran visual interaktif untuk manajemen fokus kelas dan pengerjaan tugas siswa.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLocalExpConfig({ ...localExpConfig, visualTimerEnabled: !localExpConfig.visualTimerEnabled })}
+                      className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                        localExpConfig.visualTimerEnabled
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                          : 'bg-white border-slate-200 text-slate-400'
+                      }`}
+                    >
+                      <span>Status Timer</span>
+                      <span>{localExpConfig.visualTimerEnabled ? 'Aktif ✓' : 'Nonaktif ✕'}</span>
+                    </button>
+                  </div>
+
+                  {/* 5. Smart Presensi */}
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Users size={14} className="text-blue-600" />
+                        Presensi & Absensi Kelas
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                        Widget kehadiran siswa interaktif di kanvas dengan rekapitulasi Hadir, Izin, Sakit, Alpa, dan persentase.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLocalExpConfig({ ...localExpConfig, attendanceEnabled: !localExpConfig.attendanceEnabled })}
+                      className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                        localExpConfig.attendanceEnabled
+                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          : 'bg-white border-slate-200 text-slate-400'
+                      }`}
+                    >
+                      <span>Status Presensi</span>
+                      <span>{localExpConfig.attendanceEnabled ? 'Aktif ✓' : 'Nonaktif ✕'}</span>
+                    </button>
+                  </div>
+
+                  {/* 6. Multi-Task Orchestration */}
+                  <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Workflow size={14} className="text-violet-600" />
+                        Orkestrasi Alur Multi-Tasking
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
+                        Memungkinkan AI mengeksekusi instruksi majemuk (Absensi + Timer + Mindmap + Rumus LaTeX) dalam satu putaran simultan.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLocalExpConfig({ ...localExpConfig, autoTaskAutomation: !localExpConfig.autoTaskAutomation })}
+                      className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
+                        localExpConfig.autoTaskAutomation
+                          ? 'bg-violet-50 border-violet-300 text-violet-700'
+                          : 'bg-white border-slate-200 text-slate-400'
+                      }`}
+                    >
+                      <span>Status Multi-Task</span>
+                      <span>{localExpConfig.autoTaskAutomation ? 'Aktif ✓' : 'Nonaktif ✕'}</span>
+                    </button>
+                  </div>
+                </div>
+              </Section>
+            </motion.div>
+          )}
+
+          {/* ════════ TAB 3: AUDIO & AKSESIBILITAS INKLUSIF ════════ */}
+          {activeTab === 'audio' && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <Section title="🎙️ Speech-to-Text (STT) & Transkripsi Offline" subtitle="Pengenalan suara guru otomatis untuk kendali papan tulis tanpa mengetik">
+                <Field label="Mesin Transkripsi Suara (Speech-to-Text)">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLocalTranscribeMode('faster_whisper')}
+                      className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                        localTranscribeMode === 'faster_whisper'
+                          ? 'border-blue-600 bg-blue-50/50'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <Mic size={14} className="text-emerald-600" />
+                        Faster-Whisper (100% Offline Lokal)
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                        CTranslate2 INT8, VAD peredam bising, mendukung 99+ bahasa offline
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setLocalTranscribeMode('webspeech')}
+                      className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                        localTranscribeMode === 'webspeech'
+                          ? 'border-blue-600 bg-blue-50/50'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-blue-600" />
+                        Web Speech Standard
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+                        Engine perekam audio bawaan browser standar
+                      </div>
+                    </button>
+                  </div>
+                </Field>
+              </Section>
+
+              <Section
+                title="♿ Aksesibilitas & Mode Guru Inklusif (Pak Damar Suite)"
+                subtitle="Dermaga tombol sentuh besar untuk guru dan siswa dengan keterbatasan motorik fisik"
+              >
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <HeartHandshake size={20} className={isAssistiveMode ? 'text-amber-600' : 'text-slate-400'} />
+                    <div>
+                      <div className="font-bold text-xs text-slate-900">
+                        Large-Target Assistive Dock (56px)
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        Menampilkan dermaga tombol besar di sudut layar untuk presensi, timer, dan roda acak tanpa gerakan motorik halus.
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleAssistiveMode()}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border cursor-pointer transition ${
+                      isAssistiveMode
+                        ? 'bg-amber-100 border-amber-300 text-amber-800'
+                        : 'bg-white border-slate-200 text-slate-500'
+                    }`}
+                  >
+                    {isAssistiveMode ? 'Aktif ✓' : 'Nonaktif ✕'}
+                  </button>
+                </div>
+              </Section>
+            </motion.div>
+          )}
+
+          {/* ════════ TAB 4: BAHASA & TEMA ════════ */}
+          {activeTab === 'language' && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <Section title="🌐 Bahasa & Internasionalisasi (UN & Global Languages)" subtitle="Dukungan 6 bahasa resmi PBB serta bahasa nasional dan regional">
+                <Field label={t('interfaceLanguage', 'Bahasa Antarmuka & Dialog AI')}>
                   <select
-                    value={localGeminiModel}
-                    onChange={e => setLocalGeminiModel(e.target.value)}
+                    value={localLang}
+                    onChange={e => setLocalLang(e.target.value as SupportedLanguage)}
                     className={inputCls}
                   >
-                    <option value="gemini-3.8-flash">gemini-3.8-flash (Recommended - Ultra-fast, Zero-latency & Full Power)</option>
-                    <option value="gemini-3.7-flash">gemini-3.7-flash (Gemma 4 Good - Ultra-fast & Smart)</option>
-                    <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Standard)</option>
-                    <option value="gemini-3.5-flash">gemini-3.5-flash (High Intelligence)</option>
-                    <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra-fast)</option>
-                    <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Capable)</option>
-                    <option value="gemini-2.5-pro">gemini-2.5-pro (High Intelligence)</option>
-                    <option value="gemma-4-31b-it">gemma-4-31b-it (Next-gen Gemma 4 31B)</option>
-                    <option value="gemma-2-27b-it">gemma-2-27b-it (Open Weights)</option>
-                    <option value="gemma-2-9b-it">gemma-2-9b-it (Lightweight Open Weights)</option>
-                    {serverEnvGeminiModel && 
-                     serverEnvGeminiModel !== 'gemini-3.5-flash-lite' && 
-                     serverEnvGeminiModel !== 'gemini-3.5-flash' && 
-                     serverEnvGeminiModel !== 'gemini-3.1-flash-lite' && 
-                     serverEnvGeminiModel !== 'gemini-2.5-flash' && 
-                     serverEnvGeminiModel !== 'gemini-2.5-pro' && 
-                     serverEnvGeminiModel !== 'gemma-4-31b-it' && 
-                     serverEnvGeminiModel !== 'gemma-2-27b-it' && 
-                     serverEnvGeminiModel !== 'gemma-2-9b-it' && (
-                      <option value={serverEnvGeminiModel}>{serverEnvGeminiModel} (Environment Override)</option>
-                    )}
+                    <optgroup label="United Nations (UN) Official Languages">
+                      {SUPPORTED_LANGUAGES.filter(l => l.isUN).map(l => (
+                        <option key={l.code} value={l.code}>
+                          {l.flag} {l.nativeName} ({l.name}) - UN Official
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Global & Regional Languages">
+                      {SUPPORTED_LANGUAGES.filter(l => !l.isUN).map(l => (
+                        <option key={l.code} value={l.code}>
+                          {l.flag} {l.nativeName} ({l.name})
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </Field>
-              </>
-            )}
+              </Section>
 
-            {/* Vertex AI Model */}
-            {isVertexMode && (
-              <Field
-                label={t('vertexModel', 'Model Vertex AI')}
-                hint={t('vertexModelHint', 'Pilih model Vertex AI yang digunakan di Google Cloud Project Anda. Project ID dan lokasi dikonfigurasi melalui variabel lingkungan server.')}
-              >
-                <select
-                  value={localVertexModel}
-                  onChange={e => setLocalVertexModel(e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="gemini-3.8-flash">gemini-3.8-flash (Recommended - Ultra-fast, Zero-latency & Full Power)</option>
-                  <option value="gemini-3.7-flash">gemini-3.7-flash (Gemma 4 Good - Ultra-fast & Smart)</option>
-                  <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Capable)</option>
-                  <option value="gemini-2.5-pro">gemini-2.5-pro (High Intelligence)</option>
-                  <option value="gemma-4-31b-it">gemma-4-31b-it (Next-gen Gemma 4 31B)</option>
-                  <option value="gemma-2-27b-it">gemma-2-27b-it (Gemma 2 27B)</option>
-                </select>
-              </Field>
-            )}
+              <Section title={t('appearance', 'Tampilan & Suara')} subtitle="Tema kanvas dan efek audio interaksi">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label={t('theme', 'Tema Kanvas')}>
+                    <div className="flex bg-slate-50 p-1.5 rounded-2xl gap-1 border border-slate-200/80">
+                      <button
+                        onClick={() => theme === 'dark' && toggleTheme()}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${theme === 'light' ? 'bg-white shadow-xs text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                        <Sun size={15} /> {t('light', 'Terang')}
+                      </button>
+                      <button
+                        onClick={() => theme === 'light' && toggleTheme()}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${theme === 'dark' ? 'bg-white shadow-xs text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                      >
+                        <Moon size={15} /> {t('dark', 'Gelap')}
+                      </button>
+                    </div>
+                  </Field>
 
-            {/* Ollama URL & Model */}
-            {isOllamaMode && (
-              <>
-                <Field
-                  label={t('localOllamaUrl', 'URL Ollama Lokal')}
-                  hint={t('ollamaUrlHint', 'Pastikan Ollama berjalan di latar belakang.')}
-                >
+                  <Field label={t('aiSoundEffects', 'Efek Suara Audio')}>
+                    <button
+                      onClick={() => setSoundEnabled(v => !v)}
+                      className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 font-bold text-xs transition-all w-full cursor-pointer ${soundEnabled ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-slate-200 text-slate-500 bg-white'}`}
+                    >
+                      {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                      {soundEnabled ? t('soundEnabled', 'Suara Interaksi Aktif') : t('soundDisabled', 'Suara Nonaktif')}
+                    </button>
+                  </Field>
+                </div>
+              </Section>
+            </motion.div>
+          )}
+
+          {/* ════════ TAB 5: DATA & HAK CIPTA ════════ */}
+          {activeTab === 'data' && (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <Section title="💾 Profil Guru & Identitas Kelas" subtitle="Nama pengguna yang dicantumkan pada sesi papan tulis">
+                <Field label={t('yourName', 'Nama Pengajar / Fasilitator')}>
                   <div className="relative">
-                    <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
-                      value={localOllamaUrl}
-                      onChange={e => setLocalOllamaUrl(e.target.value)}
-                      placeholder="http://localhost:11434"
+                      value={localName}
+                      onChange={e => setLocalName(e.target.value)}
+                      placeholder="Nama Guru"
                       className={`${inputCls} pl-10`}
                     />
                   </div>
                 </Field>
+              </Section>
 
-                <Field
-                  label={t('ollamaModel', 'Model Ollama Lokal')}
-                  hint={t('ollamaModelHint', 'Pilih model Ollama lokal Anda. Pastikan model yang dipilih telah diunduh menggunakan perintah: ollama pull [nama-model]')}
-                >
-                  <select
-                    value={localOllamaModel}
-                    onChange={e => setLocalOllamaModel(e.target.value)}
-                    className={inputCls}
-                  >
-                    {detectedOllamaModels.length > 0 && (
-                      <optgroup label="✅ Model yang Terpasang di Laptop Anda">
-                        {detectedOllamaModels.map(m => (
-                          <option key={m} value={m}>
-                            {m} {m === 'trido-model:latest' ? '🏆 (Model Utama Trido: 100% Lolos Uji & In-Place Mutation)' : m === 'trido-gemma:2b' ? '⚡ (Trido Gemma Edge: Ringan & Cepat)' : m.includes('ornith') ? '⭐ (Ornith 9B - Vision & Tools)' : m.includes('qwen') ? '(Qwen - Cerdas & Lengkap)' : m.includes('gemma') ? '(Gemma - Cepat & Ringan)' : '(Lokal)'}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                    <optgroup label="Model Bawaan / Unduh Otomatis">
-                      <option value="trido-model:latest">trido-model:latest (Model Utama Trido - 100% Lolos Uji)</option>
-                      <option value="trido-gemma:2b">trido-gemma:2b (Trido Gemma 2B Edge)</option>
-                      <option value="ornith-1.5:9b">ornith-1.5:9b (Ornith 9B - Vision & Tools)</option>
-                      <option value="qwen3.5-aggressive:9b">qwen3.5-aggressive:9b (Qwen 9B)</option>
-                      <option value="gemma4:e2b">gemma4:e2b (Gemma 2B)</option>
-                    </optgroup>
-                  </select>
-                </Field>
-              </>
-            )}
-
-            {/* Connection Test */}
-            <div className="pt-2 border-t border-slate-100">
-              <button
-                onClick={handleProbe}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-colors"
+              <Section
+                title="📊 Telemetri & Analisis Sesi Pembelajaran"
+                subtitle="Ekspor log riwayat aksi, estimasi token, latensi, dan statistik interaksi siswa"
               >
-                {aiStatus === 'checking' ? (
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-                    <Zap size={16} />
-                  </motion.div>
-                ) : aiStatus === 'online' ? (
-                  <Wifi size={16} className="text-emerald-500" />
-                ) : aiStatus === 'offline' ? (
-                  <WifiOff size={16} className="text-rose-500" />
-                ) : (
-                  <Wifi size={16} />
-                )}
-                {aiStatus === 'checking'
-                  ? t('checking', 'Mengecek...')
-                  : aiStatus === 'online'
-                  ? t('connected', 'Terhubung ✓')
-                  : aiStatus === 'offline'
-                  ? t('notConnectedStatus', 'Tidak terhubung')
-                  : t('testConnection', 'Test Koneksi AI')}
-              </button>
-            </div>
-          </Section>
-
-          {/* Audio & Transkripsi Suara */}
-          <Section
-            title="Perekaman & Transkripsi Audio"
-            subtitle="Pilih metode perekaman suara guru dan transkripsi AI"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* 0. Faster-Whisper (100% Offline Lokal) */}
-              <button
-                type="button"
-                onClick={() => setLocalTranscribeMode('faster_whisper')}
-                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer col-span-1 sm:col-span-2 ${
-                  localTranscribeMode === 'faster_whisper'
-                    ? 'border-emerald-600 bg-emerald-50/50 shadow-xs'
-                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
-                    <Zap size={15} className="text-emerald-600" /> Faster-Whisper (100% Offline Lokal Multibahasa)
-                  </span>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                    ⭐ Rekomendasi Offline (99+ Bahasa)
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Engine transkripsi suara lokal berbasis CTranslate2 tanpa koneksi internet sama sekali. Sangat cepat, hemat memori, dan mendukung bahasa Indonesia serta seluruh bahasa PBB secara otomatis.
-                </p>
-              </button>
-
-              {/* 1. Web Speech API (Default) */}
-              <button
-                type="button"
-                onClick={() => setLocalTranscribeMode('webspeech')}
-                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                  localTranscribeMode === 'webspeech'
-                    ? 'border-blue-600 bg-blue-50/50 shadow-xs'
-                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
-                    <Mic size={15} className="text-blue-600" /> Web Speech API
-                  </span>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
-                    Default (Pemula)
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Transkripsi suara bawaan peramban (Chrome/Edge). Memerlukan koneksi internet di Windows karena audio diolah oleh server speech peramban.
-                </p>
-              </button>
-
-              {/* 2. Rekam lalu kirim ke Gemini Cloud */}
-              <button
-                type="button"
-                onClick={() => setLocalTranscribeMode('record_gemini')}
-                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                  localTranscribeMode === 'record_gemini'
-                    ? 'border-blue-600 bg-blue-50/50 shadow-xs'
-                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
-                    <Sparkles size={15} className="text-purple-600" /> Rekam & Kirim Gemini
-                  </span>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">
-                    Akurat (Cloud)
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Rekam audio microphone berkualitas tinggi, lalu kirimkan ke Gemini Cloud untuk transkripsi istilah akurat (memerlukan internet).
-                </p>
-              </button>
-
-              {/* 3. Gemini Live Streaming Transcribe */}
-              <button
-                type="button"
-                onClick={() => setLocalTranscribeMode('gemini_live')}
-                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                  localTranscribeMode === 'gemini_live'
-                    ? 'border-blue-600 bg-blue-50/50 shadow-xs'
-                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
-                    <Radio size={15} className="text-emerald-600" /> Gemini Live Transcribe
-                  </span>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
-                    Realtime (Cloud)
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Streaming audio live berkelanjutan dengan potongan rekaman mikro ke Gemini Flash API (memerlukan internet).
-                </p>
-              </button>
-
-              {/* 4. Unggah Berkas Audio */}
-              <button
-                type="button"
-                onClick={() => setLocalTranscribeMode('upload_audio')}
-                className={`flex flex-col items-start p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                  localTranscribeMode === 'upload_audio'
-                    ? 'border-blue-600 bg-blue-50/50 shadow-xs'
-                    : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/60'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-bold text-[13.5px] text-slate-800 flex items-center gap-1.5">
-                    <Upload size={15} className="text-amber-600" /> Unggah Berkas Audio
-                  </span>
-                  <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
-                    File
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                  Pilih file rekaman suara dari komputer untuk ditranskripsi ke kanvas.
-                </p>
-              </button>
-            </div>
-
-            {/* Catatan Teknis Jujur Mengenai Perekaman Suara Saat Offline */}
-            <div className="p-3.5 bg-amber-50/90 rounded-2xl border border-amber-200/80 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2.5">
-              <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-amber-950">Catatan Kejujuran Teknis Suara Saat Offline:</span>
-                <p className="mt-0.5 text-slate-600 leading-normal">
-                  Model Ollama lokal di laptop Anda (seperti <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono text-[10.5px]">gemma4:e2b</code> dan <code className="bg-amber-100/80 px-1 py-0.5 rounded font-mono text-[10.5px]">qwen2.5:7b</code>) memproses <strong>penalaran teks, pembuatan mindmap, dan alat kelas secara 100% offline</strong> di GPU RTX 5050. Namun, engine transkripsi audio suara mikrofon (Speech-to-Text) pada Google Chrome di Windows dan Gemini memerlukan koneksi internet. Saat offline, gunakan input teks di kolom chat atau drag & drop file/catatan.
-                </p>
-              </div>
-            </div>
-
-            {/* Technical Voice Recording Settings */}
-            <div className="pt-4 border-t border-slate-100 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-[13px] font-black text-slate-800 tracking-tight">Pengaturan Teknis Rekaman Suara</h4>
-                  <p className="text-[11px] text-slate-400 font-medium">Atur durasi otomatis, peredam bising, dan alur eksekusi</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* 1. Auto-Stop Duration */}
-                <Field
-                  label="Durasi Berhenti Otomatis (Auto-Stop)"
-                  hint="Pilih apakah rekaman berhenti sendiri setelah waktu tertentu, atau manual."
-                >
-                  <select
-                    value={localVoiceConfig.autoStopSeconds}
-                    onChange={e => setLocalVoiceConfig({ ...localVoiceConfig, autoStopSeconds: Number(e.target.value) })}
-                    className={inputCls}
-                  >
-                    <option value={0}>Manual (Tanpa batas, berhenti saat diklik)</option>
-                    <option value={5}>5 Detik (Instruksi Kilat)</option>
-                    <option value={10}>10 Detik (Perintah Cepat)</option>
-                    <option value={15}>15 Detik (Rekomendasi Default)</option>
-                    <option value={20}>20 Detik (Standar Guru)</option>
-                    <option value={30}>30 Detik (Penjelasan Sedang)</option>
-                    <option value={60}>60 Detik (Narasi Panjang)</option>
-                  </select>
-                </Field>
-
-                {/* 2. Auto-Submit Action */}
-                <Field
-                  label="Alur Hasil Transkripsi"
-                  hint="Kirim langsung ke AI atau tampilkan dulu di kolom chat untuk ditinjau."
-                >
-                  <select
-                    value={localVoiceConfig.autoSubmit ? 'true' : 'false'}
-                    onChange={e => setLocalVoiceConfig({ ...localVoiceConfig, autoSubmit: e.target.value === 'true' })}
-                    className={inputCls}
-                  >
-                    <option value="true">Langsung Kirim ke AI (Otomatis & Cepat)</option>
-                    <option value="false">Tinjau di Kolom Teks Terlebih Dahulu</option>
-                  </select>
-                </Field>
-
-                {/* 3. Language */}
-                <Field
-                  label="Bahasa Rekaman Utama"
-                  hint="Bahasa target untuk pengenalan suara dan transkripsi."
-                >
-                  <select
-                    value={localVoiceConfig.language}
-                    onChange={e => setLocalVoiceConfig({ ...localVoiceConfig, language: e.target.value as any })}
-                    className={inputCls}
-                  >
-                    <option value="id-ID">Bahasa Indonesia (id-ID)</option>
-                    <option value="en-US">Bahasa Inggris (en-US)</option>
-                    <option value="auto">Deteksi Otomatis (Multibahasa)</option>
-                  </select>
-                </Field>
-
-                {/* 4. Silence Detection (VAD) */}
-                <Field
-                  label="Deteksi Hening Otomatis (Silence VAD)"
-                  hint="Otomatis selesaikan rekaman jika guru berhenti bicara."
-                >
-                  <select
-                    value={localVoiceConfig.silenceDetectionTimeout}
-                    onChange={e => setLocalVoiceConfig({ ...localVoiceConfig, silenceDetectionTimeout: Number(e.target.value) })}
-                    className={inputCls}
-                  >
-                    <option value={0}>Nonaktif (Hanya ikuti timer / tombol)</option>
-                    <option value={1.5}>1.5 Detik Hening (Responsif)</option>
-                    <option value={2.5}>2.5 Detik Hening (Rekomendasi)</option>
-                    <option value={4}>4.0 Detik Hening (Santai)</option>
-                  </select>
-                </Field>
-              </div>
-
-              {/* Hardware Mic Flags & Quality */}
-              <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-3">
-                <div className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Peningkatan Kualitas Mikrofon Hardware</div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setLocalVoiceConfig({ ...localVoiceConfig, noiseSuppression: !localVoiceConfig.noiseSuppression })}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-between ${
-                      localVoiceConfig.noiseSuppression
-                        ? 'bg-blue-50 border-blue-400 text-blue-700'
-                        : 'bg-white border-slate-200 text-slate-500'
-                    }`}
-                  >
-                    <span>Peredam Bising</span>
-                    <span>{localVoiceConfig.noiseSuppression ? '✓' : '✕'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setLocalVoiceConfig({ ...localVoiceConfig, echoCancellation: !localVoiceConfig.echoCancellation })}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-between ${
-                      localVoiceConfig.echoCancellation
-                        ? 'bg-blue-50 border-blue-400 text-blue-700'
-                        : 'bg-white border-slate-200 text-slate-500'
-                    }`}
-                  >
-                    <span>Anti-Gema</span>
-                    <span>{localVoiceConfig.echoCancellation ? '✓' : '✕'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setLocalVoiceConfig({ ...localVoiceConfig, autoGainControl: !localVoiceConfig.autoGainControl })}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-between ${
-                      localVoiceConfig.autoGainControl
-                        ? 'bg-blue-50 border-blue-400 text-blue-700'
-                        : 'bg-white border-slate-200 text-slate-500'
-                    }`}
-                  >
-                    <span>Auto-Gain Mic</span>
-                    <span>{localVoiceConfig.autoGainControl ? '✓' : '✕'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </Section>
-
-          {/* Experimental Features Laboratory */}
-          <Section
-            title="🧪 Laboratorium Fitur Eksperimental (Next-Gen)"
-            subtitle="Pembaruan tool open-source mutakhir untuk mindmap, inking halus, diagram sains, dan timer"
-          >
-            <div className="space-y-4">
-              {/* Master Switch */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
-                <div>
-                  <div className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                    <Sparkles size={16} className="text-indigo-600 animate-pulse" />
-                    Aktifkan Mode Eksperimental
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Database size={16} className="text-blue-600" />
+                      <span className="font-extrabold text-slate-800 text-xs">Live Analytics & Offline Telemetry</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-700">
+                      gemma4good-494311
+                    </span>
                   </div>
-                  <div className="text-xs text-slate-500 font-medium mt-0.5">
-                    Mengaktifkan komponen dan engine open-source generasi berikutnya
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Aktivitas papan tulis (kuis, pemanggilan alat visual, token, estimasi biaya, dan masukan pengalaman guru) tercatat dan dapat diunduh langsung untuk arsip sekolah.
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <a
+                      href={getTelemetryDownloadUrl('csv')}
+                      download
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-colors shadow-xs"
+                    >
+                      <Download size={13} /> Unduh Data (CSV / Excel)
+                    </a>
+                    <a
+                      href={getTelemetryDownloadUrl('json')}
+                      download
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors"
+                    >
+                      <Download size={13} /> Unduh Data (JSON)
+                    </a>
                   </div>
                 </div>
+              </Section>
+
+              <Section title="⚖️ Hak Cipta & Informasi Resmi Trido">
+                <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-[11px] leading-relaxed text-slate-600 font-medium space-y-1">
+                  <div className="font-black text-slate-900 text-xs">TRIDO 2026</div>
+                  <div className="font-bold text-slate-800">Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia</div>
+                  <div className="text-[10px] text-slate-400">(Ministry of Law, Republic of Indonesia)</div>
+                  <div className="text-[10px] text-slate-500 font-semibold pt-1">Copyright © 2026 TRIDO by Ardellio Satria Anindito. All rights reserved.</div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500 pt-1">
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60">
+                    <div className="text-slate-900 font-black text-sm">v1.0.0 Production</div>
+                    <div className="text-[11px] text-slate-400 font-medium">Versi Aplikasi</div>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60">
+                    <div className="text-slate-900 font-black text-sm">Trido AI Spatial Core</div>
+                    <div className="text-[11px] text-slate-400 font-medium">Engine Cerdas</div>
+                  </div>
+                </div>
+              </Section>
+
+              {/* Danger Zone */}
+              <div className="bg-rose-50/60 border border-rose-200 border-dashed rounded-3xl p-5 space-y-2">
+                <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">{t('dangerZone', 'Zona Berbahaya')}</h3>
                 <button
-                  type="button"
-                  onClick={() => setLocalExpConfig({ ...localExpConfig, enabled: !localExpConfig.enabled })}
-                  className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer p-0.5 ${
-                    localExpConfig.enabled ? 'bg-indigo-600' : 'bg-slate-300'
-                  }`}
+                  onClick={handleClearAllData}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-rose-600 font-bold text-xs rounded-xl border border-rose-200 hover:bg-rose-600 hover:text-white transition-all cursor-pointer shadow-2xs"
                 >
-                  <div
-                    className={`w-5.5 h-5.5 rounded-full bg-white shadow-sm transition-transform ${
-                      localExpConfig.enabled ? 'translate-x-5.5' : 'translate-x-0'
-                    }`}
-                  />
+                  <Trash2 size={14} /> {t('clearAllLocalData', 'Hapus Semua Data Lokal & Reset')}
                 </button>
               </div>
-
-              {/* Sub features grid */}
-              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 transition-opacity ${localExpConfig.enabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                {/* 1. Markmap D3 */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-600" />
-                      Markmap D3 Mindmap
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      Peta konsep D3 berbasis Markdown: auto-layout anti-overlap dan cabang interaktif bisa di-click untuk buka/tutup materi.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, markmapEnabled: !localExpConfig.markmapEnabled })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.markmapEnabled
-                        ? 'bg-blue-50 border-blue-300 text-blue-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Engine</span>
-                    <span>{localExpConfig.markmapEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-
-                {/* 2. Mermaid.js */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-600" />
-                      Mermaid.js Diagram
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      Diagram alur algoritma, siklus sains biologi, dan timeline sejarah langsung dirender dari sintaks Mermaid ke SVG jernih.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, mermaidEnabled: !localExpConfig.mermaidEnabled })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.mermaidEnabled
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Engine</span>
-                    <span>{localExpConfig.mermaidEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-
-                {/* 3. Perfect-Freehand Inking */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-indigo-600" />
-                      Smooth Inking (Perfect-Freehand)
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      Simulasi tekanan pena realistis dan goresan tinta halus berujung lancip (tapering) layaknya Apple Pencil saat menulis di papan.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, smoothInkingEnabled: !localExpConfig.smoothInkingEnabled })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.smoothInkingEnabled
-                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Inking</span>
-                    <span>{localExpConfig.smoothInkingEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-
-                {/* 4. Visual Pie Timer */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-600" />
-                      Visual Pie Timer (Time Timer)
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      Timer lingkaran visual yang menyusut (hijau-kuning-merah) untuk fokus siswa kelas inklusi + bel chime Web Audio saat waktu habis.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, visualTimerEnabled: !localExpConfig.visualTimerEnabled })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.visualTimerEnabled
-                        ? 'bg-amber-50 border-amber-300 text-amber-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Timer</span>
-                    <span>{localExpConfig.visualTimerEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-
-                {/* 5. Smart Shapes & Dynamic Geometry */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Shapes size={14} className="text-pink-600" />
-                      Smart Shapes & Geometri AI
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      11 bentuk geometris lengkap (Bintang, Hati, Berlian, Balon Kata, Hexagon). AI dapat membuat, mengubah warna, border, dan mengedit label teks.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, smartShapesEnabled: !localExpConfig.smartShapesEnabled })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.smartShapesEnabled
-                        ? 'bg-pink-50 border-pink-300 text-pink-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Shapes</span>
-                    <span>{localExpConfig.smartShapesEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-
-                {/* 6. Smart Presensi & Attendance Hub */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Users size={14} className="text-blue-600" />
-                      Presensi Cerdas & Absensi Kelas
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      Widget kehadiran siswa interaktif di kanvas. Mendukung status Hadir (H), Izin (I), Sakit (S), Alpa (A), bar persentase, dan salin laporan.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, attendanceEnabled: !localExpConfig.attendanceEnabled })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.attendanceEnabled
-                        ? 'bg-blue-50 border-blue-300 text-blue-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Presensi</span>
-                    <span>{localExpConfig.attendanceEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-
-                {/* 7. Break-The-Limit AI Engine */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Flame size={14} className="text-rose-600 animate-bounce" />
-                      Break-The-Limit AI (Multi-Turn & Uncapped)
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      Membuka batas hingga 60 actions/turn, eksekusi multi-langkah otonom, kemampuan mengedit semua elemen kanvas, dan penjelasan pedagogis mendalam.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, breakTheLimitAi: !localExpConfig.breakTheLimitAi })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.breakTheLimitAi
-                        ? 'bg-rose-50 border-rose-300 text-rose-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Engine</span>
-                    <span>{localExpConfig.breakTheLimitAi ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-
-                {/* 8. Auto Task Automation & Workflow Chaining */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Workflow size={14} className="text-violet-600" />
-                      Otomasi Alur Pembelajaran (Auto-Chain)
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      Kelanjutan sesi otomatis saat guru meminta 'lanjutkan': menghubungkan peta konsep, catatan rumus, kuis latihan, timer, dan evaluasi.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, autoTaskAutomation: !localExpConfig.autoTaskAutomation })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.autoTaskAutomation
-                        ? 'bg-violet-50 border-violet-300 text-violet-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Otomasi</span>
-                    <span>{localExpConfig.autoTaskAutomation ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-
-                {/* 9. Jev-Mode System 1 Fast Classifier */}
-                <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex flex-col justify-between gap-2">
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Zap size={14} className="text-amber-500" />
-                      Jev-Mode (System 1 Reflex Engine)
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
-                      Engine refleks sub-50ms berbasis klasifikasi intent cepat. Mengeksekusi perintah UI instan tanpa jeda LLM dan mengunci pengeditan diagram in-place agar tidak menduplikasi widget.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocalExpConfig({ ...localExpConfig, jevModeEnabled: !localExpConfig.jevModeEnabled })}
-                    className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
-                      localExpConfig.jevModeEnabled
-                        ? 'bg-amber-50 border-amber-300 text-amber-700'
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <span>Status Jev-Mode</span>
-                    <span>{localExpConfig.jevModeEnabled ? 'Aktif ✓' : 'Mati ✕'}</span>
-                  </button>
-                </div>
-              </div>
-
-              {localExpConfig.enabled && (
-                <div className="p-3 bg-indigo-50/80 rounded-2xl border border-indigo-200/80 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <Flame size={16} />
-                  </div>
-                  <div>
-                    <h5 className="text-xs font-black text-indigo-950">
-                      Break-The-Limit Mode Aktif 🚀
-                    </h5>
-                    <p className="text-[11px] text-indigo-700 font-medium leading-tight mt-0.5">
-                      AI dapat mengedit bentuk, timer, presensi, diagram, dan catatan secara penuh, dengan kapasitas hingga 60 tindakan dan multi-tasking tanpa batas.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </Section>
-
-          {/* Assistive / Inclusivity Suite (Pak Damar Mode) */}
-          <Section
-            title="♿ Aksesibilitas & Mode Guru Inklusif (Pak Damar Suite)"
-            subtitle="Dirancang untuk guru dengan disabilitas motorik fisik (Bandung)"
-          >
-            <Field
-              label="Mode Guru Inklusif (Large-Target Assistive Dock)"
-              hint="Menampilkan dermaga tombol sentuh besar 56px di pojok layar untuk presensi, timer, roda acak, dan kontrol tanpa gerakan motorik halus."
-            >
-              <button
-                type="button"
-                onClick={() => toggleAssistiveMode()}
-                className={`py-3 px-4 rounded-2xl text-xs font-bold border-2 transition-all cursor-pointer flex items-center justify-between w-full ${
-                  isAssistiveMode
-                    ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-sm'
-                    : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <HeartHandshake size={18} className={isAssistiveMode ? 'text-amber-600' : 'text-slate-400'} />
-                  <span>{isAssistiveMode ? 'Mode Inklusif Aktif (Dermaga 56px Muncul)' : 'Aktifkan Mode Guru Inklusif'}</span>
-                </div>
-                <span className="font-mono text-xs">{isAssistiveMode ? 'AKTIF ✓' : 'MATI ✕'}</span>
-              </button>
-            </Field>
-          </Section>
-
-          {/* Appearance */}
-          <Section title={t('appearance', 'Tampilan')} subtitle={t('appearanceSubtitle', 'Tema dan preferensi visual papan tulis')}>
-            <Field label={t('theme', 'Tema')}>
-              <div className="flex bg-slate-50 p-1.5 rounded-2xl gap-1">
-                <button
-                  onClick={() => theme === 'dark' && toggleTheme()}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'light' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  <Sun size={16} /> {t('light', 'Terang')}
-                </button>
-                <button
-                  onClick={() => theme === 'light' && toggleTheme()}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-sm transition-all ${theme === 'dark' ? 'bg-white shadow-md text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  <Moon size={16} /> {t('dark', 'Gelap')}
-                </button>
-              </div>
-            </Field>
-            <Field label={t('aiSoundEffects', 'Suara Efek AI')}>
-              <button
-                onClick={() => setSoundEnabled(v => !v)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border-2 font-bold text-sm transition-all w-full ${soundEnabled ? 'border-emerald-400 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-500'}`}
-              >
-                {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                {soundEnabled ? t('soundEnabled', 'Suara Aktif') : t('soundDisabled', 'Suara Nonaktif')}
-              </button>
-            </Field>
-          </Section>
-
-          {/* Google Sheets & Telemetry */}
-          <Section
-            title="Integrasi Data & Google Sheets (Live Telemetri)"
-            subtitle="Sinkronisasi prompt, output token, biaya, dan user logs langsung ke Google Cloud & Sheets"
-          >
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Database size={16} className="text-blue-600" />
-                  <span className="font-black text-slate-800 text-xs">Google Cloud Project & Live Analytics</span>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-blue-700">
-                  gemma4good-494311
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Seluruh aktivitas interaksi guru dan siswa di Trido (prompt, respon visual, output tokens, estimasi biaya rupiah/dolar, latensi ms, dan user experience feedback) dicatat secara otomatis dan dapat diekspor atau disinkronkan live ke Google Sheets.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-2 pt-2">
-                <a
-                  href={getTelemetryDownloadUrl('csv')}
-                  download
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-colors shadow-sm"
-                >
-                  <Download size={13} /> Unduh Data (CSV / Excel)
-                </a>
-                <a
-                  href={getTelemetryDownloadUrl('json')}
-                  download
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors"
-                >
-                  <Download size={13} /> Unduh Data (JSON)
-                </a>
-              </div>
-            </div>
-          </Section>
-
-          {/* About */}
-          <Section title={t('aboutTrido', 'Tentang Trido')}>
-            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-2xl">
-              <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
-              <p className="text-xs font-semibold text-blue-700 leading-relaxed">
-                {t('aboutTridoDesc', 'Trido adalah papan tulis AI inklusif untuk guru yang mendukung ratusan bahasa internasional dan beroperasi penuh secara offline.')}
-              </p>
-            </div>
-            <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-[11px] leading-relaxed text-slate-500 font-medium">
-              <div className="font-bold text-slate-700">TRIDO 2026</div>
-              <div>Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia</div>
-              <div className="text-[10px] text-slate-400">(Ministry of Law, Republic of Indonesia)</div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Copyright © 2026 TRIDO by Ardellio Satria Anindito</div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500">
-              <div className="bg-slate-50 rounded-xl p-3">
-                <div className="text-slate-800 font-black text-base">v1.0.0</div>
-                <div>{t('appVersion', 'Versi Aplikasi')}</div>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-3">
-                <div className="text-slate-800 font-black text-base">Trido AI Core</div>
-                <div>{t('aiModel', 'Model AI')}</div>
-              </div>
-            </div>
-          </Section>
-
-          {/* Danger Zone */}
-          <div className="bg-rose-50 border border-rose-200 border-dashed rounded-3xl p-5 space-y-3">
-            <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">{t('dangerZone', 'Zona Berbahaya')}</h3>
-            <button
-              onClick={handleClearAllData}
-              className="flex items-center gap-2 w-full px-4 py-3 bg-white text-rose-600 font-bold text-sm rounded-2xl border border-rose-200 hover:bg-rose-600 hover:text-white transition-all"
-            >
-              <Trash2 size={16} /> {t('clearAllLocalData', 'Hapus Semua Data Lokal')}
-            </button>
-          </div>
+            </motion.div>
+          )}
 
         </div>
       </div>

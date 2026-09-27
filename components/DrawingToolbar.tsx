@@ -134,34 +134,68 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
 
   const isDrawingMode = activeTool === 'PENCIL' || activeTool === 'ERASER';
 
+  // Keyboard shortcut listener to close flyout and switch tools smoothly
+  React.useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) return;
+      if (e.key === 'Escape') {
+        close();
+        setActiveTool('SELECT');
+      } else if (e.key === 'v' || e.key === 'V') {
+        close();
+        setActiveTool('SELECT');
+      } else if (e.key === 'p' || e.key === 'P') {
+        close();
+        setActiveTool('PENCIL');
+      } else if (e.key === 'e' || e.key === 'E') {
+        close();
+        setActiveTool('ERASER');
+      } else if (e.key === 't' || e.key === 'T') {
+        close();
+        setActiveTool('TEXT');
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [setActiveTool]);
+
   return (
-    <div className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 pointer-events-auto z-50">
-      {/* ── Vertical Pill (Only 6 Clustered Buttons) ── */}
-      <motion.div
-        initial={{ opacity: 0, x: -14 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="relative flex flex-col items-center gap-1 bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-xl shadow-slate-900/8 rounded-2xl p-1.5"
-      >
-        {/* 1. SELECT */}
-        <Btn icon={MousePointer2} active={activeTool === 'SELECT'} title={t('selectElement', 'Pilih Elemen')} onClick={() => { setActiveTool('SELECT'); close(); }} />
+    <>
+      {/* Click-outside backdrop overlay to auto-dismiss open flyouts smoothly */}
+      {openPanel && (
+        <div
+          className="fixed inset-0 z-40 bg-transparent pointer-events-auto"
+          onClick={close}
+        />
+      )}
 
-        <div className="w-5 h-px bg-slate-200/80" />
+      <div className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 pointer-events-auto z-50">
+        {/* ── Vertical Pill (Only 6 Clustered Buttons) ── */}
+        <motion.div
+          initial={{ opacity: 0, x: -14 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="relative flex flex-col items-center gap-1 bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-xl shadow-slate-900/8 rounded-2xl p-1.5"
+        >
+          {/* 1. SELECT */}
+          <Btn icon={MousePointer2} active={activeTool === 'SELECT'} title={`${t('selectElement', 'Pilih Elemen')} (V)`} onClick={() => { setActiveTool('SELECT'); close(); }} />
 
-        {/* 2. DRAWING (Pencil, Eraser, Colors, Thickness combined) */}
-        <div className="relative">
-          <Btn
-            icon={activeTool === 'ERASER' ? Eraser : Pencil}
-            active={openPanel === 'draw' || isDrawingMode}
-            title={t('scribbleAndEraser', 'Coret & Hapus')}
-            onClick={() => {
-              if (!isDrawingMode) {
-                setActiveTool('PENCIL');
-              }
-              toggle('draw');
-            }}
-          >
-            <ChevronRight size={7} className="absolute right-0.5 bottom-0.5 opacity-50" />
-          </Btn>
+          <div className="w-5 h-px bg-slate-200/80" />
+
+          {/* 2. DRAWING (Pencil, Eraser, Colors, Thickness combined) */}
+          <div className="relative">
+            <Btn
+              icon={activeTool === 'ERASER' ? Eraser : Pencil}
+              active={openPanel === 'draw' || isDrawingMode}
+              title={`${t('scribbleAndEraser', 'Coret & Hapus')} (P)`}
+              onClick={() => {
+                if (!isDrawingMode) {
+                  setActiveTool('PENCIL');
+                }
+                toggle('draw');
+              }}
+            >
+              <ChevronRight size={7} className="absolute right-0.5 bottom-0.5 opacity-50" />
+            </Btn>
           <Flyout open={openPanel === 'draw'}>
             <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">{t('scribbleMode', 'Mode Coret')}</div>
             <div className="flex gap-1 mb-3">
@@ -228,7 +262,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
           <Btn
             icon={ShapeIcon}
             active={openPanel === 'shapes' || !!activeShape}
-            title={t('shapesAndLines', 'Bentuk & Garis')}
+            title={`${t('shapesAndLines', 'Bentuk & Garis')} (R)`}
             onClick={() => toggle('shapes')}
           >
             <ChevronRight size={7} className="absolute right-0.5 bottom-0.5 opacity-50" />
@@ -268,7 +302,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
           <Btn
             icon={Type}
             active={openPanel === 'text' || activeTool === 'TEXT'}
-            title={t('textAndTypography', 'Teks & Tipografi')}
+            title={`${t('textAndTypography', 'Teks & Tipografi')} (T)`}
             onClick={() => {
               if (activeTool !== 'TEXT') {
                 setActiveTool('TEXT');
@@ -336,5 +370,6 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
 
       </motion.div>
     </div>
+    </>
   );
 };

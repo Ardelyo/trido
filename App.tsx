@@ -8,8 +8,6 @@ import { ShareDialog } from './components/ShareDialog';
 import { ExportDialog } from './components/ExportDialog';
 import { ToolOverlay } from './components/ToolOverlay';
 import { AssistiveDock } from './components/AssistiveDock';
-import { TemplatesView } from './components/TemplatesView';
-import { AiToolsView } from './components/AiToolsView';
 import { HistoryView } from './components/HistoryView';
 import { SettingsView } from './components/SettingsView';
 import { SaveMenu } from './components/SaveMenu';
@@ -218,8 +216,6 @@ const App: React.FC = () => {
     isCalculatorOpen, toggleCalculator,
     isNotesOpen, toggleNotes,
     isQuizOpen, toggleQuiz,
-    isTemplatesOpen, toggleTemplates,
-    isAiToolsOpen, toggleAiTools,
     isHistoryOpen, toggleHistory
   } = useStore();
 
@@ -308,7 +304,7 @@ const App: React.FC = () => {
                 onClick={toggleAiDrawer}
                 className={`flex items-center gap-2 px-4 py-2 lg:py-2.5 text-sm font-bold rounded-[1.25rem] transition-colors shadow-sm ${isAiDrawerOpen ? 'bg-blue-600 text-white shadow-blue-600/30 ring-4 ring-blue-600/10' : 'text-blue-700 bg-white hover:bg-blue-50 border border-white'}`}
               >
-                <Sparkles size={16} /> <span className="hidden sm:inline">Trido AI</span>
+                <Sparkles size={16} /> <span className="hidden sm:inline">Asisten</span>
               </motion.button>
 
               <div className="hidden sm:block w-px h-6 bg-slate-300/50 mx-1" />
@@ -365,10 +361,8 @@ const App: React.FC = () => {
                       <SidebarItem
                         icon={Square}
                         label={t('whiteboard', 'Papan Tulis')}
-                        active={!isTemplatesOpen && !isAiToolsOpen && !isHistoryOpen && !isSettingsOpen && !isExportOpen}
+                        active={!isHistoryOpen && !isSettingsOpen && !isExportOpen}
                         onClick={() => {
-                          if (isTemplatesOpen) toggleTemplates();
-                          if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
@@ -382,8 +376,6 @@ const App: React.FC = () => {
                         active={isHistoryOpen}
                         onClick={() => {
                           toggleHistory();
-                          if (isTemplatesOpen) toggleTemplates();
-                          if (isAiToolsOpen) toggleAiTools();
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
                         }}
@@ -396,8 +388,6 @@ const App: React.FC = () => {
                         active={isExportOpen}
                         onClick={() => {
                           setIsExportOpen(true);
-                          if (isTemplatesOpen) toggleTemplates();
-                          if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
                         }}
@@ -410,59 +400,10 @@ const App: React.FC = () => {
                         active={isSettingsOpen}
                         onClick={() => {
                           setIsSettingsOpen(v => !v);
-                          if (isTemplatesOpen) toggleTemplates();
-                          if (isAiToolsOpen) toggleAiTools();
                           if (isHistoryOpen) toggleHistory();
                           setIsExportOpen(false);
                         }}
                       />
-
-                      {/* Archived Features Section (Templates & AI Tools) */}
-                      <div className="pt-3 mt-3 border-t border-slate-100">
-                        <button
-                          type="button"
-                          onClick={() => setIsArchiveOpen(!isArchiveOpen)}
-                          className="w-full flex items-center justify-between px-3 py-2 text-[11.5px] font-bold text-slate-400 hover:text-slate-600 rounded-xl transition-colors cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Archive size={13} />
-                            <span>Arsip Fitur</span>
-                          </div>
-                          {isArchiveOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                        </button>
-
-                        <AnimatePresence>
-                          {isArchiveOpen && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="space-y-1 mt-1 pl-1"
-                            >
-                              <SidebarItem
-                                icon={Layers}
-                                label={t('templates', 'Templat')}
-                                active={isTemplatesOpen}
-                                onClick={() => {
-                                  toggleTemplates();
-                                  setIsSettingsOpen(false);
-                                  setIsExportOpen(false);
-                                }}
-                              />
-                              <SidebarItem
-                                icon={Sparkles}
-                                label={t('agenticAiTools', 'Alat AI')}
-                                active={isAiToolsOpen}
-                                onClick={() => {
-                                  toggleAiTools();
-                                  setIsSettingsOpen(false);
-                                  setIsExportOpen(false);
-                                }}
-                              />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
                     </nav>
 
                     <div className="p-5 border-t border-slate-100/80 space-y-4 bg-slate-50/50">
@@ -495,17 +436,8 @@ const App: React.FC = () => {
                               <Pencil size={12} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                           )}
-                          <div className="text-[12px] text-slate-500 font-medium">{t('teacher', 'Guru')}</div>
+                          <div className="text-[12px] text-slate-500 font-medium">Pengajar Kelas</div>
                         </div>
-                      </div>
-
-                      <div className="p-4 rounded-3xl bg-white border border-slate-200/60 shadow-sm">
-                        <div className="text-[13px] font-bold text-slate-800 mb-1.5">{t('aiStatus', 'Status AI')}</div>
-                        <div className={`text-[12px] ${statusConfig.statusColor} font-semibold flex items-center gap-1.5`}>
-                            <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
-                            {statusConfig.text}
-                        </div>
-                        <div className="mt-1 text-[11px] text-slate-500 font-medium leading-snug">{statusConfig.detail}</div>
                       </div>
                     </div>
                   </div>
@@ -567,24 +499,6 @@ const App: React.FC = () => {
                )}
 
                <AnimatePresence>
-                 {isTemplatesOpen && (
-                   <TemplatesView
-                     onClose={toggleTemplates}
-                     onApplyTemplate={async (prompt) => {
-                       toggleTemplates();
-                       await processUserPrompt(prompt, canvasRef);
-                     }}
-                   />
-                 )}
-               </AnimatePresence>
-
-               <AnimatePresence>
-                 {isAiToolsOpen && (
-                   <AiToolsView onClose={toggleAiTools} />
-                 )}
-               </AnimatePresence>
-
-               <AnimatePresence>
                  {isHistoryOpen && (
                    <HistoryView onClose={toggleHistory} />
                  )}
@@ -626,21 +540,18 @@ const App: React.FC = () => {
                   className={`absolute right-4 lg:right-8 top-4 lg:top-8 bottom-4 lg:bottom-8 w-[calc(100%-2rem)] sm:w-95 bg-white/95 backdrop-blur-2xl rounded-4xl border border-white flex flex-col z-50 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden`}
                 >
                   {/* Header */}
-                  <div className="h-16 lg:h-20 border-b border-slate-100/80 flex items-center justify-between px-6 font-sans bg-white/50">
+                  <div className="h-16 lg:h-18 border-b border-slate-100 flex items-center justify-between px-5 font-sans bg-white/70">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-[1.1rem] bg-white border border-slate-200/80 shadow-sm flex items-center justify-center p-2">
-                          <img src="/logo.png" alt="Trido Logo" className="w-6 h-6 object-contain" />
+                        <div className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1.5">
+                          <img src="/logo.png" alt="Trido Logo" className="w-5 h-5 object-contain" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-slate-900 text-[16px]">Trido AI</span>
-                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${statusConfig.color} flex items-center gap-1 shadow-2xs`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
-                              {statusConfig.detail.split('•')[0].trim()}
-                            </span>
+                            <span className="font-extrabold text-slate-900 text-[15px]">Trido Assistant</span>
+                            <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} title={statusConfig.text} />
                           </div>
-                          <div className={`text-[11px] ${statusConfig.statusColor} font-bold tracking-tight`}>
-                            {statusConfig.text} • {statusConfig.detail.includes('•') ? statusConfig.detail.split('•')[1].trim() : (statusConfig.mode === 'ollama' ? '100% Offline Lokal' : 'Cloud AI Engine')}
+                          <div className="text-[11px] text-slate-400 font-medium tracking-tight">
+                            {statusConfig.mode === 'ollama' ? 'Mode Offline Lokal' : 'Cloud Assistant'}
                           </div>
                         </div>
                     </div>

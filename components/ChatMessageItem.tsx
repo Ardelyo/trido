@@ -163,16 +163,9 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
           <div className="w-5 h-5 rounded-md bg-white border border-slate-200 flex items-center justify-center p-0.5 shadow-2xs">
             <img src="/logo.png" alt="Trido" className="w-3.5 h-3.5 object-contain" />
           </div>
-          <span className="text-[11px] font-bold text-slate-700">Trido AI</span>
-          <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border ${
-            (message.provider === 'ollama' || aiPref === 'ollama' || displayModel.includes('gemma') || displayModel.includes('qwen'))
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-              : 'bg-blue-50 text-blue-600 border-blue-200/60'
-          }`}>
-            {displayModel}
-          </span>
+          <span className="text-[11px] font-bold text-slate-700">Trido Assistant</span>
           {message.tokens && (
-            <span className="text-[10px] font-mono text-slate-400 flex items-center gap-0.5">
+            <span className="text-[10px] font-mono text-slate-400 flex items-center gap-0.5" title={`Model: ${displayModel}`}>
               <Zap size={10} className="text-amber-500" /> {message.tokens} tok
               {message.latencyMs && ` • ${(message.latencyMs / 1000).toFixed(1)}s`}
             </span>
