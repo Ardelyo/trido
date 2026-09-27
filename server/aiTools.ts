@@ -881,8 +881,27 @@ export const validateFunctionCalls = (
     }
 
     if (call.name === 'update_component') {
-      const id = call.args.objectId;
+      let id = call.args.objectId;
       const validIds = Object.keys(domElements);
+
+      // Auto-resolution: if objectId is missing or needs resolution, resolve by componentTitle or sole active element
+      if (!id || (validIds.length > 0 && !validIds.includes(id))) {
+        if (call.args.componentTitle) {
+          const matchedKey = validIds.find(k => 
+            domElements[k]?.title?.toLowerCase().includes(call.args.componentTitle.toLowerCase()) ||
+            call.args.componentTitle.toLowerCase().includes((domElements[k]?.title || '').toLowerCase())
+          );
+          if (matchedKey) {
+            id = matchedKey;
+            call.args.objectId = matchedKey;
+          }
+        }
+        if (!call.args.objectId && validIds.length === 1) {
+          id = validIds[0];
+          call.args.objectId = validIds[0];
+        }
+      }
+
       if (id && validIds.length > 0 && !validIds.includes(id)) {
         errors.push(`Call ${index}: update_component ID "${id}" not in DOM elements`);
         continue;
