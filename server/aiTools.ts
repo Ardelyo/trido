@@ -74,17 +74,41 @@ export const MODEL_CAPABILITIES: Record<string, ModelCapability> = {
     supportsLessonEngine: true,
     recommendedTemperature: 0.7
   },
+  'trido-model:latest': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 35,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.2
+  },
+  'trido-gemma:2b': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 20,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.15
+  },
+  'ornith-1.5:9b': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 35,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.2
+  },
+  'qwen3.5-aggressive:9b': {
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 35,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.2
+  },
   'gemma-4-31b-it': {
-    supportsComplexSchema: false,
-    maxToolCallsPerRequest: 5,
-    supportsLessonEngine: false,
-    recommendedTemperature: 0.4
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 25,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.3
   },
   'ollama-local': {
-    supportsComplexSchema: false,
-    maxToolCallsPerRequest: 3,
-    supportsLessonEngine: false,
-    recommendedTemperature: 0.3
+    supportsComplexSchema: true,
+    maxToolCallsPerRequest: 20,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.2
   }
 };
 
@@ -640,9 +664,9 @@ ${existingObjects}
 
 RULES:
 - Respond in user's language
-- For mind maps: use add_mindmap_node only. First node = MAIN_TOPIC (center), others = SUBTOPIC
-- For text: use add_text_label with gridPosition=CENTER
-- Keep responses short (1-2 sentences)
+- For mind maps and concept maps: use render_mermaid with syntax: mindmap. First node = root((Topic))
+- If a diagram already exists on canvas: use update_component to modify or expand it in-place
+- For interactive apps: use add_component (TIMER, ATTENDANCE, TODOLIST)
 - Maximum ${capability.maxToolCallsPerRequest} tool calls
 
 Execute the request now.`;

@@ -96,8 +96,8 @@ const probeOllama = async (customUrl?: string, customModel?: string) => {
     const models = (data.models || []).map((m: any) => m.name);
     const configuredModel = customModel || getOllamaModel();
     
-    // Check configured model, prioritized by highest capability (ornith-1.5:9b with native tools/thinking/vision), then qwen and gemma
-    const candidateModels = [configuredModel, 'ornith-1.5:9b', 'qwen3.5-aggressive:9b', 'gemma4:e2b', 'gemma4:latest', 'gemma2:2b'];
+    // Check configured model, prioritized by Trido fine-tuned models first (trido-model:latest, trido-gemma:2b), then base models
+    const candidateModels = [configuredModel, 'trido-model:latest', 'trido-gemma:2b', 'ornith-1.5:9b', 'qwen3.5-aggressive:9b', 'gemma4:e2b', 'gemma4:latest', 'gemma2:2b'];
     let activeModel = candidateModels.find(candidate => 
       models.includes(candidate) || models.some((m: string) => m.startsWith(candidate + ':'))
     );

@@ -62,9 +62,23 @@ export const generateAgentActionsOllama = async (
   }));
 
   const isVisionModel = /vision|llava|bakllava|moondream|minicpm-v|cogvlm|qwen-vl/i.test(modelName);
+
+  // Jev System 1 Reflex Guard: In-Place Mutation Enforcement
+  const isModification = /(ubah|edit|ganti|tambah|update|modify|expand|lanjutkan|cabang|masukkan|hapus)/i.test(prompt);
+  const existingDiagramKeys = Object.keys(domElements).filter(k => {
+    const el = domElements[k];
+    const type = el?.componentType || el?.type || '';
+    return type === 'MERMAID_DIAGRAM' || type === 'MARKMAP_MINDMAP';
+  });
+
+  let reflexDirective = "";
+  if (isModification && existingDiagramKeys.length > 0) {
+    reflexDirective = `\n\n[JEV SYSTEM 1 DECISION: IN-PLACE MUTATION ONLY]\nAn existing diagram is already on the canvas (ID: "${existingDiagramKeys[0]}"). DO NOT call render_mermaid or create a duplicate widget. You MUST call update_component with objectId="${existingDiagramKeys[0]}", action="REPLACE" or "APPEND", and provide the updated complete Mermaid code.`;
+  }
+
   const userMessage: any = {
     role: "user",
-    content: `User request: ${prompt}\n\nRemember: Thoroughly address the entire request. Use function calls for all visual artifacts, batching actions together, and explain in clear text.`
+    content: `User request: ${prompt}${reflexDirective}\n\nRemember: Thoroughly address the entire request. Use function calls for all visual artifacts, batching actions together, and explain in clear text.`
   };
 
   if (isVisionModel && (cleanCanvasBase64 || highResInputImage)) {
