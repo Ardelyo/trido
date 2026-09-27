@@ -210,7 +210,7 @@ const getInitialSelectedGeminiModel = (): string => {
 };
 
 const getInitialSelectedOllamaModel = (): string => {
-  return localStorage.getItem('selected_ollama_model') || 'gemma4:e2b';
+  return localStorage.getItem('selected_ollama_model') || 'trido-model:latest';
 };
 
 const getInitialSelectedVertexModel = (): string => {

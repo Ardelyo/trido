@@ -6,8 +6,14 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { createLogger } from '../utils/logger';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const getScriptDir = (): string => {
+  if (typeof __dirname !== 'undefined') return __dirname;
+  try {
+    return path.dirname(fileURLToPath(import.meta.url));
+  } catch {
+    return path.join(process.cwd(), 'server');
+  }
+};
 
 const execFileAsync = promisify(execFile);
 const logger = createLogger('whisper');
@@ -43,7 +49,7 @@ export const transcribeAudioWhisper = async (
 ): Promise<string> => {
   const tmpId = `trido_whisper_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const tmpFilePath = path.join(os.tmpdir(), `${tmpId}.webm`);
-  const scriptPath = path.resolve(__dirname, 'whisperService.py');
+  const scriptPath = path.resolve(getScriptDir(), 'whisperService.py');
 
   try {
     // 1. Strip data URL header if present

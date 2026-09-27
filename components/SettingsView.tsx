@@ -383,16 +383,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                       <optgroup label="✅ Model yang Terpasang di Laptop Anda">
                         {detectedOllamaModels.map(m => (
                           <option key={m} value={m}>
-                            {m} {m.includes('ornith') ? '⭐ (Ornith 9B - Model Terbaik Trido: Native Tools & Vision)' : m.includes('qwen') ? '(Qwen - Cerdas & Lengkap)' : m.includes('gemma') ? '(Gemma - Cepat & Ringan)' : '(Lokal)'}
+                            {m} {m === 'trido-model:latest' ? '🏆 (Model Utama Trido: 100% Lolos Uji & In-Place Mutation)' : m === 'trido-gemma:2b' ? '⚡ (Trido Gemma Edge: Ringan & Cepat)' : m.includes('ornith') ? '⭐ (Ornith 9B - Vision & Tools)' : m.includes('qwen') ? '(Qwen - Cerdas & Lengkap)' : m.includes('gemma') ? '(Gemma - Cepat & Ringan)' : '(Lokal)'}
                           </option>
                         ))}
                       </optgroup>
                     )}
-                    <optgroup label="Rekomendasi Model Trido">
-                      <option value="gemma4:e2b">gemma4:e2b (Gemma 2B - Default Cepat & Ringan)</option>
-                      <option value="qwen2.5:7b">qwen2.5:7b (Qwen 7B - Cerdas & Mendalam)</option>
-                      <option value="gemma4:31b">gemma4:31b (Gemma 4 31B IT)</option>
-                      <option value="gemma2:2b">gemma2:2b (Gemma 2 2B)</option>
+                    <optgroup label="Model Bawaan / Unduh Otomatis">
+                      <option value="trido-model:latest">trido-model:latest (Model Utama Trido - 100% Lolos Uji)</option>
+                      <option value="trido-gemma:2b">trido-gemma:2b (Trido Gemma 2B Edge)</option>
+                      <option value="ornith-1.5:9b">ornith-1.5:9b (Ornith 9B - Vision & Tools)</option>
+                      <option value="qwen3.5-aggressive:9b">qwen3.5-aggressive:9b (Qwen 9B)</option>
+                      <option value="gemma4:e2b">gemma4:e2b (Gemma 2B)</option>
                     </optgroup>
                   </select>
                 </Field>
