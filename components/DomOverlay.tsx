@@ -319,7 +319,7 @@ export const DomOverlay: React.FC = () => {
                 height: `${el.height}px`,
                 left: el.x,
                 top: el.y,
-                transform: `translate(-50%, -50%) scale(${el.scaleX}, ${el.scaleY}) rotate(${el.rotation}deg)`,
+                transform: `translate(-50%, -50%) rotate(${el.rotation || 0}deg)`,
                 transformOrigin: 'center center',
                 pointerEvents: 'auto'
               }}

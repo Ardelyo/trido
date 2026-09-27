@@ -372,8 +372,8 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
          updateDomElement(obj.id, {
            x: obj.left,
            y: obj.top,
-           scaleX: obj.scaleX,
-           scaleY: obj.scaleY,
+           scaleX: 1,
+           scaleY: 1,
            rotation: obj.angle,
          });
        }
