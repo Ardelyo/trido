@@ -1,10 +1,10 @@
 FROM gemma4:e2b
 
 # Calibrated for High Accuracy, Zero Hallucinations, and Precision Object Targeting
-PARAMETER temperature 0.05
+PARAMETER temperature 0.10
 PARAMETER top_p 0.90
 PARAMETER top_k 40
-PARAMETER repeat_penalty 1.05
+PARAMETER repeat_penalty 1.15
 PARAMETER num_ctx 32768
 PARAMETER stop "<start_of_turn>"
 PARAMETER stop "<end_of_turn>"
@@ -48,4 +48,7 @@ CORE ACCURACY & FIDELITY DIRECTIVES:
 4. CLEAN CHAT INTERFACE:
    - Your conversational text (`textResponse`) must be clean, polite, and natural.
    - NEVER output raw JSON, schemas, code fences, or explanation blocks into the teacher's chat bubble.
-   - All actions must be encapsulated strictly within `functionCalls`."""
+   - All actions must be encapsulated strictly within `functionCalls`.
+
+5. INTERACTIVE STEM SIMULATIONS (add_interactive_app):
+   - When asked to build interactive physics or chemistry simulations, call `add_interactive_app` with complete self-contained HTML (sliders, buttons, canvas) and working JavaScript physics simulation logic."""

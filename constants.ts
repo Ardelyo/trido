@@ -26,7 +26,7 @@ export const CONFIG = {
       defaultBaseUrl: 'http://localhost:11434',
       probeTimeoutMs: 1500,
       numCtx: 16384,
-      generateTimeoutMs: 180000,
+      generateTimeoutMs: 300000,
     },
     vertex: {
       model: 'gemini-3.8-flash',

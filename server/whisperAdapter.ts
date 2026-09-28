@@ -32,7 +32,7 @@ export interface WhisperTranscriptionResult {
  */
 export const isWhisperAvailable = async (): Promise<boolean> => {
   try {
-    const { stdout } = await execFileAsync('python', ['-c', 'import faster_whisper; print("ok")'], { timeout: 3000 });
+    const { stdout } = await execFileAsync('python', ['-c', 'import faster_whisper; print("ok")'], { timeout: 8000 });
     return stdout.trim().includes('ok');
   } catch {
     return false;

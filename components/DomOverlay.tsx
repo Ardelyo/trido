@@ -261,6 +261,10 @@ export const DomOverlay: React.FC = () => {
         case 'MERMAID_DIAGRAM':
           return <MermaidTool id={el.id} config={el.config} />;
         case 'INTERACTIVE_APP':
+        case 'APP_BUILDER':
+        case 'STEM_SIMULATION':
+        case 'SIMULASI_FISIKA':
+        case 'SIMULASI_KIMIA':
           return <AppBuilderTool config={el.config} />;
         case 'QUIZ_APP':
           return <QuizApp config={el.config} />;

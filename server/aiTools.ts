@@ -255,9 +255,12 @@ export const tools: FunctionDeclaration[] = [
             "MARKDOWN_NOTE",
             "DOCUMENT_PAGE",
             "MARKMAP_MINDMAP",
-            "MERMAID_DIAGRAM"
+            "MERMAID_DIAGRAM",
+            "INTERACTIVE_APP",
+            "STEM_SIMULATION",
+            "APP_BUILDER"
           ],
-          description: "Widget type to instantiate"
+          description: "Widget type to instantiate. Use STEM_SIMULATION or INTERACTIVE_APP for interactive physics, chemistry, biology, or math simulations."
         },
         gridPosition: {
           type: Type.STRING,
@@ -280,7 +283,8 @@ ATTENDANCE: {"title":"Presensi Siswa","className":"Kelas 8A","students":[{"name"
 TODOLIST: {"tasks":[{"text":"Bahas materi","completed":false}]}
 MARKMAP_MINDMAP: {"title":"string","markdown":"# Root\\n## Branch 1\\n- Detail A\\n## Branch 2"}
 MERMAID_DIAGRAM: {"title":"string","code":"flowchart TD\\n  A-->B"}
-DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBody text. Math: $E=mc^2$"}`
+DOCUMENT_PAGE or MARKDOWN_NOTE: {"title":"string","markdown":"# Heading\\n\\nBody text. Math: $E=mc^2$"}
+STEM_SIMULATION or INTERACTIVE_APP: {"title":"string","html":"HTML string with canvas/controls","css":"optional CSS","js":"JavaScript for physics simulation, sliders, and animation loop"}`
         }
       },
       required: ["componentType", "gridPosition"]
