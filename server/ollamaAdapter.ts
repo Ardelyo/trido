@@ -138,6 +138,47 @@ function extractToolsAndCleanText(rawText: string): { functionCalls: any[]; clea
     }
   }
 
+  // Case E: Direct Bullet/Text Mindmap Extractor (System 1 Fallback for lightweight SLMs)
+  // If model emitted structured bullet points or Mindmap Title instead of valid JSON
+  if (functionCalls.length === 0 && (cleanText.includes("Mindmap Title:") || cleanText.includes("peta konsep") || cleanText.includes("Root Node:"))) {
+    const titleMatch = cleanText.match(/\[Mindmap Title:\s*([^\]]+)\]|\*\*Judul:\*\*\s*([^\n]+)|\*\*Root Node:\*\*\s*([^\n\(]+)/i);
+    const title = (titleMatch ? (titleMatch[1] || titleMatch[2] || titleMatch[3]) : "Peta Konsep").trim();
+    
+    // Extract bullet hierarchy
+    const lines = cleanText.split('\n');
+    const mermaidLines = [`mindmap`, `  root((${title}))`];
+    let inHierarchy = false;
+
+    for (const line of lines) {
+      if (line.includes('* **Cabang') || line.includes('* **Root Node:') || line.includes('    * **Subtopic') || line.includes('        * **Detail') || line.includes('- Struktur') || line.includes('- Konsep')) {
+        inHierarchy = true;
+      }
+      if (line.startsWith('**[Explanation]') || line.startsWith('**[Action Breakdown]') || line.startsWith('**[Next Steps]')) {
+        inHierarchy = false;
+      }
+      if (inHierarchy && (line.trim().startsWith('*') || line.trim().startsWith('-'))) {
+        const indentMatch = line.match(/^(\s*)/);
+        const indentLevel = Math.min(Math.floor((indentMatch ? indentMatch[1].length : 0) / 4) + 2, 6);
+        let nodeText = line.replace(/^[\s*\-]+/g, '').replace(/\*\*/g, '').replace(/\[.*?\]/g, '').trim();
+        // Remove parenthetical duplicates like "Struktur Bahasa (Struktur Bahasa)"
+        nodeText = nodeText.replace(/\(([^)]+)\)$/, '').replace(/^(Cabang \d+:|Subtopic \d+:|Detail \d+:)\s*/i, '').trim();
+        if (nodeText && !nodeText.toLowerCase().includes('root node')) {
+          mermaidLines.push(`${'  '.repeat(indentLevel)}${nodeText}`);
+        }
+      }
+    }
+
+    if (mermaidLines.length > 3) {
+      functionCalls.push({
+        name: "render_mermaid",
+        args: {
+          title,
+          code: mermaidLines.join('\n')
+        }
+      });
+    }
+  }
+
   // If function calls were extracted, purge technical JSON and schemas from user-facing text
   if (functionCalls.length > 0) {
     if (extractedConversationalText) {

@@ -1,8 +1,8 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useStore } from '../store';
 import { ChevronDown, Timer } from 'lucide-react';
 import { useTranslation } from '../utils/translations';
+import gsap from 'gsap';
 
 export const AgentCursor: React.FC = () => {
   const { t } = useTranslation();
@@ -10,12 +10,42 @@ export const AgentCursor: React.FC = () => {
   const [displayMessage, setDisplayMessage] = useState<string | null>(null);
   const [thinkTime, setThinkTime] = useState(0);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const badgeRef = useRef<HTMLDivElement>(null);
+
   const zoom = viewportTransform[0];
   const panX = viewportTransform[4];
   const panY = viewportTransform[5];
 
   const screenX = cursorPosition.x * zoom + panX;
   const screenY = cursorPosition.y * zoom + panY;
+
+  // GSAP Smooth Coordinate Tracking
+  useEffect(() => {
+    if (!containerRef.current) return;
+    gsap.to(containerRef.current, {
+      x: screenX,
+      y: screenY,
+      duration: 0.35,
+      ease: 'power2.out',
+    });
+  }, [screenX, screenY]);
+
+  // GSAP Pulse on Agent Badge during processing
+  useEffect(() => {
+    if (isThinking && badgeRef.current) {
+      const pulse = gsap.to(badgeRef.current, {
+        scale: 1.05,
+        duration: 0.6,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.inOut',
+      });
+      return () => {
+        pulse.kill();
+      };
+    }
+  }, [isThinking]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -30,13 +60,13 @@ export const AgentCursor: React.FC = () => {
     return () => clearInterval(interval);
   }, [isThinking]);
 
-  // Typewriter effect or simple delay for message
+  // Speech bubble display timer
   useEffect(() => {
     if (agentMessage) {
       setDisplayMessage(agentMessage);
       const timer = setTimeout(() => {
         useStore.getState().setAgentMessage(null);
-      }, 15000 + agentMessage.length * 50); // Read time increased
+      }, 15000 + agentMessage.length * 50);
       return () => clearTimeout(timer);
     } else {
       setDisplayMessage(null);
@@ -57,32 +87,31 @@ export const AgentCursor: React.FC = () => {
   
   return (
     <div
-      className={`pointer-events-none absolute z-[100] flex flex-col items-start transition-all duration-500 will-change-transform ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90 translate-y-4'}`}
+      ref={containerRef}
+      className={`pointer-events-none fixed top-0 left-0 z-[100] flex flex-col items-start transition-opacity duration-300 will-change-transform ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       style={{
-        left: screenX,
-        top: screenY,
-        transform: 'translate(0, 0)', 
+        transform: `translate3d(${screenX}px, ${screenY}px, 0)`,
       }}
     >
       {/* SPEECH BUBBLE */}
       {displayMessage && (
-         <div className="absolute bottom-8 left-4 z-50 animate-in slide-in-from-bottom-2 fade-in duration-300 pointer-events-auto">
-            <details className="relative rounded-2xl rounded-bl-none bg-white shadow-[0_8px_30px_rgba(0,0,0,0.3)] overflow-hidden group min-w-[200px] max-w-[320px]">
-               <summary className="p-3 text-sm font-semibold text-primary cursor-pointer hover:bg-slate-50 list-none flex items-center gap-2 select-none [&::-webkit-details-marker]:hidden relative">
-                 <span className="relative flex h-2 w-2 mr-1">
-                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                 </span>
-                 Agen AI Merespons
-                 <ChevronDown size={16} className="ml-auto group-open:rotate-180 transition-transform" />
-               </summary>
-               <div className="px-3 pb-3 pt-1 text-xs font-medium text-slate-800 border-t border-slate-100 max-h-[300px] overflow-y-auto whitespace-pre-wrap">
-                 {displayMessage}
-               </div>
-               {/* Tail */}
-               <div className="absolute -bottom-2 left-0 h-4 w-4 bg-white hidden group-open:block" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}></div>
-            </details>
-         </div>
+        <div className="absolute bottom-8 left-4 z-50 animate-in slide-in-from-bottom-2 fade-in duration-300 pointer-events-auto">
+          <details className="relative rounded-2xl rounded-bl-none bg-white shadow-2xl border border-slate-200 overflow-hidden group min-w-[200px] max-w-[320px]">
+            <summary className="p-3 text-sm font-semibold text-blue-600 cursor-pointer hover:bg-slate-50 list-none flex items-center gap-2 select-none [&::-webkit-details-marker]:hidden relative">
+              <span className="relative flex h-2 w-2 mr-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-600 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+              </span>
+              Trido AI Merespons
+              <ChevronDown size={16} className="ml-auto group-open:rotate-180 transition-transform" />
+            </summary>
+            <div className="px-3 pb-3 pt-1 text-xs font-medium text-slate-800 border-t border-slate-100 max-h-[300px] overflow-y-auto whitespace-pre-wrap">
+              {displayMessage}
+            </div>
+            {/* Tail */}
+            <div className="absolute -bottom-2 left-0 h-4 w-4 bg-white hidden group-open:block" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}></div>
+          </details>
+        </div>
       )}
 
       {/* The Cursor Tip (Figma style) */}
@@ -92,7 +121,7 @@ export const AgentCursor: React.FC = () => {
           height="24" 
           viewBox="0 0 24 24" 
           fill="none" 
-          className="drop-shadow-lg"
+          className="drop-shadow-md"
         >
           <path 
             d="M3 3L10.5 20.5L13.5 13.5L20.5 10.5L3 3Z" 
@@ -105,34 +134,35 @@ export const AgentCursor: React.FC = () => {
         
         {/* Click Ripple Effect */}
         {isClicking && (
-          <div className="absolute -left-2 -top-2 h-10 w-10 animate-ping rounded-full border-2 border-primary opacity-75"></div>
+          <div className="absolute -left-2 -top-2 h-10 w-10 animate-ping rounded-full border-2 border-blue-600 opacity-75"></div>
         )}
       </div>
 
       {/* Label / Status Bubble */}
       <div 
+        ref={badgeRef}
         className={`
           absolute left-5 top-5 flex items-center gap-2 whitespace-nowrap rounded-br-xl rounded-bl-xl rounded-tr-xl 
-          bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-lg
+          bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-xl
           transition-all duration-300 origin-top-left
           ${(isThinking || currentAction) ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
         `}
       >
         {isThinking && (
-          <div className="flex flex-col items-start gap-1">
-             <div className="flex items-center gap-2">
-                <div className="h-2 w-2 animate-bounce rounded-full bg-white" />
-                <span>{currentAction || t('thinking', 'Berpikir...')}</span>
-             </div>
-             <div className={`flex items-center gap-1.5 ${timeColor} text-[10px] w-full font-mono bg-black/20 px-1.5 py-0.5 rounded`}>
-                <Timer size={10} />
-                <span>{thinkTime}s</span>
-                <span className="ml-1 opacity-80">{timeStatus}</span>
-             </div>
+          <div className="flex flex-col items-start gap-0.5">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 animate-bounce rounded-full bg-white" />
+              <span>{currentAction || t('thinking', 'Berpikir...')}</span>
+            </div>
+            <div className={`flex items-center gap-1.5 ${timeColor} text-[10px] w-full font-mono bg-black/20 px-1.5 py-0.5 rounded`}>
+              <Timer size={10} />
+              <span>{thinkTime}s</span>
+              <span className="ml-1 opacity-80">{timeStatus}</span>
+            </div>
           </div>
         )}
         {!isThinking && currentAction && (
-           <span>{currentAction}</span>
+          <span>{currentAction}</span>
         )}
       </div>
     </div>

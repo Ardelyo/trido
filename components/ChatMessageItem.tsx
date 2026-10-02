@@ -8,6 +8,7 @@ import { ChatMessage } from '../types';
 import { toast } from '../utils/toast';
 import { submitLogFeedback } from '../services/aiService';
 import { useStore } from '../store';
+import gsap from 'gsap';
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -20,10 +21,32 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   isLatest,
   isThinking
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const isModel = message.role === 'model';
   const [copied, setCopied] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [rated, setRated] = useState<'good' | 'bad' | null>(null);
+
+  // GSAP Smooth Entrance Animation
+  useEffect(() => {
+    if (containerRef.current) {
+      gsap.fromTo(
+        containerRef.current,
+        {
+          opacity: 0,
+          y: isModel ? 14 : 10,
+          scale: 0.96,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.4,
+          ease: 'power2.out',
+        }
+      );
+    }
+  }, []);
 
   const aiPref = useStore(state => state.aiPreference);
   const selOllama = useStore(state => state.selectedOllamaModel);
@@ -142,7 +165,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 
   if (!isModel) {
     return (
-      <div className="flex flex-col items-end group w-full">
+      <div ref={containerRef} className="flex flex-col items-end group w-full will-change-transform">
         <div className="flex items-center gap-1.5 mb-1 mr-1">
           <span className="text-[11px] font-semibold text-slate-400">Anda</span>
           <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
@@ -157,7 +180,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-start group w-full" onClick={handleSkipStream}>
+    <div ref={containerRef} className="flex flex-col items-start group w-full will-change-transform" onClick={handleSkipStream}>
       <div className="flex items-center justify-between w-full mb-1 ml-1 px-1">
         <div className="flex items-center gap-1.5">
           <div className="w-5 h-5 rounded-md bg-white border border-slate-200 flex items-center justify-center p-0.5 shadow-2xs">

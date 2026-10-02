@@ -212,6 +212,25 @@ async function startServer() {
       server: { middlewareMode: true },
       appType: "spa",
     });
+
+    // Ensure SPA route requests (like /app) serve the transformed HTML shell
+    app.use(async (req, res, next) => {
+      const url = req.originalUrl;
+      const accept = req.headers.accept || '';
+      if (accept.includes('text/html') && !url.startsWith('/api') && !url.startsWith('/@') && !url.includes('.')) {
+        try {
+          const indexPath = path.join(process.cwd(), 'index.html');
+          let template = await fs.promises.readFile(indexPath, 'utf-8');
+          template = await vite.transformIndexHtml(url, template);
+          res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+          return;
+        } catch (e) {
+          return next(e);
+        }
+      }
+      next();
+    });
+
     app.use(vite.middlewares);
   } else {
     // APP_DIST_PATH is set by Electron before requiring this bundle.

@@ -43,9 +43,9 @@ export const ToolOverlay: React.FC = () => {
         isOpen={isCalculatorOpen} 
         onClose={toggleCalculator} 
         icon={PencilRuler}
-        defaultPosition={{ x: 450, y: 120 }}
-        width={340}
-        height={540}
+        defaultPosition={{ x: 450, y: 100 }}
+        width={320}
+        height={430}
       >
         <CalculatorTool />
       </FloatingToolContainer>
@@ -55,9 +55,9 @@ export const ToolOverlay: React.FC = () => {
         isOpen={isNotesOpen} 
         onClose={toggleNotes} 
         icon={FileText}
-        defaultPosition={{ x: 120, y: 350 }}
-        width={400}
-        height={450}
+        defaultPosition={{ x: 120, y: 300 }}
+        width={380}
+        height={420}
       >
         <NotesTool />
       </FloatingToolContainer>
@@ -67,9 +67,9 @@ export const ToolOverlay: React.FC = () => {
         isOpen={isQuizOpen} 
         onClose={toggleQuiz} 
         icon={HelpCircle}
-        defaultPosition={{ x: 500, y: 150 }}
+        defaultPosition={{ x: 480, y: 120 }}
         width={380}
-        height={560}
+        height={480}
       >
         <QuizTool />
       </FloatingToolContainer>

@@ -1,9 +1,9 @@
 FROM ornith-1.5:9b
 
 # Calibrated for High Accuracy, Zero Hallucinations, and Precision Object Targeting
-PARAMETER temperature 0.10
+PARAMETER temperature 0.05
 PARAMETER top_p 0.90
-PARAMETER repeat_penalty 1.12
+PARAMETER repeat_penalty 1.08
 PARAMETER num_ctx 32768
 
 SYSTEM """You are TRIDO (Trido AI) — the flagship intelligent, continuous spatial smartboard co-worker for classroom education worldwide, created by Ardellio Satria Anindito.

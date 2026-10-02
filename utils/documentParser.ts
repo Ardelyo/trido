@@ -531,7 +531,12 @@ export async function parseDocumentFile(file: File): Promise<AttachedDocument> {
   };
 
   // Helper to read file as Text
-  const readText = (): Promise<string> => {
+  const readText = async (): Promise<string> => {
+    if (typeof (file as any).text === 'function') {
+      try {
+        return await (file as any).text();
+      } catch (_) {}
+    }
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
@@ -608,7 +613,7 @@ export async function parseDocumentFile(file: File): Promise<AttachedDocument> {
         name: file.name,
         type: file.type || 'text/plain',
         size: file.size,
-        category: 'text',
+        category: category !== 'other' ? category : 'text',
         text,
         previewSnippet: preview,
         wordCount: text.split(/\s+/).filter(Boolean).length

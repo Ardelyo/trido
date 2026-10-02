@@ -582,7 +582,7 @@ ${jevDirective}
       let cleanMsg = textResponse?.trim() || "";
 
       // Defense-in-depth: If raw JSON or markdown JSON blocks leak into textResponse, sanitize them
-      if (cleanMsg.startsWith('{') || cleanMsg.startsWith('```json') || cleanMsg.includes('"functionCalls"') || cleanMsg.includes('"textResponse"')) {
+      if (cleanMsg.startsWith('{') || cleanMsg.startsWith('```json') || cleanMsg.includes('"functionCalls"') || cleanMsg.includes('"textResponse"') || cleanMsg.includes('json\n') || cleanMsg.includes('Salin\n{')) {
         try {
           const jsonMatch = cleanMsg.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
@@ -590,7 +590,7 @@ ${jevDirective}
             if (innerMatch && innerMatch[1]) {
               cleanMsg = innerMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
             } else {
-              cleanMsg = cleanMsg.replace(/```(?:json)?[\s\S]*?```/gi, '').replace(/\{[\s\S]*\}/g, '').trim();
+              cleanMsg = cleanMsg.replace(/```(?:json)?[\s\S]*?```/gi, '').replace(/\{[\s\S]*\}/g, '').replace(/json\s+Salin\s*/gi, '').trim();
             }
           }
         } catch (_) {}

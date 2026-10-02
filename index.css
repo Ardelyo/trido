@@ -4,6 +4,16 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+
+  --color-paper: #e4e3e0;
+  --color-paper-2: #d9d8d4;
+  --color-trido: #1550aa;
+  --color-trido-deep: #0d3a80;
+  --color-ink: #0a1a3a;
+  --color-sun: #ffcc00;
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -76,9 +86,12 @@
   * {
     border-color: hsl(var(--border));
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    overflow: hidden;
+    overflow-x: hidden;
   }
 }
 
@@ -173,3 +186,65 @@
     max-height: none !important;
   }
 }
+
+/* ── Trido Landing Page Styles ────────────────────────────────────────── */
+.display {
+  font-family: var(--font-display);
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+  font-weight: 800;
+}
+
+.dotgrid {
+  background-color: #f8fafc;
+  background-image: radial-gradient(#cbd5e1 1.1px, transparent 1.1px);
+  background-size: 18px 18px;
+}
+
+.paper-grain {
+  background-image: radial-gradient(rgba(10, 26, 58, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Voice waveform */
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+}
+.wave-bar {
+  transform-origin: center;
+  animation: wave 1s ease-in-out infinite;
+}
+
+/* Marquee */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes marquee-rev {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+.marquee { animation: marquee 48s linear infinite; }
+.marquee-rev { animation: marquee-rev 56s linear infinite; }
+.marquee-wrap:hover .marquee,
+.marquee-wrap:hover .marquee-rev { animation-play-state: paused; }
+
+/* Mic pulse */
+@keyframes ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+.mic-ring { animation: ring 1.6s ease-out infinite; }
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+.caret { animation: blink 0.9s steps(1) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee, .marquee-rev, .wave-bar, .mic-ring { animation: none; }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }

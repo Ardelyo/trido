@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import RootRouter from './components/RootRouter';
 import { registerSW } from 'virtual:pwa-register';
 
 // Patch Fabric.js textBaseline typo ('alphabetical' -> 'alphabetic') to eliminate canvas enum warnings
@@ -50,7 +50,7 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <RootRouter />
     </ErrorBoundary>
   </React.StrictMode>
 );

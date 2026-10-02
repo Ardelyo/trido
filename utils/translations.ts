@@ -11,17 +11,17 @@ export interface LanguageInfo {
 }
 
 export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
-  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩', isUN: false },
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇳', isUN: true },
+  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩', isUN: false, dir: 'ltr' },
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇳', isUN: true, dir: 'ltr' },
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇺🇳', isUN: true, dir: 'rtl' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文 (简体)', flag: '🇺🇳', isUN: true },
-  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇺🇳', isUN: true },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇺🇳', isUN: true },
-  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇺🇳', isUN: true },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵', isUN: false },
-  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷', isUN: false },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', isUN: false },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇧🇷', isUN: false },
+  { code: 'zh', name: 'Chinese', nativeName: '中文 (简体)', flag: '🇺🇳', isUN: true, dir: 'ltr' },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇺🇳', isUN: true, dir: 'ltr' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇺🇳', isUN: true, dir: 'ltr' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇺🇳', isUN: true, dir: 'ltr' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵', isUN: false, dir: 'ltr' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷', isUN: false, dir: 'ltr' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', isUN: false, dir: 'ltr' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇧🇷', isUN: false, dir: 'ltr' },
 ];
 
 export const translations: Record<SupportedLanguage, Record<string, string>> = {
@@ -175,6 +175,10 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
     app_Periodic: 'Periodik',
     app_Attendance: 'Presensi',
     app_Todo: 'To-Do',
+    app_SpinWheel: 'Roda Acak',
+    app_Scoreboard: 'Papan Skor',
+    app_MathGraph: 'Grafik MTK',
+    userGuide: 'Panduan Guru',
 
     // Settings
     settingsTitle: 'Pengaturan',
@@ -240,6 +244,12 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
     category_creative: 'Kreatif',
     templateNotFound: 'Templat tidak ditemukan',
     tryAnotherSearch: 'Coba kata kunci pencarian yang lain.',
+
+    // Common Actions
+    start: 'Mulai',
+    pause: 'Jeda',
+    reset: 'Reset',
+    clear: 'Hapus',
 
     // Quiz Tool
     quiz_createNew: 'Buat Baru',
@@ -406,10 +416,14 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
     app_Timer: 'Timer',
     app_Notes: 'Notes',
     app_Quiz: 'AI Quiz',
-    app_Conversion: 'Converter',
-    app_Periodic: 'Periodic Table',
+    app_Conversion: 'Convert',
+    app_Periodic: 'Periodic',
     app_Attendance: 'Attendance',
     app_Todo: 'To-Do',
+    app_SpinWheel: 'Spin Wheel',
+    app_Scoreboard: 'Scoreboard',
+    app_MathGraph: 'Math Graph',
+    userGuide: 'User Guide',
 
     // Settings
     settingsTitle: 'Settings',
@@ -475,6 +489,12 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
     category_creative: 'Creative',
     templateNotFound: 'Template not found',
     tryAnotherSearch: 'Try another search query.',
+
+    // Common Actions
+    start: 'Start',
+    pause: 'Pause',
+    reset: 'Reset',
+    clear: 'Clear',
 
     // Quiz Tool
     quiz_createNew: 'Create New',

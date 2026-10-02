@@ -198,32 +198,42 @@ const getInitialOllamaBaseUrl = (): string => {
 };
 
 const getInitialSelectedGeminiModel = (): string => {
+  if (typeof window === 'undefined') return 'gemini-3.8-flash';
   const saved = localStorage.getItem('selected_gemini_model');
   if (!saved || saved === 'gemini-3.7-flash') return 'gemini-3.8-flash';
   return saved;
 };
 
 const getInitialSelectedOllamaModel = (): string => {
-  return localStorage.getItem('selected_ollama_model') || 'trido-model:latest';
+  if (typeof window === 'undefined') return 'trido-model:latest';
+  const saved = localStorage.getItem('selected_ollama_model');
+  if (!saved || saved === 'gemma:2b' || saved === 'gemma2:2b' || saved === 'gemma4:e2b' || saved === 'qwen2.5:7b') {
+    return 'trido-model:latest';
+  }
+  return saved;
 };
 
 const getInitialSelectedVertexModel = (): string => {
+  if (typeof window === 'undefined') return 'gemini-3.8-flash';
   const saved = localStorage.getItem('selected_vertex_model');
   if (!saved || saved === 'gemini-3.7-flash') return 'gemini-3.8-flash';
   return saved;
 };
 
 const getInitialLanguage = (): SupportedLanguage => {
+  if (typeof window === 'undefined') return 'id';
   const saved = localStorage.getItem('trido_language') as SupportedLanguage;
   const validLanguages: SupportedLanguage[] = ['id', 'en', 'ar', 'zh', 'fr', 'ru', 'es', 'ja', 'ko', 'de', 'pt'];
   return (saved && validLanguages.includes(saved)) ? saved : 'id';
 };
 
 const getInitialUserName = (): string => {
+  if (typeof window === 'undefined') return 'Guru';
   return localStorage.getItem('trido_user_name') || 'Guru';
 };
 
 const getInitialTranscribeMode = (): TranscribeMode => {
+  if (typeof window === 'undefined') return 'faster_whisper';
   const saved = localStorage.getItem('trido_transcribe_mode') as TranscribeMode;
   if (saved === 'faster_whisper' || saved === 'record_gemini' || saved === 'gemini_live' || saved === 'upload_audio' || saved === 'webspeech') return saved;
   return 'faster_whisper';

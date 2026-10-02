@@ -118,6 +118,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
     fontFamily, setFontFamily, fontSize, setFontSize,
     toggleCalculator, toggleTimer, toggleNotes, toggleQuiz,
     toggleUnitConverter, togglePeriodicTable, toggleAttendance, toggleTodoList,
+    toggleSpinWheel, toggleScoreboard, toggleMathGraph,
   } = useStore();
 
   const [openPanel, setOpenPanel] = useState<PanelId | null>(null);
@@ -130,6 +131,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
   const appActions: Record<string, () => void> = {
     toggleCalculator, toggleTimer, toggleNotes, toggleQuiz,
     toggleUnitConverter, togglePeriodicTable, toggleAttendance, toggleTodoList,
+    toggleSpinWheel, toggleScoreboard, toggleMathGraph,
   };
 
   const isDrawingMode = activeTool === 'PENCIL' || activeTool === 'ERASER';

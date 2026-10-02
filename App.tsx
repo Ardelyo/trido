@@ -10,6 +10,8 @@ import { ToolOverlay } from './components/ToolOverlay';
 import { AssistiveDock } from './components/AssistiveDock';
 import { HistoryView } from './components/HistoryView';
 import { SettingsView } from './components/SettingsView';
+import { QuickGuideModal } from './components/QuickGuideModal';
+import { GsapInteractionEffects } from './components/GsapInteractionEffects';
 import { SaveMenu } from './components/SaveMenu';
 import { useSocketSync } from './hooks/useSocketSync';
 import { useAiStatus } from './hooks/useAiStatus';
@@ -38,6 +40,7 @@ const App: React.FC = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
@@ -110,6 +113,23 @@ const App: React.FC = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const isWeb = typeof window !== 'undefined' &&
+    !((window as any).electronAPI || (window as any).process?.type === 'renderer' || navigator.userAgent.toLowerCase().includes('electron')) &&
+    !['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname) &&
+    !window.location.hostname.endsWith('.local') &&
+    !['3000', '3030', '5173'].includes(window.location.port);
+
+  const navigateToLanding = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.history.pushState({ tridoView: 'landing' }, '', '/');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      } catch {
+        window.location.href = '/';
+      }
+    }
+  };
 
   const getStatusConfig = () => {
     const storeState = useStore.getState();
@@ -276,46 +296,59 @@ const App: React.FC = () => {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="h-16 lg:h-20 bg-[#e2e8f0] flex items-center justify-between px-4 lg:px-6 shrink-0 z-20 relative"
+            className="h-16 lg:h-20 bg-[#e2e8f0] flex items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 z-20 relative gap-2 sm:gap-4 select-none"
           >
-            <div className="flex flex-1 items-center gap-2 lg:gap-4">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-slate-500 hover:text-slate-800 transition-colors p-2.5 rounded-[1.25rem] hover:bg-white/50 backdrop-blur active:scale-95">
+            {/* Left Section: Menu & Brand */}
+            <div className="flex items-center gap-2 lg:gap-3 shrink-0 z-10">
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-slate-500 hover:text-slate-800 transition-colors p-2.5 rounded-[1.25rem] hover:bg-white/50 backdrop-blur active:scale-95 cursor-pointer">
                 <Menu size={22} />
               </button>
               {/* Logo & Product Name */}
-              <div className="flex items-center gap-2 bg-white/60 backdrop-blur-md px-4 py-2 lg:py-2.5 rounded-[1.25rem] shadow-sm border border-white">
+              <div 
+                onClick={isWeb ? navigateToLanding : undefined}
+                className={`flex items-center gap-2 bg-white/60 backdrop-blur-md px-3 sm:px-4 py-2 lg:py-2.5 rounded-[1.25rem] shadow-sm border border-white ${isWeb ? 'cursor-pointer hover:bg-white/90 transition-all' : ''}`}
+                title={isWeb ? (language === 'id' ? 'Kembali ke Beranda' : 'Return to Landing Page') : undefined}
+              >
                 <img src="/logo.png" alt="Trido Logo" className="w-6 h-6 object-contain" />
                 <span className="font-extrabold text-xl text-[#0f172a] tracking-tight">Trido</span>
-                <span className="hidden md:inline ml-3 font-medium text-[15px] pl-4 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
+                <span className="hidden xl:inline ml-3 font-medium text-[15px] pl-4 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
               </div>
-
             </div>
 
-            {/* Mode Indicator (Center) */}
-            <div className="flex-none hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            {/* Center Section: Mode Indicator (In-flow flex child, NEVER overlaps with buttons) */}
+            <div className="hidden md:flex flex-1 items-center justify-center px-2 min-w-0 pointer-events-auto">
               <AiStatusBadge status={statusConfig} onPullModel={pullOllamaModel} onClick={() => setIsSettingsOpen(true)} />
             </div>
 
-            <div className="flex flex-1 justify-end items-center gap-2 lg:gap-3">
-              {/* Actions (Right) */}
+            {/* Right Section: Actions */}
+            <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 z-10">
+              {/* Asisten Button */}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={toggleAiDrawer}
-                className={`flex items-center gap-2 px-4 py-2 lg:py-2.5 text-sm font-bold rounded-[1.25rem] transition-colors shadow-sm ${isAiDrawerOpen ? 'bg-blue-600 text-white shadow-blue-600/30 ring-4 ring-blue-600/10' : 'text-blue-700 bg-white hover:bg-blue-50 border border-white'}`}
+                className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 lg:py-2.5 text-sm font-bold rounded-[1.25rem] transition-colors shadow-sm cursor-pointer ${isAiDrawerOpen ? 'bg-blue-600 text-white shadow-blue-600/30 ring-4 ring-blue-600/10' : 'text-blue-700 bg-white hover:bg-blue-50 border border-white'}`}
               >
                 <Sparkles size={16} /> <span className="hidden sm:inline">Asisten</span>
               </motion.button>
 
-              <div className="hidden sm:block w-px h-6 bg-slate-300/50 mx-1" />
-
-              <button onClick={() => setIsShareOpen(true)} className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 border border-white bg-white/60 hover:bg-white backdrop-blur rounded-[1.25rem] transition-colors shadow-sm active:scale-95">
-                <Share2 size={16} /> <span className="hidden md:inline">{t('share', 'Bagikan')}</span>
+              <button onClick={() => setIsShareOpen(true)} className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 lg:py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 border border-white bg-white/60 hover:bg-white backdrop-blur rounded-[1.25rem] transition-colors shadow-sm active:scale-95 cursor-pointer">
+                <Share2 size={16} /> <span className="hidden lg:inline">{t('share', 'Bagikan')}</span>
               </button>
 
               <SaveMenu onExportClick={() => setIsExportOpen(true)} />
 
-              <button className="w-10 h-10 rounded-[1.25rem] overflow-hidden border-[2.5px] border-white hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-[#e2e8f0] transition-all ml-1 shadow-sm shrink-0" title={t('userMenu', 'Menu Pengguna')} onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}>
+              {/* Panduan Penggunaan / Help Center Button */}
+              <button
+                onClick={() => setIsGuideOpen(true)}
+                className="w-10 h-10 rounded-[1.25rem] bg-white/70 hover:bg-white border border-white flex items-center justify-center text-slate-600 hover:text-blue-600 shadow-sm transition-all active:scale-95 cursor-pointer"
+                title="Panduan Cara Penggunaan Trido (Bantuan)"
+              >
+                <HelpCircle size={18} />
+              </button>
+
+              {/* User Avatar */}
+              <button className="w-10 h-10 rounded-[1.25rem] overflow-hidden border-[2.5px] border-white hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-[#e2e8f0] transition-all shadow-sm shrink-0 cursor-pointer" title={t('userMenu', 'Menu Pengguna')} onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}>
                 <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">
                   {userName.charAt(0).toUpperCase()}
                 </div>
@@ -327,8 +360,17 @@ const App: React.FC = () => {
           <div className="flex-1 flex min-h-0 relative bg-transparent p-2 lg:p-4 pt-0 gap-4 overflow-hidden">
 
             {/* Modals & Overlays */}
+            <GsapInteractionEffects />
             <ShareDialog isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} roomId={roomId} />
             <ExportDialog isOpen={isExportOpen} onClose={() => setIsExportOpen(false)} canvasRef={canvasRef} />
+            <QuickGuideModal 
+              isOpen={isGuideOpen} 
+              onClose={() => setIsGuideOpen(false)} 
+              onSamplePromptClick={(prompt) => {
+                setChatInputText(prompt);
+                if (!isAiDrawerOpen) toggleAiDrawer();
+              }}
+            />
             <ToolOverlay />
             <AssistiveDock />
 
@@ -402,8 +444,32 @@ const App: React.FC = () => {
                           setIsSettingsOpen(v => !v);
                           if (isHistoryOpen) toggleHistory();
                           setIsExportOpen(false);
+                          setIsGuideOpen(false);
                         }}
                       />
+
+                      {/* 5. Guide */}
+                      <SidebarItem
+                        icon={HelpCircle}
+                        label={language === 'id' ? 'Panduan Guru' : 'User Guide'}
+                        active={isGuideOpen}
+                        onClick={() => {
+                          setIsGuideOpen(true);
+                          if (isHistoryOpen) toggleHistory();
+                          setIsSettingsOpen(false);
+                          setIsExportOpen(false);
+                        }}
+                      />
+
+                      {/* 6. Landing / About (Web Only) */}
+                      {isWeb && (
+                        <SidebarItem
+                          icon={Home}
+                          label={language === 'id' ? 'Beranda / Info' : 'About / Home'}
+                          active={false}
+                          onClick={navigateToLanding}
+                        />
+                      )}
                     </nav>
 
                     <div className="p-5 border-t border-slate-100/80 space-y-4 bg-slate-50/50">
