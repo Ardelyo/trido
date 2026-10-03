@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 
 async function testFluidity() {
-  console.log('Testing Circular Corners & Fluidity on http://localhost:3001 ...\n');
+  console.log('Testing Circular Corners & Fluidity on http://localhost:3030 ...\n');
   const browser = await puppeteer.launch({
     executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     headless: 'new',
@@ -12,7 +12,7 @@ async function testFluidity() {
   await page.setViewport({ width: 1440, height: 900 });
 
   try {
-    await page.goto('http://localhost:3001/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto('http://localhost:3030/', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('#root', { timeout: 10000 });
 
     // Wait for canvas to mount
