@@ -195,7 +195,15 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
     });
 
     return () => {
-      socket.disconnect();
+      try {
+        if (socket.connected) {
+          socket.disconnect();
+        } else {
+          socket.once('connect', () => {
+            socket.disconnect();
+          });
+        }
+      } catch {}
     };
   }, []);
 

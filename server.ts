@@ -204,6 +204,11 @@ async function startServer() {
     });
   });
 
+  app.post("/api/log-error", (req, res) => {
+    logger.warn("[Client Error Log]", req.body);
+    res.status(200).json({ ok: true });
+  });
+
   app.use("/api/ai", aiRouter);
 
   // Vite middleware for development

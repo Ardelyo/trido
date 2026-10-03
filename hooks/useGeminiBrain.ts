@@ -844,6 +844,14 @@ ${jevDirective}
               configObj = {};
             }
           }
+          if (!configObj) {
+            configObj = {
+              title: args.title || 'Catatan Pelajaran',
+              markdown: args.markdown || args.content || args.text || '',
+              ...(args.questions ? { questions: args.questions } : {}),
+              ...(args.seconds ? { seconds: args.seconds } : {})
+            };
+          }
 
           if (cType === 'DOCUMENT_PAGE' || cType === 'MARKDOWN_NOTE') {
             pWidth = 600; pHeight = 700;

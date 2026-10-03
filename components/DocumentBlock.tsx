@@ -8,7 +8,7 @@ import { triggerPrintComponent, exportDocumentAsHtml, exportDocumentAsMarkdown, 
 import { Copy, Printer, Globe, FileText, Check, Image as ImageIcon } from 'lucide-react';
 
 interface DocumentBlockProps {
-  config: {
+  config?: {
     title?: string;
     markdown?: string;
     content?: string;
@@ -19,13 +19,15 @@ export const DocumentBlock: React.FC<DocumentBlockProps> = ({ config }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
+  const safeConfig = config || {};
+
   const processedMarkdown = useMemo(() => {
-    const raw = config.markdown || config.content || '';
+    const raw = safeConfig.markdown || safeConfig.content || '';
     if (!raw) return '';
     return raw.replace(/\\n/g, '\n');
-  }, [config.markdown, config.content]);
+  }, [safeConfig.markdown, safeConfig.content]);
 
-  const title = config.title || 'Ringkasan Materi';
+  const title = safeConfig.title || 'Ringkasan Materi';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(processedMarkdown);
