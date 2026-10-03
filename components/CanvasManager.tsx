@@ -358,14 +358,19 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     };
     window.addEventListener('clearCanvas', handleClearCanvas);
 
+    let movePlaceholderRaf: number | null = null;
     const handleMovePlaceholder = (e: any) => {
       const { id, x, y } = e.detail || {};
       if (!id) return;
-      const obj = canvas.getObjects().find((o: any) => o.id === id);
-      if (obj) {
-        obj.set({ left: x, top: y });
-        canvas.requestRenderAll();
-      }
+      if (movePlaceholderRaf) return;
+      movePlaceholderRaf = requestAnimationFrame(() => {
+        movePlaceholderRaf = null;
+        const obj = canvas.getObjects().find((o: any) => o.id === id);
+        if (obj) {
+          obj.set({ left: x, top: y });
+          canvas.requestRenderAll();
+        }
+      });
     };
     window.addEventListener('moveCanvasPlaceholder', handleMovePlaceholder);
 

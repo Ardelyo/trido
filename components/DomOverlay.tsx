@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useStore } from '../store';
 import { DomElementState } from '../types';
@@ -47,8 +47,9 @@ export const DomOverlay: React.FC = () => {
   const [fullscreenWidgetId, setFullscreenWidgetId] = useState<string | null>(null);
   const [draggingWidget, setDraggingWidget] = useState<{ id: string; startMouseX: number; startMouseY: number; startElX: number; startElY: number } | null>(null);
   const [resizingWidget, setResizingWidget] = useState<{ id: string; startMouseX: number; startMouseY: number; startWidth: number; startHeight: number } | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
-  const handleTitlebarMouseDown = (el: DomElementState, e: React.MouseEvent) => {
+  const handleTitlebarMouseDown = (el: DomElementState, e: React.MouseEvent | React.PointerEvent) => {
     if (e.button !== 0) return; // Only drag on left click
     e.preventDefault();
     e.stopPropagation();
@@ -61,7 +62,7 @@ export const DomOverlay: React.FC = () => {
     });
   };
 
-  const handleResizeMouseDown = (el: DomElementState, e: React.MouseEvent) => {
+  const handleResizeMouseDown = (el: DomElementState, e: React.MouseEvent | React.PointerEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
@@ -78,39 +79,51 @@ export const DomOverlay: React.FC = () => {
     if (!draggingWidget && !resizingWidget) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const scale = viewportTransform[0] || 1;
+      if (rafIdRef.current) return;
+      const { clientX, clientY } = e;
 
-      if (draggingWidget) {
-        const deltaX = (e.clientX - draggingWidget.startMouseX) / scale;
-        const deltaY = (e.clientY - draggingWidget.startMouseY) / scale;
+      rafIdRef.current = requestAnimationFrame(() => {
+        rafIdRef.current = null;
+        const scale = viewportTransform[0] || 1;
 
-        const newX = Math.round(draggingWidget.startElX + deltaX);
-        const newY = Math.round(draggingWidget.startElY + deltaY);
+        if (draggingWidget) {
+          const deltaX = (clientX - draggingWidget.startMouseX) / scale;
+          const deltaY = (clientY - draggingWidget.startMouseY) / scale;
 
-        useStore.getState().updateDomElement(draggingWidget.id, { x: newX, y: newY });
-        const event = new CustomEvent('moveCanvasPlaceholder', { detail: { id: draggingWidget.id, x: newX, y: newY } });
-        window.dispatchEvent(event);
-      } else if (resizingWidget) {
-        const deltaX = (e.clientX - resizingWidget.startMouseX) / scale;
-        const deltaY = (e.clientY - resizingWidget.startMouseY) / scale;
+          const newX = Math.round(draggingWidget.startElX + deltaX);
+          const newY = Math.round(draggingWidget.startElY + deltaY);
 
-        const newW = Math.max(260, Math.round(resizingWidget.startWidth + deltaX));
-        const newH = Math.max(180, Math.round(resizingWidget.startHeight + deltaY));
+          useStore.getState().updateDomElement(draggingWidget.id, { x: newX, y: newY });
+          window.dispatchEvent(new CustomEvent('moveCanvasPlaceholder', { detail: { id: draggingWidget.id, x: newX, y: newY } }));
+        } else if (resizingWidget) {
+          const deltaX = (clientX - resizingWidget.startMouseX) / scale;
+          const deltaY = (clientY - resizingWidget.startMouseY) / scale;
 
-        useStore.getState().updateDomElement(resizingWidget.id, { width: newW, height: newH });
-        const event = new CustomEvent('resizeCanvasPlaceholder', { detail: { id: resizingWidget.id, width: newW, height: newH } });
-        window.dispatchEvent(event);
-      }
+          const newW = Math.max(260, Math.round(resizingWidget.startWidth + deltaX));
+          const newH = Math.max(180, Math.round(resizingWidget.startHeight + deltaY));
+
+          useStore.getState().updateDomElement(resizingWidget.id, { width: newW, height: newH });
+          window.dispatchEvent(new CustomEvent('resizeCanvasPlaceholder', { detail: { id: resizingWidget.id, width: newW, height: newH } }));
+        }
+      });
     };
 
     const handleMouseUp = () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       setDraggingWidget(null);
       setResizingWidget(null);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
@@ -346,7 +359,7 @@ export const DomOverlay: React.FC = () => {
           return (
             <div
               key={el.id}
-              className={`absolute flex flex-col overflow-hidden rounded-[2rem] bg-white border-2 transition-all duration-200 will-change-transform select-none ${
+              className={`absolute flex flex-col overflow-hidden rounded-[2rem] bg-white border-2 will-change-transform select-none ${
                 isActing ? 'opacity-50' : 'opacity-100'
               } ${
                 isDragging
@@ -360,7 +373,8 @@ export const DomOverlay: React.FC = () => {
                 top: el.y,
                 transform: `translate(-50%, -50%) rotate(${el.rotation || 0}deg)`,
                 transformOrigin: 'center center',
-                pointerEvents: 'auto'
+                pointerEvents: 'auto',
+                transition: isDragging || isResizing ? 'none' : 'box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease'
               }}
             >
               {/* Desktop Header / PC Window Titlebar with Generous Drag Area */}
