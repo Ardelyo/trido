@@ -155,16 +155,18 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       stopContextMenu: true,
     });
 
-    // Selection styling
+    // Selection styling with generous touch hitbox and Trido brand identity
     window.fabric.Object.prototype.set({
       transparentCorners: false,
       cornerColor: '#ffffff',
-      cornerStrokeColor: '#000000',
-      borderColor: '#ffffff',
-      cornerSize: 8,
-      padding: 10,
+      cornerStrokeColor: '#1550aa',
+      borderColor: '#1550aa',
+      cornerSize: 12,
+      touchCornerSize: 28,
+      padding: 8,
       cornerStyle: 'circle',
-      borderDashArray: [4, 4]
+      borderDashArray: [4, 4],
+      borderScaleFactor: 2
     });
 
     fabricRef.current = canvas;

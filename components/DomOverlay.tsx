@@ -46,6 +46,7 @@ export const DomOverlay: React.FC = () => {
 
   const [fullscreenWidgetId, setFullscreenWidgetId] = useState<string | null>(null);
   const [draggingWidget, setDraggingWidget] = useState<{ id: string; startMouseX: number; startMouseY: number; startElX: number; startElY: number } | null>(null);
+  const [resizingWidget, setResizingWidget] = useState<{ id: string; startMouseX: number; startMouseY: number; startWidth: number; startHeight: number } | null>(null);
 
   const handleTitlebarMouseDown = (el: DomElementState, e: React.MouseEvent) => {
     if (e.button !== 0) return; // Only drag on left click
@@ -60,24 +61,51 @@ export const DomOverlay: React.FC = () => {
     });
   };
 
+  const handleResizeMouseDown = (el: DomElementState, e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setResizingWidget({
+      id: el.id,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      startWidth: el.width,
+      startHeight: el.height
+    });
+  };
+
   useEffect(() => {
-    if (!draggingWidget) return;
+    if (!draggingWidget && !resizingWidget) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const scale = viewportTransform[0] || 1;
-      const deltaX = (e.clientX - draggingWidget.startMouseX) / scale;
-      const deltaY = (e.clientY - draggingWidget.startMouseY) / scale;
 
-      const newX = Math.round(draggingWidget.startElX + deltaX);
-      const newY = Math.round(draggingWidget.startElY + deltaY);
+      if (draggingWidget) {
+        const deltaX = (e.clientX - draggingWidget.startMouseX) / scale;
+        const deltaY = (e.clientY - draggingWidget.startMouseY) / scale;
 
-      useStore.getState().updateDomElement(draggingWidget.id, { x: newX, y: newY });
-      const event = new CustomEvent('moveCanvasPlaceholder', { detail: { id: draggingWidget.id, x: newX, y: newY } });
-      window.dispatchEvent(event);
+        const newX = Math.round(draggingWidget.startElX + deltaX);
+        const newY = Math.round(draggingWidget.startElY + deltaY);
+
+        useStore.getState().updateDomElement(draggingWidget.id, { x: newX, y: newY });
+        const event = new CustomEvent('moveCanvasPlaceholder', { detail: { id: draggingWidget.id, x: newX, y: newY } });
+        window.dispatchEvent(event);
+      } else if (resizingWidget) {
+        const deltaX = (e.clientX - resizingWidget.startMouseX) / scale;
+        const deltaY = (e.clientY - resizingWidget.startMouseY) / scale;
+
+        const newW = Math.max(260, Math.round(resizingWidget.startWidth + deltaX));
+        const newH = Math.max(180, Math.round(resizingWidget.startHeight + deltaY));
+
+        useStore.getState().updateDomElement(resizingWidget.id, { width: newW, height: newH });
+        const event = new CustomEvent('resizeCanvasPlaceholder', { detail: { id: resizingWidget.id, width: newW, height: newH } });
+        window.dispatchEvent(event);
+      }
     };
 
     const handleMouseUp = () => {
       setDraggingWidget(null);
+      setResizingWidget(null);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -86,7 +114,7 @@ export const DomOverlay: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [draggingWidget, viewportTransform]);
+  }, [draggingWidget, resizingWidget, viewportTransform]);
 
   // Keyboard shortcut: Escape exits fullscreen mode
   useEffect(() => {
@@ -312,11 +340,18 @@ export const DomOverlay: React.FC = () => {
 
           const title = el.config?.title || el.componentType?.replace(/_/g, ' ') || 'KOMPONEN';
 
+          const isDragging = draggingWidget?.id === el.id;
+          const isResizing = resizingWidget?.id === el.id;
+
           return (
             <div
               key={el.id}
-              className={`absolute flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_12px_45px_rgba(0,0,0,0.12)] border border-slate-200/90 transition-opacity duration-300 will-change-transform select-none ${
+              className={`absolute flex flex-col overflow-hidden rounded-[2rem] bg-white border-2 transition-all duration-200 will-change-transform select-none ${
                 isActing ? 'opacity-50' : 'opacity-100'
+              } ${
+                isDragging
+                  ? 'shadow-[0_24px_70px_rgba(10,26,58,0.22)] border-[#1550aa] scale-[1.018] z-40 ring-4 ring-[#1550aa]/15'
+                  : 'shadow-[0_12px_45px_rgba(10,26,58,0.10)] border-slate-200/90 hover:border-slate-300'
               }`}
               style={{
                 width: `${el.width}px`,
@@ -332,8 +367,8 @@ export const DomOverlay: React.FC = () => {
               <div
                 onMouseDown={(e) => handleTitlebarMouseDown(el, e)}
                 onDoubleClick={() => setFullscreenWidgetId(el.id)}
-                className={`flex h-11 w-full items-center justify-between px-3 border-b border-slate-200/80 shrink-0 select-none transition-colors cursor-grab active:cursor-grabbing ${
-                  draggingWidget?.id === el.id ? 'bg-indigo-100/90' : 'bg-slate-100/95 hover:bg-slate-200/80'
+                className={`flex h-12 w-full items-center justify-between px-3.5 border-b border-slate-200/80 shrink-0 select-none transition-colors cursor-grab active:cursor-grabbing ${
+                  isDragging ? 'bg-[#1550aa]/10' : 'bg-slate-50/90 hover:bg-slate-100/90'
                 }`}
                 title="Tahan dan geser di mana saja pada judul untuk memindahkan widget • Klik ganda untuk Layar Penuh"
               >
@@ -345,7 +380,7 @@ export const DomOverlay: React.FC = () => {
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0">
                     {getComponentIcon(el.componentType)}
                   </div>
-                  <div className="font-extrabold text-[12.5px] text-slate-800 tracking-tight truncate font-sans">
+                  <div className="font-extrabold text-[12.5px] text-[#0a1a3a] tracking-tight truncate font-sans">
                     {title}
                   </div>
                 </div>
@@ -355,7 +390,7 @@ export const DomOverlay: React.FC = () => {
                   {/* Quick Export Artifact */}
                   <button
                     onClick={(e) => handleQuickExport(el, e)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-blue-600 transition cursor-pointer"
+                    className="p-1.5 rounded-full hover:bg-slate-200/70 text-slate-500 hover:text-[#1550aa] transition cursor-pointer"
                     title="Unduh Berkas Mandiri (SVG/MD/HTML)"
                   >
                     <Download size={14} />
@@ -364,7 +399,7 @@ export const DomOverlay: React.FC = () => {
                   {/* Fullscreen / Focus Mode */}
                   <button
                     onClick={() => setFullscreenWidgetId(el.id)}
-                    className="p-1.5 rounded-lg hover:bg-slate-200/70 text-slate-500 hover:text-purple-600 transition cursor-pointer"
+                    className="p-1.5 rounded-full hover:bg-slate-200/70 text-slate-500 hover:text-purple-600 transition cursor-pointer"
                     title="Layar Penuh (Fullscreen PC Focus)"
                   >
                     <Maximize2 size={14} />
@@ -375,7 +410,7 @@ export const DomOverlay: React.FC = () => {
                   {/* Sole Close / Delete Button */}
                   <button
                     onClick={(e) => handleDelete(el.id, e)}
-                    className="p-1.5 rounded-lg hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                    className="p-1.5 rounded-full hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition cursor-pointer"
                     title="Tutup Komponen"
                   >
                     <X size={15} strokeWidth={2.5} />
@@ -392,6 +427,20 @@ export const DomOverlay: React.FC = () => {
                     <div className="bg-black/90 px-3 py-1 rounded border border-cyan-400/50 text-cyan-300 text-[10px] font-mono animate-pulse tracking-tighter">
                       AGENT_INTERACTING...
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tactile Corner Resize Handle (learned from C7Cards & windows) */}
+              <div
+                onMouseDown={(e) => handleResizeMouseDown(el, e)}
+                className="absolute bottom-0 right-0 w-8 h-8 flex items-end justify-end p-1.5 cursor-nwse-resize z-40 select-none group/resize touch-none"
+                title="Tarik sudut untuk mengubah ukuran widget"
+              >
+                <div className="w-3.5 h-3.5 rounded-br-sm border-b-2 border-r-2 border-[#1550aa] group-hover/resize:border-[#ffcc00] group-hover/resize:scale-125 transition-all" />
+                {isResizing && (
+                  <div className="absolute -top-7 right-0 px-2 py-0.5 rounded-full bg-[#0a1a3a] text-white text-[10px] font-mono font-bold whitespace-nowrap shadow-md pointer-events-none">
+                    {el.width} × {el.height}
                   </div>
                 )}
               </div>

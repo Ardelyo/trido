@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal, ThumbsUp, ThumbsDown, Zap } from 'lucide-react';
+import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal, ThumbsUp, ThumbsDown, Zap, Pin } from 'lucide-react';
 import { ChatMessage } from '../types';
 import { toast } from '../utils/toast';
 import { submitLogFeedback } from '../services/aiService';
@@ -123,6 +123,44 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Gagal menyalin pesan');
+    }
+  };
+
+  const handlePinToBoard = () => {
+    try {
+      const zoom = useStore.getState().zoom || 1;
+      const vpt = useStore.getState().viewportTransform || [1, 0, 0, 1, 0, 0];
+      const centerX = Math.round((-vpt[4] + (typeof window !== 'undefined' ? window.innerWidth / 2 : 960)) / zoom);
+      const centerY = Math.round((-vpt[5] + (typeof window !== 'undefined' ? window.innerHeight / 2 : 540)) / zoom);
+
+      const id = `ai_note_${Date.now()}`;
+      const titleSnippet = fullText.slice(0, 32).replace(/[#*`_~]/g, '').trim();
+
+      useStore.getState().updateDomElement(id, {
+        id,
+        html: '<div>Catatan AI</div>',
+        componentType: 'DOCUMENT_PAGE',
+        config: {
+          title: `📌 Catatan AI: ${titleSnippet || 'Penjelasan Ringkas'}`,
+          markdown: fullText,
+          model: displayModel
+        },
+        x: centerX,
+        y: centerY,
+        width: 520,
+        height: 420,
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        zIndex: 20
+      });
+
+      const event = new CustomEvent('addCanvasPlaceholder', { detail: { id, x: centerX, y: centerY, width: 520, height: 420 } });
+      window.dispatchEvent(event);
+
+      toast.success('📌 Respons AI berhasil ditempel ke papan tulis!');
+    } catch {
+      toast.error('Gagal menempel respons ke papan');
     }
   };
 
@@ -257,6 +295,20 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
           >
             {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+          </button>
+
+          {/* Grab / Pin AI Output to Board */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePinToBoard();
+            }}
+            title="Tempelkan Respons AI ini langsung ke Papan Tulis (Pin to Canvas)"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#1550aa]/10 hover:bg-[#1550aa] text-[#1550aa] hover:text-white transition-all cursor-pointer"
+          >
+            <Pin size={11} className="rotate-45" />
+            <span className="hidden sm:inline">Tempel ke Papan</span>
           </button>
         </div>
       </div>
