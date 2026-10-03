@@ -149,6 +149,8 @@ interface AppStore extends AgentState {
   addLog: (log: string) => void;
   clearQueue: () => void;
   abortTask: () => void;
+  currentTaskAbortController: AbortController | null;
+  setTaskAbortController: (controller: AbortController | null) => void;
   setViewport: (zoom: number, transform: number[]) => void;
   
   // DOM Element Management
@@ -246,7 +248,7 @@ const getInitialTranscribeMode = (): TranscribeMode => {
 };
 
 const defaultVoiceConfig: VoiceConfig = {
-  autoStopSeconds: 15,
+  autoStopSeconds: 0, // 0 = manual continuous recording (no arbitrary 10s deadline cutoff)
   autoSubmit: true,
   noiseSuppression: true,
   echoCancellation: true,
@@ -864,14 +866,24 @@ export const useStore = create<AppStore>((set, get) => ({
 
   clearQueue: () => set({ actionQueue: [] }),
   
+  currentTaskAbortController: null,
+  setTaskAbortController: (controller) => set({ currentTaskAbortController: controller }),
+
   abortTask: () => {
+    const state = get();
+    if (state.currentTaskAbortController) {
+      try {
+        state.currentTaskAbortController.abort();
+      } catch {}
+    }
     window.speechSynthesis.cancel();
     set({ 
+      currentTaskAbortController: null,
       actionQueue: [], 
       isThinking: false, 
       isActing: false, 
       currentAction: null,
-      agentMessage: 'Task aborted by user.' 
+      agentMessage: 'Tugas dibatalkan oleh pengguna.' 
     });
   },
 

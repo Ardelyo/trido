@@ -44,10 +44,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [lastShape, setLastShape] = useState<CreatorTool>('RECTANGLE');
 
+  const autoStopTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioUploadInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (autoStopTimerRef.current) {
+        clearTimeout(autoStopTimerRef.current);
+        autoStopTimerRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     isListeningRef.current = isListening;
@@ -378,6 +388,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     const isWebSpeech = transcribeMode === 'webspeech';
 
     if (isListening) {
+      if (autoStopTimerRef.current) {
+        clearTimeout(autoStopTimerRef.current);
+        autoStopTimerRef.current = null;
+      }
       setIsListening(false);
       sounds.play('mic_off');
       stopVisualizer();
@@ -546,10 +560,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
           // If gemini_live, stream in 3-second intervals, else continuous recording until stop
           mediaRecorder.start(transcribeMode === 'gemini_live' ? 3000 : undefined);
 
-          // Auto-stop timer: if autoStopSeconds === 0, it's MANUAL (no timeout)
+          // Auto-stop timer: if autoStopSeconds === 0, it's MANUAL (continuous, no timeout cutoff)
+          if (autoStopTimerRef.current) {
+            clearTimeout(autoStopTimerRef.current);
+            autoStopTimerRef.current = null;
+          }
           if (voiceConfig.autoStopSeconds > 0) {
-            setTimeout(() => {
-              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            autoStopTimerRef.current = setTimeout(() => {
+              if (isListeningRef.current && mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
                 toggleListening();
               }
             }, voiceConfig.autoStopSeconds * 1000);
@@ -564,6 +582,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   };
 
   const handleSendVoice = () => {
+    if (autoStopTimerRef.current) {
+      clearTimeout(autoStopTimerRef.current);
+      autoStopTimerRef.current = null;
+    }
     const isWebSpeech = transcribeMode === 'webspeech';
     if (isWebSpeech) {
       const finalInput = transcriptBufferRef.current.trim() || interimBufferRef.current.trim();

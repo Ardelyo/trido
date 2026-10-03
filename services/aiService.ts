@@ -54,9 +54,20 @@ const parseAiError = async (response: Response): Promise<AiServiceError> => {
 
 const requestJson = async <T>(url: string, init: RequestInit = { method: 'GET' }, retries = CONFIG.ai.request.retryCount): Promise<T> => {
   for (let attempt = 0; attempt <= retries; attempt++) {
+    // If user already aborted the operation, stop immediately
+    if (init.signal?.aborted) {
+      throw new DOMException('Permintaan dibatalkan oleh pengguna.', 'AbortError');
+    }
+
     const controller = new AbortController();
     const timeoutMs = 120000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    // Forward caller's abort signal to local controller
+    const onCallerAbort = () => controller.abort();
+    if (init.signal) {
+      init.signal.addEventListener('abort', onCallerAbort, { once: true });
+    }
 
     try {
       const response = await fetch(url, {
@@ -64,16 +75,28 @@ const requestJson = async <T>(url: string, init: RequestInit = { method: 'GET' }
         signal: controller.signal
       });
       clearTimeout(timeoutId);
+      if (init.signal) {
+        init.signal.removeEventListener('abort', onCallerAbort);
+      }
 
       if (!response.ok) {
         const error = await parseAiError(response);
-        if (!error.retryable || attempt === retries) throw error;
+        if (!error.retryable || attempt === retries || init.signal?.aborted) throw error;
         await wait(CONFIG.ai.request.retryBaseDelayMs * Math.pow(2, attempt));
         continue;
       }
       return await response.json();
     } catch (error: any) {
       clearTimeout(timeoutId);
+      if (init.signal) {
+        init.signal.removeEventListener('abort', onCallerAbort);
+      }
+
+      // If user aborted, throw immediately without retrying
+      if (init.signal?.aborted || error.name === 'AbortError' && init.signal?.aborted) {
+        throw new DOMException('Permintaan dibatalkan oleh pengguna.', 'AbortError');
+      }
+
       if (error instanceof AiServiceError) throw error;
       
       if (error.name === 'AbortError') {
@@ -91,7 +114,7 @@ const requestJson = async <T>(url: string, init: RequestInit = { method: 'GET' }
         0,
         true
       );
-      if (attempt === retries) throw networkError;
+      if (attempt === retries || init.signal?.aborted) throw networkError;
       await wait(CONFIG.ai.request.retryBaseDelayMs * Math.pow(2, attempt));
     }
   }
@@ -117,12 +140,14 @@ export const generateAgentActions = async (
     phase?: string;
     existingMindmapNodes?: string[];
     completedSteps?: string[];
-  }
+  },
+  signal?: AbortSignal
 ) => {
   const { aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel } = useStore.getState() as any;
   const apiUrl = (import.meta as any).env.VITE_API_URL || '';
   return requestJson<any>(`${apiUrl}/api/ai/generate`, {
     method: 'POST',
+    signal,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       prompt,

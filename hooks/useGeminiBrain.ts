@@ -406,6 +406,9 @@ export const useGeminiBrain = () => {
     sounds.play('thinking');
     addLog(`Pemindaian neural dimulai...`);
 
+    const abortController = new AbortController();
+    useStore.getState().setTaskAbortController(abortController);
+
     const lessonDetection = detectLessonStart(prompt);
     if (lessonDetection.isLessonStart) {
       storeState.startLesson(
@@ -570,8 +573,16 @@ ${jevDirective}
         storeState.domElements,
         intent,
         forceTools,
-        lessonContextObj
+        lessonContextObj,
+        abortController.signal
       );
+
+      // Check if user clicked cancel during network generation
+      if (abortController.signal.aborted || !useStore.getState().isThinking) {
+        logger.info('[GeminiBrain] Task was aborted by user during AI generation. Halting pipeline.');
+        return;
+      }
+
       let functionCalls = _aiResult.functionCalls;
       const { textResponse, thought } = _aiResult;
 
@@ -1057,6 +1068,11 @@ ${jevDirective}
       [...shapeActions, ...pathActions, ...otherActions].forEach(a => addAction(a));
 
     } catch (error: any) {
+      if (error?.name === 'AbortError' || error?.message?.includes('dibatalkan') || !useStore.getState().isThinking) {
+        logger.info('[GeminiBrain] Task was aborted cleanly by user. Suppressing error alerts.');
+        return;
+      }
+
       logger.error('Failed to process prompt', error);
 
       let errorMsg = 'Sinkronisasi kognitif gagal. Coba lagi atau periksa koneksi AI.';
@@ -1071,6 +1087,7 @@ ${jevDirective}
       addLog(`AI error: ${errorMsg}`);
       setAgentMessage(errorMsg);
     } finally {
+      useStore.getState().setTaskAbortController(null);
       setThinking(false);
       sounds.stop('thinking');
       isProcessingGlobal = false;
