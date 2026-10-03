@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig, SupportedLanguage } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig, SupportedLanguage, SmartboardLayoutMode } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 import { findMatchingMindmapNode } from './utils/mindmapLayout';
 
@@ -15,6 +15,8 @@ interface AppStore extends AgentState {
   attachedDocument: AttachedDocument | null;
   setAttachedDocument: (doc: AttachedDocument | null) => void;
   theme: 'dark' | 'light';
+  smartboardLayoutMode: SmartboardLayoutMode;
+  setSmartboardLayoutMode: (mode: SmartboardLayoutMode) => void;
   
   // App UI State
   isAiDrawerOpen: boolean;
@@ -585,6 +587,13 @@ export const useStore = create<AppStore>((set, get) => ({
     lastUploadedImage: doc?.dataUrl || null
   }),
   theme: 'light',
+  smartboardLayoutMode: (typeof window !== 'undefined' && (localStorage.getItem('trido_layout_mode') as SmartboardLayoutMode)) || 'dock',
+  setSmartboardLayoutMode: (mode) => {
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('trido_layout_mode', mode); } catch {}
+    }
+    set({ smartboardLayoutMode: mode });
+  },
   
   isAiDrawerOpen: false,
   toggleAiDrawer: () => set((state) => ({ isAiDrawerOpen: !state.isAiDrawerOpen })),

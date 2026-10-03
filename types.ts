@@ -14,6 +14,7 @@ export enum ShapeType {
 }
 
 export type FontFamily = 'Inter' | 'Source Serif 4' | 'JetBrains Mono' | 'Bricolage Grotesque' | 'Playfair Display';
+export type SmartboardLayoutMode = 'classic' | 'dock' | 'radial';
 
 export type CreatorTool = 'SELECT' | 'PENCIL' | 'ERASER' | 'TEXT' | 'RECTANGLE' | 'CIRCLE' | 'TRIANGLE' | 'STAR' | 'POLYGON' | 'LINE' | 'ARROW' | 'DIAMOND' | 'SPEECH_BUBBLE' | 'HEART' | 'PENTAGON';
 

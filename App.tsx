@@ -31,6 +31,9 @@ import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
 import { useTranslation } from './utils/translations';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { LayoutSwitcher } from './components/smartboard/LayoutSwitcher';
+import { SmartboardDock } from './components/smartboard/SmartboardDock';
+import { SmartboardRadial } from './components/smartboard/SmartboardRadial';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
@@ -57,7 +60,8 @@ const App: React.FC = () => {
     language, chatInputText, setChatInputText, lastUploadedImage, setLastUploadedImage,
     attachedDocument, setAttachedDocument,
     userName, setUserName,
-    pages, currentPageIndex, switchPage, addPage, isThinking, isActing
+    pages, currentPageIndex, switchPage, addPage, isThinking, isActing,
+    smartboardLayoutMode
   } = useStore();
 
   useEffect(() => {
@@ -240,7 +244,7 @@ const App: React.FC = () => {
   } = useStore();
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden bg-[#e2e8f0] font-sans text-slate-900 selection:bg-blue-200">
+    <div className="flex flex-col h-screen w-full overflow-hidden bg-[#e4e3e0] font-sans text-[#0a1a3a] selection:bg-[#ffcc00] selection:text-[#0a1a3a]">
 
       {/* VIEWER MODE (CINEMA MODE) */}
       {isViewer ? (
@@ -296,7 +300,7 @@ const App: React.FC = () => {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="h-16 lg:h-20 bg-[#e2e8f0] flex items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 z-20 relative gap-2 sm:gap-4 select-none"
+            className="h-16 lg:h-20 bg-white/75 backdrop-blur-xl border-b border-[#0a1a3a]/10 flex items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 z-20 relative gap-2 sm:gap-4 select-none shadow-xs"
           >
             {/* Left Section: Menu & Brand */}
             <div className="flex items-center gap-2 lg:gap-3 shrink-0 z-10">
@@ -315,9 +319,10 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Center Section: Mode Indicator (In-flow flex child, NEVER overlaps with buttons) */}
-            <div className="hidden md:flex flex-1 items-center justify-center px-2 min-w-0 pointer-events-auto">
+            {/* Center Section: Mode Indicator & Layout Switcher */}
+            <div className="hidden md:flex flex-1 items-center justify-center gap-3 px-2 min-w-0 pointer-events-auto">
               <AiStatusBadge status={statusConfig} onPullModel={pullOllamaModel} onClick={() => setIsSettingsOpen(true)} />
+              <LayoutSwitcher />
             </div>
 
             {/* Right Section: Actions */}
@@ -373,6 +378,12 @@ const App: React.FC = () => {
             />
             <ToolOverlay />
             <AssistiveDock />
+
+            {/* Smartboard Redesign Prototype: Dock & Radial Layout Modes */}
+            <AnimatePresence>
+              {smartboardLayoutMode === 'dock' && <SmartboardDock key="smartboard-dock" />}
+              {smartboardLayoutMode === 'radial' && <SmartboardRadial key="smartboard-radial" />}
+            </AnimatePresence>
 
             {/* Mobile Sidebar Overlay */}
             <AnimatePresence>
@@ -512,7 +523,7 @@ const App: React.FC = () => {
             </AnimatePresence>
 
             {/* 3 & 4. CANVAS AREA & VERTICAL TOOLBAR */}
-            <main className="flex-1 min-w-0 relative h-full bg-[#f8fafc] rounded-4xl lg:rounded-[2.5rem] border-4 border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col">
+            <main className="flex-1 min-w-0 relative h-full bg-white rounded-3xl lg:rounded-[2.5rem] border-2 border-[#1550aa]/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
 
                {/* Dot Grid Background */}
                <div
