@@ -67,11 +67,11 @@ const Flyout: React.FC<FlyoutProps> = ({ open, children, align = 'top' }) => {
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0, x: -8, scale: 0.96 }}
+          initial={{ opacity: 0, x: -8, scale: 0.94 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={{ opacity: 0, x: -8, scale: 0.96 }}
-          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-          className={`absolute left-full ml-3 z-50 bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-2xl shadow-slate-900/10 rounded-2xl p-3 w-52 ${positionClass}`}
+          exit={{ opacity: 0, x: -8, scale: 0.94 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+          className={`absolute left-full ml-3.5 z-50 bg-white/95 backdrop-blur-2xl border-2 border-[#1550aa]/15 shadow-2xl shadow-slate-900/10 rounded-[1.75rem] p-3.5 w-56 ${positionClass}`}
         >
           {children}
         </motion.div>
@@ -86,16 +86,17 @@ const Btn: React.FC<{
   onClick: () => void; children?: React.ReactNode;
 }> = ({ icon: Icon, active, title, onClick, children }) => (
   <motion.button
-    whileTap={{ scale: 0.86 }}
+    whileHover={{ scale: 1.08 }}
+    whileTap={{ scale: 0.90 }}
     title={title}
     onClick={onClick}
-    className={`relative w-10 h-10 flex items-center justify-center rounded-xl transition-colors touch-manipulation ${
+    className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-all cursor-pointer select-none ${
       active
-        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-        : 'text-slate-500 hover:bg-slate-100 hover:text-blue-600'
+        ? 'bg-[#1550aa] text-white shadow-md shadow-[#1550aa]/30 ring-2 ring-[#ffcc00]'
+        : 'text-[#0a1a3a]/75 hover:bg-slate-100/90 hover:text-[#1550aa]'
     }`}
   >
-    <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+    <Icon size={19} strokeWidth={active ? 2.5 : 2} />
     {children}
   </motion.button>
 );
@@ -176,12 +177,12 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         <motion.div
           initial={{ opacity: 0, x: -14 }}
           animate={{ opacity: 1, x: 0 }}
-          className="relative flex flex-col items-center gap-1 bg-white/95 backdrop-blur-xl border border-slate-200/80 shadow-xl shadow-slate-900/8 rounded-2xl p-1.5"
+          className="relative flex flex-col items-center gap-1.5 bg-white/95 backdrop-blur-2xl border-2 border-[#1550aa]/15 shadow-xl shadow-slate-900/10 rounded-full p-2"
         >
           {/* 1. SELECT */}
           <Btn icon={MousePointer2} active={activeTool === 'SELECT'} title={`${t('selectElement', 'Pilih Elemen')} (V)`} onClick={() => { setActiveTool('SELECT'); close(); }} />
 
-          <div className="w-5 h-px bg-slate-200/80" />
+          <div className="w-5 h-px bg-[#0a1a3a]/10" />
 
           {/* 2. DRAWING (Pencil, Eraser, Colors, Thickness combined) */}
           <div className="relative">

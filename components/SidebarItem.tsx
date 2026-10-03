@@ -11,14 +11,21 @@ interface SidebarItemProps {
 
 export const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, active = false, onClick }) => (
   <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
+    whileHover={{ scale: 1.025 }}
+    whileTap={{ scale: 0.975 }}
     onClick={onClick}
-    className={`flex items-center gap-3 w-full px-4 py-3 rounded-2xl transition-colors duration-200 cursor-pointer ${
-      active ? 'bg-blue-600 text-white font-medium shadow-lg shadow-blue-600/20' : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
+    className={`relative flex items-center gap-3 w-full px-4 py-3 rounded-full transition-colors cursor-pointer select-none ${
+      active ? 'text-white font-bold' : 'text-[#0a1a3a]/70 hover:text-[#0a1a3a] hover:bg-slate-100/60 font-medium'
     }`}
   >
-    <Icon size={20} className={active ? 'text-white' : 'text-slate-400'} />
-    <span className="text-[14px] font-medium">{label}</span>
+    {active && (
+      <motion.span
+        layoutId="active-sidebar-pill"
+        className="absolute inset-0 rounded-full bg-[#1550aa] shadow-md shadow-[#1550aa]/25"
+        transition={{ type: 'spring', stiffness: 440, damping: 32 }}
+      />
+    )}
+    <Icon size={19} className={`relative z-10 transition-colors ${active ? 'text-[#ffcc00]' : 'text-[#1550aa]/80'}`} />
+    <span className="relative z-10 text-[14px] tracking-tight">{label}</span>
   </motion.button>
 );

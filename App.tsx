@@ -31,9 +31,6 @@ import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
 import { useTranslation } from './utils/translations';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { LayoutSwitcher } from './components/smartboard/LayoutSwitcher';
-import { SmartboardDock } from './components/smartboard/SmartboardDock';
-import { SmartboardRadial } from './components/smartboard/SmartboardRadial';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
@@ -300,64 +297,85 @@ const App: React.FC = () => {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="h-16 lg:h-20 bg-white/75 backdrop-blur-xl border-b border-[#0a1a3a]/10 flex items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 z-20 relative gap-2 sm:gap-4 select-none shadow-xs"
+            className="h-16 lg:h-20 bg-white/80 backdrop-blur-xl border-b border-[#0a1a3a]/10 flex items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 z-20 relative gap-2 sm:gap-4 select-none shadow-xs"
           >
             {/* Left Section: Menu & Brand */}
             <div className="flex items-center gap-2 lg:gap-3 shrink-0 z-10">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-slate-500 hover:text-slate-800 transition-colors p-2.5 rounded-[1.25rem] hover:bg-white/50 backdrop-blur active:scale-95 cursor-pointer">
-                <Menu size={22} />
-              </button>
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                className="w-11 h-11 rounded-full bg-white/80 hover:bg-white text-slate-700 hover:text-[#1550aa] border border-slate-200/80 shadow-xs flex items-center justify-center transition-all cursor-pointer"
+              >
+                <Menu size={20} />
+              </motion.button>
               {/* Logo & Product Name */}
               <div 
                 onClick={isWeb ? navigateToLanding : undefined}
-                className={`flex items-center gap-2 bg-white/60 backdrop-blur-md px-3 sm:px-4 py-2 lg:py-2.5 rounded-[1.25rem] shadow-sm border border-white ${isWeb ? 'cursor-pointer hover:bg-white/90 transition-all' : ''}`}
+                className={`flex items-center gap-2.5 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-xs border border-slate-200/80 ${isWeb ? 'cursor-pointer hover:bg-white transition-all' : ''}`}
                 title={isWeb ? (language === 'id' ? 'Kembali ke Beranda' : 'Return to Landing Page') : undefined}
               >
                 <img src="/logo.png" alt="Trido Logo" className="w-6 h-6 object-contain" />
-                <span className="font-extrabold text-xl text-[#0f172a] tracking-tight">Trido</span>
-                <span className="hidden xl:inline ml-3 font-medium text-[15px] pl-4 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
+                <span className="font-extrabold text-xl text-[#0a1a3a] tracking-tight">Trido</span>
+                <span className="hidden xl:inline ml-2 font-semibold text-[14px] pl-3 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
               </div>
             </div>
 
-            {/* Center Section: Mode Indicator & Layout Switcher */}
-            <div className="hidden md:flex flex-1 items-center justify-center gap-3 px-2 min-w-0 pointer-events-auto">
+            {/* Center Section: Mode Indicator (In-flow flex child, NEVER overlaps with buttons) */}
+            <div className="hidden md:flex flex-1 items-center justify-center px-2 min-w-0 pointer-events-auto">
               <AiStatusBadge status={statusConfig} onPullModel={pullOllamaModel} onClick={() => setIsSettingsOpen(true)} />
-              <LayoutSwitcher />
             </div>
 
             {/* Right Section: Actions */}
-            <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0 z-10">
+            <div className="flex items-center justify-end gap-2 shrink-0 z-10">
               {/* Asisten Button */}
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={toggleAiDrawer}
-                className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 lg:py-2.5 text-sm font-bold rounded-[1.25rem] transition-colors shadow-sm cursor-pointer ${isAiDrawerOpen ? 'bg-blue-600 text-white shadow-blue-600/30 ring-4 ring-blue-600/10' : 'text-blue-700 bg-white hover:bg-blue-50 border border-white'}`}
+                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all shadow-xs cursor-pointer ${
+                  isAiDrawerOpen 
+                    ? 'bg-[#1550aa] text-white shadow-[#1550aa]/30 ring-4 ring-[#1550aa]/15' 
+                    : 'text-[#1550aa] bg-white hover:bg-slate-50 border border-[#1550aa]/25'
+                }`}
               >
                 <Sparkles size={16} /> <span className="hidden sm:inline">Asisten</span>
               </motion.button>
 
-              <button onClick={() => setIsShareOpen(true)} className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 lg:py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 border border-white bg-white/60 hover:bg-white backdrop-blur rounded-[1.25rem] transition-colors shadow-sm active:scale-95 cursor-pointer">
+              <motion.button 
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => setIsShareOpen(true)} 
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-[#0a1a3a] border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs cursor-pointer"
+              >
                 <Share2 size={16} /> <span className="hidden lg:inline">{t('share', 'Bagikan')}</span>
-              </button>
+              </motion.button>
 
               <SaveMenu onExportClick={() => setIsExportOpen(true)} />
 
               {/* Panduan Penggunaan / Help Center Button */}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setIsGuideOpen(true)}
-                className="w-10 h-10 rounded-[1.25rem] bg-white/70 hover:bg-white border border-white flex items-center justify-center text-slate-600 hover:text-blue-600 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="w-11 h-11 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-[#1550aa] shadow-xs transition-all cursor-pointer"
                 title="Panduan Cara Penggunaan Trido (Bantuan)"
               >
                 <HelpCircle size={18} />
-              </button>
+              </motion.button>
 
               {/* User Avatar */}
-              <button className="w-10 h-10 rounded-[1.25rem] overflow-hidden border-[2.5px] border-white hover:ring-2 hover:ring-blue-500 hover:ring-offset-2 hover:ring-offset-[#e2e8f0] transition-all shadow-sm shrink-0 cursor-pointer" title={t('userMenu', 'Menu Pengguna')} onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}>
-                <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white font-bold">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-xs shrink-0 cursor-pointer" 
+                title={t('userMenu', 'Menu Pengguna')} 
+                onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}
+              >
+                <div className="w-full h-full bg-[#1550aa] flex items-center justify-center text-white font-black text-sm">
                   {userName.charAt(0).toUpperCase()}
                 </div>
-              </button>
+              </motion.button>
             </div>
           </motion.header>
 
@@ -378,12 +396,6 @@ const App: React.FC = () => {
             />
             <ToolOverlay />
             <AssistiveDock />
-
-            {/* Smartboard Redesign Prototype: Dock & Radial Layout Modes */}
-            <AnimatePresence>
-              {smartboardLayoutMode === 'dock' && <SmartboardDock key="smartboard-dock" />}
-              {smartboardLayoutMode === 'radial' && <SmartboardRadial key="smartboard-radial" />}
-            </AnimatePresence>
 
             {/* Mobile Sidebar Overlay */}
             <AnimatePresence>
@@ -540,33 +552,33 @@ const App: React.FC = () => {
                </div>
 
                {/* Page Navigation Indicator */}
-               <div className="absolute bottom-6 left-6 z-10 flex items-center gap-1.5 p-1.5 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/50">
+               <div className="absolute bottom-6 left-6 z-10 flex items-center gap-1.5 p-1.5 bg-white/95 backdrop-blur-xl rounded-full shadow-lg border-2 border-[#1550aa]/15">
                 {pages.map((_, idx) => (
                   <button
                     key={idx}
                     disabled={isThinking || isActing}
                     onClick={() => switchPage(idx)}
-                    className={`min-w-[32px] h-8 rounded-xl text-[13px] font-black transition-all ${
+                    className={`min-w-[34px] h-8 px-2.5 rounded-full text-[13px] font-black transition-all cursor-pointer ${
                       isThinking || isActing ? 'opacity-50 cursor-not-allowed' : ''
                     } ${
                       currentPageIndex === idx 
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
-                        : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                        ? 'bg-[#1550aa] text-white shadow-sm ring-2 ring-[#ffcc00]' 
+                        : 'text-slate-500 hover:bg-slate-100 hover:text-[#0a1a3a]'
                     }`}
                   >
                     {idx + 1}
                   </button>
                 ))}
-                <div className="w-px h-4 bg-slate-200 mx-1" />
+                <div className="w-px h-4 bg-[#0a1a3a]/15 mx-1" />
                 <button 
                   disabled={isThinking || isActing}
                   onClick={() => addPage()}
-                  className={`w-8 h-8 flex items-center justify-center rounded-xl text-slate-400 transition-all ${
-                    isThinking || isActing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 hover:text-blue-600'
+                  className={`w-8 h-8 flex items-center justify-center rounded-full text-slate-500 transition-all cursor-pointer ${
+                    isThinking || isActing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 hover:text-[#1550aa]'
                   }`}
                   title="Tambah Halaman Baru"
                 >
-                  <Plus size={16} strokeWidth={3} />
+                  <Plus size={16} strokeWidth={2.5} />
                 </button>
               </div>
 
