@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Mic, Clock, Users, Dices, RotateCcw, Compass, Sparkles,
-  ChevronUp, ChevronDown, Check, Volume2, ShieldCheck, HeartHandshake
+  ChevronUp, ChevronDown, Check, Volume2, ShieldCheck, HeartHandshake, Radio
 } from 'lucide-react';
 import { useStore } from '../store';
 import { toast } from '../utils/toast';
+import { useAmbientListener } from '../hooks/useAmbientListener';
 
 export const AssistiveDock: React.FC = () => {
   const {
@@ -15,6 +16,8 @@ export const AssistiveDock: React.FC = () => {
     setViewport,
     updateDomElement
   } = useStore();
+
+  const { isAmbientActive, interimCaption, toggleAmbient } = useAmbientListener();
 
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -78,8 +81,52 @@ export const AssistiveDock: React.FC = () => {
         </button>
       </div>
 
+      {/* Live Voice Caption Bubble */}
+      <AnimatePresence>
+        {isAmbientActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#0a1a3a]/95 text-white border border-white/20 shadow-xl backdrop-blur-md text-xs font-semibold max-w-xs truncate"
+          >
+            <span className="flex items-center gap-1 shrink-0">
+              {[0, 1, 2, 3].map((b) => (
+                <span
+                  key={b}
+                  className="w-1 bg-[#ffcc00] rounded-full animate-pulse"
+                  style={{ height: `${8 + ((b * 6) % 12)}px`, animationDelay: `${b * 0.15}s` }}
+                />
+              ))}
+            </span>
+            <span className="truncate">{interimCaption ? `“${interimCaption}”` : 'Bebas Genggam: "Trido, ..."'}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Large-Target Assistive Dock (56px touch buttons) */}
       <div className="bg-slate-900/95 backdrop-blur-xl border-2 border-slate-700/80 p-2.5 rounded-3xl shadow-2xl flex items-center gap-2.5">
+        {/* 0. Hands-Free Ambient Voice Assistant (Pak Damar Special) */}
+        <button
+          onClick={toggleAmbient}
+          className={`relative w-14 h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 shadow-md transition cursor-pointer active:scale-90 select-none ${
+            isAmbientActive 
+              ? 'bg-[#ffcc00] text-[#0a1a3a] ring-4 ring-[#ffcc00]/30 font-black' 
+              : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+          }`}
+          title={isAmbientActive ? 'Mode Bebas Genggam Aktif (Klik untuk Matikan)' : 'Aktifkan Mode Bebas Genggam (Bicara Tanpa Sentuh)'}
+        >
+          {isAmbientActive && (
+            <motion.span
+              animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.8, 0.4] }}
+              transition={{ duration: 1.6, repeat: Infinity }}
+              className="absolute -inset-1 rounded-2xl border-2 border-[#ffcc00] pointer-events-none"
+            />
+          )}
+          <Mic size={22} className={isAmbientActive ? 'text-[#0a1a3a]' : 'text-slate-300'} />
+          <span className="text-[9px] font-black uppercase tracking-tight">{isAmbientActive ? 'Dengar' : 'Suara'}</span>
+        </button>
+
         {/* 1. Quick Attendance */}
         <button
           onClick={() => {

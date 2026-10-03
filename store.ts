@@ -52,6 +52,10 @@ interface AppStore extends AgentState {
   
   isAssistiveMode: boolean;
   toggleAssistiveMode: (enabled?: boolean) => void;
+  isHandsFreeListening: boolean;
+  setHandsFreeListening: (active: boolean) => void;
+  lastVoiceCommand: string | null;
+  setLastVoiceCommand: (cmd: string | null) => void;
   
   isBoardSettingsOpen: boolean;
   toggleBoardSettings: () => void;
@@ -682,6 +686,10 @@ export const useStore = create<AppStore>((set, get) => ({
     if (typeof window !== 'undefined') localStorage.setItem('trido_assistive_mode', String(nextVal));
     return { isAssistiveMode: nextVal };
   }),
+  isHandsFreeListening: false,
+  setHandsFreeListening: (active) => set({ isHandsFreeListening: active }),
+  lastVoiceCommand: null,
+  setLastVoiceCommand: (cmd) => set({ lastVoiceCommand: cmd }),
   
   isBoardSettingsOpen: false,
   toggleBoardSettings: () => set((state) => ({ isBoardSettingsOpen: !state.isBoardSettingsOpen })),

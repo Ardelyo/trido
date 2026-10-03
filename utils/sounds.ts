@@ -6,18 +6,28 @@ class SoundManager {
   private activeOscillators: Set<OscillatorNode> = new Set();
 
   private initContext() {
+    if (typeof window === 'undefined') return;
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
     if (!this.context) {
-      this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
+      try {
+        this.context = new AudioCtx();
+      } catch {
+        return;
+      }
     }
-    if (this.context.state === 'suspended') {
-      this.context.resume();
+    if (this.context && this.context.state === 'suspended') {
+      try {
+        this.context.resume();
+      } catch {}
     }
   }
 
   play(name: string) {
     if (!this.enabled) return;
     this.initContext();
-    const ctx = this.context!;
+    if (!this.context) return;
+    const ctx = this.context;
 
     switch (name) {
       case 'mic_on':
