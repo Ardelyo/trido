@@ -53,10 +53,10 @@ export default function Story() {
             <div className="relative aspect-[4/5] overflow-hidden rounded-t-[999px] rounded-b-[2rem] bg-trido-deep">
               <motion.img
                 src={PHOTO}
-                alt=""
+                alt={s.sticker || "Pak Damar"}
                 loading="lazy"
-                style={{ y: imgY, scale: 1.18 }}
-                className="h-full w-full object-cover"
+                style={{ y: imgY, scale: 1.08 }}
+                className="h-full w-full object-cover object-top"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-trido-deep/60 via-transparent to-transparent" />
             </div>
