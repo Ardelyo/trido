@@ -63,70 +63,18 @@ export const DocumentBlock: React.FC<DocumentBlockProps> = ({ config }) => {
   return (
     <div
       ref={containerRef}
-      className="flex w-full h-full flex-col bg-[#fffdfa] text-slate-800 border border-slate-200 shadow-sm overflow-hidden rounded-sm font-sans"
+      className="flex w-full h-full flex-col bg-white text-slate-800 overflow-hidden font-sans select-text"
     >
       {/* Printable Document Header (Appears only on print) */}
       <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
-        <div className="text-[10px] font-black uppercase tracking-widest text-blue-600">TRIDO ACADEMIC DOCUMENT</div>
+        <div className="text-[10px] font-black uppercase tracking-widest text-[#1550aa]">TRIDO ACADEMIC DOCUMENT</div>
         <h1 className="text-2xl font-black text-slate-900 uppercase mt-1">{title}</h1>
         <div className="text-xs text-slate-500 mt-1">Tanggal: {new Date().toLocaleDateString('id-ID')}</div>
       </div>
 
-      {/* Screen Toolbar */}
-      <div className="bg-slate-50 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between pointer-events-auto sticky top-0 z-10 no-print">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-            {title}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button 
-            onClick={handleCopy}
-            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer"
-            title="Salin Teks Markdown"
-          >
-            {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-            Salin
-          </button>
-          <button
-            onClick={handleDownloadPNG}
-            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer"
-            title="Unduh Gambar PNG HD Dokumen (2x Retina)"
-          >
-            <ImageIcon size={12} />
-            PNG
-          </button>
-          <button
-            onClick={handleDownloadMarkdown}
-            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer"
-            title="Unduh Berkas Markdown (.md)"
-          >
-            <FileText size={12} />
-            .MD
-          </button>
-          <button
-            onClick={handleDownloadHtml}
-            className="flex items-center gap-1 px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer"
-            title="Unduh Laman Web Mandiri (.html)"
-          >
-            <Globe size={12} />
-            HTML
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1 px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer shadow-2xs"
-            title="Cetak Dokumen Bersih / Simpan PDF (Hanya dokumen, tanpa menu website)"
-          >
-            <Printer size={12} />
-            Cetak / PDF
-          </button>
-        </div>
-      </div>
-      
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto px-8 md:px-12 py-8 custom-scrollbar bg-white/50 print:overflow-visible print:px-0 print:py-0">
-        <div className="max-w-3xl mx-auto prose prose-indigo prose-lg leading-relaxed antialiased print:max-w-none">
+      <div className="flex-1 overflow-y-auto px-6 md:px-10 py-6 custom-scrollbar bg-white print:overflow-visible print:px-0 print:py-0">
+        <div className="max-w-3xl mx-auto prose prose-slate prose-base leading-relaxed antialiased print:max-w-none">
           <ReactMarkdown
             remarkPlugins={[remarkMath, remarkGfm]}
             rehypePlugins={[rehypeKatex]}

@@ -399,32 +399,21 @@ export const DomOverlay: React.FC = () => {
                   </div>
                 </div>
 
-                {/* PC Window Actions: Clean, non-redundant controls */}
+                {/* PC Window Actions: Minimalist & focused */}
                 <div className="flex items-center gap-1 shrink-0 no-print" onMouseDown={(e) => e.stopPropagation()}>
-                  {/* Quick Export Artifact */}
-                  <button
-                    onClick={(e) => handleQuickExport(el, e)}
-                    className="p-1.5 rounded-full hover:bg-slate-200/70 text-slate-500 hover:text-[#1550aa] transition cursor-pointer"
-                    title="Unduh Berkas Mandiri (SVG/MD/HTML)"
-                  >
-                    <Download size={14} />
-                  </button>
-
                   {/* Fullscreen / Focus Mode */}
                   <button
                     onClick={() => setFullscreenWidgetId(el.id)}
-                    className="p-1.5 rounded-full hover:bg-slate-200/70 text-slate-500 hover:text-purple-600 transition cursor-pointer"
-                    title="Layar Penuh (Fullscreen PC Focus)"
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-200/70 text-slate-400 hover:text-[#1550aa] transition cursor-pointer"
+                    title="Layar Penuh (Fokus)"
                   >
                     <Maximize2 size={14} />
                   </button>
 
-                  <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
-
                   {/* Sole Close / Delete Button */}
                   <button
                     onClick={(e) => handleDelete(el.id, e)}
-                    className="p-1.5 rounded-full hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition cursor-pointer"
                     title="Tutup Komponen"
                   >
                     <X size={15} strokeWidth={2.5} />
