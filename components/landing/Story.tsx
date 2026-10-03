@@ -4,8 +4,7 @@ import { Mic } from "lucide-react";
 import { useI18n } from "./i18n";
 import { Mark, Reveal, SectionPill } from "./shared";
 
-const PHOTO =
-  "https://images.pexels.com/photos/5427870/pexels-photo-5427870.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=1200&w=800";
+const PHOTO = "/pak-damar.jpg";
 
 export default function Story() {
   const { t } = useI18n();
