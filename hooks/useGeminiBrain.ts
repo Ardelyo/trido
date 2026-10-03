@@ -488,7 +488,7 @@ export const useGeminiBrain = () => {
 [ATTACHED FILE/DOCUMENT: ${attachedDocument.name}]
 [TYPE: ${attachedDocument.category.toUpperCase()} | SIZE: ${(attachedDocument.size / 1024).toFixed(1)} KB${attachedDocument.pageCount ? ` | PAGES: ${attachedDocument.pageCount}` : ''}${attachedDocument.wordCount ? ` | WORDS: ${attachedDocument.wordCount}` : ''}]
 --- DOCUMENT CONTENT START ---
-${attachedDocument.text.slice(0, 60000)}
+${attachedDocument.text.slice(0, 120000)}
 --- DOCUMENT CONTENT END ---
 NOTE: The user has attached this document. Use its factual details, structure, and text to fulfill their request (such as answering questions, generating whiteboard mindmaps, summaries, diagrams, or explanations).
 ` : '';

@@ -21,7 +21,7 @@ import {
   Image as ImageIcon, File, History, Settings, Mic, Monitor, Share, Download, Sparkles,
   CheckCircle2, ChevronDown, ChevronRight, Keyboard, Menu,
   Clock, CheckSquare, PencilRuler, ShieldCheck, HelpCircle, User,
-  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2, Archive, Database
+  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2, Archive, Database, Network
 } from 'lucide-react';
 import { SidebarItem } from './components/SidebarItem';
 import { AiStatusBadge } from './components/AiStatusBadge';
@@ -31,6 +31,7 @@ import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
 import { useTranslation } from './utils/translations';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ProcessingStatusHud } from './components/ProcessingStatusHud';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
@@ -58,7 +59,7 @@ const App: React.FC = () => {
     attachedDocument, setAttachedDocument,
     userName, setUserName,
     pages, currentPageIndex, switchPage, addPage, isThinking, isActing,
-    smartboardLayoutMode
+    smartboardLayoutMode, abortTask
   } = useStore();
 
   useEffect(() => {
@@ -687,25 +688,9 @@ const App: React.FC = () => {
                       </motion.div>
                     ))}
                     {isThinking && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        className="flex flex-col items-start w-full"
-                      >
-                        <div className="bg-white text-slate-800 border border-slate-200/80 shadow-[0_4px_20px_rgb(0,0,0,0.04)] rounded-3xl rounded-tl-sm p-4 max-w-[90%] flex items-center gap-3">
-                          <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-ping" />
-                          <span className="text-sm font-semibold text-slate-600">Trido sedang memproses secara instan...</span>
-                          <div className="flex gap-1">
-                            {[0, 1, 2].map(i => (
-                              <div
-                                key={i}
-                                className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
-                                style={{ animationDelay: `${i * 0.15}s` }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </motion.div>
+                      <div className="flex flex-col items-start w-full my-1">
+                        <ProcessingStatusHud onCancel={abortTask} />
+                      </div>
                     )}
                     <div ref={chatEndRef} />
                   </div>
@@ -713,6 +698,49 @@ const App: React.FC = () => {
                   {/* Input Bar */}
                   <div className="p-4 lg:p-5 border-t border-slate-100 bg-white/90 backdrop-blur-xl shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10 font-sans relative shrink-0">
                     <AttachedDocumentBadge className="mb-2" />
+
+                    {/* Quick Document Action Pills (Only when document is attached) */}
+                    {attachedDocument && !isThinking && (
+                      <div className="flex flex-wrap gap-1.5 mb-2.5">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const prompt = `Tolong buatkan peta konsep (mindmap) terstruktur dan lengkap dari dokumen "${attachedDocument.name}" ini di whiteboard.`;
+                            useStore.getState().addMessage({ role: 'user', text: prompt });
+                            await processUserPrompt(prompt, canvasRef);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#1550aa] border border-blue-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                        >
+                          <Network size={12} />
+                          <span>🌳 Buat Peta Konsep</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const prompt = `Tolong buatkan ringkasan materi akademik lengkap dari dokumen "${attachedDocument.name}" ini dan tampilkan sebagai catatan di whiteboard.`;
+                            useStore.getState().addMessage({ role: 'user', text: prompt });
+                            await processUserPrompt(prompt, canvasRef);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                        >
+                          <FileText size={12} />
+                          <span>📝 Ringkas Materi</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const prompt = `Tolong buatkan 5 soal kuis evaluasi pemahaman siswa berdasarkan isi dokumen "${attachedDocument.name}" ini.`;
+                            useStore.getState().addMessage({ role: 'user', text: prompt });
+                            await processUserPrompt(prompt, canvasRef);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                        >
+                          <HelpCircle size={12} />
+                          <span>❓ Buat Kuis Interaktif</span>
+                        </button>
+                      </div>
+                    )}
+
                     <form
                       onSubmit={async (e) => {
                         e.preventDefault();
