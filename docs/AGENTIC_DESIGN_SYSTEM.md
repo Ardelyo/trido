@@ -33,11 +33,12 @@ Trido Agentika dirancang bukan sebagai *chat wrapper*, melainkan sebagai **Auton
    - Seluruh dokumen yang berhasil disusun otomatis disimpan ke dalam **Riwayat Dokumen Sesi** (`trido_agentika_history`).
    - Guru dapat membuka kembali versi sebelumnya kapan saja tanpa takut data tertimpa.
 
-5. **Physical / Tactile Brand Consistency**
+5. **Physical / Tactile Brand Consistency & Voice-First DNA**
    - Mengusung estetika *Tactile IKEA Paper Warmth*:
-     * Latar kanvas kertas halus: `#f8f7f5` dengan dot-grid subtle.
-     * Warna solid bebas gradien: **Trido Blue (`#1550aa`)**, **Dark Ink (`#0a1a3a`)**, **Sun Yellow (`#ffcc00`)**.
-     * Geometri kapsul sirkular: `rounded-full`, `rounded-3xl`, `rounded-[2.2rem]`.
+     * Latar kanvas kertas hangat: `#E8E6E1` (krem hangat khas landing page Trido).
+     * Kartu permukaan: Putih bersih `#FFFFFF` dengan radius `16px`.
+     * Warna solid bebas gradien: **Bold Blue (`#1D4ED8` / `#1550aa`)** & **Amber Kuning (`#F5C518` / `#ffcc00`)**.
+     * Identitas Suara (Voice-First): *"Teach out loud. The board listens."* 🎙️ Tombol mic tanda tangan hadir di bilah perintah.
 
 ---
 
