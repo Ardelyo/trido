@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Bot, Sparkles, FileText, Table, Presentation, Network,
   Download, ArrowRight, CornerDownLeft, X, Copy, Check,
-  ChevronLeft, ChevronRight, Pin,
-  Cpu, Lightbulb, CheckCircle2, Eye, Code, Printer
+  ChevronLeft, ChevronRight, Pin, ChevronDown, ChevronUp,
+  Cpu, Lightbulb, CheckCircle2, Eye, Code, Printer,
+  History, ShieldCheck, HelpCircle, Layers, SlidersHorizontal, BookOpen
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -20,6 +21,23 @@ export type AgentikaMode = 'doc' | 'sheet' | 'slide' | 'diagram';
 interface AgentikaViewProps {
   onClose: () => void;
   canvasRef: React.RefObject<any>;
+}
+
+// Global Teacher Context configuration
+interface TeacherContext {
+  curriculum: string;
+  gradeLevel: string;
+  subject: string;
+  classGrade: string;
+}
+
+// Saved Document History Item
+interface AgentikaHistoryItem {
+  id: string;
+  title: string;
+  mode: AgentikaMode;
+  content: string;
+  timestamp: number;
 }
 
 // Rotating Pedagogical Tips & Insights during generation
@@ -38,7 +56,7 @@ const PEDAGOGICAL_INSIGHTS = [
   },
   {
     tag: 'Privasi & Offline-First',
-    text: 'Saat menggunakan Ollama (Gemma), seluruh data nilai dan identitas siswa Anda diproses 100% lokal tanpa meninggalkan perangkat.'
+    text: 'Saat menggunakan Mode Privat Offline (Ollama/Gemma), seluruh data nilai dan identitas siswa Anda diproses 100% lokal di perangkat.'
   },
   {
     tag: 'Desain Presentasi Kelas',
@@ -46,10 +64,90 @@ const PEDAGOGICAL_INSIGHTS = [
   }
 ];
 
+// Rich Sample Previews so teachers see the exact output structure before generating
+const SAMPLE_PREVIEWS: Record<AgentikaMode, { title: string; subtitle: string; content: string }> = {
+  doc: {
+    title: 'Contoh: Modul Ajar Fisika Fase E (Hukum Newton)',
+    subtitle: 'Standar Kurikulum Merdeka Kemendikbudristek',
+    content: `# MODUL AJAR FISIKA: HUKUM NEWTON TENTANG GERAK
+
+## I. IDENTITAS MODUL
+- **Nama Penyusun**: Ardellio Satria Anindito, S.Pd.
+- **Satuan Pendidikan**: SMA Negeri 1 Inklusif
+- **Fase / Kelas**: E / X (Sepuluh)
+- **Alokasi Waktu**: 2 JP x 45 Menit (Pertemuan 1)
+- **Model Pembelajaran**: Problem Based Learning (PBL)
+
+---
+
+## II. KOMPETENSI INTI
+### A. Capaian Pembelajaran (CP)
+Peserta didik mampu menyelidiki prinsip dinamika gerak lurus dan menganalisis pengaruh gaya terhadap percepatan benda dalam kehidupan sehari-hari.
+
+### B. Tujuan Pembelajaran (TP)
+1. Melalui demonstrasi papan tulis, peserta didik dapat merumuskan konsep kelembaman ($F = 0$) secara kritis.
+2. Peserta didik dapat menghitung percepatan balok bermassa $m$ dengan gaya gesek menggunakan persamaan $a = \\frac{\\Sigma F}{m}$.
+
+---
+
+## III. ASESMEN FORMATIF & LKPD
+| Kriteria Penilaian | Indikator Ketercapaian | Rubrik Skor (1-4) |
+|---|---|---|
+| Pemahaman Konsep | Menjelaskan Hukum I Newton | 4: Sangat Baik, 3: Baik, 2: Cukup |
+| Analisis Kasus | Menghitung gaya gesek kinetik | 4: Akurat, 3: Sebagian Benar |
+
+> **Pertanyaan Pemantik**: Mengapa tubuh kita terdorong ke depan saat bus direm mendadak?`
+  },
+  sheet: {
+    title: 'Contoh: Rekapitulasi Nilai Ulangan 25 Siswa',
+    subtitle: 'Format CSV / Excel Lengkap dengan Rumus KKM',
+    content: `No,NISN,Nama Siswa,Tugas 1,Tugas 2,Nilai UH,Nilai Akhir,Status,Tindak Lanjut
+1,0081234561,Aditya Pratama,85,90,88,88,Tuntas,Pengayaan Materi Bab II
+2,0081234562,Aisyah Nuraini,75,80,78,78,Tuntas,Pengayaan Materi Bab II
+3,0081234563,Bima Wicaksono,60,65,62,62,Remedial,Bimbingan Khusus Rumus Gaya
+4,0081234564,Cantika Kirana,90,95,92,92,Tuntas,Tutor Sebaya Kelompok A
+5,0081234565,Daffa Ramadhan,70,72,71,71,Remedial,Penugasan Ulang LKPD 1
+---,---,Rata-rata Kelas,76.0,80.4,78.2,78.2,76% Lulus,-`
+  },
+  slide: {
+    title: 'Contoh: Dek Presentasi 8 Slide Tata Surya',
+    subtitle: 'Slide Interaktif Siap Ajar Lengkap dengan Speaker Notes',
+    content: `--- SLIDE START ---
+TITLE: 🪐 Sistem Tata Surya Kita
+CONTENT:
+- Pusat orbit: Matahari (Bintang deret utama)
+- 8 Planet utama terbagi: Planet Kebumian & Raksasa Gas
+- Sabuk Asteroid membatasi Mars dan Jupiter
+NOTES: Tanyakan ke siswa: Apa perbedaan mendasar antara planet dalam dan luar?
+--- SLIDE END ---
+
+--- SLIDE START ---
+TITLE: 🌍 Karakteristik Bumi & Atmosfer
+CONTENT:
+- Satu-satunya planet dengan air berwujud cair stabil di permukaan
+- Komposisi atmosfer: 78% Nitrogen, 21% Oksigen, 1% Gas Lain
+- Medan magnetik melindungi dari radiasi angin matahari
+NOTES: Diskusikan peran lapisan ozon dalam melindungi keanekaragaman hayati.
+--- SLIDE END ---`
+  },
+  diagram: {
+    title: 'Contoh: Peta Konsep Klasifikasi Makhluk Hidup',
+    subtitle: 'Sintaks Mermaid untuk Ditempel Langsung ke Kanvas Papan',
+    content: `graph TD
+    Root[Klasifikasi Makhluk Hidup] --> Monera[Kingdom Monera<br/>Prokariotik, Uniseluler]
+    Root --> Protista[Kingdom Protista<br/>Eukariotik, Mirip Hewan/Tumbuhan]
+    Root --> Fungi[Kingdom Fungi<br/>Heterotrof, Dinding Kitin]
+    Root --> Plantae[Kingdom Plantae<br/>Autotrof, Fotosintesis]
+    Root --> Animalia[Kingdom Animalia<br/>Multiseluler, Bergerak Aktif]`
+  }
+};
+
 const CAPABILITY_PREVIEWS = [
   {
     mode: 'doc' as AgentikaMode,
     icon: FileText,
+    iconColor: 'text-[#1550aa]',
+    badgeBg: 'bg-blue-50 text-[#1550aa] border-blue-200',
     badge: 'DOCX / Markdown',
     title: 'Modul Ajar & RPP Kurikulum Merdeka',
     desc: 'Susun RPP lengkap dengan Capaian Pembelajaran (CP), Tujuan Pembelajaran (TP), asesmen diagnostik, dan lembar kerja siswa (LKPD).',
@@ -58,6 +156,8 @@ const CAPABILITY_PREVIEWS = [
   {
     mode: 'sheet' as AgentikaMode,
     icon: Table,
+    iconColor: 'text-emerald-600',
+    badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     badge: 'XLSX / CSV',
     title: 'Buku Nilai & Analisis Ketuntasan Siswa',
     desc: 'Rekap tabel nilai ulangan 25 siswa dengan kalkulasi otomatis rata-rata, persentase ketuntasan (KKM 75), ranking, dan deteksi siswa remedial.',
@@ -66,6 +166,8 @@ const CAPABILITY_PREVIEWS = [
   {
     mode: 'slide' as AgentikaMode,
     icon: Presentation,
+    iconColor: 'text-amber-600',
+    badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
     badge: 'PPTX / Slide Deck',
     title: 'Slide Presentasi Interaktif Kelas',
     desc: 'Dek presentasi 8 slide interaktif siap ajar dengan alur terstruktur, pertanyaan pemantik diskusi, dan catatan pembicara untuk guru.',
@@ -74,6 +176,8 @@ const CAPABILITY_PREVIEWS = [
   {
     mode: 'diagram' as AgentikaMode,
     icon: Network,
+    iconColor: 'text-indigo-600',
+    badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
     badge: 'Peta Konsep & Smartboard',
     title: 'Peta Konsep & Alur Pembelajaran',
     desc: 'Struktur hubungan konsep materi secara bertingkat untuk ditempel langsung ke kanvas papan tulis Trido.',
@@ -99,6 +203,34 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
   const [elapsedSecs, setElapsedSecs] = useState<number>(0);
   const [insightIndex, setInsightIndex] = useState<number>(0);
   const [copied, setCopied] = useState(false);
+  const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+
+  // Global Teacher Context (saved to localStorage)
+  const [teacherContext, setTeacherContext] = useState<TeacherContext>(() => {
+    try {
+      const saved = localStorage.getItem('trido_teacher_context');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      curriculum: 'Kurikulum Merdeka',
+      gradeLevel: 'SMA/SMK (Fase E)',
+      subject: 'Fisika',
+      classGrade: 'Kelas X'
+    };
+  });
+
+  // Sample Preview Modal State
+  const [sampleModalMode, setSampleModalMode] = useState<AgentikaMode | null>(null);
+
+  // Document History State
+  const [historyItems, setHistoryItems] = useState<AgentikaHistoryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('trido_agentika_history');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
 
   // Result state
   const [resultTitle, setResultTitle] = useState<string>('');
@@ -112,11 +244,24 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Active AI Model display
-  const activeModelDisplay = 
-    aiPreference === 'ollama' 
-      ? (selectedOllamaModel || 'Ollama (Lokal)') 
-      : (aiPreference === 'vertex' ? (selectedVertexModel || 'Vertex AI') : (selectedGeminiModel || 'gemini-3.8-flash'));
+  // Save teacher context on change
+  const updateTeacherContext = (patch: Partial<TeacherContext>) => {
+    const next = { ...teacherContext, ...patch };
+    setTeacherContext(next);
+    try {
+      localStorage.setItem('trido_teacher_context', JSON.stringify(next));
+    } catch {}
+  };
+
+  // Friendly human labels for AI models
+  const getModelLabel = () => {
+    switch (aiPreference) {
+      case 'gemini': return 'Mode Cepat (Gemini)';
+      case 'vertex': return 'Mode Terpadu (Vertex)';
+      case 'ollama': return 'Mode Privat Offline (Lokal)';
+      default: return 'Otomatis (Rekomendasi)';
+    }
+  };
 
   // Elapsed timer during run
   useEffect(() => {
@@ -141,7 +286,7 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  // Execute agent pipeline
+  // Execute agent pipeline with live 4-step trace
   const handleRunAgent = async () => {
     const finalPrompt = promptText.trim();
     if (!finalPrompt || isRunning) return;
@@ -157,9 +302,9 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     try {
       // Step 1: Analyzing curriculum & intent
       setCurrentStep(1);
-      await new Promise(r => setTimeout(r, 450));
+      await new Promise(r => setTimeout(r, 600));
 
-      // Step 2: Formulating schema
+      // Step 2: Formulating pedagogical schema
       setCurrentStep(2);
 
       let formatDirective = '';
@@ -168,16 +313,23 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
 Anda adalah Lead Curriculum Architect dari Trido Agentika.
 Susun dokumen ajar atau modul pembelajaran lengkap dan profesional dalam format Markdown bersih.
 Sertakan judul (# Judul), sub-bagian (## Bagian), rincian poin, dan tabel markdown jika relevan.
+Pedoman Konteks Pendidik:
+- Kurikulum: ${teacherContext.curriculum}
+- Jenjang: ${teacherContext.gradeLevel}
+- Mata Pelajaran: ${teacherContext.subject}
+- Kelas: ${teacherContext.classGrade}
 Jangan gunakan tanda elipsis "..." atau menyisakan placeholder kosong; tuliskan materi secara tuntas dan berbobot akademis.`;
       } else if (mode === 'sheet') {
         formatDirective = `
 Anda adalah Data Analyst Pendidikan dari Trido Agentika.
 Susun tabel dataset nilai/administrasi sekolah yang rapi dan realistis.
+Konteks: ${teacherContext.subject} (${teacherContext.classGrade}).
 Format keluaran HANYA dalam format tabel CSV (dipisahkan tanda koma) atau tabel Markdown yang valid.
 Pastikan header kolom jelas, nama siswa realistis Indonesia, kalkulasi rata-rata dan ranking akurat.`;
       } else if (mode === 'slide') {
         formatDirective = `
 Anda adalah Instructional Slide Deck Designer dari Trido Agentika.
+Konteks: ${teacherContext.subject} (${teacherContext.classGrade}, ${teacherContext.curriculum}).
 Format presentasi menjadi 6 hingga 10 slide terstruktur menggunakan penanda berikut:
 --- SLIDE START ---
 TITLE: [Judul Slide]
@@ -191,6 +343,7 @@ Tuliskan materi secara lengkap dan siap ajar.`;
       } else {
         formatDirective = `
 Anda adalah Conceptual Diagramming Agent dari Trido Agentika.
+Konteks: ${teacherContext.subject} (${teacherContext.classGrade}).
 Susun diagram atau peta konsep terstruktur menggunakan sintaks Mermaid (graph TD atau mindmap).
 Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papan tulis.`;
       }
@@ -212,7 +365,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         })
       });
 
-      // Step 3: Synthesizing Content
+      // Step 3: Synthesizing Content & Calculations
       setCurrentStep(3);
 
       if (!response.ok) {
@@ -238,6 +391,20 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       setResultTitle(extractedTitle);
       setResultContent(rawText);
       setResultType(mode);
+
+      // Save to Document History
+      const newHistoryItem: AgentikaHistoryItem = {
+        id: `doc_${Date.now()}`,
+        title: extractedTitle,
+        mode,
+        content: rawText,
+        timestamp: Date.now()
+      };
+      const updatedHistory = [newHistoryItem, ...historyItems].slice(0, 20);
+      setHistoryItems(updatedHistory);
+      try {
+        localStorage.setItem('trido_agentika_history', JSON.stringify(updatedHistory));
+      } catch {}
 
       // Parse spreadsheet CSV if in sheet mode
       if (mode === 'sheet') {
@@ -299,6 +466,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Pin to canvas with actual DomOverlay placement
   const handlePinToSmartboard = () => {
     if (!resultContent) return;
 
@@ -317,9 +485,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
           const height = canvasRef.current.getHeight() || 800;
           centerX = (-vpt[4] + width / 2) / zoom;
           centerY = (-vpt[5] + height / 2) / zoom;
-        } catch {
-          // fallback
-        }
+        } catch {}
       }
 
       // 2. Configure widget dimensions and type
@@ -329,7 +495,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       let config: any = {
         title: `📄 ${titleSnippet}`,
         markdown: resultContent,
-        model: activeModelDisplay
+        model: getModelLabel()
       };
 
       if (resultType === 'diagram') {
@@ -339,7 +505,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         config = {
           title: `🗺️ ${titleSnippet}`,
           code: resultContent.replace(/```mermaid/g, '').replace(/```/g, '').trim(),
-          model: activeModelDisplay
+          model: getModelLabel()
         };
       } else if (resultType === 'sheet') {
         width = 760;
@@ -347,7 +513,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         config = {
           title: `📊 ${titleSnippet}`,
           markdown: resultContent,
-          model: activeModelDisplay
+          model: getModelLabel()
         };
       } else if (resultType === 'slide') {
         width = 700;
@@ -355,7 +521,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         config = {
           title: `📽️ ${titleSnippet}`,
           markdown: resultContent,
-          model: activeModelDisplay
+          model: getModelLabel()
         };
       }
 
@@ -439,64 +605,74 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       />
 
       {/* Top Header */}
-      <header className="relative h-16 px-6 lg:px-10 flex items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md shrink-0 z-20 shadow-2xs">
+      <header className="relative h-16 px-4 lg:px-8 flex items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md shrink-0 z-20 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#1550aa] text-white shadow-xs">
             <Bot size={22} className="text-[#ffcc00]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black tracking-tight text-[#0a1a3a]">Agentika</h1>
-              <span className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded-full bg-[#1550aa] text-white uppercase">
+              <h1 className="text-lg font-black tracking-tight text-[#0a1a3a]">Agentika Studio</h1>
+              <span className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded-full bg-[#1550aa] text-white uppercase" title="Fitur eksperimental studio agen mandiri produktivitas pendidik">
                 Eksperimental
               </span>
             </div>
             <p className="text-xs text-slate-500 font-medium hidden sm:block">
-              Studio Agen Mandiri Produktivitas Pendidik (Docs · Sheets · Slides · Diagrams)
+              Studio Agen Mandiri Produktivitas Pendidik (RPP · Nilai · Slide · Peta Konsep)
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Quick Model Selector Pill */}
-          <div className="flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/70 text-xs font-bold">
+        <div className="flex items-center gap-2">
+          {/* Teacher-Friendly Mode Selector Pill */}
+          <div className="hidden md:flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/70 text-xs font-bold">
             <button
               type="button"
               onClick={() => setAiPreference('auto')}
-              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
                 aiPreference === 'auto' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
               }`}
+              title="Memilih penyedia AI terbaik secara otomatis"
             >
-              Auto
+              Otomatis
             </button>
             <button
               type="button"
               onClick={() => setAiPreference('gemini')}
-              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
                 aiPreference === 'gemini' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
               }`}
+              title="Mode pemrosesan awan berkecepatan tinggi"
             >
-              Gemini
-            </button>
-            <button
-              type="button"
-              onClick={() => setAiPreference('vertex')}
-              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
-                aiPreference === 'vertex' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
-              }`}
-            >
-              Vertex
+              Mode Cepat
             </button>
             <button
               type="button"
               onClick={() => setAiPreference('ollama')}
-              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
                 aiPreference === 'ollama' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
               }`}
+              title="Privasi 100% offline lokal di laptop Anda tanpa koneksi internet"
             >
-              Lokal (Ollama)
+              Mode Privat (Offline)
             </button>
           </div>
+
+          {/* History Drawer Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsHistoryDrawerOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-2xs"
+            title="Lihat riwayat dokumen yang telah dibuat"
+          >
+            <History size={14} className="text-[#1550aa]" />
+            <span className="hidden sm:inline">Riwayat</span>
+            {historyItems.length > 0 && (
+              <span className="w-4 h-4 rounded-full bg-[#1550aa] text-white text-[10px] flex items-center justify-center font-bold">
+                {historyItems.length}
+              </span>
+            )}
+          </button>
 
           {/* Close / Return to Board button */}
           <button
@@ -510,10 +686,56 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         </div>
       </header>
 
-      {/* Main Workspace Area */}
-      <div className="relative flex-1 overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-8 custom-scrollbar pb-64 z-10">
+      {/* Global Teacher Context Setter Bar */}
+      <div className="bg-white/80 border-b border-slate-200/70 px-4 lg:px-8 py-2 z-10 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-bold text-slate-500 flex items-center gap-1">
+            <SlidersHorizontal size={13} className="text-[#1550aa]" /> Konteks Kelas:
+          </span>
+
+          {/* Curriculum Selector */}
+          <select
+            value={teacherContext.curriculum}
+            onChange={e => updateTeacherContext({ curriculum: e.target.value })}
+            className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-full font-bold text-[#0a1a3a] text-xs cursor-pointer focus:outline-hidden"
+          >
+            <option value="Kurikulum Merdeka">Kurikulum Merdeka</option>
+            <option value="Kurikulum 2013 (K-13)">Kurikulum 2013 (K-13)</option>
+            <option value="Kurikulum Internasional / Cambridge">Kurikulum Internasional</option>
+          </select>
+
+          {/* Grade Level */}
+          <select
+            value={teacherContext.gradeLevel}
+            onChange={e => updateTeacherContext({ gradeLevel: e.target.value })}
+            className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-full font-bold text-[#0a1a3a] text-xs cursor-pointer focus:outline-hidden"
+          >
+            <option value="SMA/SMK (Fase E)">SMA/SMK (Fase E/F)</option>
+            <option value="SMP (Fase D)">SMP (Fase D)</option>
+            <option value="SD (Fase A/B/C)">SD (Fase A/B/C)</option>
+            <option value="PAUD">PAUD</option>
+          </select>
+
+          {/* Subject */}
+          <input
+            type="text"
+            value={teacherContext.subject}
+            onChange={e => updateTeacherContext({ subject: e.target.value })}
+            placeholder="Mata Pelajaran (contoh: Fisika)"
+            className="px-3 py-1 bg-slate-50 border border-slate-200 rounded-full font-bold text-[#0a1a3a] text-xs w-32 sm:w-40 focus:outline-hidden focus:border-[#1550aa]"
+          />
+        </div>
+
+        <div className="hidden lg:flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+          <ShieldCheck size={13} className="text-emerald-600" />
+          <span>Konteks otomatis disematkan pada setiap dokumen yang disusun agen</span>
+        </div>
+      </div>
+
+      {/* Main Workspace Area with Generous Bottom Clearance (pb-96 md:pb-[340px] to PREVENT DOCK OVERLAP) */}
+      <div className="relative flex-1 overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-8 custom-scrollbar pb-96 md:pb-[340px] z-10">
         
-        {/* Animated Loading Progression HUD */}
+        {/* Live 4-Step Agentic Reasoning Trace Stepper (Visible During Execution) */}
         <AnimatePresence>
           {isRunning && (
             <motion.div
@@ -534,7 +756,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                       Agen Agentika Sedang Bekerja...
                     </h3>
                     <p className="text-xs text-slate-500 font-medium">
-                      Model aktif: <span className="font-bold text-[#1550aa]">{activeModelDisplay}</span>
+                      Penyedia AI: <span className="font-bold text-[#1550aa]">{getModelLabel()}</span>
                     </p>
                   </div>
                 </div>
@@ -554,20 +776,20 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                 </div>
               </div>
 
-              {/* Step Pipeline Tracker */}
-              <div className="grid grid-cols-4 gap-2">
+              {/* Step Pipeline Tracker with Clear Agentic Transparency */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
-                  { num: 1, label: 'Dekonstruksi' },
-                  { num: 2, label: 'Skema Berkas' },
-                  { num: 3, label: 'Sintesis Konten' },
-                  { num: 4, label: 'Kompilasi' }
+                  { num: 1, label: 'Menganalisis Kurikulum & TP', detail: 'Membedah Capaian Pembelajaran' },
+                  { num: 2, label: 'Menyusun Skema Berkas', detail: 'Merancang Struktur & Format' },
+                  { num: 3, label: 'Sintesis Materi & Asesmen', detail: 'Menulis LKPD & Rubrik Nilai' },
+                  { num: 4, label: 'Kompilasi Berkas Akhir', detail: 'Membangun Berkas Siap Pakai' }
                 ].map(s => {
                   const isDone = currentStep > s.num;
                   const isCurrent = currentStep === s.num;
                   return (
                     <div 
                       key={s.num} 
-                      className={`p-2.5 rounded-xl border flex flex-col items-center text-center gap-1 transition-all ${
+                      className={`p-3 rounded-2xl border flex flex-col items-center text-center gap-1 transition-all ${
                         isCurrent 
                           ? 'bg-blue-50/80 border-[#1550aa] text-[#1550aa] ring-2 ring-[#1550aa]/20' 
                           : isDone 
@@ -575,16 +797,17 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                             : 'bg-slate-50 border-slate-200/70 text-slate-400'
                       }`}
                     >
-                      <div className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black">
-                        {isDone ? <CheckCircle2 size={14} className="text-emerald-600" /> : s.num}
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-black">
+                        {isDone ? <CheckCircle2 size={16} className="text-emerald-600" /> : s.num}
                       </div>
-                      <span className="text-[11px] font-bold leading-tight">{s.label}</span>
+                      <span className="text-xs font-bold leading-tight">{s.label}</span>
+                      <span className="text-[10px] text-slate-400 hidden sm:block">{s.detail}</span>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Solid Indeterminate Progress Line */}
+              {/* Solid Indeterminate Progress Line (Strictly Zero Gradient) */}
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden relative">
                 <motion.div
                   initial={{ left: '-30%', width: '30%' }}
@@ -626,12 +849,12 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         {/* Capability Showcase Cards (When Idle) */}
         {!resultContent && !isRunning && (
           <div className="max-w-5xl mx-auto space-y-4">
-            <div className="text-center space-y-1 mb-6">
+            <div className="text-center space-y-1.5 mb-6">
               <h2 className="text-2xl font-black text-[#0a1a3a] tracking-tight">
                 Pilih Kemampuan Agen & Hasilkan Berkas Siap Pakai
               </h2>
               <p className="text-sm text-slate-600 max-w-xl mx-auto font-medium">
-                Pilih salah satu template di bawah atau ketik instruksi di Dock Island untuk mempekerjakan agen AI mandiri.
+                Pilih salah satu template di bawah, tinjau contoh hasilnya, atau ketik langsung instruksi di Bilah Perintah Agen.
               </p>
             </div>
 
@@ -644,35 +867,51 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                     key={idx}
                     whileHover={{ scale: 1.015, y: -2 }}
                     whileTap={{ scale: 0.985 }}
-                    onClick={() => {
-                      setMode(item.mode);
-                      setPromptText(item.prompt);
-                      if (textareaRef.current) {
-                        textareaRef.current.focus();
-                      }
-                    }}
-                    className={`p-5 rounded-3xl border-2 transition-all cursor-pointer bg-white shadow-xs flex flex-col justify-between text-left group ${
+                    className={`p-5 rounded-3xl border-2 transition-all bg-white shadow-xs flex flex-col justify-between text-left group ${
                       isSelected ? 'border-[#1550aa] ring-2 ring-[#1550aa]/20' : 'border-slate-200/80 hover:border-[#1550aa]/40'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
                         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${
-                          isSelected ? 'bg-[#1550aa] text-white' : 'bg-blue-50 text-[#1550aa] group-hover:bg-[#1550aa] group-hover:text-white'
+                          isSelected ? 'bg-[#1550aa] text-white' : 'bg-slate-50 ' + item.iconColor
                         }`}>
                           <Icon size={20} />
                         </div>
-                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                        <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${item.badgeBg}`}>
                           {item.badge}
                         </span>
                       </div>
                       <h3 className="font-extrabold text-base text-[#0a1a3a] mb-1.5">{item.title}</h3>
-                      <p className="text-xs text-slate-600 leading-relaxed">{item.desc}</p>
+                      <p className="text-xs text-slate-600 leading-relaxed mb-4">{item.desc}</p>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-[#1550aa]">
-                      <span>Gunakan Template Ini</span>
-                      <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSampleModalMode(item.mode)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#1550aa] px-2.5 py-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                        title="Lihat contoh format berkas jadi sebelum generate"
+                      >
+                        <Eye size={13} />
+                        <span>Contoh Hasil</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode(item.mode);
+                          setPromptText(item.prompt);
+                          setIsDockCollapsed(false);
+                          if (textareaRef.current) {
+                            textareaRef.current.focus();
+                          }
+                        }}
+                        className="flex items-center gap-1 text-xs font-bold text-white bg-[#1550aa] hover:bg-[#0a1a3a] px-3.5 py-1.5 rounded-full transition-all cursor-pointer shadow-xs active:scale-95"
+                      >
+                        <span>Gunakan Template</span>
+                        <ArrowRight size={13} />
+                      </button>
                     </div>
                   </motion.div>
                 );
@@ -873,7 +1112,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                               TRIDO AGENTIKA · PENDIDIKAN INKLUSIF
                             </div>
                             <div className="text-[11px] text-slate-500 font-semibold">
-                              Modul Ajar & Dokumen Kurikulum Merdeka
+                              {teacherContext.curriculum} · {teacherContext.gradeLevel}
                             </div>
                           </div>
                         </div>
@@ -892,8 +1131,8 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                         </ReactMarkdown>
                       </div>
 
-                      {/* Formal Footer */}
-                      <div className="mt-12 pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                      {/* Formal Footer & Teacher Disclaimer */}
+                      <div className="mt-12 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-medium gap-2">
                         <span>Dihasilkan oleh Agen Agentika · Siap digunakan di kelas</span>
                         <span>Hak Cipta © 2026 Ardellio Satria Anindito</span>
                       </div>
@@ -910,16 +1149,24 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                   {resultContent}
                 </div>
               )}
+
+              {/* Pedagogy Trust Disclaimer Banner */}
+              <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200/60 flex items-center gap-2 text-xs text-slate-600 font-medium">
+                <ShieldCheck size={16} className="text-[#1550aa] shrink-0" />
+                <span>
+                  <strong>Catatan Verifikasi:</strong> Hasil agen AI ini disesuaikan dengan Capaian Pembelajaran {teacherContext.curriculum}. Harap tinjau kembali kesesuaian materi sebelum diterapkan di ruang kelas.
+                </span>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Dock Island Prompt Bar (Fixed Middle-to-Bottom of Screen) */}
+      {/* Dock Island Command Bar (Positioned at bottom with collapsible toggle) */}
       <div className="fixed bottom-6 inset-x-4 max-w-3xl mx-auto z-30 font-sans pointer-events-auto">
-        <div className="bg-white/95 backdrop-blur-xl rounded-[2.2rem] border-2 border-[#1550aa]/20 shadow-[0_12px_40px_rgba(0,0,0,0.08)] p-3 lg:p-4 space-y-3">
+        <div className="bg-white/95 backdrop-blur-xl rounded-[2.2rem] border-2 border-[#1550aa]/20 shadow-[0_12px_45px_rgba(10,26,58,0.12)] p-3 lg:p-4 space-y-3">
           
-          {/* Top Pill Selector for Mode */}
+          {/* Top Pill Selector for Mode & Collapse Toggle */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-1">
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full">
               {[
@@ -934,7 +1181,10 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setMode(t.id)}
+                    onClick={() => {
+                      setMode(t.id);
+                      setIsDockCollapsed(false);
+                    }}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       isActive 
                         ? 'bg-[#1550aa] text-white shadow-xs' 
@@ -948,42 +1198,185 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
               })}
             </div>
 
-            {/* Model Pill in Dock */}
-            <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200/60 hidden sm:inline-block">
-              {activeModelDisplay}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200/60 hidden sm:inline-block">
+                {getModelLabel()}
+              </span>
+
+              {/* Minimize / Expand Dock Button */}
+              <button
+                type="button"
+                onClick={() => setIsDockCollapsed(v => !v)}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                title={isDockCollapsed ? 'Buka Bilah Perintah' : 'Ciutkan Bilah Perintah'}
+              >
+                {isDockCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            </div>
           </div>
 
-          {/* Textarea Input Form */}
-          <div className="relative flex items-end gap-2 bg-slate-50 border border-slate-200/80 rounded-[1.6rem] p-2 focus-within:ring-2 focus-within:ring-[#1550aa]/30 focus-within:bg-white transition-all">
-            <textarea
-              ref={textareaRef}
-              value={promptText}
-              onChange={e => setPromptText(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleRunAgent();
-                }
-              }}
-              rows={2}
-              placeholder={`Tuliskan rincian ${mode === 'doc' ? 'dokumen/RPP' : mode === 'sheet' ? 'tabel/buku nilai' : mode === 'slide' ? 'materi slide' : 'diagram'} yang ingin disusun oleh Agen Agentika...`}
-              className="flex-1 bg-transparent border-none outline-hidden resize-none text-sm text-[#0a1a3a] placeholder:text-slate-400 px-3 py-1.5 custom-scrollbar"
-            />
+          {/* Textarea Input Form (Visible unless collapsed) */}
+          {!isDockCollapsed && (
+            <div className="relative flex items-end gap-2 bg-slate-50 border border-slate-200/80 rounded-[1.6rem] p-2 focus-within:ring-2 focus-within:ring-[#1550aa]/30 focus-within:bg-white transition-all">
+              <textarea
+                ref={textareaRef}
+                value={promptText}
+                onChange={e => setPromptText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleRunAgent();
+                  }
+                }}
+                rows={2}
+                placeholder={`Contoh: Modul Ajar ${teacherContext.subject} materi Hukum Newton, 2 pertemuan, model Problem Based Learning lengkap LKPD...`}
+                className="flex-1 bg-transparent border-none outline-hidden resize-none text-sm text-[#0a1a3a] placeholder:text-slate-400 px-3 py-1.5 custom-scrollbar font-medium"
+              />
 
-            <button
-              type="button"
-              disabled={isRunning || !promptText.trim()}
-              onClick={handleRunAgent}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs transition-all shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 shrink-0"
-            >
-              <Sparkles size={14} className="text-[#ffcc00] animate-pulse" />
-              <span>{isRunning ? 'Memproses...' : 'Jalankan Agen'}</span>
-              <CornerDownLeft size={12} className="opacity-70" />
-            </button>
-          </div>
+              <button
+                type="button"
+                disabled={isRunning || !promptText.trim()}
+                onClick={handleRunAgent}
+                className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-extrabold text-xs transition-all shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 shrink-0"
+              >
+                <Sparkles size={14} className="text-[#ffcc00] animate-pulse" />
+                <span>{isRunning ? 'Memproses...' : 'Jalankan Agen'}</span>
+                <CornerDownLeft size={12} className="opacity-70" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Sample Result Preview Modal */}
+      <AnimatePresence>
+        {sampleModalMode && (
+          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-[2rem] border-2 border-[#1550aa]/20 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden font-sans"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-lg text-[#0a1a3a]">
+                    {SAMPLE_PREVIEWS[sampleModalMode].title}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {SAMPLE_PREVIEWS[sampleModalMode].subtitle}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSampleModalMode(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 custom-scrollbar">
+                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs text-xs sm:text-sm font-sans prose prose-slate max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                    {SAMPLE_PREVIEWS[sampleModalMode].content}
+                  </ReactMarkdown>
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-slate-100 bg-white flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium">
+                  Setiap dokumen yang dihasilkan dapat disesuaikan dan diunduh (.DOCX / .CSV).
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode(sampleModalMode);
+                    const tmpl = CAPABILITY_PREVIEWS.find(c => c.mode === sampleModalMode);
+                    if (tmpl) setPromptText(tmpl.prompt);
+                    setSampleModalMode(null);
+                    setIsDockCollapsed(false);
+                  }}
+                  className="px-4 py-2 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs transition-all cursor-pointer shadow-xs active:scale-95"
+                >
+                  Gunakan Format Ini
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Document History Drawer */}
+      <AnimatePresence>
+        {isHistoryDrawerOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex justify-end">
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white w-full max-w-md h-full shadow-2xl border-l border-slate-200 flex flex-col font-sans"
+            >
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History size={18} className="text-[#1550aa]" />
+                  <h3 className="font-black text-base text-[#0a1a3a]">Riwayat Dokumen Sesi</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsHistoryDrawerOpen(false)}
+                  className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                {historyItems.length === 0 ? (
+                  <div className="text-center py-16 space-y-2">
+                    <BookOpen size={32} className="mx-auto text-slate-300" />
+                    <p className="text-sm font-bold text-slate-600">Belum ada riwayat dokumen</p>
+                    <p className="text-xs text-slate-400">Dokumen yang berhasil disusun akan tersimpan otomatis di sini.</p>
+                  </div>
+                ) : (
+                  historyItems.map(item => (
+                    <div
+                      key={item.id}
+                      className="p-4 rounded-2xl border border-slate-200 hover:border-[#1550aa] bg-white transition-all shadow-2xs space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-[#1550aa]">
+                          {item.mode.toUpperCase()}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {new Date(item.timestamp).toLocaleDateString()} {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <h4 className="font-extrabold text-sm text-[#0a1a3a] line-clamp-1">{item.title}</h4>
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResultTitle(item.title);
+                            setResultContent(item.content);
+                            setResultType(item.mode);
+                            setIsHistoryDrawerOpen(false);
+                            toast.info(`Memuat "${item.title}"`);
+                          }}
+                          className="px-3 py-1 rounded-full bg-[#1550aa] text-white text-xs font-bold cursor-pointer hover:bg-[#0a1a3a]"
+                        >
+                          Buka
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
