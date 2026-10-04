@@ -5,11 +5,12 @@ import { LucideIcon } from 'lucide-react';
 interface SidebarItemProps {
   icon: LucideIcon;
   label: string;
+  badge?: string;
   active?: boolean;
   onClick?: () => void;
 }
 
-export const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, active = false, onClick }) => (
+export const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, badge, active = false, onClick }) => (
   <motion.button
     whileHover={{ scale: 1.025 }}
     whileTap={{ scale: 0.975 }}
@@ -27,5 +28,12 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, label, act
     )}
     <Icon size={19} className={`relative z-10 transition-colors ${active ? 'text-[#ffcc00]' : 'text-[#1550aa]/80'}`} />
     <span className="relative z-10 text-[14px] tracking-tight">{label}</span>
+    {badge && (
+      <span className={`relative z-10 ml-auto text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
+        active ? 'bg-white/20 text-[#ffcc00]' : 'bg-blue-50 text-[#1550aa] border border-blue-200/50'
+      }`}>
+        {badge}
+      </span>
+    )}
   </motion.button>
 );

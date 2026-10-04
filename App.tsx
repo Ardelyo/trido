@@ -21,7 +21,7 @@ import {
   Image as ImageIcon, File, History, Settings, Mic, Monitor, Share, Download, Sparkles,
   CheckCircle2, ChevronDown, ChevronRight, Keyboard, Menu,
   Clock, CheckSquare, PencilRuler, ShieldCheck, HelpCircle, User,
-  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2, Archive, Database, Network
+  MoreHorizontal, Plus, X, Check, Pencil, Send, Trash2, Archive, Database, Network, Bot
 } from 'lucide-react';
 import { SidebarItem } from './components/SidebarItem';
 import { AiStatusBadge } from './components/AiStatusBadge';
@@ -32,6 +32,7 @@ import { ToastContainer } from './components/Toast';
 import { useTranslation } from './utils/translations';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProcessingStatusHud } from './components/ProcessingStatusHud';
+import { AgentikaView } from './components/AgentikaView';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
@@ -43,6 +44,7 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [isAgentikaOpen, setIsAgentikaOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
 
@@ -427,58 +429,78 @@ const App: React.FC = () => {
                       <SidebarItem
                         icon={Square}
                         label={t('whiteboard', 'Papan Tulis')}
-                        active={!isHistoryOpen && !isSettingsOpen && !isExportOpen}
+                        active={!isHistoryOpen && !isSettingsOpen && !isExportOpen && !isAgentikaOpen}
                         onClick={() => {
+                          setIsAgentikaOpen(false);
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
                         }}
                       />
 
-                      {/* 2. History */}
+                      {/* 2. Agentika Autonomous Productivity Studio */}
+                      <SidebarItem
+                        icon={Bot}
+                        label="Agentika"
+                        badge="Eksperimental"
+                        active={isAgentikaOpen}
+                        onClick={() => {
+                          setIsAgentikaOpen(true);
+                          if (isHistoryOpen) toggleHistory();
+                          setIsSettingsOpen(false);
+                          setIsExportOpen(false);
+                          setIsGuideOpen(false);
+                        }}
+                      />
+
+                      {/* 3. History */}
                       <SidebarItem
                         icon={Clock}
                         label={t('history', 'Riwayat Sesi')}
                         active={isHistoryOpen}
                         onClick={() => {
                           toggleHistory();
+                          setIsAgentikaOpen(false);
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
                         }}
                       />
 
-                      {/* 3. Export & Import */}
+                      {/* 4. Export & Import */}
                       <SidebarItem
                         icon={Download}
                         label="Ekspor & Impor"
                         active={isExportOpen}
                         onClick={() => {
                           setIsExportOpen(true);
+                          setIsAgentikaOpen(false);
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
                         }}
                       />
 
-                      {/* 4. Settings */}
+                      {/* 5. Settings */}
                       <SidebarItem
                         icon={Settings}
                         label={t('settings', 'Pengaturan')}
                         active={isSettingsOpen}
                         onClick={() => {
                           setIsSettingsOpen(v => !v);
+                          setIsAgentikaOpen(false);
                           if (isHistoryOpen) toggleHistory();
                           setIsExportOpen(false);
                           setIsGuideOpen(false);
                         }}
                       />
 
-                      {/* 5. Guide */}
+                      {/* 6. Guide */}
                       <SidebarItem
                         icon={HelpCircle}
                         label={language === 'id' ? 'Panduan Guru' : 'User Guide'}
                         active={isGuideOpen}
                         onClick={() => {
                           setIsGuideOpen(true);
+                          setIsAgentikaOpen(false);
                           if (isHistoryOpen) toggleHistory();
                           setIsSettingsOpen(false);
                           setIsExportOpen(false);
@@ -597,6 +619,20 @@ const App: React.FC = () => {
                <AnimatePresence>
                  {isSettingsOpen && (
                    <SettingsView onClose={() => setIsSettingsOpen(false)} />
+                 )}
+               </AnimatePresence>
+
+               <AnimatePresence>
+                 {isAgentikaOpen && (
+                   <motion.div
+                     initial={{ opacity: 0, scale: 0.98 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     exit={{ opacity: 0, scale: 0.98 }}
+                     transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                     className="absolute inset-0 z-30"
+                   >
+                     <AgentikaView onClose={() => setIsAgentikaOpen(false)} canvasRef={canvasRef} />
+                   </motion.div>
                  )}
                </AnimatePresence>
 
