@@ -301,12 +301,103 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
 
   const handlePinToSmartboard = () => {
     if (!resultContent) return;
-    useStore.getState().addMessage({
-      role: 'model',
-      text: `### 📄 ${resultTitle || 'Dokumen Agentika'}\n\n${resultContent}`
-    });
-    toast.success('Ditempelkan ke Smartboard! Membuka kanvas...');
-    onClose();
+
+    try {
+      const id = `agentika_${Date.now()}`;
+      const titleSnippet = resultTitle || 'Dokumen Agentika';
+
+      // 1. Calculate center coordinates of current viewport on whiteboard canvas
+      let centerX = 640;
+      let centerY = 420;
+      if (canvasRef?.current) {
+        try {
+          const vpt = canvasRef.current.viewportTransform || [1, 0, 0, 1, 0, 0];
+          const zoom = canvasRef.current.getZoom() || 1;
+          const width = canvasRef.current.getWidth() || 1280;
+          const height = canvasRef.current.getHeight() || 800;
+          centerX = (-vpt[4] + width / 2) / zoom;
+          centerY = (-vpt[5] + height / 2) / zoom;
+        } catch {
+          // fallback
+        }
+      }
+
+      // 2. Configure widget dimensions and type
+      let componentType = 'DOCUMENT_PAGE';
+      let width = 680;
+      let height = 540;
+      let config: any = {
+        title: `📄 ${titleSnippet}`,
+        markdown: resultContent,
+        model: activeModelDisplay
+      };
+
+      if (resultType === 'diagram') {
+        componentType = 'MERMAID_DIAGRAM';
+        width = 720;
+        height = 520;
+        config = {
+          title: `🗺️ ${titleSnippet}`,
+          code: resultContent.replace(/```mermaid/g, '').replace(/```/g, '').trim(),
+          model: activeModelDisplay
+        };
+      } else if (resultType === 'sheet') {
+        width = 760;
+        height = 500;
+        config = {
+          title: `📊 ${titleSnippet}`,
+          markdown: resultContent,
+          model: activeModelDisplay
+        };
+      } else if (resultType === 'slide') {
+        width = 700;
+        height = 540;
+        config = {
+          title: `📽️ ${titleSnippet}`,
+          markdown: resultContent,
+          model: activeModelDisplay
+        };
+      }
+
+      // 3. Mount directly to whiteboard DOM overlay
+      useStore.getState().updateDomElement(id, {
+        id,
+        html: '<div>Dokumen Agentika</div>',
+        componentType,
+        config,
+        x: Math.round(centerX),
+        y: Math.round(centerY),
+        width,
+        height,
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        zIndex: 25
+      });
+
+      // 4. Dispatch canvas placeholder registration
+      const event = new CustomEvent('addCanvasPlaceholder', {
+        detail: {
+          id,
+          x: Math.round(centerX),
+          y: Math.round(centerY),
+          width,
+          height
+        }
+      });
+      window.dispatchEvent(event);
+
+      // 5. Add confirmation message to chat history
+      useStore.getState().addMessage({
+        role: 'model',
+        text: `✨ Berkas **${titleSnippet}** berhasil ditempelkan langsung ke kanvas papan tulis!`
+      });
+
+      toast.success('📌 Berhasil ditempelkan ke Papan Tulis!');
+      onClose();
+    } catch (err: any) {
+      toast.error('Gagal menempelkan ke kanvas: ' + (err.message || 'Error'));
+    }
   };
 
   const handleDownload = async () => {
