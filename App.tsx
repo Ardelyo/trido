@@ -330,9 +330,16 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Center Section: Mode Indicator (In-flow flex child, NEVER overlaps with buttons) */}
+            {/* Center Section: Mode Indicator (Only on Whiteboard to prevent redundancy with Agentika sub-header) */}
             <div className="hidden md:flex flex-1 items-center justify-center px-2 min-w-0 pointer-events-auto">
-              <AiStatusBadge status={statusConfig} onPullModel={pullOllamaModel} onClick={() => setIsSettingsOpen(true)} />
+              {!isAgentikaOpen ? (
+                <AiStatusBadge status={statusConfig} onPullModel={pullOllamaModel} onClick={() => setIsSettingsOpen(true)} />
+              ) : (
+                <div className="flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-100/90 border border-slate-200/80 text-xs font-bold text-slate-600 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                  <span>Studio Agen Mandiri</span>
+                </div>
+              )}
             </div>
 
             {/* Right Section: Actions */}

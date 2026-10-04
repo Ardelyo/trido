@@ -5,7 +5,8 @@ import {
   Download, ArrowRight, CornerDownLeft, X, Copy, Check,
   ChevronLeft, ChevronRight, Pin, ChevronDown, ChevronUp,
   Cpu, Lightbulb, CheckCircle2, Eye, Code, Printer,
-  History, ShieldCheck, HelpCircle, Layers, SlidersHorizontal, BookOpen
+  History, ShieldCheck, HelpCircle, Layers, SlidersHorizontal, BookOpen,
+  Search, Settings2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -28,7 +29,9 @@ interface TeacherContext {
   curriculum: string;
   gradeLevel: string;
   subject: string;
-  classGrade: string;
+  classSpecific: string;
+  studentCount: number;
+  semester: string;
 }
 
 // Saved Document History Item
@@ -39,6 +42,14 @@ interface AgentikaHistoryItem {
   content: string;
   timestamp: number;
 }
+
+// Standard Indonesian Subjects for combobox
+const STANDARD_SUBJECTS = [
+  'Fisika', 'Biologi', 'Kimia', 'Matematika', 'Informatika',
+  'Bahasa Indonesia', 'Bahasa Inggris', 'Sejarah', 'Geografi',
+  'Ekonomi', 'Sosiologi', 'Pendidikan Pancasila (PPKn)', 'Seni Budaya',
+  'Pendidikan Jasmani & Olahraga (PJOK)', 'Pendidikan Agama'
+];
 
 // Rotating Pedagogical Tips & Insights during generation
 const PEDAGOGICAL_INSIGHTS = [
@@ -203,7 +214,15 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
   const [elapsedSecs, setElapsedSecs] = useState<number>(0);
   const [insightIndex, setInsightIndex] = useState<number>(0);
   const [copied, setCopied] = useState(false);
-  const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+
+  // Input form mode: 'structured' vs 'free'
+  const [inputMode, setInputMode] = useState<'structured' | 'free'>('free');
+
+  // Structured Form Fields
+  const [structuredTopic, setStructuredTopic] = useState('Hukum Newton tentang Gerak');
+  const [structuredModel, setStructuredModel] = useState('Problem Based Learning (PBL)');
+  const [structuredDuration, setStructuredDuration] = useState('2 JP x 45 Menit');
+  const [structuredKkm, setStructuredKkm] = useState('75');
 
   // Global Teacher Context (saved to localStorage)
   const [teacherContext, setTeacherContext] = useState<TeacherContext>(() => {
@@ -215,9 +234,12 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
       curriculum: 'Kurikulum Merdeka',
       gradeLevel: 'SMA/SMK (Fase E)',
       subject: 'Fisika',
-      classGrade: 'Kelas X'
+      classSpecific: 'Kelas X',
+      studentCount: 25,
+      semester: 'Semester 1 (Ganjil)'
     };
   });
+  const [showAdvancedContext, setShowAdvancedContext] = useState(false);
 
   // Sample Preview Modal State
   const [sampleModalMode, setSampleModalMode] = useState<AgentikaMode | null>(null);
@@ -253,7 +275,7 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     } catch {}
   };
 
-  // Friendly human labels for AI models
+  // Friendly human labels for AI modes
   const getModelLabel = () => {
     switch (aiPreference) {
       case 'gemini': return 'Mode Cepat (Gemini)';
@@ -261,6 +283,21 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
       case 'ollama': return 'Mode Privat Offline (Lokal)';
       default: return 'Otomatis (Rekomendasi)';
     }
+  };
+
+  // Synchronize structured fields into prompt text
+  const applyStructuredPrompt = () => {
+    if (mode === 'doc') {
+      setPromptText(`Tolong susun Modul Ajar ${teacherContext.curriculum} untuk mata pelajaran ${teacherContext.subject} (${teacherContext.classSpecific}, ${teacherContext.gradeLevel}). Materi: "${structuredTopic}". Alokasi waktu: ${structuredDuration}. Model pembelajaran: ${structuredModel}. Lengkap dengan identitas modul, Capaian Pembelajaran (CP), Tujuan Pembelajaran (TP), langkah kegiatan pembelajaran, asesmen formatif, LKPD siswa, dan rubrik penilaian.`);
+    } else if (mode === 'sheet') {
+      setPromptText(`Buatkan tabel rekapitulasi nilai evaluasi ${teacherContext.subject} untuk ${teacherContext.studentCount} siswa ${teacherContext.classSpecific}. Materi: "${structuredTopic}". KKM/KKTP: ${structuredKkm}. Kolom: No, NISN, Nama Siswa, Tugas 1, Tugas 2, Nilai UH, Nilai Akhir, Status (Tuntas/Remedial), Tindak Lanjut. Sertakan baris rata-rata kelas, nilai tertinggi, dan persentase kelulusan.`);
+    } else if (mode === 'slide') {
+      setPromptText(`Rancanglah dek presentasi materi kelas 8 slide tentang "${structuredTopic}" untuk mata pelajaran ${teacherContext.subject} (${teacherContext.classSpecific}). Setiap slide harus memuat: Judul Slide, Poin Inti (bullet points), Pertanyaan Interaktif Siswa, dan Catatan Guru (Speaker Notes).`);
+    } else {
+      setPromptText(`Buatkan peta konsep terstruktur tentang "${structuredTopic}" untuk mata pelajaran ${teacherContext.subject} (${teacherContext.classSpecific}) dengan cabang hierarki konsep utama, sub-konsep, dan contoh aplikasi untuk ditampilkan di papan tulis.`);
+    }
+    setInputMode('free');
+    toast.success('Formulir terstruktur berhasil diterapkan ke prompt!');
   };
 
   // Elapsed timer during run
@@ -317,19 +354,19 @@ Pedoman Konteks Pendidik:
 - Kurikulum: ${teacherContext.curriculum}
 - Jenjang: ${teacherContext.gradeLevel}
 - Mata Pelajaran: ${teacherContext.subject}
-- Kelas: ${teacherContext.classGrade}
+- Kelas: ${teacherContext.classSpecific} (${teacherContext.semester})
 Jangan gunakan tanda elipsis "..." atau menyisakan placeholder kosong; tuliskan materi secara tuntas dan berbobot akademis.`;
       } else if (mode === 'sheet') {
         formatDirective = `
 Anda adalah Data Analyst Pendidikan dari Trido Agentika.
 Susun tabel dataset nilai/administrasi sekolah yang rapi dan realistis.
-Konteks: ${teacherContext.subject} (${teacherContext.classGrade}).
+Konteks: ${teacherContext.subject} (${teacherContext.classSpecific}, ${teacherContext.studentCount} Siswa).
 Format keluaran HANYA dalam format tabel CSV (dipisahkan tanda koma) atau tabel Markdown yang valid.
 Pastikan header kolom jelas, nama siswa realistis Indonesia, kalkulasi rata-rata dan ranking akurat.`;
       } else if (mode === 'slide') {
         formatDirective = `
 Anda adalah Instructional Slide Deck Designer dari Trido Agentika.
-Konteks: ${teacherContext.subject} (${teacherContext.classGrade}, ${teacherContext.curriculum}).
+Konteks: ${teacherContext.subject} (${teacherContext.classSpecific}, ${teacherContext.curriculum}).
 Format presentasi menjadi 6 hingga 10 slide terstruktur menggunakan penanda berikut:
 --- SLIDE START ---
 TITLE: [Judul Slide]
@@ -343,7 +380,7 @@ Tuliskan materi secara lengkap dan siap ajar.`;
       } else {
         formatDirective = `
 Anda adalah Conceptual Diagramming Agent dari Trido Agentika.
-Konteks: ${teacherContext.subject} (${teacherContext.classGrade}).
+Konteks: ${teacherContext.subject} (${teacherContext.classSpecific}).
 Susun diagram atau peta konsep terstruktur menggunakan sintaks Mermaid (graph TD atau mindmap).
 Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papan tulis.`;
       }
@@ -605,7 +642,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       />
 
       {/* Top Header */}
-      <header className="relative h-16 px-4 lg:px-8 flex items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md shrink-0 z-20 shadow-2xs">
+      <header className="relative h-16 px-4 lg:px-8 flex items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-md shrink-0 z-20 shadow-2xs">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#1550aa] text-white shadow-xs">
             <Bot size={22} className="text-[#ffcc00]" />
@@ -624,7 +661,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Teacher-Friendly Mode Selector Pill */}
+          {/* Single Source of Truth Mode Selector */}
           <div className="hidden md:flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/70 text-xs font-bold">
             <button
               type="button"
@@ -658,20 +695,20 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
             </button>
           </div>
 
-          {/* History Drawer Trigger */}
+          {/* History Drawer Trigger with Badge Count */}
           <button
             type="button"
             onClick={() => setIsHistoryDrawerOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-2xs"
-            title="Lihat riwayat dokumen yang telah dibuat"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-2xs"
+            title={historyItems.length > 0 ? `Lihat ${historyItems.length} riwayat dokumen sesi` : 'Belum ada riwayat dokumen'}
           >
             <History size={14} className="text-[#1550aa]" />
             <span className="hidden sm:inline">Riwayat</span>
-            {historyItems.length > 0 && (
-              <span className="w-4 h-4 rounded-full bg-[#1550aa] text-white text-[10px] flex items-center justify-center font-bold">
-                {historyItems.length}
-              </span>
-            )}
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+              historyItems.length > 0 ? 'bg-[#1550aa] text-white' : 'bg-slate-200 text-slate-500'
+            }`}>
+              {historyItems.length}
+            </span>
           </button>
 
           {/* Close / Return to Board button */}
@@ -687,13 +724,13 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       </header>
 
       {/* Global Teacher Context Setter Bar */}
-      <div className="bg-white/80 border-b border-slate-200/70 px-4 lg:px-8 py-2 z-10 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div className="bg-white/90 border-b border-slate-200/80 px-4 lg:px-8 py-2 z-10 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-bold text-slate-500 flex items-center gap-1">
             <SlidersHorizontal size={13} className="text-[#1550aa]" /> Konteks Kelas:
           </span>
 
-          {/* Curriculum Selector */}
+          {/* Curriculum Dropdown */}
           <select
             value={teacherContext.curriculum}
             onChange={e => updateTeacherContext({ curriculum: e.target.value })}
@@ -704,7 +741,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
             <option value="Kurikulum Internasional / Cambridge">Kurikulum Internasional</option>
           </select>
 
-          {/* Grade Level */}
+          {/* Grade Level Dropdown */}
           <select
             value={teacherContext.gradeLevel}
             onChange={e => updateTeacherContext({ gradeLevel: e.target.value })}
@@ -716,24 +753,93 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
             <option value="PAUD">PAUD</option>
           </select>
 
-          {/* Subject */}
-          <input
-            type="text"
-            value={teacherContext.subject}
-            onChange={e => updateTeacherContext({ subject: e.target.value })}
-            placeholder="Mata Pelajaran (contoh: Fisika)"
-            className="px-3 py-1 bg-slate-50 border border-slate-200 rounded-full font-bold text-[#0a1a3a] text-xs w-32 sm:w-40 focus:outline-hidden focus:border-[#1550aa]"
-          />
+          {/* Subject Combobox with Search Affordance */}
+          <div className="relative flex items-center">
+            <Search size={12} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              list="subject-options"
+              value={teacherContext.subject}
+              onChange={e => updateTeacherContext({ subject: e.target.value })}
+              placeholder="Pilih / Cari Mapel..."
+              className="pl-7 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-full font-bold text-[#0a1a3a] text-xs w-36 sm:w-44 focus:outline-hidden focus:border-[#1550aa]"
+            />
+            <datalist id="subject-options">
+              {STANDARD_SUBJECTS.map(s => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </div>
+
+          {/* Expandable Advanced Context Settings Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowAdvancedContext(v => !v)}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+              showAdvancedContext ? 'bg-blue-50 text-[#1550aa] border-blue-200' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            <Settings2 size={12} />
+            <span>{showAdvancedContext ? 'Tutup Rincian' : 'Rincian Kelas'}</span>
+            {showAdvancedContext ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
         </div>
 
         <div className="hidden lg:flex items-center gap-1 text-[11px] text-slate-500 font-medium">
           <ShieldCheck size={13} className="text-emerald-600" />
-          <span>Konteks otomatis disematkan pada setiap dokumen yang disusun agen</span>
+          <span>Konteks otomatis disematkan pada setiap dokumen yang disusun</span>
         </div>
       </div>
 
-      {/* Main Workspace Area with Generous Bottom Clearance (pb-96 md:pb-[340px] to PREVENT DOCK OVERLAP) */}
-      <div className="relative flex-1 overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-8 custom-scrollbar pb-96 md:pb-[340px] z-10">
+      {/* Advanced Context Options (Dropdown Drawer) */}
+      <AnimatePresence>
+        {showAdvancedContext && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-slate-50/90 border-b border-slate-200 px-4 lg:px-8 py-2.5 flex flex-wrap items-center gap-3 text-xs z-10 shrink-0 overflow-hidden font-sans"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-600">Kelas Spesifik:</span>
+              <input
+                type="text"
+                value={teacherContext.classSpecific}
+                onChange={e => updateTeacherContext({ classSpecific: e.target.value })}
+                className="px-2.5 py-0.5 bg-white border border-slate-200 rounded-md font-bold text-xs w-28"
+                placeholder="misal: Kelas X IPA 1"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-600">Jumlah Siswa:</span>
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={teacherContext.studentCount}
+                onChange={e => updateTeacherContext({ studentCount: Number(e.target.value) || 25 })}
+                className="px-2.5 py-0.5 bg-white border border-slate-200 rounded-md font-bold text-xs w-20"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-slate-600">Semester:</span>
+              <select
+                value={teacherContext.semester}
+                onChange={e => updateTeacherContext({ semester: e.target.value })}
+                className="px-2.5 py-0.5 bg-white border border-slate-200 rounded-md font-bold text-xs cursor-pointer"
+              >
+                <option value="Semester 1 (Ganjil)">Semester 1 (Ganjil)</option>
+                <option value="Semester 2 (Genap)">Semester 2 (Genap)</option>
+              </select>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Workspace Area (Scrollable flex-1 container - CARDS & RESULTS NEVER OVERLAPPED BY DOCK) */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-8 custom-scrollbar z-10">
         
         {/* Live 4-Step Agentic Reasoning Trace Stepper (Visible During Execution) */}
         <AnimatePresence>
@@ -854,7 +960,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                 Pilih Kemampuan Agen & Hasilkan Berkas Siap Pakai
               </h2>
               <p className="text-sm text-slate-600 max-w-xl mx-auto font-medium">
-                Pilih salah satu template di bawah, tinjau contoh hasilnya, atau ketik langsung instruksi di Bilah Perintah Agen.
+                Pilih salah satu template di bawah, tinjau contoh hasilnya, atau gunakan formulir terstruktur di bilah bawah.
               </p>
             </div>
 
@@ -891,7 +997,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                         type="button"
                         onClick={() => setSampleModalMode(item.mode)}
                         className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#1550aa] px-2.5 py-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="Lihat contoh format berkas jadi sebelum generate"
+                        title="Lihat contoh format dokumen jadi sebelum generate"
                       >
                         <Eye size={13} />
                         <span>Contoh Hasil</span>
@@ -902,7 +1008,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                         onClick={() => {
                           setMode(item.mode);
                           setPromptText(item.prompt);
-                          setIsDockCollapsed(false);
                           if (textareaRef.current) {
                             textareaRef.current.focus();
                           }
@@ -1112,7 +1217,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                               TRIDO AGENTIKA · PENDIDIKAN INKLUSIF
                             </div>
                             <div className="text-[11px] text-slate-500 font-semibold">
-                              {teacherContext.curriculum} · {teacherContext.gradeLevel}
+                              {teacherContext.curriculum} · {teacherContext.gradeLevel} ({teacherContext.classSpecific})
                             </div>
                           </div>
                         </div>
@@ -1154,7 +1259,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
               <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200/60 flex items-center gap-2 text-xs text-slate-600 font-medium">
                 <ShieldCheck size={16} className="text-[#1550aa] shrink-0" />
                 <span>
-                  <strong>Catatan Verifikasi:</strong> Hasil agen AI ini disesuaikan dengan Capaian Pembelajaran {teacherContext.curriculum}. Harap tinjau kembali kesesuaian materi sebelum diterapkan di ruang kelas.
+                  <strong>Catatan Verifikasi Guru:</strong> Hasil agen AI ini disesuaikan dengan Capaian Pembelajaran {teacherContext.curriculum}. Harap tinjau kembali kesesuaian materi sebelum diterapkan di ruang kelas.
                 </span>
               </div>
             </div>
@@ -1162,18 +1267,18 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         )}
       </div>
 
-      {/* Dock Island Command Bar (Positioned at bottom with collapsible toggle) */}
-      <div className="fixed bottom-6 inset-x-4 max-w-3xl mx-auto z-30 font-sans pointer-events-auto">
-        <div className="bg-white/95 backdrop-blur-xl rounded-[2.2rem] border-2 border-[#1550aa]/20 shadow-[0_12px_45px_rgba(10,26,58,0.12)] p-3 lg:p-4 space-y-3">
+      {/* IN-FLOW STICKY BOTTOM COMMAND BAR (Dock is an in-flow flex sibling — ZERO OVERLAP GUARANTEED) */}
+      <div className="shrink-0 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-8px_30px_rgba(10,26,58,0.06)] px-4 py-3 lg:px-8 z-20 font-sans">
+        <div className="max-w-4xl mx-auto space-y-2.5">
           
-          {/* Top Pill Selector for Mode & Collapse Toggle */}
-          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+          {/* Top Row: Mode Selector Pills & Read-Only Status */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full">
               {[
-                { id: 'doc' as AgentikaMode, label: 'Dokumen (DOCX)', icon: FileText },
-                { id: 'sheet' as AgentikaMode, label: 'Spreadsheet (XLSX)', icon: Table },
-                { id: 'slide' as AgentikaMode, label: 'Slide Deck (PPTX)', icon: Presentation },
-                { id: 'diagram' as AgentikaMode, label: 'Diagram / Papan', icon: Network },
+                { id: 'doc' as AgentikaMode, label: 'Modul Ajar (DOCX)', icon: FileText },
+                { id: 'sheet' as AgentikaMode, label: 'Buku Nilai (XLSX)', icon: Table },
+                { id: 'slide' as AgentikaMode, label: 'Presentasi (PPTX)', icon: Presentation },
+                { id: 'diagram' as AgentikaMode, label: 'Peta Konsep (Papan)', icon: Network },
               ].map(t => {
                 const Icon = t.icon;
                 const isActive = mode === t.id;
@@ -1181,10 +1286,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => {
-                      setMode(t.id);
-                      setIsDockCollapsed(false);
-                    }}
+                    onClick={() => setMode(t.id)}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       isActive 
                         ? 'bg-[#1550aa] text-white shadow-xs' 
@@ -1198,53 +1300,140 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
               })}
             </div>
 
+            {/* Read-Only Status & Structured Input Mode Toggle */}
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200/60 hidden sm:inline-block">
-                {getModelLabel()}
-              </span>
-
-              {/* Minimize / Expand Dock Button */}
               <button
                 type="button"
-                onClick={() => setIsDockCollapsed(v => !v)}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
-                title={isDockCollapsed ? 'Buka Bilah Perintah' : 'Ciutkan Bilah Perintah'}
+                onClick={() => setInputMode(m => m === 'structured' ? 'free' : 'structured')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                  inputMode === 'structured' ? 'bg-amber-50 text-amber-800 border-amber-200 shadow-2xs' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                }`}
+                title="Buka isian terstruktur untuk membantu menyusun instruksi"
               >
-                {isDockCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                <SlidersHorizontal size={12} />
+                <span>{inputMode === 'structured' ? 'Mode Bebas' : 'Formulir Terstruktur'}</span>
               </button>
+
+              <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200/60 hidden sm:inline-flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Berjalan di: {getModelLabel()}</span>
+              </span>
             </div>
           </div>
 
-          {/* Textarea Input Form (Visible unless collapsed) */}
-          {!isDockCollapsed && (
-            <div className="relative flex items-end gap-2 bg-slate-50 border border-slate-200/80 rounded-[1.6rem] p-2 focus-within:ring-2 focus-within:ring-[#1550aa]/30 focus-within:bg-white transition-all">
-              <textarea
-                ref={textareaRef}
-                value={promptText}
-                onChange={e => setPromptText(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleRunAgent();
-                  }
-                }}
-                rows={2}
-                placeholder={`Contoh: Modul Ajar ${teacherContext.subject} materi Hukum Newton, 2 pertemuan, model Problem Based Learning lengkap LKPD...`}
-                className="flex-1 bg-transparent border-none outline-hidden resize-none text-sm text-[#0a1a3a] placeholder:text-slate-400 px-3 py-1.5 custom-scrollbar font-medium"
-              />
-
-              <button
-                type="button"
-                disabled={isRunning || !promptText.trim()}
-                onClick={handleRunAgent}
-                className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-extrabold text-xs transition-all shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 shrink-0"
+          {/* Structured Input Form Fields (When Active) */}
+          <AnimatePresence>
+            {inputMode === 'structured' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-3.5 bg-blue-50/60 border border-blue-200/70 rounded-2xl space-y-3 overflow-hidden text-xs"
               >
-                <Sparkles size={14} className="text-[#ffcc00] animate-pulse" />
-                <span>{isRunning ? 'Memproses...' : 'Jalankan Agen'}</span>
-                <CornerDownLeft size={12} className="opacity-70" />
-              </button>
-            </div>
-          )}
+                <div className="flex items-center justify-between pb-1.5 border-b border-blue-200/50">
+                  <span className="font-bold text-[#1550aa] flex items-center gap-1.5">
+                    <SlidersHorizontal size={13} />
+                    <span>Formulir Terstruktur Agen: {mode.toUpperCase()}</span>
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Isi field di bawah, lalu klik "Terapkan ke Bilah Agen"
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">Topik / Materi Pokok:</label>
+                    <input
+                      type="text"
+                      value={structuredTopic}
+                      onChange={e => setStructuredTopic(e.target.value)}
+                      placeholder="contoh: Hukum Newton"
+                      className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden focus:border-[#1550aa]"
+                    />
+                  </div>
+
+                  {mode === 'doc' && (
+                    <>
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700">Model Pembelajaran:</label>
+                        <select
+                          value={structuredModel}
+                          onChange={e => setStructuredModel(e.target.value)}
+                          className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden"
+                        >
+                          <option value="Problem Based Learning (PBL)">Problem Based Learning (PBL)</option>
+                          <option value="Project Based Learning (PjBL)">Project Based Learning (PjBL)</option>
+                          <option value="Discovery Learning">Discovery Learning</option>
+                          <option value="Inquiry Terbimbing">Inquiry Terbimbing</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700">Alokasi Waktu:</label>
+                        <input
+                          type="text"
+                          value={structuredDuration}
+                          onChange={e => setStructuredDuration(e.target.value)}
+                          className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {mode === 'sheet' && (
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-700">KKM / KKTP:</label>
+                      <input
+                        type="number"
+                        value={structuredKkm}
+                        onChange={e => setStructuredKkm(e.target.value)}
+                        className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={applyStructuredPrompt}
+                      className="w-full py-1.5 px-3 rounded-lg bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs transition-colors cursor-pointer shadow-2xs"
+                    >
+                      Terapkan ke Bilah Agen ↵
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Textarea Input Form */}
+          <div className="relative flex items-end gap-2 bg-slate-50 border border-slate-200/90 rounded-[1.6rem] p-2 focus-within:ring-2 focus-within:ring-[#1550aa]/30 focus-within:bg-white transition-all shadow-2xs">
+            <textarea
+              ref={textareaRef}
+              value={promptText}
+              onChange={e => setPromptText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleRunAgent();
+                }
+              }}
+              rows={2}
+              placeholder={`Contoh: Modul Ajar ${teacherContext.subject} materi ${structuredTopic}, 2 pertemuan, model Problem Based Learning lengkap LKPD...`}
+              className="flex-1 bg-transparent border-none outline-hidden resize-none text-sm text-[#0a1a3a] placeholder:text-slate-400 px-3 py-1.5 custom-scrollbar font-medium"
+            />
+
+            <button
+              type="button"
+              disabled={isRunning || !promptText.trim()}
+              onClick={handleRunAgent}
+              className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-extrabold text-xs transition-all shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 shrink-0"
+            >
+              <Sparkles size={14} className="text-[#ffcc00] animate-pulse" />
+              <span>{isRunning ? 'Memproses...' : 'Jalankan Agen'}</span>
+              <CornerDownLeft size={12} className="opacity-70" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1295,7 +1484,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                     const tmpl = CAPABILITY_PREVIEWS.find(c => c.mode === sampleModalMode);
                     if (tmpl) setPromptText(tmpl.prompt);
                     setSampleModalMode(null);
-                    setIsDockCollapsed(false);
                   }}
                   className="px-4 py-2 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs transition-all cursor-pointer shadow-xs active:scale-95"
                 >

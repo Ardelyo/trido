@@ -131,3 +131,28 @@ Setiap agen di Agentika beroperasi melalui siklus status yang terdefinisi secara
    * Amber Slide: `#b45309` pada putih.
    * Ungu Diagram: `#4338ca` pada putih.
 3. **Penyimpanan Lokal & Privasi**: Tidak ada data murid atau dokumen yang dikirimkan ke server eksternal tanpa izin guru. Sesi dokumen tersimpan di penyimpanan peramban lokal.
+
+---
+
+## 6. Spesifikasi Khusus Komponen Tambahan (Revisi ke-2)
+
+### A. Mode Selector Specification (`/mode-selector.md`)
+- **Single Source of Truth Rule**:
+  * Status read-only ringkas ditampilkan di top bar global (`Studio Agen Mandiri`).
+  * **Satu-satunya titik kendali interaktif** adalah toggle di sub-header Agentika: `[ Otomatis ] [ Mode Cepat ] [ Mode Privat (Offline) ]`.
+  * Di dalam bilah perintah bawah (dock bar), status ditampilkan secara **read-only non-interaktif** (`Berjalan di: Mode ...`) dengan dot hijau/biru untuk mencegah kebingungan dan redundansi visual.
+- **Dukungan Model**:
+  * *Otomatis (Rekomendasi)*: Evaluasi heuristik kuota awan vs server lokal.
+  * *Mode Cepat (Gemini)*: Latensi rendah untuk penyusunan bahan ajar harian.
+  * *Mode Terpadu (Vertex)*: Perhitungan kompleks dan analitik kurikulum.
+  * *Mode Privat Offline (Lokal / Ollama)*: Berjalan 100% di GPU/CPU laptop tanpa koneksi internet; menjamin kerahasiaan nilai dan identitas siswa.
+
+### B. Teacher Context Setter Bar (`/context-setter-bar.md`)
+- **Struktur Field**:
+  * *Field Primer*: Kurikulum (Merdeka / K-13 / Internasional), Jenjang (Fase A-F), Mata Pelajaran (Searchable Combobox 15+ mapel standar).
+  * *Field Lanjutan (Expandable)*: Kelas spesifik (misal: Kelas X IPA 1), Jumlah Siswa (default: 25), Semester (Ganjil/Genap).
+- **Perilaku & Persistensi**:
+  * Tersimpan otomatis di `localStorage` (`trido_teacher_context`).
+  * Disuntikkan secara otomatis ke setiap prompt template dan instruksi bebas agen tanpa membebani guru mengetik berulang.
+- **Validasi Halus (Soft Validation)**:
+  * Jika field tidak diisi lengkap, agen tetap berjalan menggunakan nilai default tanpa memblokir guru, disertai catatan informatif ramah.
