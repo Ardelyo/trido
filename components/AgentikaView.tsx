@@ -4,8 +4,12 @@ import {
   Bot, Sparkles, FileText, Table, Presentation, Network,
   Download, ArrowRight, CornerDownLeft, X, Copy, Check,
   ChevronLeft, ChevronRight, Pin,
-  Cpu, Lightbulb, CheckCircle2
+  Cpu, Lightbulb, CheckCircle2, Eye, Code, Printer
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { useStore } from '../store';
 import { useTranslation } from '../utils/translations';
 import { toast } from '../utils/toast';
@@ -103,6 +107,7 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
   const [parsedSlides, setParsedSlides] = useState<{ title: string; content: string; notes?: string }[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
   const [parsedTableRows, setParsedTableRows] = useState<string[][]>([]);
+  const [previewTab, setPreviewTab] = useState<'paper' | 'source'>('paper');
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -304,11 +309,17 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
     onClose();
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const title = resultTitle || 'dokumen-agentika';
     if (resultType === 'doc') {
-      exportToDocx(title, resultContent);
-      toast.success('Mengunduh format DOCX (Word)...');
+      try {
+        toast.info('Menyusun berkas OpenXML .DOCX...');
+        await exportToDocx(title, resultContent);
+        toast.success('Berkas .DOCX berhasil diunduh!');
+      } catch (e: any) {
+        exportToMarkdown(title, resultContent);
+        toast.error('Gagal kompilasi docx, mengunduh markdown.');
+      }
     } else if (resultType === 'sheet') {
       exportToSpreadsheet(title, resultContent);
       toast.success('Mengunduh format CSV (Excel)...');
@@ -706,6 +717,101 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                       ))}
                     </tbody>
                   </table>
+                </div>
+              ) : resultType === 'doc' ? (
+                /* Document Academic Paper & Markdown Preview */
+                <div className="space-y-4">
+                  {/* View Mode Switcher Toolbar */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('paper')}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+                          previewTab === 'paper' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
+                        }`}
+                      >
+                        <Eye size={13} />
+                        <span>Halaman Dokumen (A4)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('source')}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+                          previewTab === 'source' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
+                        }`}
+                      >
+                        <Code size={13} />
+                        <span>Sumber Markdown</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                        title="Cetak atau Simpan PDF (Ctrl+P)"
+                      >
+                        <Printer size={13} />
+                        <span>Cetak / PDF</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          exportToMarkdown(resultTitle || 'dokumen', resultContent);
+                          toast.success('Mengunduh berkas Markdown (.md)!');
+                        }}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                      >
+                        <FileText size={13} />
+                        <span>Unduh .MD</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Rendered A4 Sheet vs Raw Markdown */}
+                  {previewTab === 'paper' ? (
+                    <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-8 lg:p-14 min-h-[500px]">
+                      {/* Document Formal Header Stamp */}
+                      <div className="border-b-2 border-[#1550aa] pb-4 mb-8 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <img src="/logo.png" alt="Trido" className="w-8 h-8 object-contain" />
+                          <div>
+                            <div className="font-black text-xs text-[#1550aa] tracking-widest uppercase">
+                              TRIDO AGENTIKA · PENDIDIKAN INKLUSIF
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-semibold">
+                              Modul Ajar & Dokumen Kurikulum Merdeka
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-[10px] font-mono text-slate-400 font-bold bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
+                          {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                      </div>
+
+                      {/* Markdown Rendered Content */}
+                      <div className="prose prose-slate max-w-none prose-headings:font-black prose-headings:tracking-tight prose-h1:text-2xl prose-h1:text-[#1550aa] prose-h2:text-xl prose-h2:text-[#0a1a3a] prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-2 prose-h3:text-lg prose-p:text-slate-700 prose-p:leading-relaxed prose-li:text-slate-700 prose-table:border prose-table:border-slate-200 prose-th:bg-slate-50 prose-th:p-3 prose-th:text-xs prose-td:p-3 prose-td:text-xs prose-td:border prose-td:border-slate-100 font-sans">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                        >
+                          {resultContent}
+                        </ReactMarkdown>
+                      </div>
+
+                      {/* Formal Footer */}
+                      <div className="mt-12 pt-4 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                        <span>Dihasilkan oleh Agen Agentika · Siap digunakan di kelas</span>
+                        <span>Hak Cipta © 2026 Ardellio Satria Anindito</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-6 rounded-2xl bg-slate-900 text-slate-100 font-mono text-xs overflow-x-auto max-h-[550px] whitespace-pre-wrap leading-relaxed custom-scrollbar">
+                      {resultContent}
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Document Academic Paper Preview */

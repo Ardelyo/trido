@@ -1,65 +1,218 @@
 /**
  * Agentika Productivity Exporter
- * Generates downloadable DOCX, XLSX, PPTX, and Markdown files
- * directly in the browser with full Word, Excel, and PowerPoint compatibility.
+ * Generates genuine native .docx OpenXML files, UTF-8 CSV spreadsheets,
+ * HTML slide decks, and clean Markdown files.
  */
+import {
+  Document,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  AlignmentType,
+  Packer
+} from 'docx';
 
-// 1. Export as Word (.docx / Word-compatible HTML format)
-export function exportToDocx(title: string, markdownContent: string) {
-  // Convert basic markdown to formatted HTML for Word
-  const htmlBody = markdownContent
-    .replace(/^# (.*$)/gim, '<h1 style="color: #1550aa; font-family: Calibri, sans-serif; font-size: 24pt; margin-top: 18pt;">$1</h1>')
-    .replace(/^## (.*$)/gim, '<h2 style="color: #0a1a3a; font-family: Calibri, sans-serif; font-size: 18pt; margin-top: 14pt;">$1</h2>')
-    .replace(/^### (.*$)/gim, '<h3 style="color: #334155; font-family: Calibri, sans-serif; font-size: 14pt; margin-top: 10pt;">$1</h3>')
-    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-    .replace(/`([^`]+)`/gim, '<code style="background-color: #f1f5f9; padding: 2px 4px; font-family: Consolas;">$1</code>')
-    .replace(/^\- (.*$)/gim, '<li style="margin-bottom: 4pt; font-family: Calibri, sans-serif; font-size: 11pt;">$1</li>')
-    .replace(/^\d+\. (.*$)/gim, '<li style="margin-bottom: 4pt; font-family: Calibri, sans-serif; font-size: 11pt;">$1</li>')
-    .replace(/\n\n/gim, '</p><p style="margin-bottom: 8pt; font-family: Calibri, sans-serif; font-size: 11pt; line-height: 1.5;">');
+// 1. Export as Native OpenXML Word (.docx)
+export async function exportToDocx(title: string, markdownContent: string): Promise<void> {
+  const children: (Paragraph | Table)[] = [];
 
-  const fullHtml = `<!DOCTYPE html>
-<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-<head>
-<meta charset="utf-8">
-<title>${title}</title>
-<!--[if gte mso 9]>
-<xml>
-<w:WordDocument>
-<w:View>Print</w:View>
-<w:Zoom>100</w:Zoom>
-<w:DoNotOptimizeForBrowser/>
-</w:WordDocument>
-</xml>
-<![endif]-->
-<style>
-  body { font-family: 'Calibri', 'Segoe UI', sans-serif; font-size: 11pt; color: #1e293b; line-height: 1.6; margin: 36pt 48pt; }
-  table { border-collapse: collapse; width: 100%; margin: 12pt 0; }
-  th, td { border: 1px solid #cbd5e1; padding: 6pt 10pt; text-align: left; }
-  th { background-color: #f8fafc; font-weight: bold; color: #0f172a; }
-  .header-banner { border-bottom: 2pt solid #1550aa; padding-bottom: 8pt; margin-bottom: 16pt; }
-  .footer-stamp { margin-top: 24pt; border-top: 1pt solid #e2e8f0; padding-top: 6pt; font-size: 9pt; color: #64748b; }
-</style>
-</head>
-<body>
-<div class="header-banner">
-  <div style="font-size: 10pt; color: #1550aa; font-weight: bold; letter-spacing: 1px;">TRIDO AGENTIKA · PENDIDIKAN INKLUSIF</div>
-</div>
-<h1 style="color: #1550aa; font-size: 22pt; margin-bottom: 12pt;">${title}</h1>
-<p style="margin-bottom: 8pt; font-size: 11pt; line-height: 1.5;">${htmlBody}</p>
-<div class="footer-stamp">
-  Dokumen dihasilkan oleh Agen Agentika · Trido Smartboard (Hak Cipta © 2026 Ardellio Satria Anindito)
-</div>
-</body>
-</html>`;
+  // Header Title
+  children.push(
+    new Paragraph({
+      text: title,
+      heading: HeadingLevel.TITLE,
+      spacing: { after: 200 }
+    })
+  );
 
-  const blob = new Blob(['\ufeff', fullHtml], { type: 'application/msword;charset=utf-8' });
-  triggerDownload(blob, `${slugify(title)}.doc`);
+  // Subtitle stamp
+  children.push(
+    new Paragraph({
+      children: [
+        new TextRun({
+          text: 'TRIDO AGENTIKA · STUDIO PRODUKTIVITAS PENDIDIK',
+          bold: true,
+          color: '1550aa',
+          size: 18
+        })
+      ],
+      spacing: { after: 300 }
+    })
+  );
+
+  // Split lines and parse markdown structures
+  const lines = markdownContent.split('\n');
+  let inTable = false;
+  let tableRows: string[][] = [];
+
+  const flushTable = () => {
+    if (tableRows.length === 0) return;
+    const docxRows = tableRows.map((row, rIdx) => {
+      const isHeader = rIdx === 0;
+      return new TableRow({
+        children: row.map(cell => new TableCell({
+          width: { size: 100 / Math.max(row.length, 1), type: WidthType.PERCENTAGE },
+          shading: isHeader ? { fill: 'F1F5F9' } : undefined,
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: cell.trim(),
+                  bold: isHeader,
+                  size: 20
+                })
+              ]
+            })
+          ]
+        }))
+      });
+    });
+
+    children.push(
+      new Table({
+        rows: docxRows,
+        width: { size: 100, type: WidthType.PERCENTAGE }
+      })
+    );
+    // Add spacer after table
+    children.push(new Paragraph({ text: '', spacing: { after: 150 } }));
+    tableRows = [];
+    inTable = false;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Markdown Table row
+    if (line.startsWith('|') && line.endsWith('|')) {
+      // Skip markdown separator row like |---|---|
+      if (/^\|[\s:-|-]+\|$/.test(line)) {
+        continue;
+      }
+      inTable = true;
+      const cells = line.slice(1, -1).split('|').map(c => c.trim());
+      tableRows.push(cells);
+      continue;
+    } else if (inTable) {
+      flushTable();
+    }
+
+    if (!line) {
+      continue;
+    }
+
+    // Heading 1 (# )
+    if (line.startsWith('# ')) {
+      children.push(
+        new Paragraph({
+          text: line.slice(2).trim(),
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 240, after: 120 }
+        })
+      );
+      continue;
+    }
+
+    // Heading 2 (## )
+    if (line.startsWith('## ')) {
+      children.push(
+        new Paragraph({
+          text: line.slice(3).trim(),
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 100 }
+        })
+      );
+      continue;
+    }
+
+    // Heading 3 (### )
+    if (line.startsWith('### ')) {
+      children.push(
+        new Paragraph({
+          text: line.slice(4).trim(),
+          heading: HeadingLevel.HEADING_3,
+          spacing: { before: 160, after: 80 }
+        })
+      );
+      continue;
+    }
+
+    // Bullet list item (- or *)
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      children.push(
+        new Paragraph({
+          bullet: { level: 0 },
+          children: parseInlineFormatting(line.slice(2).trim()),
+          spacing: { after: 60 }
+        })
+      );
+      continue;
+    }
+
+    // Numbered list item (e.g. 1. )
+    const numberedMatch = line.match(/^\d+\.\s+(.*)/);
+    if (numberedMatch) {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({ text: line.split(/\s+/)[0] + ' ', bold: true }),
+            ...parseInlineFormatting(numberedMatch[1])
+          ],
+          spacing: { after: 60 }
+        })
+      );
+      continue;
+    }
+
+    // Normal paragraph
+    children.push(
+      new Paragraph({
+        children: parseInlineFormatting(line),
+        spacing: { after: 120 }
+      })
+    );
+  }
+
+  // Flush table if file ended on table
+  if (inTable) {
+    flushTable();
+  }
+
+  // Footer copyright
+  children.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: 'TRIDO 2026 Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia · Karya Ardellio Satria Anindito',
+          italics: true,
+          size: 16,
+          color: '94A3B8'
+        })
+      ],
+      spacing: { before: 400 }
+    })
+  );
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children
+      }
+    ]
+  });
+
+  const blob = await Packer.toBlob(doc);
+  triggerDownload(blob, `${slugify(title)}.docx`);
 }
 
 // 2. Export as Spreadsheet (.xlsx / CSV with UTF-8 BOM)
 export function exportToSpreadsheet(title: string, csvData: string) {
-  // Adding UTF-8 BOM so Microsoft Excel renders Indonesian/multilingual accents and symbols properly
   const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' });
   triggerDownload(blob, `${slugify(title)}.csv`);
 }
@@ -67,14 +220,16 @@ export function exportToSpreadsheet(title: string, csvData: string) {
 // 3. Export as Presentation (.pptx / HTML Slide Deck)
 export function exportToSlideDeck(title: string, slides: { title: string; content: string; notes?: string }[]) {
   const slidesHtml = slides.map((s, idx) => `
-    <div class="slide" style="page-break-after: always; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px; box-sizing: border-box; background: #ffffff; border-bottom: 2px dashed #cbd5e1; position: relative;">
-      <div style="font-size: 14px; font-weight: bold; color: #1550aa; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px;">Slide ${idx + 1} dari ${slides.length} · Trido Agentika</div>
-      <h2 style="font-size: 36px; color: #0a1a3a; margin-top: 0; margin-bottom: 24px; font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 800;">${s.title}</h2>
-      <div style="font-size: 20px; line-height: 1.6; color: #334155; font-family: 'Segoe UI', system-ui, sans-serif;">
-        ${s.content.replace(/\n/g, '<br/>')}
+    <div class="slide" style="page-break-after: always; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 60px 80px; box-sizing: border-box; background: #ffffff; border-bottom: 2px dashed #cbd5e1; position: relative;">
+      <div>
+        <div style="font-size: 13px; font-weight: 800; color: #1550aa; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;">Slide ${idx + 1} dari ${slides.length} · Trido Agentika</div>
+        <h2 style="font-size: 38px; color: #0a1a3a; margin-top: 0; margin-bottom: 24px; font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 800;">${s.title}</h2>
+        <div style="font-size: 20px; line-height: 1.6; color: #334155; font-family: 'Segoe UI', system-ui, sans-serif;">
+          ${s.content.replace(/\n/g, '<br/>')}
+        </div>
       </div>
-      ${s.notes ? `<div style="margin-top: 40px; padding: 16px 20px; background: #f8fafc; border-left: 4px solid #ffcc00; border-radius: 8px; font-size: 15px; color: #64748b;"><strong>Catatan Guru:</strong> ${s.notes}</div>` : ''}
-      <div style="position: absolute; bottom: 30px; right: 80px; font-size: 13px; color: #94a3b8; font-weight: 600;">TRIDO SMARTBOARD · PRESENTASI KELAS</div>
+      ${s.notes ? `<div style="margin-top: 30px; padding: 16px 20px; background: #f8fafc; border-left: 4px solid #ffcc00; border-radius: 8px; font-size: 15px; color: #64748b;"><strong>Catatan Guru:</strong> ${s.notes}</div>` : ''}
+      <div style="font-size: 12px; color: #94a3b8; font-weight: 600; margin-top: 20px;">TRIDO SMARTBOARD · PRESENTASI KELAS</div>
     </div>
   `).join('');
 
@@ -103,6 +258,27 @@ ${slidesHtml}
 export function exportToMarkdown(title: string, markdown: string) {
   const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8;' });
   triggerDownload(blob, `${slugify(title)}.md`);
+}
+
+// Helper: parse bold and italic inline spans for docx TextRun
+function parseInlineFormatting(text: string): TextRun[] {
+  const runs: TextRun[] = [];
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+
+  for (const part of parts) {
+    if (!part) continue;
+    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+      runs.push(new TextRun({ text: part.slice(2, -2), bold: true }));
+    } else if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
+      runs.push(new TextRun({ text: part.slice(1, -1), italics: true }));
+    } else if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
+      runs.push(new TextRun({ text: part.slice(1, -1), font: 'Consolas', color: '1550aa' }));
+    } else {
+      runs.push(new TextRun({ text: part }));
+    }
+  }
+
+  return runs.length > 0 ? runs : [new TextRun({ text })];
 }
 
 function triggerDownload(blob: Blob, filename: string) {

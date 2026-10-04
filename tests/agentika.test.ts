@@ -35,8 +35,8 @@ describe('Agentika Productivity Exporter', () => {
     });
   });
 
-  it('generates DOCX compatible Word document with proper XML namespaces', () => {
-    exportToDocx('Modul Ajar Fisika', '# Modul Ajar\n\nPenjelasan hukum Newton.');
+  it('generates DOCX compatible Word document with proper XML namespaces', async () => {
+    await exportToDocx('Modul Ajar Fisika', '# Modul Ajar\n\nPenjelasan hukum Newton.');
     expect(global.URL.createObjectURL).toHaveBeenCalled();
   });
 
