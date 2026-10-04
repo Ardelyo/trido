@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Bot, Sparkles, FileText, Table, Presentation, Network,
   Download, ArrowRight, CornerDownLeft, X, Copy, Check,
-  ChevronLeft, ChevronRight, RefreshCw, Pin, Paperclip,
-  CheckCircle2, Clock, Cpu, Sliders, Eye
+  ChevronLeft, ChevronRight, Pin,
+  Cpu, Lightbulb, CheckCircle2
 } from 'lucide-react';
 import { useStore } from '../store';
 import { useTranslation } from '../utils/translations';
@@ -18,7 +18,30 @@ interface AgentikaViewProps {
   canvasRef: React.RefObject<any>;
 }
 
-// Pre-built production-grade prompts for educators
+// Rotating Pedagogical Tips & Insights during generation
+const PEDAGOGICAL_INSIGHTS = [
+  {
+    tag: 'Kurikulum Merdeka',
+    text: 'Pertanyaan pemantik terbuka di awal bab terbukti meningkatkan partisipasi aktif peserta didik hingga 40%.'
+  },
+  {
+    tag: 'Otomatisasi Spreadsheet',
+    text: 'Spreadsheet yang dihasilkan Agentika otomatis menyertakan formula Excel standar untuk kalkulasi rata-rata dan status KKM.'
+  },
+  {
+    tag: 'Diferensiasi Pembelajaran',
+    text: 'Modul ajar yang efektif memfasilitasi 3 gaya belajar: visual (bagan), auditori (diskusi), dan kinestetik (proyek praktis).'
+  },
+  {
+    tag: 'Privasi & Offline-First',
+    text: 'Saat menggunakan Ollama (Gemma), seluruh data nilai dan identitas siswa Anda diproses 100% lokal tanpa meninggalkan perangkat.'
+  },
+  {
+    tag: 'Desain Presentasi Kelas',
+    text: 'Slide ajar terbaik membatasi maksimal 4 poin utama per slide dengan catatan pemantik untuk memandu interaksi dua arah.'
+  }
+];
+
 const CAPABILITY_PREVIEWS = [
   {
     mode: 'doc' as AgentikaMode,
@@ -33,7 +56,7 @@ const CAPABILITY_PREVIEWS = [
     icon: Table,
     badge: 'XLSX / CSV',
     title: 'Buku Nilai & Analisis Ketuntasan Siswa',
-    desc: 'Rekap tabel nilai ulangan 30 siswa dengan kalkulasi otomatis rata-rata, persentase ketuntasan (KKM 75), ranking, dan deteksi siswa remedial.',
+    desc: 'Rekap tabel nilai ulangan 25 siswa dengan kalkulasi otomatis rata-rata, persentase ketuntasan (KKM 75), ranking, dan deteksi siswa remedial.',
     prompt: 'Buatkan tabel rekapitulasi nilai Ulangan Harian Biologi untuk 25 siswa kelas XI IPA 2. Kolom terdiri dari: No, NISN, Nama Siswa, Tugas 1, Tugas 2, Nilai UH, Nilai Akhir, Status (Tuntas / Remedial), dan Rekomendasi Tindak Lanjut. Sertakan baris Rata-rata Kelas, Nilai Tertinggi, Nilai Terendah, dan Persentase Kelulusan.'
   },
   {
@@ -41,7 +64,7 @@ const CAPABILITY_PREVIEWS = [
     icon: Presentation,
     badge: 'PPTX / Slide Deck',
     title: 'Slide Presentasi Interaktif Kelas',
-    desc: 'Dek presentasi 8-10 slide interaktif siap ajar dengan alur terstruktur, pertanyaan pemantik diskusi, dan catatan pembicara untuk guru.',
+    desc: 'Dek presentasi 8 slide interaktif siap ajar dengan alur terstruktur, pertanyaan pemantik diskusi, dan catatan pembicara untuk guru.',
     prompt: 'Rancanglah dek presentasi materi kelas 8 slide tentang "Sistem Tata Surya & Karakteristik Planet". Setiap slide harus memuat: Judul Slide, Poin Materi Inti (bullet points), Pertanyaan Interaktif untuk Siswa, dan Catatan Guru (Speaker Notes).'
   },
   {
@@ -61,7 +84,7 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     selectedOllamaModel, 
     selectedVertexModel, 
     aiPreference,
-    addMessage,
+    setAiPreference,
     attachedDocument
   } = useStore();
 
@@ -70,6 +93,7 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
   const [isRunning, setIsRunning] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [elapsedSecs, setElapsedSecs] = useState<number>(0);
+  const [insightIndex, setInsightIndex] = useState<number>(0);
   const [copied, setCopied] = useState(false);
 
   // Result state
@@ -78,12 +102,13 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
   const [resultType, setResultType] = useState<AgentikaMode>('doc');
   const [parsedSlides, setParsedSlides] = useState<{ title: string; content: string; notes?: string }[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
+  const [parsedTableRows, setParsedTableRows] = useState<string[][]>([]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Active AI Model display
-  const activeModel = 
+  const activeModelDisplay = 
     aiPreference === 'ollama' 
       ? (selectedOllamaModel || 'Ollama (Lokal)') 
       : (aiPreference === 'vertex' ? (selectedVertexModel || 'Vertex AI') : (selectedGeminiModel || 'gemini-3.8-flash'));
@@ -102,7 +127,16 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  // Handle agent execution
+  // Rotate educational insights every 3.5 seconds during execution
+  useEffect(() => {
+    if (!isRunning) return;
+    const interval = setInterval(() => {
+      setInsightIndex(prev => (prev + 1) % PEDAGOGICAL_INSIGHTS.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isRunning]);
+
+  // Execute agent pipeline
   const handleRunAgent = async () => {
     const finalPrompt = promptText.trim();
     if (!finalPrompt || isRunning) return;
@@ -111,53 +145,54 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     setCurrentStep(1);
     setResultContent('');
     setResultTitle('');
+    setParsedTableRows([]);
+    setParsedSlides([]);
     abortControllerRef.current = new AbortController();
 
     try {
-      // Step 1: Deconstructing requirements
+      // Step 1: Analyzing curriculum & intent
       setCurrentStep(1);
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 450));
 
-      // Step 2: Formulating document schema
+      // Step 2: Formulating schema
       setCurrentStep(2);
 
-      // System instruction tailored for high-quality pedagogical deliverable
       let formatDirective = '';
       if (mode === 'doc') {
         formatDirective = `
-You are the Lead Curriculum Architect of Agentika.
-Generate a comprehensive, complete, professional educational document or lesson plan in clean Markdown.
-Include clear H1 (# Title), H2 (## Sections), H3 (### Subsections), bullet points, and markdown tables.
-DO NOT use placeholder dots or ellipsis like "...". Write out every section completely.`;
+Anda adalah Lead Curriculum Architect dari Trido Agentika.
+Susun dokumen ajar atau modul pembelajaran lengkap dan profesional dalam format Markdown bersih.
+Sertakan judul (# Judul), sub-bagian (## Bagian), rincian poin, dan tabel markdown jika relevan.
+Jangan gunakan tanda elipsis "..." atau menyisakan placeholder kosong; tuliskan materi secara tuntas dan berbobot akademis.`;
       } else if (mode === 'sheet') {
         formatDirective = `
-You are the Educational Data Analyst of Agentika.
-Generate a structured, realistic dataset and spreadsheet for teachers.
-Provide the output strictly as a CSV table format with standard comma-separated values (or clean Markdown Table).
-Columns must be well-labeled, realistic Indonesian student names/numbers, accurate arithmetic calculations (Averages, Totals, Percentages).`;
+Anda adalah Data Analyst Pendidikan dari Trido Agentika.
+Susun tabel dataset nilai/administrasi sekolah yang rapi dan realistis.
+Format keluaran HANYA dalam format tabel CSV (dipisahkan tanda koma) atau tabel Markdown yang valid.
+Pastikan header kolom jelas, nama siswa realistis Indonesia, kalkulasi rata-rata dan ranking akurat.`;
       } else if (mode === 'slide') {
         formatDirective = `
-You are the Instructional Slide Deck Designer of Agentika.
-Format the presentation as sequential slides using this exact repeatable delimiter:
+Anda adalah Instructional Slide Deck Designer dari Trido Agentika.
+Format presentasi menjadi 6 hingga 10 slide terstruktur menggunakan penanda berikut:
 --- SLIDE START ---
-TITLE: [Slide Title]
+TITLE: [Judul Slide]
 CONTENT:
-- [Key point 1]
-- [Key point 2]
-- [Key point 3]
-NOTES: [Teacher speaker notes and student discussion prompts]
+- [Poin Inti 1]
+- [Poin Inti 2]
+- [Poin Inti 3]
+NOTES: [Catatan Panduan & Pemantik Diskusi Guru]
 --- SLIDE END ---
-Generate 6 to 10 comprehensive slides.`;
+Tuliskan materi secara lengkap dan siap ajar.`;
       } else {
         formatDirective = `
-You are the Conceptual Diagramming Agent of Agentika.
-Generate an in-depth educational mindmap or flowchart using Mermaid markdown (graph TD or mindmap).
-Ensure nodes are well structured and informative for classroom smartboards.`;
+Anda adalah Conceptual Diagramming Agent dari Trido Agentika.
+Susun diagram atau peta konsep terstruktur menggunakan sintaks Mermaid (graph TD atau mindmap).
+Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papan tulis.`;
       }
 
-      const fullPrompt = `${formatDirective}\n\n[USER PEDAGOGICAL REQUEST]:\n${finalPrompt}`;
+      const fullPrompt = `${formatDirective}\n\n[PERMINTAAN PENDIDIK]:\n${finalPrompt}`;
 
-      // Call API
+      // Call tool-content endpoint
       const response = await fetch('/api/ai/tool-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -172,7 +207,7 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
         })
       });
 
-      // Step 3: Synthesizing content
+      // Step 3: Synthesizing Content
       setCurrentStep(3);
 
       if (!response.ok) {
@@ -182,18 +217,33 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
       const data = await response.json();
       const rawText = data?.result || data?.content || (typeof data === 'string' ? data : JSON.stringify(data));
 
-      // Step 4: Compiling deliverable
+      if (!rawText || rawText.trim() === '') {
+        throw new Error('Model AI tidak menghasilkan teks keluaran. Coba ganti model atau ulangi prompt.');
+      }
+
+      // Step 4: Compiling Deliverable
       setCurrentStep(4);
       await new Promise(r => setTimeout(r, 400));
 
       // Derive title
       const lines = rawText.split('\n').filter((l: string) => l.trim().length > 0);
-      let extractedTitle = lines[0]?.replace(/^[#\s*]+/, '').trim() || 'Dokumen Agentika';
+      let extractedTitle = lines[0]?.replace(/^[#\s*|,-]+/, '').trim() || 'Dokumen Agentika';
       if (extractedTitle.length > 60) extractedTitle = extractedTitle.slice(0, 57) + '...';
 
       setResultTitle(extractedTitle);
       setResultContent(rawText);
       setResultType(mode);
+
+      // Parse spreadsheet CSV if in sheet mode
+      if (mode === 'sheet') {
+        const rows = rawText
+          .split('\n')
+          .filter((r: string) => r.trim().length > 0 && !r.startsWith('```'))
+          .map((r: string) => r.includes(',') ? r.split(',').map((c: string) => c.trim().replace(/^"|"$/g, '')) : r.split('|').map((c: string) => c.trim()).filter((c: string) => c.length > 0));
+        if (rows.length > 1) {
+          setParsedTableRows(rows);
+        }
+      }
 
       // Parse slides if in slide mode
       if (mode === 'slide') {
@@ -246,14 +296,11 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
 
   const handlePinToSmartboard = () => {
     if (!resultContent) return;
-    
-    // Add as document block or message in smartboard
     useStore.getState().addMessage({
       role: 'model',
       text: `### 📄 ${resultTitle || 'Dokumen Agentika'}\n\n${resultContent}`
     });
-
-    toast.success('Ditempelkan ke Smartboard! Membuka papan tulis...');
+    toast.success('Ditempelkan ke Smartboard! Membuka kanvas...');
     onClose();
   };
 
@@ -280,10 +327,19 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
 
   return (
     <div className="relative w-full h-full flex flex-col bg-[#f8f7f5] text-[#0a1a3a] overflow-hidden select-none font-sans">
+      {/* Background Dot Pattern */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-40 z-0"
+        style={{
+          backgroundImage: 'radial-gradient(#94a3b8 1.5px, transparent 1.5px)',
+          backgroundSize: '24px 24px'
+        }}
+      />
+
       {/* Top Header */}
-      <header className="h-16 px-6 lg:px-10 flex items-center justify-between border-b border-slate-200/70 bg-white/80 backdrop-blur-md shrink-0 z-20">
+      <header className="relative h-16 px-6 lg:px-10 flex items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md shrink-0 z-20 shadow-2xs">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#1550aa] text-white shadow-sm">
+          <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#1550aa] text-white shadow-xs">
             <Bot size={22} className="text-[#ffcc00]" />
           </div>
           <div>
@@ -293,42 +349,187 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
                 Eksperimental
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 font-medium hidden sm:block">
               Studio Agen Mandiri Produktivitas Pendidik (Docs · Sheets · Slides · Diagrams)
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Active Model Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#1550aa] border border-blue-200/60 text-xs font-bold">
-            <Cpu size={13} />
-            <span>{activeModel}</span>
+        <div className="flex items-center gap-2.5">
+          {/* Quick Model Selector Pill */}
+          <div className="flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/70 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setAiPreference('auto')}
+              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                aiPreference === 'auto' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
+              }`}
+            >
+              Auto
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiPreference('gemini')}
+              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                aiPreference === 'gemini' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
+              }`}
+            >
+              Gemini
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiPreference('vertex')}
+              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                aiPreference === 'vertex' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
+              }`}
+            >
+              Vertex
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiPreference('ollama')}
+              className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                aiPreference === 'ollama' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
+              }`}
+            >
+              Lokal (Ollama)
+            </button>
           </div>
 
-          {/* Close button */}
+          {/* Close / Return to Board button */}
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-2xs"
           >
             <X size={15} />
-            <span>Kembali ke Papan</span>
+            <span className="hidden sm:inline">Kembali ke Papan</span>
           </button>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-8 custom-scrollbar pb-64">
-        {/* Capability Showcase Cards */}
-        {!resultContent && (
+      {/* Main Workspace Area */}
+      <div className="relative flex-1 overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-8 custom-scrollbar pb-64 z-10">
+        
+        {/* Animated Loading Progression HUD */}
+        <AnimatePresence>
+          {isRunning && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              className="max-w-3xl mx-auto bg-white rounded-[2rem] border-2 border-[#1550aa]/20 shadow-lg p-6 space-y-5"
+            >
+              {/* Header Status & Live Timer */}
+              <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-9 h-9 rounded-full bg-[#1550aa] flex items-center justify-center text-white shrink-0 shadow-xs">
+                    <Sparkles size={18} className="animate-pulse text-[#ffcc00]" />
+                    <span className="absolute -inset-1 rounded-full border border-[#ffcc00]/50 animate-ping opacity-40 pointer-events-none" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm text-[#0a1a3a] tracking-tight">
+                      Agen Agentika Sedang Bekerja...
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Model aktif: <span className="font-bold text-[#1550aa]">{activeModelDisplay}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">
+                    ⏱️ {elapsedSecs.toFixed(1)}s
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="flex items-center gap-1 px-3 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <X size={13} />
+                    <span>Batalkan</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Step Pipeline Tracker */}
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { num: 1, label: 'Dekonstruksi' },
+                  { num: 2, label: 'Skema Berkas' },
+                  { num: 3, label: 'Sintesis Konten' },
+                  { num: 4, label: 'Kompilasi' }
+                ].map(s => {
+                  const isDone = currentStep > s.num;
+                  const isCurrent = currentStep === s.num;
+                  return (
+                    <div 
+                      key={s.num} 
+                      className={`p-2.5 rounded-xl border flex flex-col items-center text-center gap-1 transition-all ${
+                        isCurrent 
+                          ? 'bg-blue-50/80 border-[#1550aa] text-[#1550aa] ring-2 ring-[#1550aa]/20' 
+                          : isDone 
+                            ? 'bg-emerald-50/60 border-emerald-200 text-emerald-700' 
+                            : 'bg-slate-50 border-slate-200/70 text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black">
+                        {isDone ? <CheckCircle2 size={14} className="text-emerald-600" /> : s.num}
+                      </div>
+                      <span className="text-[11px] font-bold leading-tight">{s.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Solid Indeterminate Progress Line */}
+              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden relative">
+                <motion.div
+                  initial={{ left: '-30%', width: '30%' }}
+                  animate={{ left: '100%', width: '40%' }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute inset-y-0 bg-[#ffcc00] rounded-full"
+                />
+              </div>
+
+              {/* Rotating Pedagogical Insights & Pro Tips */}
+              <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
+                  <Lightbulb size={14} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">
+                      Wawasan Pengajar · {PEDAGOGICAL_INSIGHTS[insightIndex].tag}
+                    </span>
+                  </div>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={insightIndex}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-xs text-amber-950/80 font-medium leading-relaxed"
+                    >
+                      {PEDAGOGICAL_INSIGHTS[insightIndex].text}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Capability Showcase Cards (When Idle) */}
+        {!resultContent && !isRunning && (
           <div className="max-w-5xl mx-auto space-y-4">
             <div className="text-center space-y-1 mb-6">
               <h2 className="text-2xl font-black text-[#0a1a3a] tracking-tight">
                 Pilih Kemampuan Agen & Hasilkan Berkas Siap Pakai
               </h2>
-              <p className="text-sm text-slate-600 max-w-xl mx-auto">
-                Cukup pilih template di bawah atau ketik instruksi di Dock Island untuk mempekerjakan agen AI mandiri.
+              <p className="text-sm text-slate-600 max-w-xl mx-auto font-medium">
+                Pilih salah satu template di bawah atau ketik instruksi di Dock Island untuk mempekerjakan agen AI mandiri.
               </p>
             </div>
 
@@ -379,15 +580,15 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
         )}
 
         {/* Deliverable Viewer (When Results are ready) */}
-        {resultContent && (
+        {resultContent && !isRunning && (
           <div className="max-w-5xl mx-auto space-y-4">
-            <div className="bg-white rounded-[2rem] border-2 border-[#1550aa]/20 shadow-md p-6 lg:p-8 space-y-6">
+            <div className="bg-white rounded-[2.2rem] border-2 border-[#1550aa]/20 shadow-md p-6 lg:p-8 space-y-6">
               {/* Deliverable Header */}
               <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-[#1550aa] uppercase">
-                      {resultType.toUpperCase()} BERHASIL DIKOMPILASI
+                    <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-blue-100 text-[#1550aa] uppercase tracking-wider">
+                      {resultType.toUpperCase()} SELESAI
                     </span>
                     <span className="text-xs text-slate-400 font-mono">
                       {new Date().toLocaleTimeString()}
@@ -438,33 +639,34 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
               {/* View according to result type */}
               {resultType === 'slide' && parsedSlides.length > 0 ? (
                 <div className="space-y-4">
-                  {/* Slide Carousel */}
-                  <div className="p-8 rounded-2xl bg-slate-50 border border-slate-200 min-h-[300px] flex flex-col justify-between relative">
-                    <div className="flex items-center justify-between text-xs font-bold text-[#1550aa] uppercase tracking-wider mb-2">
+                  {/* 16:9 Presentation Slide Preview */}
+                  <div className="aspect-[16/9] w-full max-w-3xl mx-auto p-8 rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col justify-between relative overflow-hidden">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#ffcc00] uppercase tracking-wider mb-2">
                       <span>Slide {currentSlideIndex + 1} dari {parsedSlides.length}</span>
-                      <span>Trido Slide Deck</span>
+                      <span>Trido Presentation Deck</span>
                     </div>
 
                     <div className="my-auto space-y-4">
-                      <h3 className="text-2xl font-black text-[#0a1a3a]">
+                      <h3 className="text-2xl lg:text-3xl font-black text-white">
                         {parsedSlides[currentSlideIndex]?.title}
                       </h3>
-                      <div className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm">
+                      <div className="text-slate-200 whitespace-pre-wrap leading-relaxed text-sm lg:text-base">
                         {parsedSlides[currentSlideIndex]?.content}
                       </div>
-                      {parsedSlides[currentSlideIndex]?.notes && (
-                        <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
-                          <strong>Catatan Guru:</strong> {parsedSlides[currentSlideIndex]?.notes}
-                        </div>
-                      )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-slate-200/80 mt-4">
+                    {parsedSlides[currentSlideIndex]?.notes && (
+                      <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl text-xs text-amber-200 border border-white/15">
+                        <strong>Catatan Guru:</strong> {parsedSlides[currentSlideIndex]?.notes}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-4 border-t border-white/20 mt-4">
                       <button
                         type="button"
                         disabled={currentSlideIndex === 0}
                         onClick={() => setCurrentSlideIndex(i => Math.max(0, i - 1))}
-                        className="flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-bold disabled:opacity-40 cursor-pointer"
+                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold disabled:opacity-30 cursor-pointer"
                       >
                         <ChevronLeft size={14} /> Sebelumnya
                       </button>
@@ -472,15 +674,42 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
                         type="button"
                         disabled={currentSlideIndex === parsedSlides.length - 1}
                         onClick={() => setCurrentSlideIndex(i => Math.min(parsedSlides.length - 1, i + 1))}
-                        className="flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-bold disabled:opacity-40 cursor-pointer"
+                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#1550aa] hover:bg-blue-600 text-white text-xs font-bold disabled:opacity-30 cursor-pointer"
                       >
                         Berikutnya <ChevronRight size={14} />
                       </button>
                     </div>
                   </div>
                 </div>
+              ) : resultType === 'sheet' && parsedTableRows.length > 1 ? (
+                /* Interactive Spreadsheet Table Preview */
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs max-h-[500px] custom-scrollbar">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead className="sticky top-0 bg-[#0a1a3a] text-white font-bold">
+                      <tr>
+                        {parsedTableRows[0].map((head, i) => (
+                          <th key={i} className="p-3 border-r border-slate-700 last:border-r-0 whitespace-nowrap">
+                            {head}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 bg-white">
+                      {parsedTableRows.slice(1).map((row, rIdx) => (
+                        <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
+                          {row.map((cell, cIdx) => (
+                            <td key={cIdx} className="p-3 border-r border-slate-100 last:border-r-0 text-slate-700 whitespace-nowrap">
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
-                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 font-mono text-xs overflow-x-auto max-h-[500px] whitespace-pre-wrap leading-relaxed custom-scrollbar">
+                /* Document Academic Paper Preview */
+                <div className="p-6 lg:p-8 rounded-2xl bg-slate-50/70 border border-slate-200 text-slate-800 text-xs sm:text-sm overflow-x-auto max-h-[550px] whitespace-pre-wrap leading-relaxed custom-scrollbar font-mono">
                   {resultContent}
                 </div>
               )}
@@ -522,57 +751,11 @@ Ensure nodes are well structured and informative for classroom smartboards.`;
               })}
             </div>
 
-            {/* Running Status Timer */}
-            {isRunning && (
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
-                  ⏱️ {elapsedSecs.toFixed(1)}s
-                </span>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold cursor-pointer"
-                >
-                  <X size={12} /> Batal
-                </button>
-              </div>
-            )}
+            {/* Model Pill in Dock */}
+            <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200/60 hidden sm:inline-block">
+              {activeModelDisplay}
+            </span>
           </div>
-
-          {/* Stepper Pipeline Indicator (When Running) */}
-          <AnimatePresence>
-            {isRunning && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-2 py-2 bg-blue-50/70 rounded-2xl border border-blue-200/60 space-y-2 overflow-hidden"
-              >
-                <div className="flex items-center justify-between text-xs font-bold text-[#1550aa]">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#1550aa] animate-ping" />
-                    <span>
-                      {currentStep === 1 && 'Tahap 1: Menganalisis instruksi & standar kurikulum...'}
-                      {currentStep === 2 && 'Tahap 2: Merancang skema tabel & struktur dokumen...'}
-                      {currentStep === 3 && 'Tahap 3: Mensintesis konten akademis & kalkulasi data...'}
-                      {currentStep === 4 && 'Tahap 4: Mengompilasi format berkas akhir...'}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono">Langkah {currentStep} / 4</span>
-                </div>
-
-                {/* Indeterminate Solid Progress Line */}
-                <div className="w-full h-1 bg-blue-200/50 rounded-full overflow-hidden relative">
-                  <motion.div
-                    initial={{ left: '-30%', width: '30%' }}
-                    animate={{ left: '100%', width: '40%' }}
-                    transition={{ duration: 1.1, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute inset-y-0 bg-[#1550aa] rounded-full"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Textarea Input Form */}
           <div className="relative flex items-end gap-2 bg-slate-50 border border-slate-200/80 rounded-[1.6rem] p-2 focus-within:ring-2 focus-within:ring-[#1550aa]/30 focus-within:bg-white transition-all">

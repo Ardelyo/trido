@@ -212,6 +212,8 @@ Rules:
   } else if (toolId === 'summary') {
     promptText = `Summarize the following text clearly and concisely, suitable for presentation notes.
     Format your response in Markdown. Text: "${prompt}"`;
+  } else {
+    promptText = prompt;
   }
 
   const payload = {
@@ -236,13 +238,15 @@ Rules:
   }
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  if (toolId === 'summary') return text;
+  if (toolId === 'summary' || toolId === 'doc' || toolId === 'sheet' || toolId === 'slide' || toolId === 'diagram' || toolId === 'agentika') {
+    return text;
+  }
 
   try {
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(jsonStr);
   } catch {
-    return null;
+    return text || null;
   }
 };
 

@@ -516,6 +516,9 @@ aiRouter.post("/tool-content", async (req, res) => {
           activeModel = selectedOllamaModel || status.ollamaStatus?.activeModel || getOllamaModel();
           result = await generateToolContentOllama(toolId, prompt, ollamaBaseUrl, activeModel);
         }
+        if (result === null || result === undefined || (typeof result === 'string' && result.trim() === '')) {
+          throw new Error(`Mode ${mode} menghasilkan konten kosong.`);
+        }
         success = true;
         break;
       } catch (err: any) {

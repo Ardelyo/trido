@@ -450,6 +450,8 @@ Rules:
   } else if (toolId === 'summary') {
     promptText = `Summarize the following text clearly and concisely, suitable for presentation notes.
     Format your response in Markdown. Text: "${prompt}"`;
+  } else {
+    promptText = prompt;
   }
 
   const payload = {
@@ -477,14 +479,16 @@ Rules:
   }
 
   const text = data.message?.content || "";
-  if (toolId === 'summary') return text;
+  if (toolId === 'summary' || toolId === 'doc' || toolId === 'sheet' || toolId === 'slide' || toolId === 'diagram' || toolId === 'agentika') {
+    return text;
+  }
   
   try {
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(jsonStr);
   } catch (e) {
-    logger.error("Failed to parse tool JSON", e);
-    return null;
+    logger.warn(`[Ollama] Output for ${toolId} is not strict JSON, returning raw text.`);
+    return text || null;
   }
 };
 

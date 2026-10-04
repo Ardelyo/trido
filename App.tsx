@@ -320,7 +320,13 @@ const App: React.FC = () => {
               >
                 <img src="/logo.png" alt="Trido Logo" className="w-6 h-6 object-contain" />
                 <span className="font-extrabold text-xl text-[#0a1a3a] tracking-tight">Trido</span>
-                <span className="hidden xl:inline ml-2 font-semibold text-[14px] pl-3 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
+                {isAgentikaOpen ? (
+                  <span className="hidden sm:inline-flex items-center gap-1.5 ml-2 font-bold text-xs pl-3 border-l border-slate-300 text-[#1550aa]">
+                    <Bot size={13} className="text-[#ffcc00]" /> Agentika Studio
+                  </span>
+                ) : (
+                  <span className="hidden xl:inline ml-2 font-semibold text-[14px] pl-3 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
+                )}
               </div>
             </div>
 
@@ -331,19 +337,23 @@ const App: React.FC = () => {
 
             {/* Right Section: Actions */}
             <div className="flex items-center justify-end gap-2 shrink-0 z-10">
-              {/* Asisten Button */}
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={toggleAiDrawer}
-                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all shadow-xs cursor-pointer ${
-                  isAiDrawerOpen 
-                    ? 'bg-[#1550aa] text-white shadow-[#1550aa]/30 ring-4 ring-[#1550aa]/15' 
-                    : 'text-[#1550aa] bg-white hover:bg-slate-50 border border-[#1550aa]/25'
-                }`}
-              >
-                <Sparkles size={16} /> <span className="hidden sm:inline">Asisten</span>
-              </motion.button>
+              {/* AI Smartboard Drawer Trigger (Only shown when on Whiteboard canvas) */}
+              {!isAgentikaOpen && (
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={toggleAiDrawer}
+                  className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-full transition-all shadow-xs cursor-pointer ${
+                    isAiDrawerOpen 
+                      ? 'bg-[#1550aa] text-white shadow-[#1550aa]/30 ring-4 ring-[#1550aa]/15' 
+                      : 'text-[#1550aa] bg-white hover:bg-slate-50 border border-[#1550aa]/25'
+                  }`}
+                  title="Buka / Tutup Panel AI Smartboard"
+                >
+                  <Sparkles size={15} className={isAiDrawerOpen ? 'text-[#ffcc00]' : 'text-[#1550aa]'} />
+                  <span className="hidden sm:inline">AI Smartboard</span>
+                </motion.button>
+              )}
 
               <motion.button 
                 whileHover={{ scale: 1.04 }}
@@ -673,11 +683,11 @@ const App: React.FC = () => {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-slate-900 text-[15px]">Trido Assistant</span>
+                            <span className="font-extrabold text-slate-900 text-[15px]">Trido Smartboard</span>
                             <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} title={statusConfig.text} />
                           </div>
                           <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            {statusConfig.mode === 'ollama' ? 'Mode Offline Lokal' : 'Cloud Assistant'}
+                            {statusConfig.mode === 'ollama' ? 'Mode Offline Lokal' : 'AI Copilot'}
                           </div>
                         </div>
                     </div>
