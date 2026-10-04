@@ -19,6 +19,11 @@ import { toast } from '../utils/toast';
 import { exportToDocx, exportToSpreadsheet, exportToSlideDeck, exportToMarkdown } from '../utils/agentikaExporter';
 import { parseDocumentFile } from '../utils/documentParser';
 import { AttachedDocument } from '../types';
+import { MarkdownRenderer } from './agentika-studio/MarkdownRenderer';
+import { SpreadsheetViewer } from './agentika-studio/SpreadsheetViewer';
+import { VoiceOrb } from './agentika-studio/VoiceOrb';
+import { ContextUploadZone } from './agentika-studio/ContextUploadZone';
+import { ContextChip } from './agentika-studio/ContextChip';
 
 export type AgentikaMode = 'doc' | 'sheet' | 'slide' | 'diagram';
 
@@ -130,6 +135,7 @@ CONTENT:
 - Pusat orbit: Matahari (Bintang deret utama)
 - 8 Planet utama terbagi: Planet Kebumian & Raksasa Gas
 - Sabuk Asteroid membatasi Mars dan Jupiter
+- **Pertanyaan Interaktif:** Apa perbedaan mendasar antara planet terestrial dan planet raksasa gas?
 NOTES: Tanyakan ke siswa: Apa perbedaan mendasar antara planet dalam dan luar?
 --- SLIDE END ---
 
@@ -1193,33 +1199,41 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
               {/* View according to result type */}
               {resultType === 'slide' && parsedSlides.length > 0 ? (
                 <div className="space-y-3">
-                  <div className="aspect-[16/9] w-full max-w-2xl mx-auto p-8 rounded-2xl bg-slate-900 text-white flex flex-col justify-between shadow-xl">
+                  <div className="aspect-[16/9] w-full max-w-3xl mx-auto p-8 rounded-2xl bg-white border border-slate-300 text-slate-800 flex flex-col justify-between shadow-md">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-400">
                       <span>Slide {currentSlideIndex + 1} dari {parsedSlides.length}</span>
-                      <span>Trido Presentation Deck</span>
+                      <span className="text-[#1D4ED8] font-bold">Trido Presentation Deck</span>
                     </div>
 
                     <div className="my-auto space-y-3">
-                      <h3 className="text-2xl font-black text-white">
+                      <h3 className="text-2xl font-black text-[#111827] border-l-4 border-[#1D4ED8] pl-3">
                         {parsedSlides[currentSlideIndex]?.title}
                       </h3>
-                      <div className="text-slate-200 text-sm whitespace-pre-wrap leading-relaxed">
-                        {parsedSlides[currentSlideIndex]?.content}
+                      <div className="text-sm leading-relaxed">
+                        <MarkdownRenderer
+                          content={parsedSlides[currentSlideIndex]?.content || ''}
+                          variant="slide"
+                        />
                       </div>
                     </div>
 
                     {parsedSlides[currentSlideIndex]?.notes && (
-                      <div className="p-2.5 bg-white/10 rounded-xl text-xs text-amber-200 border border-white/10">
-                        <strong>Catatan Guru:</strong> {parsedSlides[currentSlideIndex]?.notes}
+                      <div className="p-3 bg-amber-50/80 rounded-xl text-xs text-slate-700 border-l-4 border-[#F5C518]">
+                        <strong className="text-amber-900">Catatan Guru:</strong>{' '}
+                        <MarkdownRenderer
+                          content={parsedSlides[currentSlideIndex]?.notes || ''}
+                          variant="note"
+                          className="inline-block"
+                        />
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-3 border-t border-white/15 mt-2">
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-200 mt-2">
                       <button
                         type="button"
                         disabled={currentSlideIndex === 0}
                         onClick={() => setCurrentSlideIndex(i => Math.max(0, i - 1))}
-                        className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold disabled:opacity-30 cursor-pointer"
+                        className="px-4 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold disabled:opacity-30 cursor-pointer"
                       >
                         Sebelumnya
                       </button>
@@ -1227,7 +1241,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                         type="button"
                         disabled={currentSlideIndex === parsedSlides.length - 1}
                         onClick={() => setCurrentSlideIndex(i => Math.min(parsedSlides.length - 1, i + 1))}
-                        className="px-3 py-1 rounded-full bg-[#1D4ED8] hover:bg-blue-600 text-white text-xs font-bold disabled:opacity-30 cursor-pointer"
+                        className="px-4 py-1.5 rounded-full bg-[#1D4ED8] hover:bg-[#0a1a3a] text-white text-xs font-bold disabled:opacity-30 cursor-pointer shadow-xs"
                       >
                         Berikutnya
                       </button>
@@ -1236,79 +1250,11 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                 </div>
               ) : resultType === 'sheet' && parsedTableRows.length > 1 ? (
                 /* 📊 TRUE INTERACTIVE SPREADSHEET VIEWER (Table 3 Formula Support) */
-                <div className="space-y-3 font-sans">
-                  {/* Spreadsheet Formula Bar */}
-                  <div className="flex items-center gap-2 p-2 bg-slate-100 rounded-xl border border-slate-300 text-xs font-mono">
-                    <div className="px-2 py-1 bg-white rounded border border-slate-300 font-bold text-[#1D4ED8] w-12 text-center">
-                      {selectedCellCoord?.ref || 'A1'}
-                    </div>
-                    <div className="text-slate-400 font-bold">fx</div>
-                    <input
-                      type="text"
-                      readOnly
-                      value={activeCellValue}
-                      placeholder="Klik cell untuk memeriksa formula/nilai..."
-                      className="flex-1 bg-white px-2.5 py-1 rounded border border-slate-300 text-slate-800 font-medium outline-hidden"
-                    />
-                  </div>
-
-                  {/* Interactive Spreadsheet Table with Row/Col Index */}
-                  <div className="overflow-x-auto rounded-xl border border-slate-300 max-h-[480px] custom-scrollbar bg-white shadow-2xs">
-                    <table className="w-full text-xs text-left border-collapse font-sans">
-                      <thead className="sticky top-0 bg-slate-100 text-slate-700 font-extrabold border-b border-slate-300 z-10">
-                        <tr>
-                          <th className="w-10 p-2 text-center border-r border-slate-300 bg-slate-200/80 text-[10px] text-slate-500">#</th>
-                          {parsedTableRows[0].map((head, cIdx) => (
-                            <th key={cIdx} className="p-2.5 border-r border-slate-300 last:border-r-0 whitespace-nowrap">
-                              <span className="text-[10px] text-slate-400 mr-1.5 font-mono">{getColLetter(cIdx)}</span>
-                              {head}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {parsedTableRows.slice(1).map((row, rIdx) => {
-                          const isSummaryRow = row[0]?.includes('---') || row[2]?.toLowerCase().includes('rata-rata');
-                          return (
-                            <tr key={rIdx} className={isSummaryRow ? 'bg-amber-50/60 font-bold border-t-2 border-slate-300' : (rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60')}>
-                              <td className="p-2 text-center border-r border-slate-300 bg-slate-100/70 text-[10px] text-slate-500 font-mono">
-                                {rIdx + 1}
-                              </td>
-                              {row.map((cell, cIdx) => {
-                                const isSelected = selectedCellCoord?.row === (rIdx + 1) && selectedCellCoord?.col === cIdx;
-                                const isRemedial = cell.toLowerCase().includes('remedial');
-                                const hasFormula = cell.startsWith('=');
-                                return (
-                                  <td
-                                    key={cIdx}
-                                    onClick={() => setSelectedCellCoord({ row: rIdx + 1, col: cIdx, ref: `${getColLetter(cIdx)}${rIdx + 2}` })}
-                                    className={`p-2.5 border-r border-slate-200 last:border-r-0 whitespace-nowrap cursor-pointer transition-all ${
-                                      isSelected ? 'ring-2 ring-[#1D4ED8] bg-blue-50/70 font-bold text-[#1D4ED8]' : ''
-                                    } ${isRemedial ? 'text-rose-700 font-bold bg-rose-50/50' : 'text-slate-800'}`}
-                                  >
-                                    {hasFormula ? (
-                                      <span className="font-mono text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200 text-[11px]" title={`Formula aktif: ${cell}`}>
-                                        {cell}
-                                      </span>
-                                    ) : (
-                                      cell
-                                    )}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Summary Bar */}
-                  <div className="flex flex-wrap items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 font-bold">
-                    <span>💡 Tip: Cell dengan formula (=AVERAGE, =IF) aktif dan terbawa utuh saat diekspor ke Excel (.xlsx / .csv).</span>
-                    <span className="text-[#1D4ED8]">Format Standar Kemendikbud</span>
-                  </div>
-                </div>
+                <SpreadsheetViewer
+                  csvContent={resultContent}
+                  title={resultTitle}
+                  onPinToSmartboard={handlePinToSmartboard}
+                />
               ) : resultType === 'doc' ? (
                 <div className="space-y-4">
                   {/* View Mode Switcher Toolbar */}
@@ -1464,15 +1410,14 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
           {uploadedFiles.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 p-2 bg-blue-50/60 rounded-xl border border-blue-200 text-xs">
               <span className="text-slate-500 font-bold flex items-center gap-1">
-                <Paperclip size={12} className="text-[#1D4ED8]" /> Terlampir:
+                <Paperclip size={12} className="text-[#1D4ED8]" /> Terlampir ({uploadedFiles.length}):
               </span>
               {uploadedFiles.map((file, idx) => (
-                <div key={idx} className="flex items-center gap-1.5 px-2.5 py-0.5 bg-white rounded-full border border-blue-200 font-medium text-slate-700">
-                  <span className="max-w-[140px] truncate">{file.name}</span>
-                  <button type="button" onClick={() => removeUploadedFile(idx)} className="text-slate-400 hover:text-rose-600 cursor-pointer">
-                    <X size={12} />
-                  </button>
-                </div>
+                <ContextChip
+                  key={idx}
+                  document={file}
+                  onRemove={() => removeUploadedFile(idx)}
+                />
               ))}
             </div>
           )}
@@ -1650,11 +1595,30 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 bg-[#E8E6E1]/30 custom-scrollbar text-xs">
-                <div className="bg-white rounded-xl border border-slate-300 p-5 prose prose-slate max-w-none text-xs">
-                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-                    {SAMPLE_PREVIEWS[sampleModalMode].content}
-                  </ReactMarkdown>
-                </div>
+                {sampleModalMode === 'sheet' ? (
+                  <SpreadsheetViewer
+                    csvContent={SAMPLE_PREVIEWS.sheet.content}
+                    title={SAMPLE_PREVIEWS.sheet.title}
+                  />
+                ) : sampleModalMode === 'slide' ? (
+                  <div className="bg-white rounded-2xl border border-slate-300 p-6 shadow-xs">
+                    <MarkdownRenderer
+                      content={SAMPLE_PREVIEWS.slide.content}
+                      variant="slide"
+                    />
+                  </div>
+                ) : sampleModalMode === 'diagram' ? (
+                  <pre className="p-4 bg-slate-900 text-slate-100 rounded-xl font-mono text-xs overflow-x-auto">
+                    {SAMPLE_PREVIEWS.diagram.content}
+                  </pre>
+                ) : (
+                  <div className="bg-white rounded-xl border border-slate-300 p-5 shadow-xs">
+                    <MarkdownRenderer
+                      content={SAMPLE_PREVIEWS[sampleModalMode].content}
+                      variant="default"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="p-3.5 border-t border-slate-200 bg-white flex items-center justify-between">
@@ -1749,6 +1713,28 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
           </div>
         )}
       </AnimatePresence>
+      {/* Signature Floating Voice Orb at Bottom Right */}
+      <VoiceOrb
+        onTranscript={(text) => {
+          setPromptText(prev => (prev ? `${prev} ${text}` : text));
+        }}
+        onVoiceCommand={(cmd) => {
+          const lower = cmd.toLowerCase();
+          if (lower.includes('kelas') || lower.includes('fisika') || lower.includes('kurikulum')) {
+            toast.info('🎙️ Perintah suara: Menyesuaikan konteks pengajaran');
+            if (lower.includes('fisika')) setTeacherContext(c => ({ ...c, subject: 'Fisika' }));
+            if (lower.includes('biologi')) setTeacherContext(c => ({ ...c, subject: 'Biologi' }));
+            if (lower.includes('kimia')) setTeacherContext(c => ({ ...c, subject: 'Kimia' }));
+            if (lower.includes('matematika')) setTeacherContext(c => ({ ...c, subject: 'Matematika' }));
+          } else if (lower.includes('buatkan rpp') || lower.includes('buatkan modul')) {
+            setMode('doc');
+            toast.info('🎙️ Perintah suara: Memilih mode Modul Ajar / RPP');
+          } else if (lower.includes('bacakan') || lower.includes('dengarkan')) {
+            toggleTtsPlayback();
+          }
+        }}
+        isProcessing={isRunning}
+      />
     </div>
   );
 };
