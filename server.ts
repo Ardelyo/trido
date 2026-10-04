@@ -17,6 +17,7 @@ import fs from "fs";
 
 import { createServer } from "http";
 import { Server } from "socket.io";
+import os from "os";
 import { aiRouter } from "./server/aiRouter";
 import { CONFIG } from "./constants";
 import { ClientToServerEvents, RoomState, ServerToClientEvents, SocketData, SocketInterServerEvents } from "./types";
@@ -201,6 +202,30 @@ async function startServer() {
       env: process.env.NODE_ENV || 'development',
       aiMode: process.env.AI_MODE || 'auto',
       version: process.env.npm_package_version || '1.0.0'
+    });
+  });
+
+  app.get("/api/network-info", (_req, res) => {
+    const interfaces = os.networkInterfaces();
+    const addresses: string[] = [];
+
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name] || []) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          addresses.push(iface.address);
+        }
+      }
+    }
+
+    const port = process.env.SERVER_PORT || process.env.PORT || 3030;
+    const primaryIp = addresses[0] || 'localhost';
+
+    res.json({
+      primaryIp,
+      addresses,
+      port: Number(port),
+      primaryUrl: `http://${primaryIp}:${port}`,
+      hostname: os.hostname()
     });
   });
 

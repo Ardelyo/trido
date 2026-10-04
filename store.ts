@@ -163,6 +163,7 @@ interface AppStore extends AgentState {
   setUndoRedoFunctions: (undo: () => void, redo: () => void) => void;
 
   currentSessionId: string | null;
+  sessionLoadTimestamp: number;
   sessions: BoardSession[];
   
   loadSessions: () => Promise<void>;
@@ -319,6 +320,7 @@ const estimateSessionSize = (pages: AppStore['pages']): number => {
 
 export const useStore = create<AppStore>((set, get) => ({
   currentSessionId: null,
+  sessionLoadTimestamp: 0,
   sessions: [],
   
   loadSessions: async () => {
@@ -386,6 +388,7 @@ export const useStore = create<AppStore>((set, get) => ({
       const initialPage = session.pages[0];
       set({
         currentSessionId: session.id,
+        sessionLoadTimestamp: Date.now(),
         pages: session.pages,
         currentPageIndex: 0,
         domElements: initialPage?.dom || {},
@@ -396,7 +399,6 @@ export const useStore = create<AppStore>((set, get) => ({
           ? session.messages 
           : [{ role: 'model', text: `Memuat sesi "${session.title}". Ada yang bisa saya bantu?` }]
       });
-      // the canvas engine will need to detect this change and load
     }
   },
   

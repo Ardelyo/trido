@@ -36,18 +36,20 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
   const setActiveTool = useStore(state => state.setActiveTool);
   const currentPageIndex = useStore(state => state.currentPageIndex);
   const currentSessionId = useStore(state => state.currentSessionId);
+  const sessionLoadTimestamp = useStore(state => state.sessionLoadTimestamp);
   const isViewerUrl = useStore(state => state.isViewerUrl);
   const prevPageIndex = useRef(currentPageIndex);
   const prevSessionId = useRef(currentSessionId);
+  const prevLoadTimestamp = useRef(sessionLoadTimestamp);
 
   // Handle Page and Session Switching
   useEffect(() => {
     if (!fabricRef.current) return;
     const canvas = fabricRef.current;
     
-    if (prevPageIndex.current !== currentPageIndex || prevSessionId.current !== currentSessionId) {
+    if (prevPageIndex.current !== currentPageIndex || prevSessionId.current !== currentSessionId || prevLoadTimestamp.current !== sessionLoadTimestamp) {
       // If session is the same, we save the previous page state
-      if (prevSessionId.current === currentSessionId && prevPageIndex.current !== currentPageIndex) {
+      if (prevSessionId.current === currentSessionId && prevPageIndex.current !== currentPageIndex && prevLoadTimestamp.current === sessionLoadTimestamp) {
         const prevState = canvas.toJSON(['id', 'zIndex', 'isDomPlaceholder']);
         const prevDom = useStore.getState().domElements;
         const prevMindmap = useStore.getState().activeMindmapNodes;
@@ -86,8 +88,9 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       
       prevPageIndex.current = currentPageIndex;
       prevSessionId.current = currentSessionId;
+      prevLoadTimestamp.current = sessionLoadTimestamp;
     }
-  }, [currentPageIndex, currentSessionId]);
+  }, [currentPageIndex, currentSessionId, sessionLoadTimestamp]);
 
   useEffect(() => {
     if (!canvasRef.current || !window.fabric) return;
@@ -211,6 +214,15 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) return;
       if (isViewerUrl) return;
+
+      // Quick Save (Ctrl+S / Cmd+S)
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        useStore.getState().saveCurrentSession().then(() => {
+          toast.success('Papan tersimpan ke database lokal (Ctrl+S)');
+        });
+        return;
+      }
 
       if (e.code === 'Space') {
         isSpaceDown = true;

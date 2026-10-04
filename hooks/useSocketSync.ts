@@ -56,10 +56,17 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
        setRoomId(currentRoomId);
     }
 
-    // Only attempt socket connection if on localhost or if VITE_API_URL is configured
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    // Attempt socket connection on localhost, local LAN IPs, or configured backend
+    const hostname = window.location.hostname;
+    const isLocalNetwork = 
+      hostname === 'localhost' || 
+      hostname === '127.0.0.1' ||
+      hostname.startsWith('192.168.') ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('172.') ||
+      hostname.endsWith('.local');
     const customApiUrl = (import.meta as any).env.VITE_API_URL;
-    const isVercel = window.location.hostname.includes('vercel.app');
+    const isVercel = hostname.includes('vercel.app');
 
     // On Vercel without a custom stateful backend, serverless environment does not support WebSockets
     if (isVercel && !customApiUrl) {
@@ -67,7 +74,7 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
       return;
     }
 
-    const shouldConnect = Boolean(customApiUrl || isLocalhost || (isCurrentlyViewer && !isVercel));
+    const shouldConnect = Boolean(customApiUrl || isLocalNetwork || (isCurrentlyViewer && !isVercel));
 
     if (!shouldConnect) {
       logger.debug('Running in standalone client mode (socket sync disabled)');
@@ -79,8 +86,9 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
 
     const socket: BoardSocket = io(socketUrl, {
       path: '/socket.io',
-      reconnectionAttempts: 1,
-      timeout: 2500,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 5000,
       transports: ['websocket', 'polling']
     });
 
