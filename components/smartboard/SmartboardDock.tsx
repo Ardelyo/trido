@@ -234,7 +234,9 @@ export const SmartboardDock: React.FC = () => {
     if (!store.isAiDrawerOpen) {
       store.toggleAiDrawer();
     }
-    toast.success('🎤 Asisten Suara Trido Siap!');
+    setTimeout(() => {
+      window.dispatchEvent(new Event('start-mic'));
+    }, 250);
   };
 
   return (

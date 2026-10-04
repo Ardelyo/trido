@@ -348,15 +348,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         };
 
         recognitionRef.current.onend = () => {
-          console.log("Speech recognition ended");
-          // Don't auto-restart if we are transcribing via Gemini
+          // Chrome SpeechRecognition natively stops after short silence (~8-10s).
+          // Silently resume if user is still actively recording, preserving all previous text.
           if (isListeningRef.current && !isTranscribing) {
             try {
               recognitionRef.current.start();
             } catch(e) {
-              console.error("Reconnect failed:", e);
-              setIsListening(false);
-              stopVisualizer();
+              // If already started or inactive, ignore
             }
           }
         };
@@ -369,7 +367,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         recognitionRef.current = null;
       }
     }
-  }, [isListening, isTranscribing, language]);
+  }, [language]);
 
   useEffect(() => {
     const handleStartMic = () => {
@@ -557,20 +555,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
             };
           };
 
-          // If gemini_live, stream in 3-second intervals, else continuous recording until stop
+          // Continuous recording: records uninterrupted until teacher explicitly clicks stop button
           mediaRecorder.start(transcribeMode === 'gemini_live' ? 3000 : undefined);
 
-          // Auto-stop timer: if autoStopSeconds === 0, it's MANUAL (continuous, no timeout cutoff)
+          // Clear any dangling auto-stop timer to prevent accidental cutoffs
           if (autoStopTimerRef.current) {
             clearTimeout(autoStopTimerRef.current);
             autoStopTimerRef.current = null;
-          }
-          if (voiceConfig.autoStopSeconds > 0) {
-            autoStopTimerRef.current = setTimeout(() => {
-              if (isListeningRef.current && mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                toggleListening();
-              }
-            }, voiceConfig.autoStopSeconds * 1000);
           }
         }
       } catch (err) {

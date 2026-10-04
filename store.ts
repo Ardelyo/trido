@@ -262,7 +262,11 @@ const defaultVoiceConfig: VoiceConfig = {
 const getInitialVoiceConfig = (): VoiceConfig => {
   try {
     const saved = localStorage.getItem('trido_voice_config');
-    if (saved) return { ...defaultVoiceConfig, ...JSON.parse(saved) };
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Hard enforce continuous manual recording (0) - eliminate legacy 10s cutoff
+      return { ...defaultVoiceConfig, ...parsed, autoStopSeconds: 0 };
+    }
   } catch {}
   return defaultVoiceConfig;
 };
@@ -575,7 +579,7 @@ export const useStore = create<AppStore>((set, get) => ({
   },
   voiceConfig: getInitialVoiceConfig(),
   setVoiceConfig: (partial) => {
-    const updated = { ...get().voiceConfig, ...partial };
+    const updated = { ...get().voiceConfig, ...partial, autoStopSeconds: 0 };
     localStorage.setItem('trido_voice_config', JSON.stringify(updated));
     set({ voiceConfig: updated });
   },
