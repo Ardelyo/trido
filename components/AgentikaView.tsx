@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Bot, Sparkles, FileText, Table, Presentation, Network,
+  Bot, FileText, Table, Presentation, Network,
   Download, ArrowRight, CornerDownLeft, X, Copy, Check,
-  ChevronLeft, ChevronRight, Pin, ChevronDown, ChevronUp,
-  Cpu, Lightbulb, CheckCircle2, Eye, Code, Printer,
-  History, ShieldCheck, HelpCircle, Layers, SlidersHorizontal, BookOpen,
+  Pin, ChevronDown, ChevronUp,
+  Lightbulb, Eye, Printer,
+  History, ShieldCheck, SlidersHorizontal, BookOpen,
   Search, Settings2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -24,7 +24,6 @@ interface AgentikaViewProps {
   canvasRef: React.RefObject<any>;
 }
 
-// Global Teacher Context configuration
 interface TeacherContext {
   curriculum: string;
   gradeLevel: string;
@@ -34,7 +33,6 @@ interface TeacherContext {
   semester: string;
 }
 
-// Saved Document History Item
 interface AgentikaHistoryItem {
   id: string;
   title: string;
@@ -43,7 +41,6 @@ interface AgentikaHistoryItem {
   timestamp: number;
 }
 
-// Standard Indonesian Subjects for combobox
 const STANDARD_SUBJECTS = [
   'Fisika', 'Biologi', 'Kimia', 'Matematika', 'Informatika',
   'Bahasa Indonesia', 'Bahasa Inggris', 'Sejarah', 'Geografi',
@@ -51,7 +48,6 @@ const STANDARD_SUBJECTS = [
   'Pendidikan Jasmani & Olahraga (PJOK)', 'Pendidikan Agama'
 ];
 
-// Rotating Pedagogical Tips & Insights during generation
 const PEDAGOGICAL_INSIGHTS = [
   {
     tag: 'Kurikulum Merdeka',
@@ -75,7 +71,6 @@ const PEDAGOGICAL_INSIGHTS = [
   }
 ];
 
-// Rich Sample Previews so teachers see the exact output structure before generating
 const SAMPLE_PREVIEWS: Record<AgentikaMode, { title: string; subtitle: string; content: string }> = {
   doc: {
     title: 'Contoh: Modul Ajar Fisika Fase E (Hukum Newton)',
@@ -157,41 +152,33 @@ const CAPABILITY_PREVIEWS = [
   {
     mode: 'doc' as AgentikaMode,
     icon: FileText,
-    iconColor: 'text-[#1550aa]',
-    badgeBg: 'bg-blue-50 text-[#1550aa] border-blue-200',
     badge: 'DOCX / Markdown',
-    title: 'Modul Ajar & RPP Kurikulum Merdeka',
-    desc: 'Susun RPP lengkap dengan Capaian Pembelajaran (CP), Tujuan Pembelajaran (TP), asesmen diagnostik, dan lembar kerja siswa (LKPD).',
+    title: 'Modul Ajar & RPP',
+    desc: 'Capaian Pembelajaran (CP), Tujuan Pembelajaran (TP), asesmen diagnostik, serta lembar kerja siswa (LKPD).',
     prompt: 'Tolong buatkan Modul Ajar Kurikulum Merdeka Fase E untuk materi "Hukum Newton tentang Gerak" (Fisika SMA Kelas 10). Lengkap dengan identitas modul, kompetensi awal, profil pelajar pancasila, tujuan pembelajaran, rincian kegiatan pembelajaran (pendahuluan, inti, penutup), asesmen formatif, serta LKPD dan rubrik penilaian.'
   },
   {
     mode: 'sheet' as AgentikaMode,
     icon: Table,
-    iconColor: 'text-emerald-600',
-    badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     badge: 'XLSX / CSV',
-    title: 'Buku Nilai & Analisis Ketuntasan Siswa',
-    desc: 'Rekap tabel nilai ulangan 25 siswa dengan kalkulasi otomatis rata-rata, persentase ketuntasan (KKM 75), ranking, dan deteksi siswa remedial.',
+    title: 'Buku Nilai & Ketuntasan',
+    desc: 'Tabel evaluasi siswa dengan kalkulasi otomatis rata-rata kelas, status KKM 75, ranking, dan tindak lanjut remedial.',
     prompt: 'Buatkan tabel rekapitulasi nilai Ulangan Harian Biologi untuk 25 siswa kelas XI IPA 2. Kolom terdiri dari: No, NISN, Nama Siswa, Tugas 1, Tugas 2, Nilai UH, Nilai Akhir, Status (Tuntas / Remedial), dan Rekomendasi Tindak Lanjut. Sertakan baris Rata-rata Kelas, Nilai Tertinggi, Nilai Terendah, dan Persentase Kelulusan.'
   },
   {
     mode: 'slide' as AgentikaMode,
     icon: Presentation,
-    iconColor: 'text-amber-600',
-    badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
-    badge: 'PPTX / Slide Deck',
-    title: 'Slide Presentasi Interaktif Kelas',
-    desc: 'Dek presentasi 8 slide interaktif siap ajar dengan alur terstruktur, pertanyaan pemantik diskusi, dan catatan pembicara untuk guru.',
+    badge: 'PPTX / HTML Deck',
+    title: 'Slide Presentasi Kelas',
+    desc: 'Materi ajar 8 slide siap presentasi dengan poin inti, pemantik diskusi interaktif, dan catatan panduan guru.',
     prompt: 'Rancanglah dek presentasi materi kelas 8 slide tentang "Sistem Tata Surya & Karakteristik Planet". Setiap slide harus memuat: Judul Slide, Poin Materi Inti (bullet points), Pertanyaan Interaktif untuk Siswa, dan Catatan Guru (Speaker Notes).'
   },
   {
     mode: 'diagram' as AgentikaMode,
     icon: Network,
-    iconColor: 'text-indigo-600',
-    badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    badge: 'Peta Konsep & Smartboard',
-    title: 'Peta Konsep & Alur Pembelajaran',
-    desc: 'Struktur hubungan konsep materi secara bertingkat untuk ditempel langsung ke kanvas papan tulis Trido.',
+    badge: 'Mermaid / Smartboard',
+    title: 'Peta Konsep & Alur',
+    desc: 'Bagan relasi konsep materi secara bertingkat untuk ditempel langsung ke papan tulis Trido.',
     prompt: 'Buatkan peta konsep terstruktur tentang "Klasifikasi Makhluk Hidup (Kingdom Monera hingga Animalia)" dengan cabang utama, karakteristik khas tiap kingdom, dan contoh spesiesnya yang relevan untuk papan tulis.'
   }
 ];
@@ -203,8 +190,7 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     selectedOllamaModel, 
     selectedVertexModel, 
     aiPreference,
-    setAiPreference,
-    attachedDocument
+    setAiPreference
   } = useStore();
 
   const [mode, setMode] = useState<AgentikaMode>('doc');
@@ -266,7 +252,6 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Save teacher context on change
   const updateTeacherContext = (patch: Partial<TeacherContext>) => {
     const next = { ...teacherContext, ...patch };
     setTeacherContext(next);
@@ -275,7 +260,6 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     } catch {}
   };
 
-  // Friendly human labels for AI modes
   const getModelLabel = () => {
     switch (aiPreference) {
       case 'gemini': return 'Mode Cepat (Gemini)';
@@ -285,7 +269,6 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     }
   };
 
-  // Synchronize structured fields into prompt text
   const applyStructuredPrompt = () => {
     if (mode === 'doc') {
       setPromptText(`Tolong susun Modul Ajar ${teacherContext.curriculum} untuk mata pelajaran ${teacherContext.subject} (${teacherContext.classSpecific}, ${teacherContext.gradeLevel}). Materi: "${structuredTopic}". Alokasi waktu: ${structuredDuration}. Model pembelajaran: ${structuredModel}. Lengkap dengan identitas modul, Capaian Pembelajaran (CP), Tujuan Pembelajaran (TP), langkah kegiatan pembelajaran, asesmen formatif, LKPD siswa, dan rubrik penilaian.`);
@@ -300,7 +283,6 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     toast.success('Formulir terstruktur berhasil diterapkan ke prompt!');
   };
 
-  // Elapsed timer during run
   useEffect(() => {
     let interval: any;
     if (isRunning) {
@@ -314,7 +296,6 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  // Rotate educational insights every 3.5 seconds during execution
   useEffect(() => {
     if (!isRunning) return;
     const interval = setInterval(() => {
@@ -323,7 +304,6 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  // Execute agent pipeline with live 4-step trace
   const handleRunAgent = async () => {
     const finalPrompt = promptText.trim();
     if (!finalPrompt || isRunning) return;
@@ -337,11 +317,9 @@ export const AgentikaView: React.FC<AgentikaViewProps> = ({ onClose, canvasRef }
     abortControllerRef.current = new AbortController();
 
     try {
-      // Step 1: Analyzing curriculum & intent
       setCurrentStep(1);
       await new Promise(r => setTimeout(r, 600));
 
-      // Step 2: Formulating pedagogical schema
       setCurrentStep(2);
 
       let formatDirective = '';
@@ -387,7 +365,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
 
       const fullPrompt = `${formatDirective}\n\n[PERMINTAAN PENDIDIK]:\n${finalPrompt}`;
 
-      // Call tool-content endpoint
       const response = await fetch('/api/ai/tool-content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -402,7 +379,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         })
       });
 
-      // Step 3: Synthesizing Content & Calculations
       setCurrentStep(3);
 
       if (!response.ok) {
@@ -416,11 +392,9 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         throw new Error('Model AI tidak menghasilkan teks keluaran. Coba ganti model atau ulangi prompt.');
       }
 
-      // Step 4: Compiling Deliverable
       setCurrentStep(4);
       await new Promise(r => setTimeout(r, 400));
 
-      // Derive title
       const lines = rawText.split('\n').filter((l: string) => l.trim().length > 0);
       let extractedTitle = lines[0]?.replace(/^[#\s*|,-]+/, '').trim() || 'Dokumen Agentika';
       if (extractedTitle.length > 60) extractedTitle = extractedTitle.slice(0, 57) + '...';
@@ -429,7 +403,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       setResultContent(rawText);
       setResultType(mode);
 
-      // Save to Document History
       const newHistoryItem: AgentikaHistoryItem = {
         id: `doc_${Date.now()}`,
         title: extractedTitle,
@@ -443,7 +416,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         localStorage.setItem('trido_agentika_history', JSON.stringify(updatedHistory));
       } catch {}
 
-      // Parse spreadsheet CSV if in sheet mode
       if (mode === 'sheet') {
         const rows = rawText
           .split('\n')
@@ -454,7 +426,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         }
       }
 
-      // Parse slides if in slide mode
       if (mode === 'slide') {
         const slideMatches = rawText.split(/--- SLIDE START ---/i).slice(1);
         const parsed = slideMatches.map((block: string) => {
@@ -474,7 +445,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         }
       }
 
-      toast.success('Agen Agentika berhasil menyusun berkas produktivitas!');
+      toast.success('Agen Agentika berhasil menyusun berkas!');
     } catch (err: any) {
       if (err.name === 'AbortError') {
         toast.info('Tugas Agen dibatalkan oleh pengguna.');
@@ -503,7 +474,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Pin to canvas with actual DomOverlay placement
   const handlePinToSmartboard = () => {
     if (!resultContent) return;
 
@@ -511,7 +481,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       const id = `agentika_${Date.now()}`;
       const titleSnippet = resultTitle || 'Dokumen Agentika';
 
-      // 1. Calculate center coordinates of current viewport on whiteboard canvas
       let centerX = 640;
       let centerY = 420;
       if (canvasRef?.current) {
@@ -525,7 +494,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         } catch {}
       }
 
-      // 2. Configure widget dimensions and type
       let componentType = 'DOCUMENT_PAGE';
       let width = 680;
       let height = 540;
@@ -562,7 +530,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         };
       }
 
-      // 3. Mount directly to whiteboard DOM overlay
       useStore.getState().updateDomElement(id, {
         id,
         html: '<div>Dokumen Agentika</div>',
@@ -578,7 +545,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         zIndex: 25
       });
 
-      // 4. Dispatch canvas placeholder registration
       const event = new CustomEvent('addCanvasPlaceholder', {
         detail: {
           id,
@@ -590,7 +556,6 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       });
       window.dispatchEvent(event);
 
-      // 5. Add confirmation message to chat history
       useStore.getState().addMessage({
         role: 'model',
         text: `✨ Berkas **${titleSnippet}** berhasil ditempelkan langsung ke kanvas papan tulis!`
@@ -634,135 +599,113 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
     <div className="relative w-full h-full flex flex-col bg-[#f8f7f5] text-[#0a1a3a] overflow-hidden select-none font-sans">
       {/* Background Dot Pattern */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-40 z-0"
+        className="absolute inset-0 pointer-events-none opacity-30 z-0"
         style={{
-          backgroundImage: 'radial-gradient(#94a3b8 1.5px, transparent 1.5px)',
+          backgroundImage: 'radial-gradient(#94a3b8 1px, transparent 1px)',
           backgroundSize: '24px 24px'
         }}
       />
 
-      {/* Top Header */}
-      <header className="relative h-16 px-4 lg:px-8 flex items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-md shrink-0 z-20 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#1550aa] text-white shadow-xs">
-            <Bot size={22} className="text-[#ffcc00]" />
+      {/* Zona 2: Sub-Header Agentika Studio (Minimalist & Consolidated) */}
+      <header className="relative h-14 px-4 lg:px-8 flex items-center justify-between border-b border-slate-200 bg-white shrink-0 z-20">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-[#1550aa]">
+            <Bot size={18} strokeWidth={2} />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black tracking-tight text-[#0a1a3a]">Agentika Studio</h1>
-              <span className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded-full bg-[#1550aa] text-white uppercase" title="Fitur eksperimental studio agen mandiri produktivitas pendidik">
-                Eksperimental
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 font-medium hidden sm:block">
-              Studio Agen Mandiri Produktivitas Pendidik (RPP · Nilai · Slide · Peta Konsep)
-            </p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-bold text-[#0a1a3a] tracking-tight">Agentika Studio</h1>
+            <span className="text-[10px] font-semibold tracking-wide px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+              Eksperimental
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Single Source of Truth Mode Selector */}
-          <div className="hidden md:flex items-center bg-slate-100/90 p-1 rounded-full border border-slate-200/70 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setAiPreference('auto')}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                aiPreference === 'auto' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
-              }`}
-              title="Memilih penyedia AI terbaik secara otomatis"
+        <div className="flex items-center gap-2.5">
+          {/* Consolidated Single Compact Dropdown for Mode */}
+          <div className="relative flex items-center">
+            <select
+              value={aiPreference}
+              onChange={e => setAiPreference(e.target.value as any)}
+              className="appearance-none pl-3 pr-7 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer focus:outline-hidden focus:border-[#1550aa] transition-colors"
+              title="Pilih mode pemrosesan agen AI"
             >
-              Otomatis
-            </button>
-            <button
-              type="button"
-              onClick={() => setAiPreference('gemini')}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                aiPreference === 'gemini' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
-              }`}
-              title="Mode pemrosesan awan berkecepatan tinggi"
-            >
-              Mode Cepat
-            </button>
-            <button
-              type="button"
-              onClick={() => setAiPreference('ollama')}
-              className={`px-3 py-1 rounded-full transition-all cursor-pointer ${
-                aiPreference === 'ollama' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
-              }`}
-              title="Privasi 100% offline lokal di laptop Anda tanpa koneksi internet"
-            >
-              Mode Privat (Offline)
-            </button>
+              <option value="auto">Mode: Otomatis (Rekomendasi)</option>
+              <option value="gemini">Mode: Cepat (Gemini)</option>
+              <option value="vertex">Mode: Terpadu (Vertex)</option>
+              <option value="ollama">Mode: Privat Offline (Lokal)</option>
+            </select>
+            <ChevronDown size={13} className="absolute right-2 text-slate-400 pointer-events-none" />
           </div>
 
-          {/* History Drawer Trigger with Badge Count */}
+          {/* History Drawer Trigger with Badge Counter */}
           <button
             type="button"
             onClick={() => setIsHistoryDrawerOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-2xs"
-            title={historyItems.length > 0 ? `Lihat ${historyItems.length} riwayat dokumen sesi` : 'Belum ada riwayat dokumen'}
+            className="flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
+            title={historyItems.length > 0 ? `Lihat ${historyItems.length} riwayat dokumen` : 'Belum ada riwayat dokumen'}
           >
-            <History size={14} className="text-[#1550aa]" />
-            <span className="hidden sm:inline">Riwayat</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-              historyItems.length > 0 ? 'bg-[#1550aa] text-white' : 'bg-slate-200 text-slate-500'
-            }`}>
+            <History size={13} strokeWidth={1.8} className="text-slate-500" />
+            <span>Riwayat</span>
+            <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
               {historyItems.length}
             </span>
           </button>
 
-          {/* Close / Return to Board button */}
+          {/* Return to Board Button */}
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer active:scale-95 shadow-2xs"
+            className="flex items-center gap-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition-colors cursor-pointer active:scale-95"
           >
-            <X size={15} />
-            <span className="hidden sm:inline">Kembali ke Papan</span>
+            <X size={14} />
+            <span className="hidden sm:inline">Papan Tulis</span>
           </button>
         </div>
       </header>
 
-      {/* Global Teacher Context Setter Bar */}
-      <div className="bg-white/90 border-b border-slate-200/80 px-4 lg:px-8 py-2 z-10 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+      {/* Zona 3: Teacher Context Bar (Compact, IKEA manual clarity) */}
+      <div className="bg-white border-b border-slate-200 px-4 lg:px-8 py-2 z-10 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-bold text-slate-500 flex items-center gap-1">
-            <SlidersHorizontal size={13} className="text-[#1550aa]" /> Konteks Kelas:
+          <span className="font-semibold text-slate-500 flex items-center gap-1">
+            <SlidersHorizontal size={13} strokeWidth={2} className="text-slate-400" /> Konteks:
           </span>
 
-          {/* Curriculum Dropdown */}
-          <select
-            value={teacherContext.curriculum}
-            onChange={e => updateTeacherContext({ curriculum: e.target.value })}
-            className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-full font-bold text-[#0a1a3a] text-xs cursor-pointer focus:outline-hidden"
-          >
-            <option value="Kurikulum Merdeka">Kurikulum Merdeka</option>
-            <option value="Kurikulum 2013 (K-13)">Kurikulum 2013 (K-13)</option>
-            <option value="Kurikulum Internasional / Cambridge">Kurikulum Internasional</option>
-          </select>
-
-          {/* Grade Level Dropdown */}
-          <select
-            value={teacherContext.gradeLevel}
-            onChange={e => updateTeacherContext({ gradeLevel: e.target.value })}
-            className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-full font-bold text-[#0a1a3a] text-xs cursor-pointer focus:outline-hidden"
-          >
-            <option value="SMA/SMK (Fase E)">SMA/SMK (Fase E/F)</option>
-            <option value="SMP (Fase D)">SMP (Fase D)</option>
-            <option value="SD (Fase A/B/C)">SD (Fase A/B/C)</option>
-            <option value="PAUD">PAUD</option>
-          </select>
-
-          {/* Subject Combobox with Search Affordance */}
           <div className="relative flex items-center">
-            <Search size={12} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+            <select
+              value={teacherContext.curriculum}
+              onChange={e => updateTeacherContext({ curriculum: e.target.value })}
+              className="appearance-none pl-2.5 pr-6 py-0.5 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800 text-xs cursor-pointer focus:outline-hidden"
+            >
+              <option value="Kurikulum Merdeka">Kurikulum Merdeka</option>
+              <option value="Kurikulum 2013 (K-13)">Kurikulum 2013 (K-13)</option>
+              <option value="Kurikulum Internasional">Kurikulum Internasional</option>
+            </select>
+            <ChevronDown size={11} className="absolute right-1.5 text-slate-400 pointer-events-none" />
+          </div>
+
+          <div className="relative flex items-center">
+            <select
+              value={teacherContext.gradeLevel}
+              onChange={e => updateTeacherContext({ gradeLevel: e.target.value })}
+              className="appearance-none pl-2.5 pr-6 py-0.5 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800 text-xs cursor-pointer focus:outline-hidden"
+            >
+              <option value="SMA/SMK (Fase E)">SMA/SMK (Fase E/F)</option>
+              <option value="SMP (Fase D)">SMP (Fase D)</option>
+              <option value="SD (Fase A/B/C)">SD (Fase A/B/C)</option>
+              <option value="PAUD">PAUD</option>
+            </select>
+            <ChevronDown size={11} className="absolute right-1.5 text-slate-400 pointer-events-none" />
+          </div>
+
+          <div className="relative flex items-center">
+            <Search size={11} className="absolute left-2 text-slate-400 pointer-events-none" />
             <input
               type="text"
               list="subject-options"
               value={teacherContext.subject}
               onChange={e => updateTeacherContext({ subject: e.target.value })}
-              placeholder="Pilih / Cari Mapel..."
-              className="pl-7 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-full font-bold text-[#0a1a3a] text-xs w-36 sm:w-44 focus:outline-hidden focus:border-[#1550aa]"
+              placeholder="Mata Pelajaran..."
+              className="pl-6 pr-2.5 py-0.5 bg-slate-50 border border-slate-200 rounded-md font-semibold text-slate-800 text-xs w-32 sm:w-40 focus:outline-hidden focus:border-[#1550aa]"
             />
             <datalist id="subject-options">
               {STANDARD_SUBJECTS.map(s => (
@@ -771,64 +714,61 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
             </datalist>
           </div>
 
-          {/* Expandable Advanced Context Settings Toggle */}
           <button
             type="button"
             onClick={() => setShowAdvancedContext(v => !v)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
-              showAdvancedContext ? 'bg-blue-50 text-[#1550aa] border-blue-200' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+            className={`flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+              showAdvancedContext ? 'bg-slate-100 text-slate-800 border-slate-300' : 'bg-transparent text-slate-500 border-dashed border-slate-300 hover:bg-slate-50'
             }`}
           >
-            <Settings2 size={12} />
-            <span>{showAdvancedContext ? 'Tutup Rincian' : 'Rincian Kelas'}</span>
-            {showAdvancedContext ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            <Settings2 size={11} />
+            <span>{showAdvancedContext ? 'Sembunyikan Rincian' : '+ Rincian Kelas'}</span>
           </button>
         </div>
 
-        <div className="hidden lg:flex items-center gap-1 text-[11px] text-slate-500 font-medium">
-          <ShieldCheck size={13} className="text-emerald-600" />
-          <span>Konteks otomatis disematkan pada setiap dokumen yang disusun</span>
-        </div>
+        <span className="hidden xl:inline text-[11px] text-slate-400">
+          Konteks otomatis disematkan ke instruksi agen
+        </span>
       </div>
 
-      {/* Advanced Context Options (Dropdown Drawer) */}
+      {/* Advanced Context Drawer */}
       <AnimatePresence>
         {showAdvancedContext && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="bg-slate-50/90 border-b border-slate-200 px-4 lg:px-8 py-2.5 flex flex-wrap items-center gap-3 text-xs z-10 shrink-0 overflow-hidden font-sans"
+            className="bg-slate-50 border-b border-slate-200 px-4 lg:px-8 py-2 flex flex-wrap items-center gap-4 text-xs z-10 shrink-0 overflow-hidden"
           >
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-600">Kelas Spesifik:</span>
+              <span className="text-slate-500">Kelas:</span>
               <input
                 type="text"
                 value={teacherContext.classSpecific}
                 onChange={e => updateTeacherContext({ classSpecific: e.target.value })}
-                className="px-2.5 py-0.5 bg-white border border-slate-200 rounded-md font-bold text-xs w-28"
-                placeholder="misal: Kelas X IPA 1"
+                className="px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-semibold w-28"
+                placeholder="misal: X-1"
               />
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-600">Jumlah Siswa:</span>
+              <span className="text-slate-500">Jumlah Siswa:</span>
               <input
                 type="number"
                 min={1}
                 max={60}
                 value={teacherContext.studentCount}
                 onChange={e => updateTeacherContext({ studentCount: Number(e.target.value) || 25 })}
-                className="px-2.5 py-0.5 bg-white border border-slate-200 rounded-md font-bold text-xs w-20"
+                className="px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-semibold w-16"
               />
             </div>
 
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-slate-600">Semester:</span>
+              <span className="text-slate-500">Semester:</span>
               <select
                 value={teacherContext.semester}
                 onChange={e => updateTeacherContext({ semester: e.target.value })}
-                className="px-2.5 py-0.5 bg-white border border-slate-200 rounded-md font-bold text-xs cursor-pointer"
+                className="px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-semibold"
               >
                 <option value="Semester 1 (Ganjil)">Semester 1 (Ganjil)</option>
                 <option value="Semester 2 (Genap)">Semester 2 (Genap)</option>
@@ -838,169 +778,143 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         )}
       </AnimatePresence>
 
-      {/* Main Workspace Area (Scrollable flex-1 container - CARDS & RESULTS NEVER OVERLAPPED BY DOCK) */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 lg:px-12 lg:py-8 space-y-8 custom-scrollbar z-10">
+      {/* Zona 4: Main Content Area (Scrollable flex-1 container - NEVER OVERLAPPED BY DOCK) */}
+      <div className="flex-1 overflow-y-auto px-4 py-8 lg:px-12 lg:py-10 space-y-8 custom-scrollbar z-10">
         
-        {/* Live 4-Step Agentic Reasoning Trace Stepper (Visible During Execution) */}
+        {/* Minimalist Horizontal Step Indicator (IKEA Assembly Manual Clarity) */}
         <AnimatePresence>
           {isRunning && (
             <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.98 }}
-              className="max-w-3xl mx-auto bg-white rounded-[2rem] border-2 border-[#1550aa]/20 shadow-lg p-6 space-y-5"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="max-w-2xl mx-auto bg-white rounded-xl border border-slate-200 p-6 space-y-6 shadow-xs"
             >
-              {/* Header Status & Live Timer */}
-              <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="relative w-9 h-9 rounded-full bg-[#1550aa] flex items-center justify-center text-white shrink-0 shadow-xs">
-                    <Sparkles size={18} className="animate-pulse text-[#ffcc00]" />
-                    <span className="absolute -inset-1 rounded-full border border-[#ffcc00]/50 animate-ping opacity-40 pointer-events-none" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-sm text-[#0a1a3a] tracking-tight">
-                      Agen Agentika Sedang Bekerja...
-                    </h3>
-                    <p className="text-xs text-slate-500 font-medium">
-                      Penyedia AI: <span className="font-bold text-[#1550aa]">{getModelLabel()}</span>
-                    </p>
-                  </div>
-                </div>
-
+              {/* Stepper Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">
-                    ⏱️ {elapsedSecs.toFixed(1)}s
+                  <div className="w-2 h-2 rounded-full bg-[#1550aa] animate-ping" />
+                  <span className="font-bold text-sm text-[#0a1a3a]">Agen Sedang Menyusun Dokumen</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-medium text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                    {elapsedSecs.toFixed(1)}s
                   </span>
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="flex items-center gap-1 px-3 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition-all cursor-pointer"
+                    className="text-xs font-medium text-rose-600 hover:text-rose-700 px-2 py-0.5 rounded hover:bg-rose-50 transition-colors cursor-pointer"
                   >
-                    <X size={13} />
-                    <span>Batalkan</span>
+                    Batal
                   </button>
                 </div>
               </div>
 
-              {/* Step Pipeline Tracker with Clear Agentic Transparency */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Minimalist Horizontal Line + Dot Stepper */}
+              <div className="relative flex items-center justify-between">
+                {/* Background Connecting Line */}
+                <div className="absolute left-4 right-4 top-3 h-0.5 bg-slate-100 -z-0" />
+                
+                {/* Active Progress Bar Segment */}
+                <div 
+                  className="absolute left-4 top-3 h-0.5 bg-[#1550aa] transition-all duration-300 -z-0"
+                  style={{ width: `${Math.max(0, (currentStep - 1) / 3 * 100)}%` }}
+                />
+
                 {[
-                  { num: 1, label: 'Menganalisis Kurikulum & TP', detail: 'Membedah Capaian Pembelajaran' },
-                  { num: 2, label: 'Menyusun Skema Berkas', detail: 'Merancang Struktur & Format' },
-                  { num: 3, label: 'Sintesis Materi & Asesmen', detail: 'Menulis LKPD & Rubrik Nilai' },
-                  { num: 4, label: 'Kompilasi Berkas Akhir', detail: 'Membangun Berkas Siap Pakai' }
+                  { num: 1, label: 'Analisis' },
+                  { num: 2, label: 'Struktur' },
+                  { num: 3, label: 'Sintesis' },
+                  { num: 4, label: 'Kompilasi' }
                 ].map(s => {
                   const isDone = currentStep > s.num;
                   const isCurrent = currentStep === s.num;
                   return (
-                    <div 
-                      key={s.num} 
-                      className={`p-3 rounded-2xl border flex flex-col items-center text-center gap-1 transition-all ${
-                        isCurrent 
-                          ? 'bg-blue-50/80 border-[#1550aa] text-[#1550aa] ring-2 ring-[#1550aa]/20' 
-                          : isDone 
-                            ? 'bg-emerald-50/60 border-emerald-200 text-emerald-700' 
-                            : 'bg-slate-50 border-slate-200/70 text-slate-400'
-                      }`}
-                    >
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-black">
-                        {isDone ? <CheckCircle2 size={16} className="text-emerald-600" /> : s.num}
+                    <div key={s.num} className="relative z-10 flex flex-col items-center gap-1.5 text-center">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                        isDone 
+                          ? 'bg-[#1550aa] text-white' 
+                          : isCurrent 
+                            ? 'bg-white border-2 border-[#1550aa] text-[#1550aa] ring-4 ring-[#1550aa]/10' 
+                            : 'bg-white border border-slate-200 text-slate-400'
+                      }`}>
+                        {isDone ? <Check size={13} strokeWidth={2.5} /> : s.num}
                       </div>
-                      <span className="text-xs font-bold leading-tight">{s.label}</span>
-                      <span className="text-[10px] text-slate-400 hidden sm:block">{s.detail}</span>
+                      <span className={`text-[11px] font-medium ${
+                        isCurrent ? 'font-bold text-[#1550aa]' : isDone ? 'text-slate-700' : 'text-slate-400'
+                      }`}>
+                        {s.label}
+                      </span>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Solid Indeterminate Progress Line (Strictly Zero Gradient) */}
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden relative">
-                <motion.div
-                  initial={{ left: '-30%', width: '30%' }}
-                  animate={{ left: '100%', width: '40%' }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute inset-y-0 bg-[#ffcc00] rounded-full"
-                />
-              </div>
-
-              {/* Rotating Pedagogical Insights & Pro Tips */}
-              <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 shrink-0 mt-0.5">
-                  <Lightbulb size={14} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">
-                      Wawasan Pengajar · {PEDAGOGICAL_INSIGHTS[insightIndex].tag}
-                    </span>
-                  </div>
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={insightIndex}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{ duration: 0.3 }}
-                      className="text-xs text-amber-950/80 font-medium leading-relaxed"
-                    >
-                      {PEDAGOGICAL_INSIGHTS[insightIndex].text}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
+              {/* Neutral Pedagogical Tip */}
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-xs text-slate-600">
+                <Lightbulb size={14} className="text-slate-500 shrink-0 mt-0.5" />
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={insightIndex}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="leading-relaxed"
+                  >
+                    <strong>Tips:</strong> {PEDAGOGICAL_INSIGHTS[insightIndex].text}
+                  </motion.p>
+                </AnimatePresence>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Capability Showcase Cards (When Idle) */}
+        {/* Template Cards Grid (Consistent Monochrome Aesthetic) */}
         {!resultContent && !isRunning && (
-          <div className="max-w-5xl mx-auto space-y-4">
-            <div className="text-center space-y-1.5 mb-6">
-              <h2 className="text-2xl font-black text-[#0a1a3a] tracking-tight">
-                Pilih Kemampuan Agen & Hasilkan Berkas Siap Pakai
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="text-center space-y-1">
+              <h2 className="text-xl font-bold text-[#0a1a3a] tracking-tight">
+                Pilih Jenis Dokumen Pembelajaran
               </h2>
-              <p className="text-sm text-slate-600 max-w-xl mx-auto font-medium">
-                Pilih salah satu template di bawah, tinjau contoh hasilnya, atau gunakan formulir terstruktur di bilah bawah.
+              <p className="text-xs text-slate-500 max-w-lg mx-auto">
+                Pilih format baku di bawah atau tulis instruksi langsung pada bilah perintah.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {CAPABILITY_PREVIEWS.map((item, idx) => {
                 const Icon = item.icon;
                 const isSelected = mode === item.mode;
                 return (
-                  <motion.div
+                  <div
                     key={idx}
-                    whileHover={{ scale: 1.015, y: -2 }}
-                    whileTap={{ scale: 0.985 }}
-                    className={`p-5 rounded-3xl border-2 transition-all bg-white shadow-xs flex flex-col justify-between text-left group ${
-                      isSelected ? 'border-[#1550aa] ring-2 ring-[#1550aa]/20' : 'border-slate-200/80 hover:border-[#1550aa]/40'
+                    className={`p-5 rounded-xl border bg-white transition-all flex flex-col justify-between text-left ${
+                      isSelected 
+                        ? 'border-[#1550aa] ring-1 ring-[#1550aa]' 
+                        : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${
-                          isSelected ? 'bg-[#1550aa] text-white' : 'bg-slate-50 ' + item.iconColor
-                        }`}>
-                          <Icon size={20} />
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-700">
+                          <Icon size={18} strokeWidth={1.8} />
                         </div>
-                        <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${item.badgeBg}`}>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
                           {item.badge}
                         </span>
                       </div>
-                      <h3 className="font-extrabold text-base text-[#0a1a3a] mb-1.5">{item.title}</h3>
-                      <p className="text-xs text-slate-600 leading-relaxed mb-4">{item.desc}</p>
+                      <h3 className="font-bold text-sm text-[#0a1a3a] mb-1">{item.title}</h3>
+                      <p className="text-xs text-slate-500 leading-relaxed mb-4">{item.desc}</p>
                     </div>
 
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={() => setSampleModalMode(item.mode)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#1550aa] px-2.5 py-1 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                         title="Lihat contoh format dokumen jadi sebelum generate"
                       >
-                        <Eye size={13} />
-                        <span>Contoh Hasil</span>
+                        Contoh Hasil
                       </button>
 
                       <button
@@ -1012,13 +926,13 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                             textareaRef.current.focus();
                           }
                         }}
-                        className="flex items-center gap-1 text-xs font-bold text-white bg-[#1550aa] hover:bg-[#0a1a3a] px-3.5 py-1.5 rounded-full transition-all cursor-pointer shadow-xs active:scale-95"
+                        className="text-xs font-bold text-[#1550aa] hover:text-[#0a1a3a] flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        <span>Gunakan Template</span>
-                        <ArrowRight size={13} />
+                        <span>Gunakan</span>
+                        <ArrowRight size={12} />
                       </button>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -1027,124 +941,117 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
 
         {/* Deliverable Viewer (When Results are ready) */}
         {resultContent && !isRunning && (
-          <div className="max-w-5xl mx-auto space-y-4">
-            <div className="bg-white rounded-[2.2rem] border-2 border-[#1550aa]/20 shadow-md p-6 lg:p-8 space-y-6">
+          <div className="max-w-4xl mx-auto space-y-4">
+            <div className="bg-white rounded-xl border border-slate-200 p-6 lg:p-8 space-y-6 shadow-xs">
               {/* Deliverable Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-blue-100 text-[#1550aa] uppercase tracking-wider">
-                      {resultType.toUpperCase()} SELESAI
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono">
-                      {new Date().toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <h2 className="text-xl font-black text-[#0a1a3a] tracking-tight">{resultTitle}</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    {resultType.toUpperCase()} SELESAI
+                  </span>
+                  <h2 className="text-lg font-bold text-[#0a1a3a] tracking-tight">{resultTitle}</h2>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={handleDownload}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs transition-all shadow-sm cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-semibold text-xs transition-colors cursor-pointer"
                   >
-                    <Download size={14} className="text-[#ffcc00]" />
-                    <span>Unduh {resultType === 'doc' ? '.DOCX' : resultType === 'sheet' ? '.CSV/.XLSX' : resultType === 'slide' ? '.HTML Slide' : '.MD'}</span>
+                    <Download size={13} />
+                    <span>Unduh {resultType === 'doc' ? '.DOCX' : resultType === 'sheet' ? '.CSV' : resultType === 'slide' ? '.HTML' : '.MD'}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handlePinToSmartboard}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs transition-all cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
                   >
-                    <Pin size={14} />
-                    <span>Tempel ke Smartboard</span>
+                    <Pin size={13} />
+                    <span>Tempel ke Papan</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleCopy}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all cursor-pointer active:scale-95"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 text-xs font-medium cursor-pointer"
                   >
-                    {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+                    {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
                     <span>{copied ? 'Disalin' : 'Salin'}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setResultContent('')}
-                    className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
                     title="Tutup Hasil"
                   >
-                    <X size={16} />
+                    <X size={15} />
                   </button>
                 </div>
               </div>
 
               {/* View according to result type */}
               {resultType === 'slide' && parsedSlides.length > 0 ? (
-                <div className="space-y-4">
-                  {/* 16:9 Presentation Slide Preview */}
-                  <div className="aspect-[16/9] w-full max-w-3xl mx-auto p-8 rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col justify-between relative overflow-hidden">
-                    <div className="flex items-center justify-between text-xs font-bold text-[#ffcc00] uppercase tracking-wider mb-2">
+                <div className="space-y-3">
+                  <div className="aspect-[16/9] w-full max-w-2xl mx-auto p-8 rounded-xl bg-slate-900 text-white flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-400">
                       <span>Slide {currentSlideIndex + 1} dari {parsedSlides.length}</span>
                       <span>Trido Presentation Deck</span>
                     </div>
 
-                    <div className="my-auto space-y-4">
-                      <h3 className="text-2xl lg:text-3xl font-black text-white">
+                    <div className="my-auto space-y-3">
+                      <h3 className="text-xl font-bold text-white">
                         {parsedSlides[currentSlideIndex]?.title}
                       </h3>
-                      <div className="text-slate-200 whitespace-pre-wrap leading-relaxed text-sm lg:text-base">
+                      <div className="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">
                         {parsedSlides[currentSlideIndex]?.content}
                       </div>
                     </div>
 
                     {parsedSlides[currentSlideIndex]?.notes && (
-                      <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl text-xs text-amber-200 border border-white/15">
+                      <div className="p-2.5 bg-white/10 rounded-lg text-xs text-slate-300 border border-white/10">
                         <strong>Catatan Guru:</strong> {parsedSlides[currentSlideIndex]?.notes}
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-4 border-t border-white/20 mt-4">
+                    <div className="flex items-center justify-between pt-3 border-t border-white/15 mt-2">
                       <button
                         type="button"
                         disabled={currentSlideIndex === 0}
                         onClick={() => setCurrentSlideIndex(i => Math.max(0, i - 1))}
-                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold disabled:opacity-30 cursor-pointer"
+                        className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-white text-xs font-medium disabled:opacity-30 cursor-pointer"
                       >
-                        <ChevronLeft size={14} /> Sebelumnya
+                        Sebelumnya
                       </button>
                       <button
                         type="button"
                         disabled={currentSlideIndex === parsedSlides.length - 1}
                         onClick={() => setCurrentSlideIndex(i => Math.min(parsedSlides.length - 1, i + 1))}
-                        className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#1550aa] hover:bg-blue-600 text-white text-xs font-bold disabled:opacity-30 cursor-pointer"
+                        className="px-3 py-1 rounded bg-[#1550aa] hover:bg-blue-600 text-white text-xs font-medium disabled:opacity-30 cursor-pointer"
                       >
-                        Berikutnya <ChevronRight size={14} />
+                        Berikutnya
                       </button>
                     </div>
                   </div>
                 </div>
               ) : resultType === 'sheet' && parsedTableRows.length > 1 ? (
-                /* Interactive Spreadsheet Table Preview */
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs max-h-[500px] custom-scrollbar">
+                <div className="overflow-x-auto rounded-lg border border-slate-200 max-h-[480px] custom-scrollbar">
                   <table className="w-full text-xs text-left border-collapse">
-                    <thead className="sticky top-0 bg-[#0a1a3a] text-white font-bold">
+                    <thead className="sticky top-0 bg-slate-100 text-slate-800 font-bold border-b border-slate-200">
                       <tr>
                         {parsedTableRows[0].map((head, i) => (
-                          <th key={i} className="p-3 border-r border-slate-700 last:border-r-0 whitespace-nowrap">
+                          <th key={i} className="p-2.5 border-r border-slate-200 last:border-r-0 whitespace-nowrap">
                             {head}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 bg-white">
+                    <tbody className="divide-y divide-slate-100 bg-white">
                       {parsedTableRows.slice(1).map((row, rIdx) => (
-                        <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'}>
+                        <tr key={rIdx} className={rIdx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}>
                           {row.map((cell, cIdx) => (
-                            <td key={cIdx} className="p-3 border-r border-slate-100 last:border-r-0 text-slate-700 whitespace-nowrap">
+                            <td key={cIdx} className="p-2.5 border-r border-slate-100 last:border-r-0 text-slate-700 whitespace-nowrap">
                               {cell}
                             </td>
                           ))}
@@ -1154,80 +1061,69 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                   </table>
                 </div>
               ) : resultType === 'doc' ? (
-                /* Document Academic Paper & Markdown Preview */
                 <div className="space-y-4">
                   {/* View Mode Switcher Toolbar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full text-xs font-bold">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-medium">
                       <button
                         type="button"
                         onClick={() => setPreviewTab('paper')}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
-                          previewTab === 'paper' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
+                        className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                          previewTab === 'paper' ? 'bg-white font-bold text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
-                        <Eye size={13} />
-                        <span>Halaman Dokumen (A4)</span>
+                        Halaman Dokumen
                       </button>
                       <button
                         type="button"
                         onClick={() => setPreviewTab('source')}
-                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
-                          previewTab === 'source' ? 'bg-[#1550aa] text-white shadow-xs' : 'text-slate-600 hover:text-[#0a1a3a]'
+                        className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                          previewTab === 'source' ? 'bg-white font-bold text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
-                        <Code size={13} />
-                        <span>Sumber Markdown</span>
+                        Sumber Markdown
                       </button>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => window.print()}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer shadow-2xs"
-                        title="Cetak atau Simpan PDF (Ctrl+P)"
+                        className="px-2.5 py-1 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium cursor-pointer"
                       >
-                        <Printer size={13} />
-                        <span>Cetak / PDF</span>
+                        Cetak / PDF
                       </button>
                       <button
                         type="button"
                         onClick={() => {
                           exportToMarkdown(resultTitle || 'dokumen', resultContent);
-                          toast.success('Mengunduh berkas Markdown (.md)!');
+                          toast.success('Mengunduh .MD');
                         }}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                        className="px-2.5 py-1 rounded bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-medium cursor-pointer"
                       >
-                        <FileText size={13} />
-                        <span>Unduh .MD</span>
+                        Unduh .MD
                       </button>
                     </div>
                   </div>
 
                   {/* Rendered A4 Sheet vs Raw Markdown */}
                   {previewTab === 'paper' ? (
-                    <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-8 lg:p-14 min-h-[500px]">
+                    <div className="max-w-3xl mx-auto bg-white rounded-lg border border-slate-200 p-8 lg:p-12 min-h-[500px] shadow-xs">
                       {/* Document Formal Header Stamp */}
-                      <div className="border-b-2 border-[#1550aa] pb-4 mb-8 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <img src="/logo.png" alt="Trido" className="w-8 h-8 object-contain" />
-                          <div>
-                            <div className="font-black text-xs text-[#1550aa] tracking-widest uppercase">
-                              TRIDO AGENTIKA · PENDIDIKAN INKLUSIF
-                            </div>
-                            <div className="text-[11px] text-slate-500 font-semibold">
-                              {teacherContext.curriculum} · {teacherContext.gradeLevel} ({teacherContext.classSpecific})
-                            </div>
+                      <div className="border-b border-slate-200 pb-3 mb-6 flex items-center justify-between text-xs text-slate-500">
+                        <div>
+                          <div className="font-bold text-slate-800 uppercase tracking-wide">
+                            TRIDO AGENTIKA · PENDIDIKAN INKLUSIF
                           </div>
+                          <div>{teacherContext.curriculum} · {teacherContext.gradeLevel} ({teacherContext.classSpecific})</div>
                         </div>
-                        <div className="text-[10px] font-mono text-slate-400 font-bold bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
+                        <div className="font-mono text-slate-400">
                           {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
                         </div>
                       </div>
 
                       {/* Markdown Rendered Content */}
-                      <div className="prose prose-slate max-w-none prose-headings:font-black prose-headings:tracking-tight prose-h1:text-2xl prose-h1:text-[#1550aa] prose-h2:text-xl prose-h2:text-[#0a1a3a] prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-2 prose-h3:text-lg prose-p:text-slate-700 prose-p:leading-relaxed prose-li:text-slate-700 prose-table:border prose-table:border-slate-200 prose-th:bg-slate-50 prose-th:p-3 prose-th:text-xs prose-td:p-3 prose-td:text-xs prose-td:border prose-td:border-slate-100 font-sans">
+                      <div className="prose prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-p:text-slate-700 prose-li:text-slate-700 prose-table:border prose-table:border-slate-200 prose-th:bg-slate-50 prose-th:p-2 prose-td:p-2 prose-td:border prose-td:border-slate-100 text-xs sm:text-sm">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm, remarkMath]}
                           rehypePlugins={[rehypeKatex]}
@@ -1236,30 +1132,28 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                         </ReactMarkdown>
                       </div>
 
-                      {/* Formal Footer & Teacher Disclaimer */}
-                      <div className="mt-12 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-medium gap-2">
-                        <span>Dihasilkan oleh Agen Agentika · Siap digunakan di kelas</span>
+                      <div className="mt-8 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Disusun dengan Trido Agentika</span>
                         <span>Hak Cipta © 2026 Ardellio Satria Anindito</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-6 rounded-2xl bg-slate-900 text-slate-100 font-mono text-xs overflow-x-auto max-h-[550px] whitespace-pre-wrap leading-relaxed custom-scrollbar">
+                    <div className="p-4 rounded-lg bg-slate-900 text-slate-100 font-mono text-xs overflow-x-auto max-h-[500px] whitespace-pre-wrap leading-relaxed custom-scrollbar">
                       {resultContent}
                     </div>
                   )}
                 </div>
               ) : (
-                /* Document Academic Paper Preview */
-                <div className="p-6 lg:p-8 rounded-2xl bg-slate-50/70 border border-slate-200 text-slate-800 text-xs sm:text-sm overflow-x-auto max-h-[550px] whitespace-pre-wrap leading-relaxed custom-scrollbar font-mono">
+                <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-xs font-mono overflow-x-auto max-h-[480px] whitespace-pre-wrap custom-scrollbar">
                   {resultContent}
                 </div>
               )}
 
-              {/* Pedagogy Trust Disclaimer Banner */}
-              <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200/60 flex items-center gap-2 text-xs text-slate-600 font-medium">
-                <ShieldCheck size={16} className="text-[#1550aa] shrink-0" />
+              {/* Pedagogy Disclaimer */}
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-500 flex items-center gap-2">
+                <ShieldCheck size={14} className="text-slate-400 shrink-0" />
                 <span>
-                  <strong>Catatan Verifikasi Guru:</strong> Hasil agen AI ini disesuaikan dengan Capaian Pembelajaran {teacherContext.curriculum}. Harap tinjau kembali kesesuaian materi sebelum diterapkan di ruang kelas.
+                  <strong>Verifikasi:</strong> Hasil agen AI disesuaikan dengan Capaian Pembelajaran {teacherContext.curriculum}. Harap tinjau kembali sebelum diterapkan di kelas.
                 </span>
               </div>
             </div>
@@ -1267,18 +1161,18 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
         )}
       </div>
 
-      {/* IN-FLOW STICKY BOTTOM COMMAND BAR (Dock is an in-flow flex sibling — ZERO OVERLAP GUARANTEED) */}
-      <div className="shrink-0 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-8px_30px_rgba(10,26,58,0.06)] px-4 py-3 lg:px-8 z-20 font-sans">
-        <div className="max-w-4xl mx-auto space-y-2.5">
+      {/* Zona 5: Command Bar / Dock (In-flow flex sibling — ZERO OVERLAP) */}
+      <div className="shrink-0 bg-white border-t border-slate-200 px-4 py-3 lg:px-8 z-20">
+        <div className="max-w-4xl mx-auto space-y-2">
           
-          {/* Top Row: Mode Selector Pills & Read-Only Status */}
+          {/* Top Row: Segmented Control for Mode & Helper Actions */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full">
+            <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-lg">
               {[
-                { id: 'doc' as AgentikaMode, label: 'Modul Ajar (DOCX)', icon: FileText },
-                { id: 'sheet' as AgentikaMode, label: 'Buku Nilai (XLSX)', icon: Table },
-                { id: 'slide' as AgentikaMode, label: 'Presentasi (PPTX)', icon: Presentation },
-                { id: 'diagram' as AgentikaMode, label: 'Peta Konsep (Papan)', icon: Network },
+                { id: 'doc' as AgentikaMode, label: 'Modul Ajar', icon: FileText },
+                { id: 'sheet' as AgentikaMode, label: 'Buku Nilai', icon: Table },
+                { id: 'slide' as AgentikaMode, label: 'Presentasi', icon: Presentation },
+                { id: 'diagram' as AgentikaMode, label: 'Peta Konsep', icon: Network },
               ].map(t => {
                 const Icon = t.icon;
                 const isActive = mode === t.id;
@@ -1287,36 +1181,32 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                     key={t.id}
                     type="button"
                     onClick={() => setMode(t.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
                       isActive 
-                        ? 'bg-[#1550aa] text-white shadow-xs' 
-                        : 'text-slate-600 hover:text-[#0a1a3a] hover:bg-white/60'
+                        ? 'bg-white text-slate-900 shadow-2xs' 
+                        : 'text-slate-500 hover:text-slate-900'
                     }`}
                   >
-                    <Icon size={12} className={isActive ? 'text-[#ffcc00]' : ''} />
+                    <Icon size={12} strokeWidth={1.8} />
                     <span>{t.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Read-Only Status & Structured Input Mode Toggle */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setInputMode(m => m === 'structured' ? 'free' : 'structured')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
-                  inputMode === 'structured' ? 'bg-amber-50 text-amber-800 border-amber-200 shadow-2xs' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                className={`text-xs font-semibold px-2.5 py-1 rounded-md border transition-colors cursor-pointer ${
+                  inputMode === 'structured' ? 'bg-slate-100 text-slate-800 border-slate-300' : 'bg-transparent text-slate-500 border-dashed border-slate-300 hover:bg-slate-50'
                 }`}
-                title="Buka isian terstruktur untuk membantu menyusun instruksi"
               >
-                <SlidersHorizontal size={12} />
-                <span>{inputMode === 'structured' ? 'Mode Bebas' : 'Formulir Terstruktur'}</span>
+                {inputMode === 'structured' ? 'Mode Bebas' : '+ Isian Terstruktur'}
               </button>
 
-              <span className="text-[11px] font-mono font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200/60 hidden sm:inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>Berjalan di: {getModelLabel()}</span>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">
+                {getModelLabel()}
               </span>
             </div>
           </div>
@@ -1328,38 +1218,28 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="p-3.5 bg-blue-50/60 border border-blue-200/70 rounded-2xl space-y-3 overflow-hidden text-xs"
+                className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2.5 overflow-hidden text-xs"
               >
-                <div className="flex items-center justify-between pb-1.5 border-b border-blue-200/50">
-                  <span className="font-bold text-[#1550aa] flex items-center gap-1.5">
-                    <SlidersHorizontal size={13} />
-                    <span>Formulir Terstruktur Agen: {mode.toUpperCase()}</span>
-                  </span>
-                  <span className="text-[11px] text-slate-500 font-medium">
-                    Isi field di bawah, lalu klik "Terapkan ke Bilah Agen"
-                  </span>
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-700">Topik / Materi Pokok:</label>
+                    <label className="font-semibold text-slate-600">Topik Materi:</label>
                     <input
                       type="text"
                       value={structuredTopic}
                       onChange={e => setStructuredTopic(e.target.value)}
                       placeholder="contoh: Hukum Newton"
-                      className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden focus:border-[#1550aa]"
+                      className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-medium focus:outline-hidden focus:border-[#1550aa]"
                     />
                   </div>
 
                   {mode === 'doc' && (
                     <>
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700">Model Pembelajaran:</label>
+                        <label className="font-semibold text-slate-600">Model Pembelajaran:</label>
                         <select
                           value={structuredModel}
                           onChange={e => setStructuredModel(e.target.value)}
-                          className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden"
+                          className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-medium focus:outline-hidden"
                         >
                           <option value="Problem Based Learning (PBL)">Problem Based Learning (PBL)</option>
                           <option value="Project Based Learning (PjBL)">Project Based Learning (PjBL)</option>
@@ -1369,12 +1249,12 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                       </div>
 
                       <div className="space-y-1">
-                        <label className="font-bold text-slate-700">Alokasi Waktu:</label>
+                        <label className="font-semibold text-slate-600">Alokasi Waktu:</label>
                         <input
                           type="text"
                           value={structuredDuration}
                           onChange={e => setStructuredDuration(e.target.value)}
-                          className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden"
+                          className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-medium focus:outline-hidden"
                         />
                       </div>
                     </>
@@ -1382,12 +1262,12 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
 
                   {mode === 'sheet' && (
                     <div className="space-y-1">
-                      <label className="font-bold text-slate-700">KKM / KKTP:</label>
+                      <label className="font-semibold text-slate-600">KKM/KKTP:</label>
                       <input
                         type="number"
                         value={structuredKkm}
                         onChange={e => setStructuredKkm(e.target.value)}
-                        className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-hidden"
+                        className="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-medium focus:outline-hidden"
                       />
                     </div>
                   )}
@@ -1396,9 +1276,9 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                     <button
                       type="button"
                       onClick={applyStructuredPrompt}
-                      className="w-full py-1.5 px-3 rounded-lg bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs transition-colors cursor-pointer shadow-2xs"
+                      className="w-full py-1 px-3 rounded bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs transition-colors cursor-pointer"
                     >
-                      Terapkan ke Bilah Agen ↵
+                      Terapkan Isian ↵
                     </button>
                   </div>
                 </div>
@@ -1407,7 +1287,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
           </AnimatePresence>
 
           {/* Textarea Input Form */}
-          <div className="relative flex items-end gap-2 bg-slate-50 border border-slate-200/90 rounded-[1.6rem] p-2 focus-within:ring-2 focus-within:ring-[#1550aa]/30 focus-within:bg-white transition-all shadow-2xs">
+          <div className="relative flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 focus-within:ring-1 focus-within:ring-[#1550aa] focus-within:bg-white transition-all">
             <textarea
               ref={textareaRef}
               value={promptText}
@@ -1419,18 +1299,17 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                 }
               }}
               rows={2}
-              placeholder={`Contoh: Modul Ajar ${teacherContext.subject} materi ${structuredTopic}, 2 pertemuan, model Problem Based Learning lengkap LKPD...`}
-              className="flex-1 bg-transparent border-none outline-hidden resize-none text-sm text-[#0a1a3a] placeholder:text-slate-400 px-3 py-1.5 custom-scrollbar font-medium"
+              placeholder={`Contoh: Modul Ajar ${teacherContext.subject} materi ${structuredTopic}, 2 pertemuan, model Problem Based Learning...`}
+              className="flex-1 bg-transparent border-none outline-hidden resize-none text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 px-2 py-1 custom-scrollbar font-medium"
             />
 
             <button
               type="button"
               disabled={isRunning || !promptText.trim()}
               onClick={handleRunAgent}
-              className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-extrabold text-xs transition-all shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 shrink-0"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 shrink-0"
             >
-              <Sparkles size={14} className="text-[#ffcc00] animate-pulse" />
-              <span>{isRunning ? 'Memproses...' : 'Jalankan Agen'}</span>
+              <span>{isRunning ? 'Menyusun...' : 'Jalankan Agen'}</span>
               <CornerDownLeft size={12} className="opacity-70" />
             </button>
           </div>
@@ -1440,42 +1319,42 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       {/* Sample Result Preview Modal */}
       <AnimatePresence>
         {sampleModalMode && (
-          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-[2rem] border-2 border-[#1550aa]/20 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden font-sans"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden"
             >
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                  <h3 className="font-black text-lg text-[#0a1a3a]">
+                  <h3 className="font-bold text-sm text-[#0a1a3a]">
                     {SAMPLE_PREVIEWS[sampleModalMode].title}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-xs text-slate-500">
                     {SAMPLE_PREVIEWS[sampleModalMode].subtitle}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSampleModalMode(null)}
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer"
+                  className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
-                  <X size={16} />
+                  <X size={15} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 custom-scrollbar">
-                <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs text-xs sm:text-sm font-sans prose prose-slate max-w-none">
+              <div className="flex-1 overflow-y-auto p-4 bg-slate-50 custom-scrollbar text-xs">
+                <div className="bg-white rounded border border-slate-200 p-4 prose prose-slate max-w-none text-xs">
                   <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                     {SAMPLE_PREVIEWS[sampleModalMode].content}
                   </ReactMarkdown>
                 </div>
               </div>
 
-              <div className="p-4 border-t border-slate-100 bg-white flex items-center justify-between">
-                <span className="text-xs text-slate-500 font-medium">
-                  Setiap dokumen yang dihasilkan dapat disesuaikan dan diunduh (.DOCX / .CSV).
+              <div className="p-3 border-t border-slate-100 bg-white flex items-center justify-between">
+                <span className="text-[11px] text-slate-500">
+                  Dapat disesuaikan dan diunduh (.DOCX / .CSV).
                 </span>
                 <button
                   type="button"
@@ -1485,7 +1364,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                     if (tmpl) setPromptText(tmpl.prompt);
                     setSampleModalMode(null);
                   }}
-                  className="px-4 py-2 rounded-full bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs transition-all cursor-pointer shadow-xs active:scale-95"
+                  className="px-3 py-1.5 rounded bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-semibold text-xs transition-colors cursor-pointer"
                 >
                   Gunakan Format Ini
                 </button>
@@ -1498,51 +1377,51 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
       {/* Document History Drawer */}
       <AnimatePresence>
         {isHistoryDrawerOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-900/30 backdrop-blur-xs flex justify-end">
+          <div className="fixed inset-0 z-50 bg-slate-900/20 backdrop-blur-xs flex justify-end">
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="bg-white w-full max-w-md h-full shadow-2xl border-l border-slate-200 flex flex-col font-sans"
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-white w-full max-w-sm h-full shadow-xl border-l border-slate-200 flex flex-col font-sans"
             >
-              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <History size={18} className="text-[#1550aa]" />
-                  <h3 className="font-black text-base text-[#0a1a3a]">Riwayat Dokumen Sesi</h3>
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <History size={15} className="text-slate-600" />
+                  <h3 className="font-bold text-sm text-[#0a1a3a]">Riwayat Dokumen Sesi</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsHistoryDrawerOpen(false)}
-                  className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-400 cursor-pointer"
+                  className="p-1 rounded hover:bg-slate-100 text-slate-400 cursor-pointer"
                 >
-                  <X size={16} />
+                  <X size={15} />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
                 {historyItems.length === 0 ? (
-                  <div className="text-center py-16 space-y-2">
-                    <BookOpen size={32} className="mx-auto text-slate-300" />
-                    <p className="text-sm font-bold text-slate-600">Belum ada riwayat dokumen</p>
-                    <p className="text-xs text-slate-400">Dokumen yang berhasil disusun akan tersimpan otomatis di sini.</p>
+                  <div className="text-center py-16 space-y-1.5">
+                    <BookOpen size={28} className="mx-auto text-slate-300" />
+                    <p className="text-xs font-bold text-slate-600">Belum ada riwayat dokumen</p>
+                    <p className="text-[11px] text-slate-400">Dokumen yang selesai disusun akan tersimpan di sini.</p>
                   </div>
                 ) : (
                   historyItems.map(item => (
                     <div
                       key={item.id}
-                      className="p-4 rounded-2xl border border-slate-200 hover:border-[#1550aa] bg-white transition-all shadow-2xs space-y-2"
+                      className="p-3 rounded-lg border border-slate-200 hover:border-slate-300 bg-white transition-colors space-y-1.5 text-xs"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-[#1550aa]">
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
                           {item.mode.toUpperCase()}
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">
-                          {new Date(item.timestamp).toLocaleDateString()} {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <h4 className="font-extrabold text-sm text-[#0a1a3a] line-clamp-1">{item.title}</h4>
-                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <h4 className="font-bold text-slate-800 line-clamp-1">{item.title}</h4>
+                      <div className="flex items-center justify-end pt-1">
                         <button
                           type="button"
                           onClick={() => {
@@ -1552,7 +1431,7 @@ Pastikan hierarki konsep jelas dan mudah dipahami siswa saat ditampilkan di papa
                             setIsHistoryDrawerOpen(false);
                             toast.info(`Memuat "${item.title}"`);
                           }}
-                          className="px-3 py-1 rounded-full bg-[#1550aa] text-white text-xs font-bold cursor-pointer hover:bg-[#0a1a3a]"
+                          className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
                         >
                           Buka
                         </button>
