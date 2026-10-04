@@ -6,7 +6,33 @@ import { toPng, toBlob } from 'html-to-image';
  * Utility helper to trigger clean file downloads in browser
  */
 export function downloadFile(content: string | Blob, filename: string, mimeType: string) {
-  const blob = typeof content === 'string' ? new Blob([content], { type: mimeType }) : content;
+  let blob: Blob;
+
+  if (content instanceof Blob) {
+    blob = content;
+  } else if (typeof content === 'string') {
+    if (content.startsWith('data:')) {
+      // Decode data URL to real binary Blob so photo viewers/OS don't complain about corrupted/unsupported file format
+      try {
+        const arr = content.split(',');
+        const mime = arr[0].match(/:(.*?);/)?.[1] || mimeType;
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        blob = new Blob([u8arr], { type: mime });
+      } catch {
+        blob = new Blob([content], { type: mimeType });
+      }
+    } else {
+      blob = new Blob([content], { type: mimeType });
+    }
+  } else {
+    blob = new Blob([String(content)], { type: mimeType });
+  }
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -14,7 +40,7 @@ export function downloadFile(content: string | Blob, filename: string, mimeType:
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 /**
@@ -488,10 +514,35 @@ export async function exportSafeCompositePNG(
     multiplier?: number;
   } = {}
 ): Promise<string> {
-  if (!canvas) throw new Error('Canvas not found');
-
   const bg = options.backgroundColor || '#ffffff';
   const multiplier = options.multiplier || 2;
+  const stage = typeof document !== 'undefined' ? document.getElementById('smartboard-stage-container') : null;
+
+  // 1. Try high-fidelity DOM+Canvas stage capture via html-to-image so all widgets are included
+  if (stage) {
+    try {
+      const dataUrl = await toPng(stage, {
+        skipFonts: true,
+        backgroundColor: bg === 'transparent' ? undefined : bg,
+        pixelRatio: multiplier,
+        cacheBust: true,
+        filter: (node: any) => {
+          if (node.classList && (node.classList.contains('agent-cursor') || node.classList.contains('exclude-export'))) {
+            return false;
+          }
+          return true;
+        }
+      });
+      if (dataUrl && dataUrl.length > 500) {
+        return dataUrl;
+      }
+    } catch (err) {
+      console.warn('html-to-image stage capture fallback to canvas composition:', err);
+    }
+  }
+
+  // 2. Fallback: Fabric canvas + offscreen compositing
+  if (!canvas) throw new Error('Canvas not found');
 
   canvas.discardActiveObject();
   canvas.requestRenderAll();

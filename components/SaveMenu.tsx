@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { 
   Save, HardDrive, FileJson, FilePlus, ChevronDown, Check,
-  History, Settings, Sparkles, Clock, ArrowRight, CornerDownLeft
+  History, Settings, Sparkles, Clock, ArrowRight, CornerDownLeft, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../utils/translations';
@@ -218,6 +218,31 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                     </div>
                   </div>
                 </div>
+              </button>
+
+              {/* Option 3: Export Hub (PNG, PDF, SVG, Preview) */}
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  onExportClick();
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all cursor-pointer text-left group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1550aa] flex items-center justify-center shrink-0">
+                    <Download size={16} />
+                  </div>
+                  <div>
+                    <div className="font-extrabold text-slate-800">
+                      Pusat Ekspor Gambar & PDF
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">
+                      PNG (1x/2x/4K), PDF A4, SVG & Pratinjau
+                    </div>
+                  </div>
+                </div>
+                <ArrowRight size={14} className="text-slate-400" />
               </button>
 
               <div className="h-px w-full bg-slate-100 my-1" />

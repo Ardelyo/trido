@@ -1148,6 +1148,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
   return (
     <div
       ref={containerRef}
+      id="smartboard-stage-container"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

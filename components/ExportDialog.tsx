@@ -6,6 +6,7 @@ import {
   Copy, ExternalLink, Palette, AlertTriangle, Share2, Eye,
   Maximize2, Cpu, FileCode, GitBranch
 } from 'lucide-react';
+import { toPng } from 'html-to-image';
 import { useStore } from '../store';
 import { toast } from '../utils/toast';
 import { useTranslation } from '../utils/translations';
@@ -59,20 +60,58 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
     return detectBoardObjects(canvasRef.current, domElements, activeMindmapNodes);
   }, [domElements, activeMindmapNodes, canvasRef.current, isOpen]);
 
-  // Generate live visual preview snapshot when dialog opens
+  // Generate live visual preview snapshot capturing BOTH canvas and DOM smartboard widgets
   useEffect(() => {
-    if (!isOpen || !canvasRef.current) return;
-    try {
-      const canvas = canvasRef.current;
-      const dataUrl = canvas.toDataURL({
-        format: 'png',
-        multiplier: 0.5
-      });
-      setLivePreviewUrl(dataUrl);
-    } catch (e) {
-      console.warn('Failed to generate live preview snapshot:', e);
-    }
-  }, [isOpen, canvasRef.current, bgColor]);
+    if (!isOpen) return;
+    let isCancelled = false;
+
+    const generatePreview = async () => {
+      // 1. Try capturing composite stage with all widgets (Mindmaps, Document Blocks, Quizzes, Simulations)
+      const stage = document.getElementById('smartboard-stage-container');
+      if (stage) {
+        try {
+          const dataUrl = await toPng(stage, {
+            skipFonts: true,
+            backgroundColor: bgColor === 'transparent' ? undefined : bgColor,
+            pixelRatio: 0.6,
+            cacheBust: true,
+            filter: (node: any) => {
+              if (node.classList && (node.classList.contains('agent-cursor') || node.classList.contains('exclude-export'))) {
+                return false;
+              }
+              return true;
+            }
+          });
+          if (!isCancelled && dataUrl && dataUrl.length > 500) {
+            setLivePreviewUrl(dataUrl);
+            return;
+          }
+        } catch (err) {
+          console.warn('Live preview stage capture fallback to canvas:', err);
+        }
+      }
+
+      // 2. Fallback to canvas.toDataURL
+      if (canvasRef.current && !isCancelled) {
+        try {
+          const canvas = canvasRef.current;
+          const dataUrl = canvas.toDataURL({
+            format: 'png',
+            multiplier: 0.5
+          });
+          setLivePreviewUrl(dataUrl);
+        } catch (e) {
+          console.warn('Failed to generate live preview snapshot:', e);
+        }
+      }
+    };
+
+    generatePreview();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isOpen, canvasRef.current, bgColor, domElements, activeMindmapNodes]);
 
   // ── 1. EXPORT SAFE COMPOSITE PNG (Anti Layar Hitam) ──────────────────────
   const handleExportPNG = async () => {
@@ -227,27 +266,57 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
     onClose();
   };
 
-  // ── 6. INSPECT & IMPORT PROJECT FILE ─────────────────────────────────────
+  // ── 6. INSPECT & IMPORT PROJECT FILE (Flexible Multi-Format) ───────────
   const handleProjectFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Route image files directly to canvas insertion
+    if (file.type.startsWith('image/') || /\.(png|jpe?g|webp|svg)$/i.test(file.name)) {
+      handleImageFileChange(e);
+      return;
+    }
+
     try {
       const text = await file.text();
-      const parsed = JSON.parse(text);
-      if (!parsed.pages || !Array.isArray(parsed.pages)) {
-        throw new Error('Format berkas tidak valid: tidak ditemukan struktur halaman Trido.');
+      let parsed = JSON.parse(text);
+
+      // 1. Standard Trido project with multi-page structure
+      if (parsed.pages && Array.isArray(parsed.pages)) {
+        // already valid
+      } else if (parsed.objects && Array.isArray(parsed.objects)) {
+        // 2. Raw Fabric.js canvas export
+        parsed = {
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          pages: [{ canvas: parsed, dom: {} }],
+          currentPageIndex: 0
+        };
+      } else if (parsed.canvas) {
+        // 3. Single canvas wrapper
+        parsed = {
+          title: parsed.title || file.name.replace(/\.[^/.]+$/, ''),
+          pages: [{ canvas: parsed.canvas, dom: parsed.dom || {} }],
+          currentPageIndex: 0
+        };
+      } else {
+        // Fallback: wrap into generic page
+        parsed = {
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          pages: [{ canvas: parsed, dom: {} }],
+          currentPageIndex: 0
+        };
       }
+
       setPendingImportData({
         fileName: file.name,
         sizeKb: (file.size / 1024).toFixed(1),
         title: parsed.title || 'Proyek Tanpa Judul',
         pageCount: parsed.pages.length,
-        exportedAt: parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleDateString('id-ID') : 'Tidak diketahui',
+        exportedAt: parsed.exportedAt ? new Date(parsed.exportedAt).toLocaleDateString('id-ID') : 'Sesi Eksternal',
         raw: parsed
       });
     } catch (err: any) {
-      toast.error(err?.message || 'Gagal membaca berkas proyek.');
+      toast.error('Berkas tidak dapat dibaca: ' + (err?.message || 'Pastikan format JSON atau .trido valid'));
     } finally {
       if (e.target) e.target.value = '';
     }
