@@ -85,6 +85,89 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   // AI status probe
   const [aiStatus, setAiStatus] = useState<'checking' | 'online' | 'offline' | null>(null);
 
+  // Model Pull Streaming Progress State
+  const [isPullingModel, setIsPullingModel] = useState(false);
+  const [pullProgress, setPullProgress] = useState<{
+    status: string;
+    completed?: number;
+    total?: number;
+    percent?: number | null;
+    error?: string;
+  } | null>(null);
+
+  const isModelInstalled = detectedOllamaModels.some(m => 
+    m === localOllamaModel || m.startsWith(localOllamaModel.split(':')[0])
+  );
+
+  const handlePullModel = async () => {
+    setIsPullingModel(true);
+    setPullProgress({ status: 'Memulai pengunduhan model...' });
+
+    try {
+      const response = await fetch('/api/ai/pull-model', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream'
+        },
+        body: JSON.stringify({
+          model: localOllamaModel,
+          ollamaUrl: localOllamaUrl,
+          stream: true
+        })
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`Server merespon ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const jsonStr = line.replace(/^data:\s*/, '').trim();
+          if (!jsonStr) continue;
+
+          try {
+            const data = JSON.parse(jsonStr);
+            if (data.error) {
+              setPullProgress({ status: 'Gagal', error: data.error });
+              toast.error(data.error);
+              setIsPullingModel(false);
+              return;
+            }
+
+            setPullProgress(data);
+
+            if (data.status === 'success' || data.completed === true) {
+              toast.success(`Model ${localOllamaModel} berhasil diunduh dan terkalibrasi!`);
+              setIsPullingModel(false);
+              handleProbe();
+              return;
+            }
+          } catch {}
+        }
+      }
+
+      setIsPullingModel(false);
+      handleProbe();
+    } catch (err: any) {
+      setIsPullingModel(false);
+      setPullProgress({ status: 'Gagal', error: err.message || 'Gagal terhubung' });
+      toast.error('Gagal mengunduh model: ' + (err.message || ''));
+    }
+  };
+
   const handleProbe = async () => {
     setAiStatus('checking');
     try {
@@ -319,6 +402,82 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                         )}
                       </select>
                     </Field>
+
+                    {/* Model Status & 1-Click Pull/Calibration Card */}
+                    {isModelInstalled ? (
+                      <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200/80 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5 text-xs font-bold text-emerald-900">
+                          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                          <span>Model <code>{localOllamaModel}</code> Terpasang & Siap Digunakan Secara Offline</span>
+                        </div>
+                        <span className="text-[10px] font-mono font-black bg-white px-2.5 py-0.5 rounded-full border border-emerald-300 text-emerald-700 shadow-2xs">
+                          Siap 100%
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-200 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-2xs">
+                              <AlertCircle size={18} />
+                            </div>
+                            <div>
+                              <div className="font-extrabold text-xs text-amber-950">
+                                Model Belum Terpasang di Komputer Ini
+                              </div>
+                              <p className="text-[11px] text-amber-800 font-medium leading-relaxed mt-0.5">
+                                Untuk menggunakan smartboard secara 100% offline tanpa internet, unduh dan kalibrasi model lokal Trido langsung ke Ollama dengan 1 klik.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Download Trigger or Active Streaming Progress Bar */}
+                        {!isPullingModel && !pullProgress && (
+                          <button
+                            type="button"
+                            onClick={handlePullModel}
+                            className="w-full py-2.5 px-4 bg-[#1550aa] hover:bg-[#0a1a3a] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            <Download size={14} className="text-[#ffcc00]" />
+                            <span>Unduh & Kalibrasi Model Lokal Otomatis (1-Klik)</span>
+                          </button>
+                        )}
+
+                        {(isPullingModel || pullProgress) && (
+                          <div className="p-3.5 bg-white rounded-xl border border-amber-300 space-y-2.5 font-sans shadow-2xs">
+                            <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                              <span className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-[#1550aa] animate-ping" />
+                                <span className="capitalize">{pullProgress?.status || 'Mengunduh model...'}</span>
+                              </span>
+                              <span className="font-mono text-[#1550aa]">
+                                {pullProgress?.percent !== null && pullProgress?.percent !== undefined ? `${pullProgress.percent}%` : 'Memproses...'}
+                              </span>
+                            </div>
+
+                            {/* Animated Progress Bar */}
+                            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden relative border border-slate-200">
+                              <div
+                                className="h-full bg-[#1550aa] rounded-full transition-all duration-300"
+                                style={{ width: `${Math.max(5, pullProgress?.percent || (isPullingModel ? 25 : 0))}%` }}
+                              />
+                            </div>
+
+                            <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                              <span>Model: {localOllamaModel}</span>
+                              {pullProgress?.total ? (
+                                <span>
+                                  {(pullProgress.completed ? (pullProgress.completed / 1024 / 1024).toFixed(0) : '0')} MB / {(pullProgress.total / 1024 / 1024).toFixed(0)} MB
+                                </span>
+                              ) : (
+                                <span>Menyiapkan layer...</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 

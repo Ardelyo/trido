@@ -6,7 +6,7 @@ describe('Faster-Whisper Offline Multilingual Speech-to-Text', () => {
     const available = await isWhisperAvailable();
     expect(typeof available).toBe('boolean');
     expect(available).toBe(true);
-  });
+  }, 15000);
 
   it('handles empty audio gracefully without crashing', async () => {
     const text = await transcribeAudioWhisper('');

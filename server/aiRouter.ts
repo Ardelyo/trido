@@ -195,21 +195,73 @@ const getAvailableMode = async (
 };
 
 aiRouter.post("/pull-model", async (req, res) => {
-  const url = getOllamaUrl();
-  try {
-    const response = await fetch(`${url}/api/pull`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: getOllamaModel(), stream: false })
-    });
+  const url = (req.body?.ollamaUrl || getOllamaUrl()).replace(/\/$/, "");
+  const targetModel = req.body?.model || req.body?.name || getOllamaModel();
+  const wantsStream = req.body?.stream !== false;
 
-    if (response.ok) {
-      res.json({ success: true, message: `Model ${getOllamaModel()} sedang diunduh atau sudah ada.` });
-    } else {
-      res.status(response.status).json({ success: false, error: `Gagal menarik model: ${response.statusText}` });
+  if (wantsStream) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    try {
+      const response = await fetch(`${url}/api/pull`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: targetModel, stream: true })
+      });
+
+      if (!response.ok || !response.body) {
+        res.write(`data: ${JSON.stringify({ error: `Gagal menarik model (${response.status}): ${response.statusText}` })}\n\n`);
+        res.end();
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const parsed = JSON.parse(line);
+            const percent = parsed.total && parsed.completed ? Math.round((parsed.completed / parsed.total) * 100) : null;
+            res.write(`data: ${JSON.stringify({ ...parsed, percent, model: targetModel })}\n\n`);
+          } catch {}
+        }
+      }
+
+      res.write(`data: ${JSON.stringify({ status: 'success', completed: true, model: targetModel })}\n\n`);
+      res.end();
+    } catch (e: any) {
+      res.write(`data: ${JSON.stringify({ error: e.message || 'Koneksi ke Ollama gagal' })}\n\n`);
+      res.end();
     }
-  } catch (e: any) {
-    res.status(500).json({ success: false, error: e.message });
+  } else {
+    try {
+      const response = await fetch(`${url}/api/pull`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: targetModel, stream: false })
+      });
+
+      if (response.ok) {
+        res.json({ success: true, message: `Model ${targetModel} sedang diunduh atau sudah ada.` });
+      } else {
+        res.status(response.status).json({ success: false, error: `Gagal menarik model: ${response.statusText}` });
+      }
+    } catch (e: any) {
+      res.status(500).json({ success: false, error: e.message });
+    }
   }
 });
 
