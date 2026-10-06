@@ -57,9 +57,12 @@ async function build() {
     logLevel: 'info',
   });
 
-  console.log('[4/4] Copying HTML assets...');
+  console.log('[4/4] Copying HTML assets and icon...');
   fs.copyFileSync('electron/splash.html', 'dist-electron/splash.html');
   fs.copyFileSync('electron/setup.html', 'dist-electron/setup.html');
+  if (fs.existsSync('public/pwa-512x512.png')) {
+    fs.copyFileSync('public/pwa-512x512.png', 'dist-electron/icon.png');
+  }
   
   console.log('✅ Electron bundle ready in dist-electron/');
 }

@@ -95,12 +95,17 @@ function setupPermissions(): void {
 // ── Window factory ─────────────────────────────────────────────────────────────
 
 async function createWindow(): Promise<void> {
+  const iconPath = fs.existsSync(path.join(__dirname, 'icon.png'))
+    ? path.join(__dirname, 'icon.png')
+    : path.join(__dirname, '..', 'public', 'pwa-512x512.png');
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 960,
     minHeight: 640,
     title: 'Trido — AI Digital Classroom',
+    icon: iconPath,
     show: false,
     backgroundColor: '#0f172a',
     webPreferences: {

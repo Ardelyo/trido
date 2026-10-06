@@ -234,6 +234,10 @@ async function startServer() {
     res.status(200).json({ ok: true });
   });
 
+  app.get("/download", (_req, res) => {
+    res.redirect("https://github.com/Ardelyo/trido/releases/latest");
+  });
+
   app.use("/api/ai", aiRouter);
 
   // Vite middleware for development

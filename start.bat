@@ -23,10 +23,10 @@ if %errorlevel% neq 0 (
 echo [1/3] Node.js found: 
 node --version
 
-echo [2/3] Installing dependencies (first run may take ~30 seconds)...
-call npm install --omit=dev --prefer-offline --silent 2>nul
+echo [2/3] Checking dependencies...
+call npm.cmd install --prefer-offline 2>nul
 if %errorlevel% neq 0 (
-  call npm install --omit=dev --silent
+  call npm.cmd install
 )
 
 echo [3/3] Starting Trido server...
@@ -73,5 +73,5 @@ start "" "http://localhost:3000"
 goto :eof
 
 :StartServer
-npm start
+call npm.cmd start
 pause

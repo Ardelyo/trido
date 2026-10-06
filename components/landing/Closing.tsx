@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUp, ArrowUpRight, Check, Plus } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Check, Download, Plus } from "lucide-react";
 import { useI18n } from "./i18n";
 import { LangToggle } from "./Navbar";
 import { Logo, Mark, Reveal, SectionPill } from "./shared";
@@ -169,6 +169,19 @@ export function Cta({ onLaunchApp }: { onLaunchApp?: () => void }) {
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3 pt-6 border-t border-trido/15">
+              <span className="text-[14px] font-semibold text-trido-deep/80">
+                {t.hero.downloadExeSub || "Aplikasi Desktop Standalone:"}
+              </span>
+              <a
+                href="/download"
+                className="group inline-flex items-center gap-2 rounded-full border border-trido bg-trido px-5 py-2.5 text-[14px] font-bold text-white transition-all hover:bg-trido-deep shadow-xs"
+              >
+                <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
+                <span>{t.hero.downloadExe || "Unduh Windows (.exe)"}</span>
+              </a>
             </div>
           </Reveal>
         </div>

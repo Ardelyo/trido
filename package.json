@@ -52,7 +52,7 @@
           ]
         }
       ],
-      "icon": "public/pwa-512x512.png"
+      "icon": "public/icon.ico"
     },
     "nsis": {
       "oneClick": false,
