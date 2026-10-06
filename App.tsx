@@ -26,6 +26,7 @@ import {
 import { SidebarItem } from './components/SidebarItem';
 import { AiStatusBadge } from './components/AiStatusBadge';
 import { ChatMessageItem } from './components/ChatMessageItem';
+import { Logo } from './components/landing/shared';
 import { useStore } from './store';
 import { toast } from './utils/toast';
 import { ToastContainer } from './components/Toast';
@@ -266,10 +267,9 @@ const App: React.FC = () => {
              </div>
           </main>
 
-          {/* Minimal Branding */}
-          <div className="absolute bottom-10 right-10 opacity-25 flex items-center gap-2 pointer-events-none select-none z-50">
-             <img src="/logo.png" alt="Trido Logo" className="w-7 h-7 object-contain" />
-             <span className="text-xl font-black text-slate-900 tracking-tighter">Trido</span>
+          {/* Minimal Branding: EXACT LANDING PAGE LOGO */}
+          <div className="absolute bottom-10 right-10 opacity-30 flex items-center gap-2 pointer-events-none select-none z-50">
+             <Logo />
           </div>
 
 
@@ -310,15 +310,14 @@ const App: React.FC = () => {
               >
                 <Menu size={20} />
               </motion.button>
-              {/* Logo & Product Name */}
+              {/* Logo & Product Name: EXACT LANDING PAGE LOGO */}
               <div 
                 onClick={isWeb ? navigateToLanding : undefined}
-                className={`flex items-center gap-2.5 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-xs border border-slate-200/80 ${isWeb ? 'cursor-pointer hover:bg-white transition-all' : ''}`}
+                className={`flex items-center gap-2 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-xs border border-slate-200/80 ${isWeb ? 'cursor-pointer hover:bg-white transition-all' : ''}`}
                 title={isWeb ? (language === 'id' ? 'Kembali ke Beranda' : 'Return to Landing Page') : undefined}
               >
-                <img src="/logo.png" alt="Trido Logo" className="w-6 h-6 object-contain" />
-                <span className="font-extrabold text-xl text-[#0a1a3a] tracking-tight">Trido</span>
-                <span className="hidden xl:inline ml-2 font-semibold text-[14px] pl-3 border-l border-slate-300 text-slate-700">Digital <span className="font-medium text-slate-500">Classroom</span></span>
+                <Logo />
+                <span className="hidden xl:inline ml-1 font-semibold text-[13px] pl-2.5 border-l border-slate-300 text-slate-600">Digital <span className="font-medium text-slate-400">Classroom</span></span>
               </div>
             </div>
 
@@ -632,9 +631,17 @@ const App: React.FC = () => {
                   {/* Header */}
                   <div className="h-16 lg:h-18 border-b border-slate-100 flex items-center justify-between px-5 font-sans bg-white/70">
                     <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-white border border-slate-200/80 shadow-xs flex items-center justify-center p-1.5">
-                          <img src="/logo.png" alt="Trido Logo" className="w-5 h-5 object-contain" />
-                        </div>
+                        <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#1550aa] shrink-0 shadow-xs">
+                          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none">
+                            <path
+                              d="M7 4.5v15l4.2-4.1 2.9 5.1 2.4-1.3-2.9-5H19L7 4.5Z"
+                              fill="#fff"
+                              stroke="#fff"
+                              strokeWidth="1.2"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-extrabold text-slate-900 text-[15px]">Trido Assistant</span>
