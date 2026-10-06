@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, ArrowUpRight } from "lucide-react";
+import { Menu, X, ArrowUpRight, Download } from "lucide-react";
 import { useI18n } from "./i18n";
 import { Logo } from "./shared";
 import { cn } from "./cn";
@@ -110,9 +110,19 @@ export default function Navbar({ onLaunchApp }: { onLaunchApp?: () => void }) {
           <div className="flex items-center gap-2">
             <LangToggle id="nav" />
             <a
+              href="https://github.com/Ardelyo/trido/releases/latest"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group hidden items-center gap-1.5 rounded-full border border-trido/30 bg-trido/5 hover:bg-trido hover:text-white py-2.5 px-4 text-[13px] font-semibold text-trido transition-colors md:inline-flex"
+              title="Unduh Aplikasi Desktop Standalone (.exe)"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Unduh .exe</span>
+            </a>
+            <a
               href="/app"
               onClick={handleLaunch}
-              className="group hidden items-center gap-1.5 rounded-full bg-trido py-2.5 pl-5 pr-4 text-[14px] font-semibold text-white transition-colors hover:bg-trido-deep sm:inline-flex"
+              className="group hidden items-center gap-1.5 rounded-full bg-trido py-2.5 pl-5 pr-4 text-[14px] font-semibold text-white transition-colors hover:bg-trido-deep sm:inline-flex shadow-xs"
             >
               {t.nav.cta}
               <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

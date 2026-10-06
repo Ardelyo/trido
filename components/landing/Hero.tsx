@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowDown, ArrowUpRight, Mic } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Mic, Download, Monitor } from "lucide-react";
 import { useI18n } from "./i18n";
 import { Mark, useMedia } from "./shared";
 import BoardDemo from "./BoardDemo";
@@ -122,7 +122,7 @@ export default function Hero({ onLaunchApp }: { onLaunchApp?: () => void }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1.05, ease }}
-            className="flex flex-col gap-3 sm:flex-row lg:col-span-5 lg:justify-end"
+            className="flex flex-col gap-3 sm:flex-row lg:col-span-5 lg:justify-end lg:flex-wrap"
           >
             <a
               href="/app"
@@ -132,14 +132,24 @@ export default function Hero({ onLaunchApp }: { onLaunchApp?: () => void }) {
                   onLaunchApp();
                 }
               }}
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-trido px-7 py-4 text-[15px] font-semibold text-white transition-colors hover:bg-trido-deep"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-trido px-7 py-4 text-[15px] font-semibold text-white transition-colors hover:bg-trido-deep shadow-md"
             >
               {t.hero.cta1}
               <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </a>
             <a
+              href="https://github.com/Ardelyo/trido/releases/latest"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center justify-center gap-2 rounded-full border-2 border-trido bg-sun/90 px-7 py-4 text-[15px] font-bold text-trido transition-all hover:bg-trido hover:text-white shadow-xs"
+              title={t.hero.downloadExeSub || "Unduh Aplikasi Desktop Standalone"}
+            >
+              <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
+              <span>{t.hero.downloadExe || "Unduh App Desktop (.exe)"}</span>
+            </a>
+            <a
               href="#board"
-              className="group inline-flex items-center justify-center gap-2 rounded-full border border-trido px-7 py-4 text-[15px] font-semibold text-trido transition-colors hover:bg-trido hover:text-white"
+              className="group inline-flex items-center justify-center gap-2 rounded-full border border-trido/40 px-6 py-4 text-[15px] font-semibold text-trido transition-colors hover:bg-trido hover:text-white"
             >
               {t.hero.cta2}
               <ArrowDown className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
