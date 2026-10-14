@@ -32,6 +32,8 @@ rooms_persistence.json
 data/
 *.telemetry.json
 trido_telemetry.json
+audit_report.json
+eval_results.json
 
 # Local machine artifacts
 lint_output.txt

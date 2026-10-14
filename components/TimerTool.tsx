@@ -18,12 +18,12 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
   const [mode, setMode] = useState<Mode>(parsedConfig.mode || 'TIMER');
   
   // States
-  const totalSeconds = parsedConfig.seconds || 300;
-  const [timeLeft, setTimeLeft] = useState(totalSeconds);
+  const [totalSeconds, setTotalSeconds] = useState<number>(parsedConfig?.seconds || 300);
+  const [timeLeft, setTimeLeft] = useState<number>(parsedConfig?.seconds || 300);
   const [stopwatchTime, setStopwatchTime] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [alarmTime, setAlarmTime] = useState(parsedConfig.alarmAt || '');
+  const [alarmTime, setAlarmTime] = useState(parsedConfig?.alarmAt || '');
   const [isAlarmActive, setIsAlarmActive] = useState(false);
   const [isVisualPie, setIsVisualPie] = useState(experimentalConfig?.enabled && experimentalConfig?.visualTimerEnabled);
 
@@ -35,7 +35,8 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
     try {
       const cfg = typeof config === 'string' ? JSON.parse(config) : config;
       if (cfg.mode) setMode(cfg.mode);
-      if (typeof cfg.seconds === 'number') {
+      if (typeof cfg.seconds === 'number' && cfg.seconds > 0) {
+        setTotalSeconds(cfg.seconds);
         setTimeLeft(cfg.seconds);
       }
       if (typeof cfg.isActive === 'boolean') {
@@ -79,6 +80,9 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
       gain2.connect(ctx.destination);
       osc2.start(now + 0.25);
       osc2.stop(now + 1.2);
+      setTimeout(() => {
+        ctx.close().catch(() => {});
+      }, 1500);
     } catch {}
   };
 
@@ -140,7 +144,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
 
   const reset = () => {
     setIsActive(false);
-    if (mode === 'TIMER') setTimeLeft(parsedConfig.seconds || 300);
+    if (mode === 'TIMER') setTimeLeft(totalSeconds);
     if (mode === 'STOPWATCH') setStopwatchTime(0);
   };
 
@@ -253,31 +257,31 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
                 {/* Classroom Presets */}
                 <div className="flex flex-wrap items-center justify-center gap-1 mt-2.5">
                   <button
-                    onClick={() => { setIsActive(false); setTimeLeft(1500); }}
+                    onClick={() => { setIsActive(false); setTotalSeconds(1500); setTimeLeft(1500); }}
                     className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     🍅 25m
                   </button>
                   <button
-                    onClick={() => { setIsActive(false); setTimeLeft(600); }}
+                    onClick={() => { setIsActive(false); setTotalSeconds(600); setTimeLeft(600); }}
                     className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     🗣️ 10m
                   </button>
                   <button
-                    onClick={() => { setIsActive(false); setTimeLeft(300); }}
+                    onClick={() => { setIsActive(false); setTotalSeconds(300); setTimeLeft(300); }}
                     className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     🎤 5m
                   </button>
                   <button
-                    onClick={() => { setIsActive(false); setTimeLeft(180); }}
+                    onClick={() => { setIsActive(false); setTotalSeconds(180); setTimeLeft(180); }}
                     className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     ⚖️ 3m
                   </button>
                   <button
-                    onClick={() => { setIsActive(false); setTimeLeft(60); }}
+                    onClick={() => { setIsActive(false); setTotalSeconds(60); setTimeLeft(60); }}
                     className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     ⚡ 1m

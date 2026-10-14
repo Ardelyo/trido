@@ -123,6 +123,9 @@ export const AttendanceTool: React.FC<AttendanceToolProps> = ({ config }) => {
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.4);
+      setTimeout(() => {
+        ctx.close().catch(() => {});
+      }, 500);
     } catch {}
 
     const randomIndex = Math.floor(Math.random() * pool.length);

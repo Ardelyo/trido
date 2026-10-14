@@ -811,7 +811,7 @@ export const useTranslation = () => {
   
   const t = (key: string, fallback?: string): string => {
     const dict = translations[language] || translations['en'] || translations['id'];
-    return dict[key] || fallback || key;
+    return dict?.[key] || fallback || translations['en']?.[key] || translations['id']?.[key] || key;
   };
 
   const currentLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0];

@@ -62,16 +62,113 @@ export interface JevReflexResult {
   targetObjectId?: string;
 }
 
+/**
+ * Normalizes Indonesian and English spoken number words into digits
+ * so Voice Mode transcripts ("sepuluh menit", "lima belas soal") match numeric rules.
+ */
+export function normalizeSpokenNumbers(input: string): string {
+  const multiWordMap: Array<[RegExp, string]> = [
+    [/\bdua\s+puluh\s+lima\b/gi, '25'],
+    [/\btiga\s+puluh\s+lima\b/gi, '35'],
+    [/\bempat\s+puluh\s+lima\b/gi, '45'],
+    [/\blima\s+belas\b/gi, '15'],
+    [/\bdua\s+belas\b/gi, '12'],
+    [/\btiga\s+belas\b/gi, '13'],
+    [/\bempat\s+belas\b/gi, '14'],
+    [/\benam\s+belas\b/gi, '16'],
+    [/\btujuh\s+belas\b/gi, '17'],
+    [/\bdelapan\s+belas\b/gi, '18'],
+    [/\bsembilan\s+belas\b/gi, '19'],
+    [/\bdua\s+puluh\b/gi, '20'],
+    [/\btiga\s+puluh\b/gi, '30'],
+    [/\bempat\s+puluh\b/gi, '40'],
+    [/\blima\s+puluh\b/gi, '50'],
+    [/\benam\s+puluh\b/gi, '60'],
+    [/\btwenty[\s-]+five\b/gi, '25'],
+  ];
+  const singleWordMap: Array<[RegExp, string]> = [
+    [/\bsebelas\b/gi, '11'],
+    [/\bsepuluh\b/gi, '10'],
+    [/\bsembilan\b/gi, '9'],
+    [/\bdelapan\b/gi, '8'],
+    [/\btujuh\b/gi, '7'],
+    [/\benam\b/gi, '6'],
+    [/\blima\b/gi, '5'],
+    [/\bempat\b/gi, '4'],
+    [/\btiga\b/gi, '3'],
+    [/\bdua\b/gi, '2'],
+    [/\bsatu\b/gi, '1'],
+    [/\bthirty\b/gi, '30'],
+    [/\btwenty\b/gi, '20'],
+    [/\bfifteen\b/gi, '15'],
+    [/\bten\b/gi, '10'],
+    [/\bfive\b/gi, '5'],
+    [/\bfour\b/gi, '4'],
+    [/\bthree\b/gi, '3'],
+    [/\btwo\b/gi, '2'],
+    [/\bone\b/gi, '1'],
+  ];
+  let out = input;
+  for (const [pattern, replacement] of multiWordMap) {
+    out = out.replace(pattern, replacement);
+  }
+  for (const [pattern, replacement] of singleWordMap) {
+    out = out.replace(pattern, replacement);
+  }
+  return out;
+}
+
+/**
+ * Strips polite/conversational prefixes and wake words so both Voice Mode and Chat Mode
+ * match reflex and intent rules accurately.
+ */
+export function stripConversationalPrefix(input: string): string {
+  return input
+    .trim()
+    .replace(/^(?:(?:hai|halo|hey|ok|oke|permisi|pak|bu)\s+)?(?:trido[,.!?\s]+)?(?:(?:tolong|coba|bisa|mohon|please|can\s+you|could\s+you|bantu(?:\s+saya)?)\s+)+/i, '')
+    .replace(/^(?:hai|halo|hey|ok|oke)\s+trido[,.!?\s]*/i, '')
+    .replace(/^trido[,.!?\s]+/i, '')
+    .trim();
+}
+
 export function evaluateJevSystemOne(
   prompt: string,
   storeState: any,
   canvas: any
 ): JevReflexResult {
-  const norm = prompt.toLowerCase().trim();
+  const rawNorm = normalizeSpokenNumbers(prompt.toLowerCase().trim());
+  const norm = stripConversationalPrefix(rawNorm);
 
   // 1. Instant Reflex Handlers (<15ms, zero LLM roundtrip)
-  if (/^(buka|tampilkan|nyalakan|start|show|open)\s+(timer|penghitung waktu|stopwatch)/i.test(norm)) {
-    if (!storeState.isTimerOpen) storeState.toggleTimer();
+  const timerOpenMatch = norm.match(/^(buka|tampilkan|nyalakan|pasang|mulai|start|show|open|set)\s+(timer|penghitung waktu|stopwatch)(?:\s+(\d+)\s*(menit|mnt|min|minutes?|detik|sec|seconds?))?/i);
+  if (timerOpenMatch) {
+    const amount = timerOpenMatch[3] ? parseInt(timerOpenMatch[3], 10) : null;
+    const unit = (timerOpenMatch[4] || 'menit').toLowerCase();
+    if (amount && amount > 0 && typeof storeState.updateDomElement === 'function') {
+      const seconds = unit.startsWith('det') || unit.startsWith('sec') ? amount : amount * 60;
+      const existingTimers = Object.values(storeState.domElements || {}).filter((el: any) => el.componentType === 'TIMER') as any[];
+      if (existingTimers.length > 0) {
+        const lastTimer = existingTimers[existingTimers.length - 1];
+        storeState.updateDomElement(lastTimer.id, { config: { ...lastTimer.config, seconds, mode: 'TIMER' } });
+      } else {
+        const id = `timer_${Date.now()}`;
+        storeState.updateDomElement(id, {
+          id,
+          html: '<div>Timer</div>',
+          componentType: 'TIMER',
+          config: { seconds, mode: 'TIMER' },
+          x: 960,
+          y: 540,
+          width: 320,
+          height: 380,
+          scaleX: 1,
+          scaleY: 1,
+          rotation: 0,
+          zIndex: 15
+        });
+      }
+    }
+    if (!storeState.isTimerOpen && typeof storeState.toggleTimer === 'function') storeState.toggleTimer();
     return { handled: true, actionTaken: 'TOGGLE_TIMER', message: '⏱️ Timer telah dibuka seketika oleh Jev-1.' };
   }
   if (/^(tutup|close|sembunyikan|hide)\s+(timer|stopwatch)/i.test(norm)) {
@@ -86,7 +183,7 @@ export function evaluateJevSystemOne(
     if (storeState.isCalculatorOpen) storeState.toggleCalculator();
     return { handled: true, actionTaken: 'CLOSE_CALCULATOR', message: '🧮 Kalkulator ditutup.' };
   }
-  if (/^(buka|tampilkan|open)\s+(catatan|notes|note)/i.test(norm)) {
+  if (/^(buka|tampilkan|open)\s+(catatan|notes|note)$/i.test(norm)) {
     if (!storeState.isNotesOpen) storeState.toggleNotes();
     return { handled: true, actionTaken: 'TOGGLE_NOTES', message: '📝 Catatan dibuka seketika.' };
   }
@@ -98,46 +195,67 @@ export function evaluateJevSystemOne(
     if (!storeState.isTodoListOpen) storeState.toggleTodoList();
     return { handled: true, actionTaken: 'TOGGLE_TODOLIST', message: '✅ Agenda kelas dibuka.' };
   }
-  if (/^(buka|putar|spin|roll)\s+(roda|spin wheel|wheel|roda keberuntungan)/i.test(norm)) {
+  if (/^(buka|putar|spin|roll|acak)\s+(roda|spin wheel|wheel|roda keberuntungan|giliran)/i.test(norm)) {
     storeState.toggleSpinWheel();
     return { handled: true, actionTaken: 'TOGGLE_SPIN_WHEEL', message: '🎡 Roda acak siswa dibuka oleh Jev-1.' };
   }
-  if (/^(buka|tampilkan)\s+(papan skor|scoreboard|skor)/i.test(norm)) {
+  if (/^(buka|tampilkan|open)\s+(papan skor|scoreboard|skor)/i.test(norm)) {
     storeState.toggleScoreboard();
     return { handled: true, actionTaken: 'TOGGLE_SCOREBOARD', message: '🏆 Papan skor dibuka.' };
   }
-  if (/^(undo|batalkan|kembali)/i.test(norm)) {
-    if (typeof (window as any).__tridoUndo === 'function') (window as any).__tridoUndo();
+  if (/^(buka|tampilkan|open)\s+(tabel periodik|periodic table)/i.test(norm)) {
+    if (typeof storeState.togglePeriodicTable === 'function' && !storeState.isPeriodicTableOpen) {
+      storeState.togglePeriodicTable();
+    }
+    return { handled: true, actionTaken: 'TOGGLE_PERIODIC_TABLE', message: '🧪 Tabel Periodik dibuka oleh Jev-1.' };
+  }
+  if (/^(buka|tampilkan|open)\s+(konversi satuan|unit converter)/i.test(norm)) {
+    if (typeof storeState.toggleUnitConverter === 'function' && !storeState.isUnitConverterOpen) {
+      storeState.toggleUnitConverter();
+    }
+    return { handled: true, actionTaken: 'TOGGLE_UNIT_CONVERTER', message: '📏 Konversi Satuan dibuka oleh Jev-1.' };
+  }
+  if (/^(tambah halaman|halaman baru|buat halaman baru|add page|new page)$/i.test(norm)) {
+    if (typeof storeState.addPage === 'function') storeState.addPage();
+    return { handled: true, actionTaken: 'ADD_PAGE', message: '📄 Halaman baru telah ditambahkan.' };
+  }
+  if (/^(undo|batalkan|kembali)(?:\s+aksi(?:\s+terakhir|\s+tadi)?)?$/i.test(norm)) {
+    if (typeof storeState.undoCanvas === 'function') storeState.undoCanvas();
+    else if (typeof (window as any).__tridoUndo === 'function') (window as any).__tridoUndo();
     return { handled: true, actionTaken: 'UNDO', message: '↩️ Aksi terakhir dibatalkan oleh Jev-1.' };
   }
-  if (/^(redo|ulangi)/i.test(norm)) {
-    if (typeof (window as any).__tridoRedo === 'function') (window as any).__tridoRedo();
+  if (/^(redo|ulangi)(?:\s+aksi(?:\s+terakhir|\s+tadi)?)?$/i.test(norm)) {
+    if (typeof storeState.redoCanvas === 'function') storeState.redoCanvas();
+    else if (typeof (window as any).__tridoRedo === 'function') (window as any).__tridoRedo();
     return { handled: true, actionTaken: 'REDO', message: '↪️ Aksi diulangi oleh Jev-1.' };
   }
-  if (/^(zoom in|perbesar|zoom dekat)/i.test(norm)) {
+  if (/^(zoom in|perbesar|zoom dekat)(?:\s+kanvas|\s+layar|\s+tampilan)?$/i.test(norm)) {
     if (canvas) {
       canvas.setZoom(Math.min(canvas.getZoom() * 1.25, 4));
       canvas.requestRenderAll();
     }
     return { handled: true, actionTaken: 'ZOOM_IN', message: '🔍 Zoom diperbesar oleh Jev-1.' };
   }
-  if (/^(zoom out|perkecil|zoom jauh)/i.test(norm)) {
+  if (/^(zoom out|perkecil|zoom jauh)(?:\s+kanvas|\s+layar|\s+tampilan)?$/i.test(norm)) {
     if (canvas) {
       canvas.setZoom(Math.max(canvas.getZoom() * 0.8, 0.2));
       canvas.requestRenderAll();
     }
     return { handled: true, actionTaken: 'ZOOM_OUT', message: '🔍 Zoom diperkecil oleh Jev-1.' };
   }
-  if (/^(reset zoom|fit view|pusatkan|reset kanvas)/i.test(norm)) {
+  if (/^(reset zoom|fit view|pusatkan|reset kanvas|pusatkan layar|reset kamera)$/i.test(norm)) {
     if (canvas) {
       canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
       canvas.requestRenderAll();
+    }
+    if (typeof storeState.setViewport === 'function') {
+      storeState.setViewport(1, [1, 0, 0, 1, 0, 0]);
     }
     return { handled: true, actionTaken: 'RESET_ZOOM', message: '🎯 Tampilan kanvas dipusatkan oleh Jev-1.' };
   }
 
   // 2. In-Place Target Element Locking for System 2
-  const isModification = /ubah|ganti|edit|tambah cabang|subtopik|perbarui|update|revisi/i.test(norm);
+  const isModification = /ubah|ganti|edit|tambah(?:kan)?\s+cabang|subtopik|perbarui|update|revisi|expand|modifikasi/i.test(norm);
   if (isModification) {
     const doms = storeState.domElements || {};
     const diagrams = Object.entries(doms).filter(([_, el]: any) => {
@@ -222,14 +340,14 @@ const validateAndFixToolCall = (call: any): { valid: boolean; fixed?: any; error
       return { valid: true };
 
     case 'modify_object':
-      if (!args.objectId) {
+      if (!args.objectId && !args.elementText) {
         return {
           valid: false,
-          error: 'Missing objectId for modify_object',
+          error: 'Missing objectId or elementText for modify_object',
           fixed: null
         };
       }
-      const validActions = ['MOVE_TO_GRID', 'DELETE', 'UPDATE_TEXT', 'RESIZE_OBJECT'];
+      const validActions = ['MOVE_TO_GRID', 'DELETE', 'UPDATE_TEXT', 'RESIZE', 'RESIZE_OBJECT', 'CHANGE_COLOR', 'CHANGE_STROKE'];
       if (!args.action || !validActions.includes(args.action)) {
         return {
           valid: false,
@@ -264,18 +382,23 @@ const validateAndFixToolCall = (call: any): { valid: boolean; fixed?: any; error
   }
 };
 
-const classifyIntent = (prompt: string): 'question' | 'creation' | 'modification' | 'navigation' => {
-  const modificationWords = /ubah|edit|hapus|delete|pindah|move|update|ganti|change|geser|drag|geserkan|pindahkan|reposition|align/i;
-  const creationWords = /buat|create|gambar|draw|tambah|add|tulis|write|bikin|generate|tarik|garis|panah|arrow|line|hubungkan|connect|shape|kotak|lingkaran|segitiga|mindmap|diagram|peta konsep|tabel|rangkum|susun|visual/i;
-  const navigationWords = /pergi|go|zoom|pan|navigasi|navigate|ke halaman|page/i;
-  const questionWords = /(apa|bagaimana|mengapa|kapan|siapa|berapa|what|how|why|when|who|jelaskan|terangkan)/i;
+export const classifyIntent = (prompt: string): 'question' | 'creation' | 'modification' | 'navigation' => {
+  const cleaned = stripConversationalPrefix(normalizeSpokenNumbers(prompt));
+  const navigationWords = /\b(pergi\s+ke|zoom|pan|navigasi|navigate|ke\s+halaman|pindah\s+(?:ke\s+)?halaman|halaman\s+baru|tambah\s+halaman|pusatkan\s+layar|reset\s+kamera|geser\s+(?:layar|kanvas))\b/i;
+  const modificationWords = /\b(ubah|edit|hapus|delete|remove|pindah|move|update|perbarui|revisi|modifikasi|ganti|change|geser|drag|geserkan|pindahkan|reposition|align|expand)\b|tambah(?:kan)?\s+(?:cabang|subtopik|simpul|node)|lanjutkan\s+(?:peta\s+konsep|mindmap|diagram)/i;
+  const creationWords = /\b(buat|buatkan|create|gambar|gambarkan|draw|tambah|tambahkan|add|tulis|tuliskan|write|bikin|generate|tarik|garis|panah|arrow|line|hubungkan|connect|shape|kotak|lingkaran|segitiga|mindmap|diagram|peta\s+konsep|tabel|rangkum|ringkas|susun|visual|kuis|quiz|simulasi)\b/i;
+  const questionWords = /^(apa|apakah|bagaimana|mengapa|kenapa|kapan|siapa|dimana|berapa|what|how|why|when|who|where|jelaskan|terangkan|explain)\b/i;
 
-  // If prompt explicitly asks to create or draw visual artifacts, prioritize creation even if it contains questions
-  if (creationWords.test(prompt)) return 'creation';
-  if (modificationWords.test(prompt)) return 'modification';
-  if (navigationWords.test(prompt)) return 'navigation';
-  if (questionWords.test(prompt.trim())) return 'question';
-  return 'creation'; // default
+  // 1. Prioritize explicit board/camera/page navigation commands (e.g. 'pindah halaman', 'geser layar')
+  if (navigationWords.test(cleaned)) return 'navigation';
+  // 2. Prioritize in-place modification when modification verbs are present (even if target nouns like 'mindmap' or 'kotak' are mentioned)
+  if (modificationWords.test(cleaned)) return 'modification';
+  // 3. Pure conceptual questions without explicit board artifact creation keywords
+  if (questionWords.test(cleaned) && !creationWords.test(cleaned)) return 'question';
+  // 4. Default / explicit artifact creation
+  if (creationWords.test(cleaned)) return 'creation';
+  if (questionWords.test(cleaned)) return 'question';
+  return 'creation';
 };
 
 interface ParsedLesson {
@@ -883,14 +1006,14 @@ ${jevDirective}
           actionType = 'RENDER_HTML';
           const pos = getGridPos(args.gridPosition || 'CENTER');
           payload = {
-            html: '<div>MERMAID</div>',
+            html: '<div>MARKMAP</div>',
             x: pos.x,
             y: pos.y,
             width: 720,
             height: 560,
-            componentType: 'MERMAID_DIAGRAM',
+            componentType: 'MARKMAP_MINDMAP',
             config: {
-              title: args.title || 'Peta Konsep Mermaid',
+              title: args.title || 'Peta Konsep Markmap',
               markdown: args.markdown
             }
           };

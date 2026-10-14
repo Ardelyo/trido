@@ -35,7 +35,7 @@ export const PeriodicTableTool: React.FC = () => {
       </div>
       <div className="grid grid-cols-8 gap-2">
          {elements.map(el => (
-           <div key={el.num} className={`p-2 rounded-xl border flex flex-col items-center justify-center aspect-square shadow-sm cursor-pointer hover:scale-105 transition-transform ${getTypeColor(el.type)}`}>
+           <div key={el.num} className={`relative p-2 rounded-xl border flex flex-col items-center justify-center aspect-square shadow-sm cursor-pointer hover:scale-105 transition-transform ${getTypeColor(el.type)}`}>
              <span className="text-[9px] font-bold opacity-50 absolute top-1 left-1.5">{el.num}</span>
              <span className="text-xl font-black">{el.symbol}</span>
              <span className="text-[8px] font-bold uppercase tracking-tighter truncate w-full text-center mt-1">{el.name}</span>

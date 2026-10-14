@@ -140,6 +140,18 @@ export const DomOverlay: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [fullscreenWidgetId]);
 
+  const getWidgetDomId = (elId: string) =>
+    fullscreenWidgetId === elId ? `widget-${elId}-fullscreen` : `widget-${elId}`;
+
+  const sanitizeWidgetHtml = (rawHtml?: string): string => {
+    if (!rawHtml || typeof rawHtml !== 'string') return '<div>Konten widget</div>';
+    return rawHtml
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<(iframe|object|embed|applet|meta|base)\b[^>]*>/gi, '')
+      .replace(/\son[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .replace(/(href|src|xlink:href)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*')/gi, '$1="#"');
+  };
+
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -163,7 +175,7 @@ export const DomOverlay: React.FC = () => {
       return;
     }
 
-    triggerPrintComponent(`widget-${el.id}`);
+    triggerPrintComponent(getWidgetDomId(el.id));
     toast.success('Membuka pratinjau cetak PDF bersih.');
   };
 
@@ -172,7 +184,7 @@ export const DomOverlay: React.FC = () => {
     e.preventDefault();
     const title = el.config?.title || el.componentType || 'komponen';
     toast.info('Membuat gambar PNG HD...');
-    const ok = await exportComponentAsPNG(`widget-${el.id}`, title, { pixelRatio: 2 });
+    const ok = await exportComponentAsPNG(getWidgetDomId(el.id), title, { pixelRatio: 2 });
     if (ok) {
       toast.success('Gambar PNG berhasil diunduh!');
     } else {
@@ -184,7 +196,7 @@ export const DomOverlay: React.FC = () => {
     e.stopPropagation();
     e.preventDefault();
     toast.info('Menyalin gambar ke clipboard...');
-    const ok = await copyComponentAsImage(`widget-${el.id}`);
+    const ok = await copyComponentAsImage(getWidgetDomId(el.id));
     if (ok) {
       toast.success('Gambar disalin ke clipboard! Siap di-paste ke Canva/WA.');
     } else {
@@ -198,12 +210,13 @@ export const DomOverlay: React.FC = () => {
     const type = el.componentType || '';
     const config = el.config || {};
     const title = config.title || type;
+    const domId = getWidgetDomId(el.id);
 
     if (type === 'MARKDOWN_NOTE' || type === 'DOCUMENT_PAGE') {
       exportDocumentAsHtml(title, config.markdown || config.content || '');
       toast.success('Dokumen HTML berhasil diunduh.');
     } else if (type === 'MARKMAP_MINDMAP') {
-      const svg = document.querySelector(`#widget-${el.id} svg`);
+      const svg = document.querySelector(`#${domId} svg`);
       if (svg) {
         const svgData = new XMLSerializer().serializeToString(svg);
         downloadFile(svgData, `${slugify(title)}_markmap.svg`, 'image/svg+xml;charset=utf-8');
@@ -213,7 +226,7 @@ export const DomOverlay: React.FC = () => {
         toast.success('Markdown berhasil diunduh.');
       }
     } else if (type === 'MERMAID_DIAGRAM') {
-      const svg = document.querySelector(`#widget-${el.id} svg`);
+      const svg = document.querySelector(`#${domId} svg`);
       if (svg) {
         const svgData = new XMLSerializer().serializeToString(svg);
         downloadFile(svgData, `${slugify(title)}_diagram.svg`, 'image/svg+xml;charset=utf-8');
@@ -299,6 +312,10 @@ export const DomOverlay: React.FC = () => {
         case 'FLASHCARD':
           return <FlashcardTool config={el.config} />;
         case 'MARKMAP_MINDMAP':
+          if (el.config?.markdown && !el.config?.code) {
+            return <MarkmapTool config={el.config} />;
+          }
+          return <MermaidTool id={el.id} config={el.config} />;
         case 'MERMAID_DIAGRAM':
           return <MermaidTool id={el.id} config={el.config} />;
         case 'INTERACTIVE_APP':
@@ -323,7 +340,7 @@ export const DomOverlay: React.FC = () => {
           return (
             <div
               className="w-full h-full"
-              dangerouslySetInnerHTML={{ __html: el.html || '<div>Konten widget</div>' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeWidgetHtml(el.html) }}
             />
           );
       }
@@ -331,7 +348,7 @@ export const DomOverlay: React.FC = () => {
     return (
       <div
         className="w-full h-full"
-        dangerouslySetInnerHTML={{ __html: el.html || '<div>Konten</div>' }}
+        dangerouslySetInnerHTML={{ __html: sanitizeWidgetHtml(el.html) }}
       />
     );
   };
@@ -371,10 +388,11 @@ export const DomOverlay: React.FC = () => {
                 height: `${el.height}px`,
                 left: el.x,
                 top: el.y,
-                transform: `translate(-50%, -50%) rotate(${el.rotation || 0}deg)`,
+                transform: `translate3d(-50%, -50%, 0) rotate(${el.rotation || 0}deg)`,
                 transformOrigin: 'center center',
+                backfaceVisibility: 'hidden',
                 pointerEvents: 'auto',
-                transition: isDragging || isResizing ? 'none' : 'box-shadow 0.2s ease, border-color 0.2s ease, opacity 0.2s ease'
+                transition: isDragging || isResizing ? 'none' : 'box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease'
               }}
             >
               {/* Desktop Header / PC Window Titlebar with Generous Drag Area */}

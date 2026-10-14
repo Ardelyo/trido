@@ -105,8 +105,7 @@ Format your response in Markdown. Text: "${prompt}"`;
     return res.status(200).json({ result: parsedResult });
   } catch (err: any) {
     return res.status(500).json({
-      error: err.message || String(err),
-      stack: err.stack,
+      error: 'Gagal menghasilkan konten alat.',
       code: 'server_error',
       retryable: true
     });

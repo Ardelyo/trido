@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trido Smartboard — Setup</title>
+<title>Trido AI Smartboard — Panduan Awal</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #f8f7f5;
+    background-color: #e4e3e0;
+    background-image: radial-gradient(rgba(10, 26, 58, 0.10) 1.25px, transparent 1.25px);
+    background-size: 24px 24px;
     color: #0a1a3a;
-    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    font-family: -apple-system, 'Segoe UI', Inter, system-ui, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -21,82 +23,115 @@
   }
   .card {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 1.5rem;
-    padding: 2.5rem;
-    max-width: 460px;
+    border: 2px solid rgba(10, 26, 58, 0.10);
+    border-radius: 32px;
+    padding: 2.25rem 2.5rem;
+    max-width: 500px;
     width: 100%;
-    box-shadow: 0 16px 40px rgba(10, 26, 58, 0.08);
+    box-shadow: 0 24px 60px rgba(10, 26, 58, 0.10);
     -webkit-app-region: no-drag;
   }
   .header-brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 0.25rem;
+    gap: 10px;
+    background: #ffffff;
+    border: 1.5px solid rgba(10, 26, 58, 0.12);
+    padding: 6px 14px 6px 8px;
+    border-radius: 999px;
+    margin-bottom: 1rem;
   }
   .logo-box {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 10px;
     background: #1550aa;
     display: grid;
     place-items: center;
-    box-shadow: 0 4px 12px rgba(21, 80, 170, 0.2);
   }
   .logo {
-    font-size: 1.75rem;
+    font-size: 1.55rem;
     font-weight: 900;
     color: #1550aa;
     letter-spacing: -0.06em;
   }
-  h2 { font-size: 0.95rem; color: #64748b; font-weight: 600; margin-bottom: 1.75rem; }
-  label { display: block; font-size: 0.85rem; color: #334155; margin-bottom: 0.5rem; font-weight: 700; }
+  .badge {
+    background: #ffcc00;
+    color: #0a1a3a;
+    font-size: 0.68rem;
+    font-weight: 900;
+    padding: 3px 9px;
+    border-radius: 999px;
+    text-transform: uppercase;
+  }
+  h2 { font-size: 1.15rem; color: #0a1a3a; font-weight: 800; margin-bottom: 0.35rem; }
+  .subtitle { font-size: 0.83rem; color: #64748b; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.45; }
+  .mode-box {
+    background: rgba(228, 227, 224, 0.40);
+    border: 1.5px solid rgba(10, 26, 58, 0.08);
+    border-radius: 20px;
+    padding: 1rem 1.15rem;
+    margin-bottom: 1rem;
+  }
+  label { display: block; font-size: 0.82rem; color: #0a1a3a; margin-bottom: 0.45rem; font-weight: 800; }
   input {
     width: 100%;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    color: #0f172a;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    color: #0a1a3a;
     padding: 0.75rem 1rem;
-    border-radius: 0.75rem;
-    font-size: 0.9rem;
+    border-radius: 999px;
+    font-size: 0.88rem;
     outline: none;
     transition: border-color 0.2s;
     font-family: monospace;
   }
-  input:focus { border-color: #1550aa; background: #ffffff; }
+  input:focus { border-color: #1550aa; }
   .hint {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     color: #64748b;
-    margin-top: 0.5rem;
-    line-height: 1.5;
+    margin-top: 0.45rem;
+    line-height: 1.45;
   }
   .hint a {
     color: #1550aa;
-    font-weight: 700;
+    font-weight: 800;
     text-decoration: underline;
     cursor: pointer;
   }
-  button {
-    margin-top: 1.5rem;
+  .btn-primary {
+    margin-top: 0.75rem;
     width: 100%;
     background: #1550aa;
     color: white;
     border: none;
     padding: 0.85rem;
     border-radius: 999px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 800;
     cursor: pointer;
     transition: background 0.2s;
   }
-  button:hover { background: #0d3a80; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .error { color: #dc2626; font-size: 0.82rem; margin-top: 0.75rem; display: none; font-weight: 600; }
-  .loading { display: none; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1rem; color: #64748b; font-size: 0.85rem; font-weight: 600; }
+  .btn-primary:hover { background: #0a1a3a; }
+  .btn-secondary {
+    margin-top: 0.65rem;
+    width: 100%;
+    background: #ffcc00;
+    color: #0a1a3a;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 999px;
+    font-size: 0.86rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-secondary:hover { background: #f2c200; }
+  .error { color: #dc2626; font-size: 0.8rem; margin-top: 0.6rem; display: none; font-weight: 700; }
+  .loading { display: none; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.9rem; color: #1550aa; font-size: 0.84rem; font-weight: 700; }
   .spinner {
     width: 16px; height: 16px;
-    border: 2px solid #cbd5e1;
+    border: 2.5px solid #cbd5e1;
     border-top-color: #1550aa;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
@@ -109,7 +144,7 @@
   <div class="card">
     <div class="header-brand">
       <div class="logo-box">
-        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;" fill="none">
+        <svg viewBox="0 0 24 24" style="width: 20px; height: 20px;" fill="none">
           <path
             d="M7 4.5v15l4.2-4.1 2.9 5.1 2.4-1.3-2.9-5H19L7 4.5Z"
             fill="#ffffff"
@@ -120,26 +155,39 @@
         </svg>
       </div>
       <div class="logo">Trido</div>
-    </div>
-    <h2>Konfigurasi Awal Aplikasi Desktop</h2>
-
-    <label for="apikey">Google AI Studio API Key (Opsional)</label>
-    <input id="apikey" type="password" placeholder="AIzaSy…" autocomplete="off" spellcheck="false" />
-    <div class="hint">
-      Kunci API Gemini dapat diperoleh gratis di <a onclick="window.electronAPI.openExternal('https://aistudio.google.com/apikey')">aistudio.google.com/apikey</a>.
-      Tersimpan aman secara lokal di laptop Anda.
+      <span class="badge">AI Smartboard</span>
     </div>
 
-    <div class="error" id="error"></div>
+    <h2>Selamat Datang di Trido AI Smartboard</h2>
+    <div class="subtitle">
+      <strong>Pengingat Penting:</strong> Server Cloud Demo bawaan (<code>gemma4good</code>) didukung sementara untuk evaluasi dan <strong>tidak akan gratis selamanya</strong>. Gunakan Kunci API pribadi Anda di bawah, atau unduh <strong>Model Lokal Trido (<code>trido-model:latest</code> / <code>trido-gemma:2b</code>)</strong> via Ollama di menu Pengaturan untuk pemakaian offline gratis selamanya.
+    </div>
 
-    <button id="btn" onclick="save()">Buka Smartboard ↵</button>
+    <div class="mode-box">
+      <label for="apikey">Opsi 1: Mode Cloud Cepat (Google AI Studio API Key)</label>
+      <input id="apikey" type="password" placeholder="Tempel kunci AIzaSy… di sini" autocomplete="off" spellcheck="false" />
+      <div class="hint">
+        Dapatkan kunci API gratis dalam 1 klik di <a onclick="window.electronAPI && window.electronAPI.openExternal('https://aistudio.google.com/apikey')">aistudio.google.com/apikey</a>.
+      </div>
+      <div class="error" id="error"></div>
+      <button class="btn-primary" id="btn" onclick="save()">Simpan Kunci & Buka Smartboard ↵</button>
+    </div>
+
+    <button class="btn-secondary" onclick="skipToBoard()">
+      Opsi 2: Langsung Masuk Tanpa Kunci API (Mode Offline Ollama / Manual) →
+    </button>
+
     <div class="loading" id="loading">
       <div class="spinner"></div>
-      Memulai server lokal…
+      Menyiapkan ruang kelas…
     </div>
   </div>
 
   <script>
+    function skipToBoard() {
+      window.location.href = 'http://localhost:3030/?app=true';
+    }
+
     async function save() {
       const key = document.getElementById('apikey').value.trim();
       const btn = document.getElementById('btn');
@@ -148,7 +196,7 @@
 
       if (!key || key.length < 10) {
         err.style.display = 'block';
-        err.textContent = 'Mohon masukkan kunci API yang valid.';
+        err.textContent = 'Masukkan kunci API yang valid, atau klik tombol kuning di bawah untuk Mode Offline.';
         return;
       }
 
@@ -157,11 +205,13 @@
       loading.style.display = 'flex';
 
       const result = await window.electronAPI.saveApiKey(key);
-      if (!result.ok) {
+      if (result.ok) {
+        window.location.href = 'http://localhost:3030/?app=true';
+      } else {
         loading.style.display = 'none';
         btn.disabled = false;
         err.style.display = 'block';
-        err.textContent = result.error || 'Gagal memulai server. Periksa kembali kunci API Anda.';
+        err.textContent = result.error || 'Gagal menyimpan kunci API.';
       }
     }
 

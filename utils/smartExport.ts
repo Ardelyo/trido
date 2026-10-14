@@ -55,23 +55,35 @@ export function slugify(text: string): string {
     .slice(0, 50);
 }
 
+function escapeHtml(raw: unknown): string {
+  return String(raw ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * ── 1. EXPORT CLEAN DOCUMENT AS STANDALONE HTML ─────────────────────────────
  */
 export function exportDocumentAsHtml(title: string, markdown: string) {
   const cleanTitle = title || 'Dokumen Materi Trido';
+  const escapedTitle = escapeHtml(cleanTitle);
+  const safeMarkdownJson = JSON.stringify(markdown || '').replace(/<\/script>/gi, '<\\/script>');
   const htmlContent = `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${cleanTitle}</title>
+  <title>${escapedTitle}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
     .doc-article { font-family: 'Merriweather', serif; }
@@ -92,7 +104,7 @@ export function exportDocumentAsHtml(title: string, markdown: string) {
           <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
           <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Trido Academic Document</span>
         </div>
-        <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 font-sans">${cleanTitle}</h1>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 font-sans">${escapedTitle}</h1>
       </div>
       <button onclick="window.print()" class="no-print px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2 cursor-pointer">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
@@ -103,8 +115,9 @@ export function exportDocumentAsHtml(title: string, markdown: string) {
   </div>
 
   <script>
-    const rawMarkdown = ${JSON.stringify(markdown)};
-    document.getElementById('content').innerHTML = marked.parse(rawMarkdown);
+    const rawMarkdown = ${safeMarkdownJson};
+    const parsedHtml = marked.parse(rawMarkdown);
+    document.getElementById('content').innerHTML = window.DOMPurify ? window.DOMPurify.sanitize(parsedHtml) : parsedHtml;
   </script>
 </body>
 </html>`;
@@ -162,12 +175,15 @@ export function exportInteractiveAppAsHtml(config: {
   js?: string;
 }) {
   const cleanTitle = config.title || 'Trido Interactive App';
+  const escapedTitle = escapeHtml(cleanTitle);
+  const safeCss = (config.css || '').replace(/<\/style>/gi, '<\\/style>');
+  const safeJs = (config.js || '').replace(/<\/script>/gi, '<\\/script>');
   const fullHtml = `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${cleanTitle}</title>
+  <title>${escapedTitle}</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome / Lucide Icons -->
@@ -176,7 +192,7 @@ export function exportInteractiveAppAsHtml(config: {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
-    ${config.css || ''}
+    ${safeCss}
   </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -184,7 +200,7 @@ export function exportInteractiveAppAsHtml(config: {
   <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between text-xs">
     <div class="flex items-center gap-2">
       <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-      <span class="font-bold text-slate-200 tracking-wide">${cleanTitle}</span>
+      <span class="font-bold text-slate-200 tracking-wide">${escapedTitle}</span>
     </div>
     <span class="text-slate-500 text-[11px] font-mono">Standalone Web Application • Exported from Trido</span>
   </header>
@@ -196,12 +212,12 @@ export function exportInteractiveAppAsHtml(config: {
 
   <script>
     try {
-      ${config.js || ''}
+      ${safeJs}
     } catch (err) {
       console.error('Runtime error in standalone app:', err);
       const errBox = document.createElement('div');
       errBox.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#ef4444;color:white;padding:12px 18px;border-radius:12px;font-family:monospace;font-size:12px;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,0.3);';
-      errBox.innerHTML = '<strong>Application Error:</strong> ' + err.message;
+      errBox.textContent = 'Application Error: ' + (err && err.message ? err.message : String(err));
       document.body.appendChild(errBox);
     }
   </script>
@@ -220,9 +236,12 @@ export function exportQuizAsPrintableWorksheet(quiz: {
   config: any;
 }) {
   const cleanTitle = quiz.title || quiz.config?.title || 'Lembar Soal Latihan Siswa';
+  const escapedTitle = escapeHtml(cleanTitle);
   const isMultipleChoice = quiz.type === 'QUIZ_MULTIPLE_CHOICE' || !!quiz.config?.options;
   const isEssay = quiz.type === 'QUIZ_ESSAY' || !!quiz.config?.rubric;
   const isTrueFalse = quiz.type === 'QUIZ_TRUE_FALSE';
+  const ansIndex = quiz.config?.correctIndex ?? quiz.config?.answerIndex ?? quiz.config?.correct ?? quiz.config?.rightAnswerIndex;
+  const questionText = escapeHtml(quiz.config?.question || quiz.config?.statement || 'Jelaskan materi terkait.');
 
   const printWindow = window.open('', '_blank', 'width=900,height=1000');
   if (!printWindow) return false;
@@ -231,7 +250,7 @@ export function exportQuizAsPrintableWorksheet(quiz: {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${cleanTitle} - Lembar Ujian</title>
+  <title>${escapedTitle} - Lembar Ujian</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @page { size: A4; margin: 20mm 15mm; }
@@ -248,7 +267,7 @@ export function exportQuizAsPrintableWorksheet(quiz: {
     <div class="flex justify-between items-start mb-3">
       <div>
         <div class="text-[10px] font-black tracking-widest text-blue-600 uppercase">LEMBAR AKTIVITAS & EVALUASI PEMBELAJARAN</div>
-        <h1 class="text-2xl font-black text-slate-900 uppercase">${cleanTitle}</h1>
+        <h1 class="text-2xl font-black text-slate-900 uppercase">${escapedTitle}</h1>
       </div>
       <button onclick="window.print()" class="no-print px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold cursor-pointer">
         Cetak Soal
@@ -277,7 +296,7 @@ export function exportQuizAsPrintableWorksheet(quiz: {
     <div class="border border-slate-200 rounded-2xl p-6 bg-white">
       <div class="text-xs font-black text-blue-600 uppercase tracking-wider mb-2">Soal No. 1</div>
       <p class="text-base font-semibold text-slate-900 leading-relaxed mb-4">
-        ${quiz.config?.question || 'Jelaskan materi terkait.'}
+        ${questionText}
       </p>
 
       ${isMultipleChoice && Array.isArray(quiz.config?.options) ? `
@@ -287,7 +306,7 @@ export function exportQuizAsPrintableWorksheet(quiz: {
             return `
               <div class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl">
                 <span class="w-6 h-6 rounded-full border border-slate-400 flex items-center justify-center font-bold text-xs text-slate-700 shrink-0">${letter}</span>
-                <span class="text-sm text-slate-800">${opt}</span>
+                <span class="text-sm text-slate-800">${escapeHtml(opt)}</span>
               </div>
             `;
           }).join('')}
@@ -313,21 +332,21 @@ export function exportQuizAsPrintableWorksheet(quiz: {
   </div>
 
   <!-- Teacher Answer Key / Solution Section (Collapsible / Print Option) -->
-  ${quiz.config?.explanation || quiz.config?.answerIndex !== undefined || quiz.config?.sampleAnswer ? `
+  ${quiz.config?.explanation || ansIndex !== undefined || quiz.config?.sampleAnswer ? `
     <div class="mt-12 pt-6 border-t-2 border-dashed border-slate-300 page-break-before">
       <div class="text-xs font-black uppercase tracking-wider text-rose-600 mb-2">KUNCI JAWABAN & PEMBAHASAN (GURU)</div>
       <div class="bg-rose-50/70 border border-rose-200 rounded-xl p-4 text-xs text-rose-900 leading-relaxed">
-        ${quiz.config?.answerIndex !== undefined && quiz.config?.options ? `
-          <div class="mb-2"><strong>Kunci Jawaban:</strong> Pilihan ${String.fromCharCode(65 + quiz.config.answerIndex)} (${quiz.config.options[quiz.config.answerIndex]})</div>
+        ${ansIndex !== undefined && quiz.config?.options ? `
+          <div class="mb-2"><strong>Kunci Jawaban:</strong> Pilihan ${String.fromCharCode(65 + Number(ansIndex))} (${escapeHtml(quiz.config.options[Number(ansIndex)])})</div>
         ` : ''}
         ${quiz.config?.sampleAnswer ? `
-          <div class="mb-2"><strong>Contoh Jawaban Ideal:</strong> ${quiz.config.sampleAnswer}</div>
+          <div class="mb-2"><strong>Contoh Jawaban Ideal:</strong> ${escapeHtml(quiz.config.sampleAnswer)}</div>
         ` : ''}
         ${quiz.config?.rubric ? `
-          <div class="mb-2"><strong>Rubrik Penilaian:</strong> ${quiz.config.rubric}</div>
+          <div class="mb-2"><strong>Rubrik Penilaian:</strong> ${escapeHtml(quiz.config.rubric)}</div>
         ` : ''}
         ${quiz.config?.explanation ? `
-          <div><strong>Pembahasan:</strong> ${quiz.config.explanation}</div>
+          <div><strong>Pembahasan:</strong> ${escapeHtml(quiz.config.explanation)}</div>
         ` : ''}
       </div>
     </div>
@@ -712,19 +731,20 @@ export function exportQuizToGIFT(quizzes: any[]): string {
 
   quizzes.forEach((q, index) => {
     const cfg = q.config || {};
-    const title = (q.title || `Soal ${index + 1}`).replace(/[:{}]/g, '');
-    const question = (cfg.question || 'Pertanyaan').replace(/[{}]/g, '');
+    const title = (q.title || cfg.title || `Soal ${index + 1}`).replace(/[:{}]/g, '');
+    const question = (cfg.question || cfg.statement || 'Pertanyaan').replace(/[{}]/g, '');
+    const qType = q.type || q.componentType;
 
     if (cfg.options && Array.isArray(cfg.options)) {
       output += `::${title}:: ${question} {\n`;
       cfg.options.forEach((opt: string, idx: number) => {
-        const isCorrect = idx === cfg.answerIndex || idx === cfg.correctIndex;
+        const isCorrect = idx === cfg.answerIndex || idx === cfg.correctIndex || idx === cfg.correct || idx === cfg.rightAnswerIndex;
         const prefix = isCorrect ? '=' : '~';
         output += `  ${prefix}${opt.replace(/[=~#]/g, '')}\n`;
       });
       output += '}\n\n';
-    } else if (q.type === 'QUIZ_TRUE_FALSE') {
-      const isTrue = cfg.answer === true || cfg.answer === 'BENAR';
+    } else if (qType === 'QUIZ_TRUE_FALSE') {
+      const isTrue = cfg.isTrue === true || cfg.answer === true || cfg.answer === 'BENAR';
       output += `::${title}:: ${question} {${isTrue ? 'TRUE' : 'FALSE'}}\n\n`;
     } else {
       output += `::${title}:: ${question} {}\n\n`;

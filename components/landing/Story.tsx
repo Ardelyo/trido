@@ -58,7 +58,7 @@ export default function Story() {
                 style={{ y: imgY, scale: 1.08 }}
                 className="h-full w-full object-cover object-top"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-trido-deep/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 ring-1 ring-inset ring-white/15 pointer-events-none" />
             </div>
             <motion.div
               style={{ rotate: stickerR }}

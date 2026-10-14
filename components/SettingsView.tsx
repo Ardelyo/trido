@@ -311,6 +311,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
           {/* ════════ TAB 1: KECERDASAN AI ════════ */}
           {activeTab === 'ai' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              {/* Panduan Cepat Pemula & Pengingat Penting Model Trido / API Key */}
+              <div className="bg-white rounded-3xl border-2 border-[#1550aa]/20 p-5 shadow-xs space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[11px] font-black uppercase tracking-wider">
+                      Penting untuk Pengguna
+                    </span>
+                    <span className="text-xs font-extrabold text-[#0a1a3a]">
+                      Unduh Model Lokal Trido atau Gunakan Kunci API Pribadi Anda
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#1550aa]/10 text-[#1550aa]">
+                    trido-model:latest • trido-gemma:2b
+                  </span>
+                </div>
+                <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200/90 text-[11.5px] font-semibold text-amber-950 leading-relaxed">
+                  ⚠️ <strong>Catatan Server Demo (gemma4good):</strong> Akses Cloud Demo bawaan saat ini diaktifkan untuk kemudahan evaluasi & uji coba, namun <strong>tidak akan gratis selamanya</strong>. Untuk penggunaan kelas sehari-hari tanpa batas, silakan pilih salah satu dari 2 opsi mandiri di bawah ini:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3.5 rounded-2xl bg-[#e4e3e0]/40 border border-[#0a1a3a]/10">
+                    <div className="font-black text-[#0a1a3a] mb-1">1. Unduh Model Lokal Trido (100% Gratis Selamanya)</div>
+                    <p className="text-slate-600 font-medium leading-relaxed">
+                      Pilih <strong>🏠 Ollama Lokal</strong> di bawah, lalu klik <strong>Unduh & Kalibrasi Model Lokal Otomatis (`trido-model:latest` / `trido-gemma:2b`)</strong>. Berjalan 100% offline di laptop Anda tanpa biaya & tanpa internet.
+                    </p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-[#1550aa]/5 border border-[#1550aa]/15">
+                    <div className="font-black text-[#1550aa] mb-1">2. Gunakan Kunci API Google AI Studio Pribadi</div>
+                    <p className="text-slate-600 font-medium leading-relaxed">
+                      Pilih <strong>✨ Gemini Cloud</strong>, buat <strong>Kunci API (`GEMINI_API_KEY`)</strong> gratis milik Anda sendiri di <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-[#1550aa] underline font-bold">aistudio.google.com/apikey</a>, tempel di bawah, lalu klik <strong>Simpan</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Section title={t('aiConfig', 'Penyedia Model AI (Dualitas Lokal & Cloud)')} subtitle={t('aiConfigSubtitle', 'Pilih antara mode offline privat lokal (Ollama) atau mode cloud berkecepatan tinggi')}>
                 
                 {/* AI Mode Selector */}

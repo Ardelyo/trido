@@ -22,7 +22,7 @@ const INNER_RING_ITEMS: RadialItemDef[] = [
   { id: 'notes', label: 'Catatan', icon: FileText, color: 'text-violet-600', bg: 'bg-violet-100', onClick: (s) => s.toggleNotes() },
   { id: 'quiz', label: 'Kuis', icon: HelpCircle, color: 'text-fuchsia-600', bg: 'bg-fuchsia-100', onClick: (s) => s.toggleQuiz() },
   { id: 'pencil', label: 'Pena', icon: Pencil, color: 'text-blue-600', bg: 'bg-blue-100', onClick: (s) => s.setActiveTool('PENCIL') },
-  { id: 'ai', label: 'Asisten', icon: Sparkles, color: 'text-[#1550aa]', bg: 'bg-[#ffcc00]', onClick: (s) => s.toggleAiDrawer() },
+  { id: 'ai', label: 'AI Smartboard', icon: Sparkles, color: 'text-[#1550aa]', bg: 'bg-[#ffcc00]', onClick: (s) => s.toggleAiDrawer() },
 ];
 
 const OUTER_RING_ITEMS: RadialItemDef[] = [

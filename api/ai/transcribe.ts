@@ -14,7 +14,7 @@ export default async function handler(req: any, res: any) {
     body = body || {};
 
     const { base64Audio, selectedVertexModel } = body;
-    if (!base64Audio) {
+    if (!base64Audio || typeof base64Audio !== 'string') {
       return res.status(400).json({ error: 'Data audio base64 diperlukan.' });
     }
 
@@ -79,8 +79,7 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json({ text });
   } catch (err: any) {
     return res.status(500).json({
-      error: err.message || String(err),
-      stack: err.stack,
+      error: 'Gagal melakukan transkripsi audio.',
       code: 'server_error',
       retryable: true
     });

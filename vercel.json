@@ -5,7 +5,7 @@
   "redirects": [
     {
       "source": "/download",
-      "destination": "https://github.com/Ardelyo/trido/releases/latest",
+      "destination": "https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe",
       "permanent": false
     }
   ],

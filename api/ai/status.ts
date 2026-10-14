@@ -51,8 +51,7 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({
       mode: 'unavailable',
       online: false,
-      error: error.message || String(error),
-      stack: error.stack
+      error: 'Gagal memeriksa status layanan AI.'
     });
   }
 }

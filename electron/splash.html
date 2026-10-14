@@ -1,83 +1,230 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trido Smartboard — Starting…</title>
+<title>Trido AI Smartboard — Memulai Ruang Kelas…</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #f8f7f5;
+    background-color: #e4e3e0;
+    background-image: radial-gradient(rgba(10, 26, 58, 0.10) 1.25px, transparent 1.25px);
+    background-size: 24px 24px;
     color: #0a1a3a;
-    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    font-family: -apple-system, 'Segoe UI', Inter, system-ui, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
+    padding: 24px;
     user-select: none;
     -webkit-app-region: drag;
+    overflow: hidden;
+  }
+  .intro-card {
+    background: #ffffff;
+    border: 2px solid rgba(10, 26, 58, 0.10);
+    border-radius: 36px;
+    padding: 40px 44px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(10, 26, 58, 0.10);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: cardEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .brand-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    border: 2px solid rgba(10, 26, 58, 0.10);
+    padding: 8px 18px 8px 10px;
+    border-radius: 999px;
+    margin-bottom: 18px;
   }
   .logo-box {
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
     background: #1550aa;
     display: grid;
     place-items: center;
-    margin-bottom: 16px;
-    box-shadow: 0 8px 24px rgba(21, 80, 170, 0.2);
+    animation: logoPop 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .logo {
-    font-size: 2.5rem;
+  .brand-name {
+    font-size: 1.85rem;
     font-weight: 900;
     color: #1550aa;
     letter-spacing: -0.06em;
-    margin-bottom: 0.25rem;
   }
-  .tagline {
-    color: #64748b;
-    font-size: 0.9rem;
-    font-weight: 600;
-    margin-bottom: 2.5rem;
-    letter-spacing: -0.01em;
-  }
-  .spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid #e2e8f0;
-    border-top-color: #1550aa;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin-bottom: 1rem;
-  }
-  .status {
-    color: #64748b;
-    font-size: 0.75rem;
-    font-weight: 700;
+  .badge {
+    background: #ffcc00;
+    color: #0a1a3a;
+    font-size: 0.7rem;
+    font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    animation: pulse 1.5s ease-in-out infinite;
+    padding: 4px 10px;
+    border-radius: 999px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+  .tagline {
+    color: #0a1a3a;
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+  }
+  .subtagline {
+    color: #64748b;
+    font-size: 0.83rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 14px;
+  }
+  .step {
+    padding: 8px 10px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #94a3b8;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    white-space: nowrap;
+  }
+  .step.active {
+    background: #1550aa;
+    color: #ffffff;
+    border-color: #1550aa;
+  }
+  .step.done {
+    background: #ffcc00;
+    color: #0a1a3a;
+    border-color: #ffcc00;
+  }
+  .progress-track {
+    width: 100%;
+    height: 8px;
+    background: #e4e3e0;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .spinner {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 42%;
+    background: #1550aa;
+    border-radius: 999px;
+    animation: slideBar 1.25s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+  .tip-box {
+    width: 100%;
+    background: rgba(228, 227, 224, 0.45);
+    border: 1px solid rgba(10, 26, 58, 0.08);
+    border-radius: 18px;
+    padding: 10px 14px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 12px;
+    line-height: 1.45;
+  }
+  .status {
+    color: #1550aa;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  @keyframes cardEnter {
+    from { opacity: 0; transform: translateY(14px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes logoPop {
+    0% { transform: scale(0.8); }
+    60% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
+  @keyframes slideBar {
+    0% { left: -42%; width: 38%; background: #1550aa; }
+    50% { width: 52%; background: #ffcc00; }
+    100% { left: 100%; width: 38%; background: #1550aa; }
+  }
 </style>
 </head>
 <body>
-  <div class="logo-box">
-    <svg viewBox="0 0 24 24" style="width: 34px; height: 34px;" fill="none">
-      <path
-        d="M7 4.5v15l4.2-4.1 2.9 5.1 2.4-1.3-2.9-5H19L7 4.5Z"
-        fill="#ffffff"
-        stroke="#ffffff"
-        stroke-width="1.2"
-        stroke-linejoin="round"
-      />
-    </svg>
+  <div class="intro-card">
+    <div class="brand-pill">
+      <div class="logo-box">
+        <svg viewBox="0 0 24 24" style="width: 24px; height: 24px;" fill="none">
+          <path
+            d="M7 4.5v15l4.2-4.1 2.9 5.1 2.4-1.3-2.9-5H19L7 4.5Z"
+            fill="#ffffff"
+            stroke="#ffffff"
+            stroke-width="1.2"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+      <span class="brand-name">Trido</span>
+      <span class="badge">AI Smartboard</span>
+    </div>
+
+    <div class="tagline">Papan Tulis Pintar untuk Pendidikan Inklusif</div>
+    <div class="subtagline">Offline-First (Ollama) • Kontrol Suara & Chat • Tanpa Login</div>
+
+    <div class="steps">
+      <div class="step active" id="s1">1. Kanvas 120 FPS</div>
+      <div class="step" id="s2">2. AI & Suara</div>
+      <div class="step" id="s3">3. Siap Mengajar</div>
+    </div>
+
+    <div class="progress-track">
+      <div class="spinner"></div>
+    </div>
+
+    <div class="tip-box" id="tip">
+      💡 Tips Cepat: Ucapkan "Trido, buat peta konsep..." atau "Pasang timer 10 menit" langsung dengan suara maupun teks.
+    </div>
+
+    <div class="status">Menyiapkan Ruang Kelas Digital…</div>
   </div>
-  <div class="logo">Trido</div>
-  <div class="tagline">AI Smartboard for Inclusive Education</div>
-  <div class="spinner"></div>
-  <div class="status">Memulai Digital Classroom…</div>
+
+  <script>
+    const tips = [
+      '💡 Tips Cepat: Ucapkan "Trido, buat peta konsep..." atau "Pasang timer 10 menit" langsung dengan suara maupun teks.',
+      '🏠 Mode Offline (Ollama) & Cloud bekerja otomatis — seluruh materi tersimpan aman di perangkat Anda.',
+      '🎯 Klik ganda judul widget apa pun di papan tulis untuk membuka Mode Fokus Layar Penuh.'
+    ];
+    let stepIdx = 0;
+    setInterval(() => {
+      stepIdx = (stepIdx + 1) % 3;
+      const s1 = document.getElementById('s1');
+      const s2 = document.getElementById('s2');
+      const s3 = document.getElementById('s3');
+      if (stepIdx === 0) {
+        s1.className = 'step active'; s2.className = 'step'; s3.className = 'step';
+      } else if (stepIdx === 1) {
+        s1.className = 'step done'; s2.className = 'step active'; s3.className = 'step';
+      } else {
+        s1.className = 'step done'; s2.className = 'step done'; s3.className = 'step active';
+      }
+      document.getElementById('tip').textContent = tips[stepIdx];
+    }, 1100);
+  </script>
 </body>
 </html>

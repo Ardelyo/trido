@@ -43,7 +43,6 @@ const App: React.FC = () => {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
 
@@ -60,7 +59,7 @@ const App: React.FC = () => {
     attachedDocument, setAttachedDocument,
     userName, setUserName,
     pages, currentPageIndex, switchPage, addPage, isThinking, isActing,
-    smartboardLayoutMode, abortTask
+    abortTask, isVoiceListening, interimInputText
   } = useStore();
 
   useEffect(() => {
@@ -279,13 +278,26 @@ const App: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#f8fafc] z-60"
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#e4e3e0] z-60 p-6"
               >
-                <div className="relative w-12 h-12">
-                  <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
-                  <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                <div className="bg-white border-2 border-[#0a1a3a]/10 rounded-[2rem] px-8 py-7 shadow-xl flex flex-col items-center gap-4 max-w-md w-full text-center">
+                  <div className="px-4 py-2 rounded-full border border-[#0a1a3a]/10 bg-white flex items-center gap-2">
+                    <Logo />
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[10px] font-black uppercase tracking-wider">Live</span>
+                  </div>
+                  <div className="text-xs font-extrabold tracking-widest text-[#0a1a3a] uppercase">
+                    {t('connectingToBoard', 'Menghubungkan ke Papan')} {userName}...
+                  </div>
+                  <div className="w-full h-2 bg-[#e4e3e0] rounded-full overflow-hidden relative">
+                    <motion.div
+                      initial={{ left: '-40%', width: '40%' }}
+                      animate={{ left: '100%', width: '45%' }}
+                      transition={{ duration: 1.1, repeat: Infinity, ease: [0.22, 1, 0.36, 1] }}
+                      className="absolute inset-y-0 bg-[#1550aa] rounded-full"
+                    />
+                  </div>
                 </div>
-                <div className="text-[12px] font-black tracking-[0.2em] text-slate-400 uppercase">{t('connectingToBoard', 'Menghubungkan ke Papan')} {userName}...</div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -328,7 +340,7 @@ const App: React.FC = () => {
 
             {/* Right Section: Actions */}
             <div className="flex items-center justify-end gap-2 shrink-0 z-10">
-              {/* Asisten Button */}
+              {/* AI Smartboard Studio Button */}
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
@@ -339,7 +351,7 @@ const App: React.FC = () => {
                     : 'text-[#1550aa] bg-white hover:bg-slate-50 border border-[#1550aa]/25'
                 }`}
               >
-                <Sparkles size={16} /> <span className="hidden sm:inline">Asisten</span>
+                <Sparkles size={16} /> <span className="hidden sm:inline">AI Smartboard</span>
               </motion.button>
 
               <motion.button 
@@ -644,11 +656,11 @@ const App: React.FC = () => {
                         </span>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-slate-900 text-[15px]">Trido Assistant</span>
+                            <span className="font-extrabold text-[#0a1a3a] text-[15px]">Trido AI Smartboard</span>
                             <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} title={statusConfig.text} />
                           </div>
-                          <div className="text-[11px] text-slate-400 font-medium tracking-tight">
-                            {statusConfig.mode === 'ollama' ? 'Mode Offline Lokal' : 'Cloud Assistant'}
+                          <div className="text-[11px] text-slate-500 font-semibold tracking-tight">
+                            {statusConfig.mode === 'ollama' ? 'Mode Offline (Ollama)' : 'Studio Smartboard Cloud'}
                           </div>
                         </div>
                     </div>
@@ -672,6 +684,25 @@ const App: React.FC = () => {
 
                   {/* Chat Content */}
                   <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 custom-scrollbar scroll-smooth">
+                    {/* Reminder Pill for Demo Cloud / Trido Local Models & Personal API Key */}
+                    <div className="p-3 rounded-2xl bg-[#e4e3e0]/50 border border-[#0a1a3a]/10 text-[11.5px] leading-relaxed text-[#0a1a3a] flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-black text-[#1550aa] flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[9.5px] font-black uppercase">Info AI</span>
+                          Model Lokal Trido & Kunci API
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsSettingsOpen(true)}
+                          className="text-[10.5px] font-extrabold text-[#1550aa] underline cursor-pointer"
+                        >
+                          Buka Pengaturan →
+                        </button>
+                      </div>
+                      <p className="text-slate-600 font-medium">
+                        Server Cloud Demo (<code className="font-mono text-[10.5px]">gemma4good</code>) tidak gratis selamanya. Anda dapat mengunduh <strong>Model Lokal Trido (<code className="font-mono text-[10.5px]">trido-model:latest</code> / <code className="font-mono text-[10.5px]">trido-gemma:2b</code>)</strong> via Ollama atau memakai <strong>API Key Google AI Studio</strong> pribadi di Pengaturan.
+                      </p>
+                    </div>
                     {messages.length === 0 && (
                       <div className="h-full flex flex-col items-center justify-center text-center opacity-50 px-4">
                         <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
@@ -705,6 +736,27 @@ const App: React.FC = () => {
                   {/* Input Bar */}
                   <div className="p-4 lg:p-5 border-t border-slate-100 bg-white/90 backdrop-blur-xl shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-10 font-sans relative shrink-0">
                     <AttachedDocumentBadge className="mb-2" />
+
+                    {/* Live Voice Mode Synchronization Banner inside Studio Drawer */}
+                    {isVoiceListening && (
+                      <div className="flex items-center justify-between gap-2 px-3.5 py-2 mb-2.5 rounded-full bg-[#1550aa] text-white text-xs font-bold shadow-xs">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="w-2 h-2 rounded-full bg-[#ffcc00] animate-ping shrink-0" />
+                          <span className="truncate">
+                            {interimInputText
+                              ? `Mendengarkan: "${interimInputText}"`
+                              : 'Mode Suara Aktif — Silakan bicara...'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(new Event('toggle-mic'))}
+                          className="px-2.5 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[10px] font-black shrink-0 cursor-pointer"
+                        >
+                          Selesai
+                        </button>
+                      </div>
+                    )}
 
                     {/* Quick Document Action Pills (Only when document is attached) */}
                     {attachedDocument && !isThinking && (
@@ -775,12 +827,15 @@ const App: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              useStore.getState().toggleAiDrawer();
-                              setTimeout(() => window.dispatchEvent(new Event('start-mic')), 300);
+                              window.dispatchEvent(new Event('toggle-mic'));
                             }}
                             disabled={isThinking}
-                            className={`text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 active:scale-95 ${isThinking ? 'opacity-40 pointer-events-none' : ''}`}
-                            title={t('switchToVoice', 'Beralih ke mode suara')}
+                            className={`transition-all p-2.5 rounded-full active:scale-95 cursor-pointer ${
+                              useStore.getState().isVoiceListening
+                                ? 'bg-red-500 text-white animate-pulse shadow-sm'
+                                : 'text-slate-400 hover:text-[#1550aa] hover:bg-blue-50'
+                            } ${isThinking ? 'opacity-40 pointer-events-none' : ''}`}
+                            title={useStore.getState().isVoiceListening ? 'Hentikan & Kirim Suara' : t('switchToVoice', 'Bicara dengan Suara (Sinkron dengan Smartboard)')}
                           >
                             <Mic size={20} />
                           </button>

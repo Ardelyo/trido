@@ -60,6 +60,27 @@ const getOllamaUrl = () => process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL
 const getOllamaModel = () => process.env.OLLAMA_MODEL || CONFIG.ai.ollama.model;
 const getGeminiModel = () => process.env.GEMINI_MODEL || CONFIG.ai.gemini.model;
 
+const sanitizeOllamaUrl = (customUrl?: unknown): string => {
+  const fallback = getOllamaUrl().replace(/\/$/, "");
+  if (!customUrl || typeof customUrl !== "string") return fallback;
+  try {
+    const parsed = new URL(customUrl.trim());
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return fallback;
+    const allowedHosts = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+    try {
+      const envHost = new URL(fallback).hostname;
+      if (envHost) allowedHosts.add(envHost.toLowerCase());
+    } catch {}
+    if (!allowedHosts.has(parsed.hostname.toLowerCase())) {
+      logger.warn(`Blocked non-local Ollama URL override: ${parsed.hostname}`);
+      return fallback;
+    }
+    return parsed.origin;
+  } catch {
+    return fallback;
+  }
+};
+
 // ── Status probe cache (TTL: 15s) ────────────────────────────────────────────
 // Prevents triple-probe (Gemini + Ollama + Vertex) on every /generate request.
 const STATUS_CACHE_TTL_MS = 15_000;
@@ -83,7 +104,7 @@ const probeVertex = async () => {
 };
 
 const probeOllama = async (customUrl?: string, customModel?: string) => {
-  const url = customUrl || getOllamaUrl();
+  const url = sanitizeOllamaUrl(customUrl);
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), CONFIG.ai.ollama.probeTimeoutMs);
@@ -195,8 +216,12 @@ const getAvailableMode = async (
 };
 
 aiRouter.post("/pull-model", async (req, res) => {
-  const url = (req.body?.ollamaUrl || getOllamaUrl()).replace(/\/$/, "");
-  const targetModel = req.body?.model || req.body?.name || getOllamaModel();
+  const url = sanitizeOllamaUrl(req.body?.ollamaUrl || req.body?.ollamaBaseUrl);
+  const rawTargetModel = req.body?.model || req.body?.name || getOllamaModel();
+  if (typeof rawTargetModel !== "string" || !/^[a-zA-Z0-9._:/-]{1,128}$/.test(rawTargetModel.trim())) {
+    return res.status(400).json({ success: false, error: "Nama model tidak valid." });
+  }
+  const targetModel = rawTargetModel.trim();
   const wantsStream = req.body?.stream !== false;
 
   if (wantsStream) {
@@ -629,7 +654,13 @@ aiRouter.post("/tool-content", async (req, res) => {
 
 aiRouter.post("/transcribe", async (req, res) => {
   const startTime = Date.now();
-  const { base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel, sessionId } = req.body;
+  const { base64Audio, aiPreference, geminiApiKey, ollamaBaseUrl, selectedGeminiModel, selectedOllamaModel, selectedVertexModel, sessionId } = req.body || {};
+  if (!base64Audio || typeof base64Audio !== 'string') {
+    return res.status(400).json({ error: 'No audio provided' });
+  }
+  const mimeMatch = base64Audio.match(/^data:(audio\/[a-zA-Z0-9+.-]+);base64,/);
+  const audioMimeType = mimeMatch ? mimeMatch[1] : 'audio/webm';
+  const cleanAudio = base64Audio.replace(/^data:audio\/[a-zA-Z0-9+.-]+;base64,/, '');
   const activeSessionId = sessionId || (req.headers['x-session-id'] as string) || 'session_default';
   let activeMode: 'vertex' | 'gemini' | 'ollama' | 'unknown' = 'unknown';
   let activeModel = 'unknown';
@@ -654,10 +685,10 @@ aiRouter.post("/transcribe", async (req, res) => {
         activeMode = mode;
         if (mode === 'vertex') {
           activeModel = selectedVertexModel || CONFIG.ai.vertex.model;
-          text = await transcribeAudioVertex(base64Audio, selectedVertexModel);
+          text = await transcribeAudioVertex(cleanAudio, audioMimeType, selectedVertexModel);
         } else if (mode === 'gemini') {
           activeModel = selectedGeminiModel || getGeminiModel();
-          text = await transcribeAudioGemini(base64Audio, geminiApiKey, selectedGeminiModel);
+          text = await transcribeAudioGemini(cleanAudio, geminiApiKey, selectedGeminiModel);
         } else if (mode === 'ollama') {
           activeModel = selectedOllamaModel || status.ollamaStatus?.activeModel || getOllamaModel();
           logger.info(`[Router] Attempting offline Faster-Whisper transcription for language: ${req.body.language || 'auto'}...`);

@@ -32,7 +32,7 @@ export interface WhisperTranscriptionResult {
  */
 export const isWhisperAvailable = async (): Promise<boolean> => {
   try {
-    const { stdout } = await execFileAsync('python', ['-c', 'import faster_whisper; print("ok")'], { timeout: 8000 });
+    const { stdout } = await execFileAsync('python', ['-c', 'import faster_whisper; print("ok")'], { timeout: 15000 });
     return stdout.trim().includes('ok');
   } catch {
     return false;
@@ -49,7 +49,10 @@ export const transcribeAudioWhisper = async (
 ): Promise<string> => {
   const tmpId = `trido_whisper_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const tmpFilePath = path.join(os.tmpdir(), `${tmpId}.webm`);
-  const scriptPath = path.resolve(getScriptDir(), 'whisperService.py');
+  const rawScriptPath = path.resolve(getScriptDir(), 'whisperService.py');
+  const scriptPath = rawScriptPath.includes('app.asar') && !rawScriptPath.includes('app.asar.unpacked')
+    ? rawScriptPath.replace('app.asar', 'app.asar.unpacked')
+    : rawScriptPath;
 
   try {
     // 1. Strip data URL header if present

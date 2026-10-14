@@ -46,6 +46,9 @@ class SoundManager {
       case 'pop':
         this.playTone(600, 0.05, 'sine', 0.1);
         break;
+      case 'click':
+        this.playTone(700, 0.03, 'sine', 0.08);
+        break;
       case 'thinking':
         this.startThinking();
         break;
@@ -73,6 +76,8 @@ class SoundManager {
 
   private thinkingOsc: OscillatorNode | null = null;
   private thinkingGain: GainNode | null = null;
+  private thinkingLfo: OscillatorNode | null = null;
+  private thinkingLfoGain: GainNode | null = null;
 
   private startThinking() {
     if (this.thinkingOsc) return;
@@ -92,6 +97,8 @@ class SoundManager {
     lfo.connect(lfoGain);
     lfoGain.connect(this.thinkingOsc.frequency);
     lfo.start();
+    this.thinkingLfo = lfo;
+    this.thinkingLfoGain = lfoGain;
 
     this.thinkingGain.gain.setValueAtTime(0, ctx.currentTime);
     this.thinkingGain.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.5);
@@ -105,11 +112,21 @@ class SoundManager {
   stop(name: string) {
     if (name === 'thinking' && this.thinkingOsc) {
       const ctx = this.context!;
-      this.thinkingGain?.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+      const osc = this.thinkingOsc;
+      const gain = this.thinkingGain;
+      const lfo = this.thinkingLfo;
+      const lfoGain = this.thinkingLfoGain;
+      this.thinkingOsc = null;
+      this.thinkingGain = null;
+      this.thinkingLfo = null;
+      this.thinkingLfoGain = null;
+
+      gain?.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
       setTimeout(() => {
-        this.thinkingOsc?.stop();
-        this.thinkingOsc = null;
-        this.thinkingGain = null;
+        try { osc?.stop(); osc?.disconnect(); } catch {}
+        try { lfo?.stop(); lfo?.disconnect(); } catch {}
+        try { lfoGain?.disconnect(); } catch {}
+        try { gain?.disconnect(); } catch {}
       }, 600);
     }
   }

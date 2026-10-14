@@ -217,7 +217,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
           } : {
             fontFamily: 'Inter, system-ui, sans-serif'
           },
-          securityLevel: 'loose',
+          securityLevel: 'antiscript',
           fontFamily: 'Inter, system-ui, sans-serif'
         });
 

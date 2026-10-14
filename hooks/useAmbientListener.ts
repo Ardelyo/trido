@@ -17,6 +17,7 @@ import { useStore } from '../store';
 import { toast } from '../utils/toast';
 import { sounds } from '../utils/sounds';
 import { createLogger } from '../utils/logger';
+import { normalizeSpokenNumbers, stripConversationalPrefix } from './useGeminiBrain';
 
 const logger = createLogger('ambient-listener');
 
@@ -27,15 +28,15 @@ export interface HandsFreeCommandResult {
 }
 
 export function matchAndExecuteHandsFreeCommand(rawText: string): HandsFreeCommandResult {
-  const text = rawText.toLowerCase().trim();
+  const normalizedText = normalizeSpokenNumbers(rawText.toLowerCase().trim());
   const store = useStore.getState();
 
-  // Strip wake words if present
-  const clean = text.replace(/^(hai|halo|hey|ok|oke|tolong)?\s*trido[,.]?\s*/i, '').trim();
+  // Strip wake words & polite prefixes if present
+  const clean = stripConversationalPrefix(normalizedText);
 
-  // 1. Timer: "pasang timer 5 menit", "buka timer", "timer 10 menit"
-  const timerMatch = clean.match(/(?:buka\s+)?timer(?:\s+(\d+))?\s*(?:menit|mnt|min)?/i) || text.match(/timer/i);
-  if (timerMatch || clean.includes('waktu') || clean.includes('hitung mundur')) {
+  // 1. Timer: "pasang timer 5 menit", "buka timer sepuluh menit", "timer 10 menit"
+  const timerMatch = clean.match(/(?:buka\s+|pasang\s+|nyalakan\s+|mulai\s+|set\s+)?timer(?:\s+(\d+))?\s*(?:menit|mnt|min|minutes?)?/i) || normalizedText.match(/timer(?:\s+(\d+))?/i);
+  if (timerMatch || clean.includes('hitung mundur')) {
     const minutes = timerMatch && timerMatch[1] ? parseInt(timerMatch[1], 10) : 5;
     const id = `timer_${Date.now()}`;
     store.updateDomElement(id, {
@@ -52,6 +53,11 @@ export function matchAndExecuteHandsFreeCommand(rawText: string): HandsFreeComma
       rotation: 0,
       zIndex: 15
     });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('addCanvasPlaceholder', {
+        detail: { id, x: 960, y: 540, width: 320, height: 380 }
+      }));
+    }
     sounds.play('success');
     toast.success(`⏱️ Hands-Free: Timer ${minutes} menit aktif di papan!`);
     return { matched: true, action: 'TIMER', detail: `${minutes} menit` };
@@ -82,6 +88,11 @@ export function matchAndExecuteHandsFreeCommand(rawText: string): HandsFreeComma
       rotation: 0,
       zIndex: 15
     });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('addCanvasPlaceholder', {
+        detail: { id, x: 960, y: 540, width: 440, height: 480 }
+      }));
+    }
     sounds.play('success');
     toast.success('🎲 Hands-Free: Roda Acak Siswa aktif!');
     return { matched: true, action: 'SPIN_WHEEL' };
@@ -95,8 +106,8 @@ export function matchAndExecuteHandsFreeCommand(rawText: string): HandsFreeComma
     return { matched: true, action: 'CALCULATOR' };
   }
 
-  // 5. Quiz: "buat kuis", "mulai kuis", "buka kuis"
-  if (clean.includes('kuis') || clean.includes('quiz') || clean.includes('ulangan')) {
+  // 5. Quiz modal: "buka kuis", "mulai kuis" (when not asking AI to generate a topic-specific quiz)
+  if ((clean.includes('kuis') || clean.includes('quiz') || clean.includes('ulangan')) && !/\b(tentang|mengenai|soal|materi|topik)\b/i.test(clean)) {
     store.toggleQuiz();
     sounds.play('success');
     toast.success('❓ Hands-Free: Kuis Interaktif dibuka!');
@@ -119,12 +130,40 @@ export function matchAndExecuteHandsFreeCommand(rawText: string): HandsFreeComma
     return { matched: true, action: 'CLEAR_CANVAS' };
   }
 
-  // 8. General AI Command / Mindmap: "buat peta konsep ...", "jelaskan ..."
-  if (clean.includes('peta konsep') || clean.includes('mindmap') || clean.startsWith('buatkan') || clean.startsWith('jelaskan')) {
+  // 8. Undo / Redo / New Page hands-free
+  if (/^(undo|batalkan)(?:\s+aksi)?$/i.test(clean)) {
+    store.undoCanvas();
+    sounds.play('pop');
+    return { matched: true, action: 'UNDO' };
+  }
+  if (/^(redo|ulangi)(?:\s+aksi)?$/i.test(clean)) {
+    store.redoCanvas();
+    sounds.play('pop');
+    return { matched: true, action: 'REDO' };
+  }
+  if (/^(halaman baru|tambah halaman|new page|add page)$/i.test(clean)) {
+    store.addPage();
+    sounds.play('success');
+    toast.success('📄 Hands-Free: Halaman baru ditambahkan!');
+    return { matched: true, action: 'ADD_PAGE' };
+  }
+
+  // 9. General AI Smartboard Command / Mindmap / Question / In-Place Modification
+  if (
+    clean.includes('peta konsep') ||
+    clean.includes('mindmap') ||
+    clean.includes('diagram') ||
+    clean.includes('kuis') ||
+    clean.includes('quiz') ||
+    /^(buat|buatkan|gambar|gambarkan|jelaskan|terangkan|ubah|edit|perbarui|tambahkan|rangkum|ringkas|apa|mengapa|kenapa|bagaimana|siapa|create|draw|explain|modify|update|what|how|why)\b/i.test(clean)
+  ) {
     store.setChatInputText(rawText);
     if (!store.isAiDrawerOpen) store.toggleAiDrawer();
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('execute-voice-prompt', { detail: { prompt: clean } }));
+    }
     sounds.play('pop');
-    toast.info(`💡 Hands-Free: Meneruskan ke Asisten AI: "${clean.slice(0, 36)}..."`);
+    toast.info(`💡 Hands-Free: Meneruskan ke AI Smartboard: "${clean.slice(0, 36)}..."`);
     return { matched: true, action: 'AI_ASSISTANT', detail: clean };
   }
 
@@ -172,7 +211,7 @@ export function useAmbientListener(options: UseAmbientListenerOptions = {}) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              audio: base64Audio,
+              base64Audio,
               language: useStore.getState().language || 'id',
               model: 'tiny',
               mode: 'faster_whisper'
@@ -271,34 +310,33 @@ export function useAmbientListener(options: UseAmbientListenerOptions = {}) {
         speechRecognitionRef.current = recognition;
       }
 
-      // 2. Also start background media stream for waveform audio level & Whisper backup
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-      streamRef.current = stream;
+      // 2. Start background media stream & MediaRecorder only when SpeechRecognition is unavailable (Whisper fallback)
+      if (!SpeechRecognition) {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+        streamRef.current = stream;
 
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      mediaRecorderRef.current = recorder;
-      audioChunksRef.current = [];
+        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        mediaRecorderRef.current = recorder;
+        audioChunksRef.current = [];
 
-      recorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            audioChunksRef.current.push(e.data);
+          }
+        };
 
-      recorder.start(1000);
+        recorder.start(1000);
 
-      intervalTimerRef.current = setInterval(() => {
-        // Only run Whisper fallback if SpeechRecognition wasn't present
-        if (!SpeechRecognition) {
+        intervalTimerRef.current = setInterval(() => {
           processAudioBuffer();
-        }
-      }, sliceIntervalMs);
+        }, sliceIntervalMs);
+      }
 
       setHandsFreeListening(true);
       sounds.play('mic_on');

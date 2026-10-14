@@ -87,7 +87,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
 
   const wait = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-  const execute = async (x: number, y: number, label: string, taskFn: () => void) => {
+  const execute = async (x: number, y: number, label: string, taskFn: () => void | Promise<void>) => {
     setCurrentAction(label);
     setSpatialTarget({ x, y });
     setAccuracy(Math.floor(Math.random() * 5) + 95);
@@ -105,7 +105,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     setClicking(false);
 
     // 4. Act
-    taskFn();
+    await taskFn();
 
     // 5. Short verify pause
     await wait(VERIFICATION_PAUSE);
@@ -114,18 +114,15 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
 
   const runRef = useRef<() => Promise<void>>(null as any);
   runRef.current = async () => {
-    if (processingRef.current || actionQueue.length === 0) return;
+    if (processingRef.current || useStore.getState().actionQueue.length === 0) return;
+    if (!canvasRef.current) return;
     
     processingRef.current = true;
     setActing(true);
-    const action = popAction();
-    
-    if (!action || !canvasRef.current) {
-      processingRef.current = false;
-      setActing(false);
-      setCurrentAction(null);
-      return;
-    }
+
+    while (useStore.getState().actionQueue.length > 0 && canvasRef.current) {
+      const action = popAction();
+      if (!action) break;
     
     const canvas = canvasRef.current;
 
@@ -980,13 +977,15 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     } catch (err) {
       console.error("Action failed:", err);
     }
+    }
 
+    const canvas = canvasRef.current;
     processingRef.current = false;
     setActing(false);
     setCurrentAction(null);
 
     // Play success sound when queue is finished
-    if (useStore.getState().actionQueue.length === 0) {
+    if (useStore.getState().actionQueue.length === 0 && canvas) {
       sounds.play('success');
       
       // Remove tiny circle objects that have no text and no connections (Fix 4)

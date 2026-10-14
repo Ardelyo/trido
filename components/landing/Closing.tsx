@@ -171,17 +171,38 @@ export function Cta({ onLaunchApp }: { onLaunchApp?: () => void }) {
               </AnimatePresence>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3 pt-6 border-t border-trido/15">
-              <span className="text-[14px] font-semibold text-trido-deep/80">
-                {t.hero.downloadExeSub || "Aplikasi Desktop Standalone:"}
-              </span>
-              <a
-                href="/download"
-                className="group inline-flex items-center gap-2 rounded-full border border-trido bg-trido px-5 py-2.5 text-[14px] font-bold text-white transition-all hover:bg-trido-deep shadow-xs"
-              >
-                <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
-                <span>{t.hero.downloadExe || "Unduh Windows (.exe)"}</span>
-              </a>
+            <div className="mt-8 flex flex-col gap-4 pt-6 border-t border-trido/15">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-[14px] font-extrabold text-trido-deep">
+                  {t.hero.downloadExeSub || "Aplikasi Desktop Standalone:"}
+                </span>
+                <a
+                  href={t.hero.downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-2 rounded-full border-2 border-trido bg-trido px-6 py-3 text-[14px] font-bold text-white transition-all hover:bg-trido-deep shadow-sm"
+                >
+                  <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
+                  <span>{t.hero.downloadExe || "Unduh Windows (.exe)"}</span>
+                </a>
+                <a
+                  href="https://github.com/Ardelyo/trido/releases/latest"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-trido/35 bg-white/80 px-4 py-2.5 text-[12.5px] font-bold text-trido transition-all hover:bg-white"
+                >
+                  <span>Release Notes & Model Guide</span>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
+              <div className="rounded-2xl bg-white/85 border border-trido/20 p-4 max-w-[44rem]">
+                <div className="text-[12px] font-black uppercase tracking-wider text-trido mb-1">
+                  💡 {t.hero.modelReminderBadge}: {t.hero.modelReminderTitle}
+                </div>
+                <p className="text-[12.5px] leading-relaxed font-medium text-trido-deep/85">
+                  {t.hero.modelReminderBody}
+                </p>
+              </div>
             </div>
           </Reveal>
         </div>

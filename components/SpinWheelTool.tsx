@@ -36,13 +36,29 @@ export const SpinWheelTool: React.FC<SpinWheelProps> = ({ config }) => {
   const angleRef = useRef(0);
   const velocityRef = useRef(0);
   const animFrameRef = useRef<number | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   const title = config?.title || 'Roda Acak Siswa';
 
-  // Play subtle ticking sound using Web Audio API
+  useEffect(() => {
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        audioCtxRef.current.close().catch(() => {});
+      }
+    };
+  }, []);
+
+  // Play subtle ticking sound using a single shared Web Audio API context
   const playTick = () => {
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+        audioCtxRef.current = new AudioCtx();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
@@ -210,7 +226,7 @@ export const SpinWheelTool: React.FC<SpinWheelProps> = ({ config }) => {
       </div>
 
       {/* Main Wheel Canvas Area */}
-      <div className="flex-1 relative flex flex-col items-center justify-center p-3 bg-radial from-white via-slate-50 to-slate-100/50">
+      <div className="flex-1 relative flex flex-col items-center justify-center p-3 bg-slate-50">
         <canvas
           ref={canvasRef}
           width={320}
@@ -240,22 +256,41 @@ export const SpinWheelTool: React.FC<SpinWheelProps> = ({ config }) => {
         )}
       </div>
 
-      {/* Item Quick Add Bar */}
-      <div className="p-2.5 bg-white border-t border-slate-200/80 flex items-center gap-2 shrink-0">
-        <input
-          type="text"
-          placeholder="Tambah nama..."
-          value={newItemName}
-          onChange={e => setNewItemName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addItem()}
-          className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 outline-none focus:border-amber-500"
-        />
-        <button
-          onClick={addItem}
-          className="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 cursor-pointer"
-        >
-          <Plus size={14} />
-        </button>
+      {/* Item Quick Add & Chip List Bar */}
+      <div className="p-2.5 bg-white border-t border-slate-200/80 flex flex-col gap-2 shrink-0">
+        {items.length > 0 && (
+          <div className="flex flex-wrap gap-1 max-h-14 overflow-y-auto custom-scrollbar">
+            {items.map((item, idx) => (
+              <span key={`${item}-${idx}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-700">
+                <span className="truncate max-w-[90px]">{item}</span>
+                <button
+                  type="button"
+                  onClick={() => removeItem(idx)}
+                  className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                  title="Hapus"
+                >
+                  <Trash2 size={10} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="Tambah nama..."
+            value={newItemName}
+            onChange={e => setNewItemName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addItem()}
+            className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 outline-none focus:border-amber-500"
+          />
+          <button
+            onClick={addItem}
+            className="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 cursor-pointer"
+          >
+            <Plus size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );

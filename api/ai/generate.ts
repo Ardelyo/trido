@@ -464,8 +464,7 @@ CRITICAL EXECUTION RULES:
   } catch (err: any) {
     const status = err.status || 500;
     return res.status(status).json({
-      error: err.message || 'Layanan AI mengalami kendala.',
-      stack: err.stack,
+      error: status === 500 ? 'Layanan AI mengalami kendala.' : (err.message || 'Layanan AI mengalami kendala.'),
       code: status === 401 ? 'invalid_key' : status === 429 ? 'rate_limited' : 'server_error',
       retryable: status >= 500 || status === 429
     });

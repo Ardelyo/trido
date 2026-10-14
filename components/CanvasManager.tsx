@@ -48,11 +48,12 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     const canvas = fabricRef.current;
     
     if (prevPageIndex.current !== currentPageIndex || prevSessionId.current !== currentSessionId || prevLoadTimestamp.current !== sessionLoadTimestamp) {
-      // If session is the same, we save the previous page state
+      // If session is the same, we save the previous page canvas & preview (preserving its already-saved dom & mindmapNodes)
       if (prevSessionId.current === currentSessionId && prevPageIndex.current !== currentPageIndex && prevLoadTimestamp.current === sessionLoadTimestamp) {
         const prevState = canvas.toJSON(['id', 'zIndex', 'isDomPlaceholder']);
-        const prevDom = useStore.getState().domElements;
-        const prevMindmap = useStore.getState().activeMindmapNodes;
+        const prevPageObj = useStore.getState().pages[prevPageIndex.current];
+        const prevDom = prevPageObj?.dom || {};
+        const prevMindmap = prevPageObj?.mindmapNodes || [];
         try {
           const previewUrl = canvas.toDataURL({ format: 'png', multiplier: 0.2 });
           useStore.getState().updatePageData(prevPageIndex.current, prevState, prevDom, previewUrl, prevMindmap);
@@ -380,11 +381,51 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
         const obj = canvas.getObjects().find((o: any) => o.id === id);
         if (obj) {
           obj.set({ left: x, top: y });
+          obj.setCoords?.();
           canvas.requestRenderAll();
         }
       });
     };
     window.addEventListener('moveCanvasPlaceholder', handleMovePlaceholder);
+
+    const handleResizePlaceholder = (e: any) => {
+      const { id, width, height } = e.detail || {};
+      if (!id || !width || !height) return;
+      const obj = canvas.getObjects().find((o: any) => o.id === id);
+      if (obj) {
+        obj.set({ width, height, scaleX: 1, scaleY: 1 });
+        obj.setCoords?.();
+        canvas.requestRenderAll();
+      }
+    };
+    window.addEventListener('resizeCanvasPlaceholder', handleResizePlaceholder);
+
+    const handleAddPlaceholder = (e: any) => {
+      const { id, x, y, width = 400, height = 350 } = e.detail || {};
+      if (!id || !window.fabric) return;
+      const existing = canvas.getObjects().find((o: any) => o.id === id);
+      if (existing) return;
+      const placeholder = new window.fabric.Rect({
+        left: x ?? 960,
+        top: y ?? 540,
+        width,
+        height,
+        fill: 'rgba(0,0,0,0.001)',
+        stroke: 'transparent',
+        strokeWidth: 0,
+        originX: 'center',
+        originY: 'center',
+        id,
+        isDomPlaceholder: true,
+        selectable: true,
+        evented: true,
+        hasControls: true,
+        hasBorders: true,
+      });
+      canvas.add(placeholder);
+      canvas.requestRenderAll();
+    };
+    window.addEventListener('addCanvasPlaceholder', handleAddPlaceholder);
 
     const updateDomFromObject = (obj: any) => {
        if (obj.isDomPlaceholder) {
@@ -667,6 +708,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
 
     return () => {
       cancelAnimationFrame(rafId);
+      if (movePlaceholderRaf) cancelAnimationFrame(movePlaceholderRaf);
       resizeObserver.disconnect();
       clearTimeout(resizeTimeout);
       clearTimeout(autoSaveTimer);
@@ -682,6 +724,8 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       window.removeEventListener('removeCanvasObject', handleRemoteRemove);
       window.removeEventListener('clearCanvas', handleClearCanvas);
       window.removeEventListener('moveCanvasPlaceholder', handleMovePlaceholder);
+      window.removeEventListener('resizeCanvasPlaceholder', handleResizePlaceholder);
+      window.removeEventListener('addCanvasPlaceholder', handleAddPlaceholder);
     };
   }, []);
 

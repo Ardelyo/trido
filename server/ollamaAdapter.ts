@@ -5,7 +5,26 @@ import { CONFIG } from "../constants";
 import { createLogger } from "../utils/logger";
 
 const logger = createLogger('ollama-adapter');
-const getOllamaUrl = (customUrl?: string) => customUrl || process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl;
+const getOllamaUrl = (customUrl?: string): string => {
+  const fallback = (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || CONFIG.ai.ollama.defaultBaseUrl).replace(/\/$/, "");
+  if (!customUrl || typeof customUrl !== "string") return fallback;
+  try {
+    const parsed = new URL(customUrl.trim());
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return fallback;
+    const allowedHosts = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+    try {
+      const envHost = new URL(fallback).hostname;
+      if (envHost) allowedHosts.add(envHost.toLowerCase());
+    } catch {}
+    if (!allowedHosts.has(parsed.hostname.toLowerCase())) {
+      logger.warn(`Blocked non-local Ollama URL override: ${parsed.hostname}`);
+      return fallback;
+    }
+    return parsed.origin;
+  } catch {
+    return fallback;
+  }
+};
 
 function toOllamaJsonSchema(schema: any): any {
   if (!schema || typeof schema !== 'object') return schema;

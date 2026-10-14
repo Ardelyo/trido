@@ -778,21 +778,59 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-3">
                     <Sparkles size={18} className="text-[#1550aa] shrink-0 mt-0.5" />
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                      Trido dapat mengekspor diagram konsep dan kuis interaktif yang ada di papan ke format teks terstruktur standar agar dapat langsung disalin ke Canva, Notion, atau LMS sekolah.
+                      Trido dapat mengekspor diagram konsep, dokumen materi, simulasi interaktif, dan kuis evaluasi di papan ke format standar agar dapat langsung digunakan di Canva, Notion, atau LMS sekolah (Moodle/Canvas).
                     </p>
                   </div>
 
-                  {/* Mindmap Export */}
+                  {/* 1. Mermaid Diagram Widgets on DOM Overlay */}
+                  {Object.values(domElements).filter((el: any) => el.componentType === 'MERMAID_DIAGRAM').map((el: any) => (
+                    <div key={el.id} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <GitBranch size={16} className="text-[#1550aa]" />
+                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">{el.config?.title || 'Diagram Mermaid'}</h4>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-slate-800 max-h-32 overflow-y-auto custom-scrollbar border border-slate-200 whitespace-pre-wrap">
+                        {el.config?.code || ''}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(el.config?.code || '');
+                            setCopiedMermaid(true);
+                            toast.success('Sintaks Mermaid disalin!');
+                            setTimeout(() => setCopiedMermaid(false), 2000);
+                          }}
+                          className="px-3 py-1.5 bg-[#1550aa] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                        >
+                          {copiedMermaid ? <Check size={14} /> : <Copy size={14} />}
+                          <span>{copiedMermaid ? 'Tersalin' : 'Salin Kode Mermaid'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            downloadFile(el.config?.code || '', `${el.config?.title || 'diagram'}.mmd`, 'text/plain;charset=utf-8');
+                            toast.success('Berkas .mmd diunduh!');
+                          }}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Download size={14} /> Unduh .MMD
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* 2. Legacy Canvas Mindmap Export */}
                   {detected.mindmap.hasNodes && (
                     <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center gap-2">
                         <GitBranch size={16} className="text-[#1550aa]" />
-                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Diagram Mindmap Aktif</h4>
+                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Diagram Mindmap Kanvas ({detected.mindmap.rootText})</h4>
                       </div>
-                      <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-slate-800 max-h-32 overflow-y-auto custom-scrollbar border border-slate-200">
+                      <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-slate-800 max-h-32 overflow-y-auto custom-scrollbar border border-slate-200 whitespace-pre-wrap">
                         {exportMindmapToMermaid(activeMindmapNodes)}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => {
@@ -807,18 +845,145 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                           {copiedMermaid ? <Check size={14} /> : <Copy size={14} />}
                           <span>{copiedMermaid ? 'Tersalin' : 'Salin Kode Mermaid'}</span>
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            exportMindmapAsMarkdown(activeMindmapNodes);
+                            toast.success('Outline Markdown diunduh!');
+                          }}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <FileText size={14} /> Unduh Outline .MD
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const svg = exportMindmapToCanvaSVG(activeMindmapNodes);
+                            if (svg) {
+                              downloadFile(svg, 'mindmap_canva.svg', 'image/svg+xml;charset=utf-8');
+                              toast.success('SVG Canva diunduh!');
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Download size={14} /> Unduh Canva .SVG
+                        </button>
                       </div>
                     </div>
                   )}
 
-                  {!detected.mindmap.hasNodes && (
+                  {/* 3. Quizzes Export (Printable Worksheet & Moodle GIFT) */}
+                  {detected.quizzes.length > 0 && (
+                    <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckSquare size={16} className="text-[#1550aa]" />
+                          <h4 className="font-extrabold text-sm text-[#0a1a3a]">Kuis & Evaluasi ({detected.quizzes.length})</h4>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const gift = exportQuizToGIFT(detected.quizzes);
+                            downloadFile(gift, `kuis_moodle_${Date.now()}.gift.txt`, 'text/plain;charset=utf-8');
+                            toast.success('Format GIFT Moodle/LMS berhasil diunduh!');
+                          }}
+                          className="px-3 py-1.5 bg-[#1550aa] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Download size={13} /> Ekspor Semua ke Moodle GIFT
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {detected.quizzes.map((q) => (
+                          <div key={q.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                            <span className="text-xs font-bold text-slate-700 truncate">{q.title}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                exportQuizAsPrintableWorksheet(q);
+                                toast.success('Membuka lembar ujian siap cetak!');
+                              }}
+                              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 flex items-center gap-1 cursor-pointer"
+                            >
+                              <Printer size={12} /> Cetak Lembar Soal
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. Documents Export */}
+                  {detected.documents.length > 0 && (
+                    <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <FileText size={16} className="text-[#1550aa]" />
+                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Dokumen & Catatan ({detected.documents.length})</h4>
+                      </div>
+                      {detected.documents.map((doc) => (
+                        <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                          <span className="text-xs font-bold text-slate-700 truncate">{doc.title}</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => exportDocumentAsHtml(doc.title, doc.markdown)}
+                              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 cursor-pointer"
+                            >
+                              HTML
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => exportDocumentAsMarkdown(doc.title, doc.markdown)}
+                              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 cursor-pointer"
+                            >
+                              .MD
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => printCleanDocument(doc.elementNodeId, doc.title)}
+                              className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 cursor-pointer"
+                            >
+                              Cetak
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 5. Interactive Apps Export */}
+                  {detected.apps.filter(a => a.html).length > 0 && (
+                    <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <FileCode size={16} className="text-[#1550aa]" />
+                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Simulasi & Aplikasi Mini</h4>
+                      </div>
+                      {detected.apps.filter(a => a.html).map((app) => (
+                        <div key={app.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                          <span className="text-xs font-bold text-slate-700 truncate">{app.title}</span>
+                          <button
+                            type="button"
+                            onClick={() => exportInteractiveAppAsHtml(app)}
+                            className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Download size={12} /> Unduh .HTML Mandiri
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!detected.mindmap.hasNodes &&
+                    Object.values(domElements).filter((el: any) => el.componentType === 'MERMAID_DIAGRAM').length === 0 &&
+                    detected.quizzes.length === 0 &&
+                    detected.documents.length === 0 &&
+                    detected.apps.filter(a => a.html).length === 0 && (
                     <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center gap-2">
                       <div className="w-10 h-10 rounded-full bg-slate-200/70 text-slate-400 flex items-center justify-center">
                         <GitBranch size={20} />
                       </div>
-                      <div className="font-bold text-slate-700 text-sm">Belum ada diagram mindmap di halaman aktif</div>
+                      <div className="font-bold text-slate-700 text-sm">Belum ada diagram mindmap atau kuis di halaman aktif</div>
                       <p className="text-xs text-slate-500 max-w-sm">
-                        Buat peta konsep bersama AI di tab obrolan untuk melihat opsi ekspor Mermaid di sini.
+                        Buat peta konsep atau kuis bersama AI untuk melihat opsi ekspor khusus di sini.
                       </p>
                     </div>
                   )}

@@ -41,7 +41,22 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
       ? (selectedOllamaModel || 'Ollama (Lokal)') 
       : (aiPreference === 'vertex' ? (selectedVertexModel || 'Vertex AI') : (selectedGeminiModel || 'gemini-3.8-flash'));
 
-  // Contextual phase based on elapsed time and attached document
+  // Contextual phase & step index (0, 1, 2) based on elapsed time and attached document
+  const currentStepIndex = elapsedSecs < 2.0 ? 0 : elapsedSecs < 4.5 ? 1 : 2;
+
+  const pedagogicalInsights = language === 'en'
+    ? [
+        'Tip: Say "Expand the branch on..." to update existing mindmaps in-place without recreating.',
+        'Tip: Combine multiple tasks in one sentence — e.g. "Create a mindmap and start a 10m timer".',
+        'Tip: Double-click any widget header to enter distraction-free Fullscreen Focus Mode.'
+      ]
+    : [
+        'Tips: Ucapkan "Tambahkan cabang..." untuk memperbarui peta konsep secara in-place tanpa duplikasi.',
+        'Tips: Gabungkan beberapa instruksi sekaligus — misal "Buat mindmap dan pasang timer 10 menit".',
+        'Tips: Klik ganda judul widget apa pun untuk membuka Mode Fokus Layar Penuh.'
+      ];
+  const activeInsight = pedagogicalInsights[Math.floor(elapsedSecs / 3.2) % pedagogicalInsights.length];
+
   const getPhaseText = () => {
     if (attachedDocument) {
       if (elapsedSecs < 2.5) {
@@ -73,6 +88,10 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
       ? 'Finalizing response & drawing to board...'
       : 'Menyusun penjelasan & menyiapkan papan tulis...';
   };
+
+  const steps = language === 'en'
+    ? ['1. Understand', '2. Plan Board', '3. Render']
+    : ['1. Pahami Konteks', '2. Tata Spasial', '3. Render Papan'];
 
   return (
     <motion.div
@@ -131,6 +150,33 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
           <span className="w-1.5 h-1.5 rounded-full bg-[#1550aa] animate-ping" />
           <span>{getPhaseText()}</span>
         </div>
+      </div>
+
+      {/* Horizontal Step Progress Trace (IKEA Manual Style) */}
+      <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+        {steps.map((label, idx) => {
+          const isDone = idx < currentStepIndex;
+          const isCurrent = idx === currentStepIndex;
+          return (
+            <div
+              key={label}
+              className={`px-2 py-1 rounded-full text-[10px] font-bold text-center transition-colors border ${
+                isCurrent
+                  ? 'bg-[#1550aa] text-white border-[#1550aa]'
+                  : isDone
+                  ? 'bg-[#ffcc00] text-[#0a1a3a] border-[#ffcc00]'
+                  : 'bg-slate-50 text-slate-400 border-slate-200/70'
+              }`}
+            >
+              {label}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Rotating Pedagogical Insight */}
+      <div className="text-[11px] text-slate-500 font-medium bg-[#e4e3e0]/40 px-3 py-1.5 rounded-2xl border border-[#0a1a3a]/5 leading-snug">
+        {activeInsight}
       </div>
 
       {/* Bottom: Solid Indeterminate Progress Line (Strictly Zero Gradient) */}

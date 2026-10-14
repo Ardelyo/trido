@@ -36,10 +36,11 @@ function loadSavedApiKey(): string {
 }
 
 function persistApiKey(key: string): void {
+  const cleanKey = key.trim().replace(/\s+/g, '');
   const envPath = getUserEnvPath();
   fs.mkdirSync(path.dirname(envPath), { recursive: true });
-  fs.writeFileSync(envPath, `GEMINI_API_KEY=${key}\n`, 'utf8');
-  process.env.GEMINI_API_KEY = key;
+  fs.writeFileSync(envPath, `GEMINI_API_KEY=${cleanKey}\n`, 'utf8');
+  process.env.GEMINI_API_KEY = cleanKey;
 }
 
 // ── Server start ───────────────────────────────────────────────────────────────
@@ -48,8 +49,9 @@ function startServer(): void {
   if (serverStarted) return;
   serverStarted = true;
 
-  // Set dist path so server-bundle finds the frontend assets
+  // Set dist path and writable userData rooms path so server-bundle works inside Program Files
   process.env.APP_DIST_PATH = path.join(__dirname, '..', 'dist');
+  process.env.ROOMS_FILE_PATH = path.join(app.getPath('userData'), 'rooms.json');
   process.env.NODE_ENV = 'production';
   process.env.SERVER_PORT = String(PORT);
 
@@ -104,10 +106,10 @@ async function createWindow(): Promise<void> {
     height: 900,
     minWidth: 960,
     minHeight: 640,
-    title: 'Trido — AI Digital Classroom',
+    title: 'Trido — AI Smartboard Classroom',
     icon: iconPath,
     show: false,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#e4e3e0',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -128,7 +130,7 @@ async function createWindow(): Promise<void> {
 
   const ready = await waitForServer();
   if (ready) {
-    await mainWindow.loadURL(`http://localhost:${PORT}`);
+    await mainWindow.loadURL(`http://localhost:${PORT}/?app=true`);
   } else {
     // Server failed — show error page
     await mainWindow.loadFile(path.join(__dirname, 'splash.html'));
@@ -154,7 +156,11 @@ ipcMain.handle('skip-setup', async () => {
   return { ok: true };
 });
 
-ipcMain.handle('open-external', (_, url: string) => shell.openExternal(url));
+ipcMain.handle('open-external', (_, url: string) => {
+  if (typeof url === 'string' && /^https?:\/\//i.test(url)) {
+    return shell.openExternal(url);
+  }
+});
 
 // ── App lifecycle ──────────────────────────────────────────────────────────────
 

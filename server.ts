@@ -11,7 +11,6 @@ console.warn = (...args: any[]) => {
 };
 
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import fs from "fs";
 
@@ -99,6 +98,7 @@ async function startServer() {
     logger.info("Client connected", { socketId: socket.id });
 
     socket.on("join-room", (roomId: string) => {
+      if (typeof roomId !== "string" || !roomId.trim() || roomId.length > 128) return;
       socket.join(roomId);
       if (!rooms.has(roomId)) {
         rooms.set(roomId, { state: [], viewports: {}, domElements: {}, lastViewport: null });
@@ -120,6 +120,7 @@ async function startServer() {
 
     // Receive full or incremental canvas updates
     socket.on("canvas-update", ({ roomId, data }) => {
+      if (typeof roomId !== "string" || !roomId.trim() || roomId.length > 128) return;
       const room = rooms.get(roomId);
       if (room) {
         room.state = data;
@@ -130,6 +131,7 @@ async function startServer() {
 
     // Receive incremental canvas object delta updates
     socket.on("canvas-delta", ({ roomId, delta }) => {
+      if (typeof roomId !== "string" || !roomId.trim() || roomId.length > 128 || !delta) return;
       const room = rooms.get(roomId);
       if (room) {
         if (room.state && !Array.isArray(room.state)) {
@@ -169,6 +171,7 @@ async function startServer() {
 
     // Receive viewport updates
     socket.on("viewport-update", ({ roomId, viewport }) => {
+      if (typeof roomId !== "string" || !roomId.trim() || roomId.length > 128 || !viewport) return;
       const room = rooms.get(roomId);
       if (room) {
         room.viewports[socket.id] = viewport;
@@ -182,6 +185,7 @@ async function startServer() {
     });
 
     socket.on("dom-elements-update", ({ roomId, domElements }) => {
+      if (typeof roomId !== "string" || !roomId.trim() || roomId.length > 128 || !domElements || typeof domElements !== "object") return;
       const room = rooms.get(roomId);
       if (room) {
         room.domElements = domElements;
@@ -229,19 +233,27 @@ async function startServer() {
     });
   });
 
-  app.post("/api/log-error", (req, res) => {
+  app.post("/api/log-error", express.json({ limit: "1mb" }), (req, res) => {
     logger.warn("[Client Error Log]", req.body);
     res.status(200).json({ ok: true });
   });
 
   app.get("/download", (_req, res) => {
-    res.redirect("https://github.com/Ardelyo/trido/releases/latest");
+    const localExe = path.join(process.cwd(), "dist-release", "Trido Setup 1.0.0.exe");
+    if (fs.existsSync(localExe)) {
+      return res.download(localExe, "Trido-Setup-1.0.0.exe");
+    }
+    res.redirect("https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe");
   });
 
   app.use("/api/ai", aiRouter);
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  // Vite middleware for development (or fallback if dist/index.html is not built yet)
+  const distPath = process.env.APP_DIST_PATH || path.join(process.cwd(), 'dist');
+  const hasDistBuild = fs.existsSync(path.join(distPath, 'index.html'));
+
+  if (process.env.NODE_ENV !== "production" || !hasDistBuild) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

@@ -5,23 +5,31 @@ import { useTranslation } from '../utils/translations';
 
 export const BoardSettingsTool: React.FC = () => {
   const { t } = useTranslation();
-  const { theme, toggleTheme, aiPreference, setAiPreference, createNewSession } = useStore();
+  const {
+    theme,
+    toggleTheme,
+    aiPreference,
+    setAiPreference,
+    geminiApiKey,
+    setGeminiApiKey,
+    ollamaBaseUrl,
+    setOllamaBaseUrl,
+    createNewSession
+  } = useStore();
 
-  const [geminiApiKey, setGeminiApiKeyLocal] = useState(
-    () => localStorage.getItem('gemini_api_key_override') || ''
+  const [allowStudentDrawing, setAllowStudentDrawing] = useState<boolean>(
+    () => typeof localStorage !== 'undefined' && localStorage.getItem('trido_allow_student_drawing') === 'true'
   );
-  const [ollamaBaseUrl, setOllamaBaseUrlLocal] = useState(
-    () => localStorage.getItem('ollama_base_url_override') || ''
+  const [unlockStudentCamera, setUnlockStudentCamera] = useState<boolean>(
+    () => typeof localStorage !== 'undefined' && localStorage.getItem('trido_unlock_student_camera') === 'true'
   );
 
   const handleGeminiKeyChange = (val: string) => {
-    setGeminiApiKeyLocal(val);
-    localStorage.setItem('gemini_api_key_override', val);
+    setGeminiApiKey(val);
   };
 
   const handleOllamaUrlChange = (val: string) => {
-    setOllamaBaseUrlLocal(val);
-    localStorage.setItem('ollama_base_url_override', val);
+    setOllamaBaseUrl(val);
   };
 
   return (
@@ -108,7 +116,15 @@ export const BoardSettingsTool: React.FC = () => {
               </div>
               <span className="text-sm font-bold text-slate-700">{t('allowDrawing', 'Izinkan Coret-Coret')}</span>
             </div>
-            <input type="checkbox" className="w-5 h-5 rounded text-blue-600 focus:ring-0 cursor-pointer" />
+            <input
+              type="checkbox"
+              checked={allowStudentDrawing}
+              onChange={(e) => {
+                setAllowStudentDrawing(e.target.checked);
+                localStorage.setItem('trido_allow_student_drawing', String(e.target.checked));
+              }}
+              className="w-5 h-5 rounded text-blue-600 focus:ring-0 cursor-pointer"
+            />
           </label>
           
           <label className="flex items-center justify-between cursor-pointer group">
@@ -118,7 +134,15 @@ export const BoardSettingsTool: React.FC = () => {
               </div>
               <span className="text-sm font-bold text-slate-700">{t('unlockCamera', 'Buka Kunci Kamera')}</span>
             </div>
-            <input type="checkbox" className="w-5 h-5 rounded text-emerald-600 focus:ring-0 cursor-pointer" />
+            <input
+              type="checkbox"
+              checked={unlockStudentCamera}
+              onChange={(e) => {
+                setUnlockStudentCamera(e.target.checked);
+                localStorage.setItem('trido_unlock_student_camera', String(e.target.checked));
+              }}
+              className="w-5 h-5 rounded text-emerald-600 focus:ring-0 cursor-pointer"
+            />
           </label>
         </div>
       </div>

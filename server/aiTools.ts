@@ -879,8 +879,20 @@ export const validateFunctionCalls = (
       const id = call.args.objectId;
       const validIds = canvasObjects.map(o => o.id);
       if (id && !validIds.includes(id)) {
-        errors.push(`Call ${index}: modify_object ID "${id}" not found on canvas`);
-        continue;
+        if (call.args.elementText) {
+          const targetText = String(call.args.elementText).toLowerCase();
+          const matchedObj = canvasObjects.find(o =>
+            (o.textContent || '').toLowerCase().includes(targetText)
+          );
+          if (matchedObj) {
+            call.args.objectId = matchedObj.id;
+          } else {
+            delete call.args.objectId;
+          }
+        } else {
+          errors.push(`Call ${index}: modify_object ID "${id}" not found on canvas`);
+          continue;
+        }
       }
     }
 

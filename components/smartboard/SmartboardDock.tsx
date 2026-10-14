@@ -258,7 +258,7 @@ export const SmartboardDock: React.FC = () => {
         {/* Separator */}
         <div className="h-10 w-px bg-[#0a1a3a]/15 mx-1 mb-2 self-center" />
 
-        {/* AI Voice Assistant Mic & Assistant Trigger */}
+        {/* AI Voice & Smartboard Studio Trigger */}
         <div className="relative flex flex-col items-center">
           <motion.button
             animate={micBounce}
@@ -268,7 +268,7 @@ export const SmartboardDock: React.FC = () => {
                 ? 'bg-[#1550aa] text-white border-[#1550aa] ring-2 ring-[#ffcc00]'
                 : 'bg-[#ffcc00] text-[#0a1a3a] hover:bg-[#ffd633] border-[#ffcc00]'
             }`}
-            title="Asisten AI Suara (Bicara atau Buka Asisten)"
+            title="Kontrol Suara AI Smartboard"
           >
             {store.isThinking ? (
               <Sparkles size={24} className="animate-spin text-[#1550aa]" />

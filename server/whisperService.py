@@ -29,12 +29,18 @@ def transcribe(audio_path: str, model_size: str = "base", language: str = None):
             "success": False
         }
 
+    allowed_models = {
+        "tiny", "tiny.en", "base", "base.en", "small", "small.en",
+        "medium", "medium.en", "large-v1", "large-v2", "large-v3", "distil-large-v3"
+    }
+    safe_model_size = model_size if model_size in allowed_models else "base"
+
     # Automatically choose CPU int8 or CUDA if available
     try:
-        model = WhisperModel(model_size, device="cpu", compute_type="int8")
+        model = WhisperModel(safe_model_size, device="cpu", compute_type="int8")
     except Exception as e:
         return {
-            "error": f"Failed to initialize WhisperModel({model_size}): {str(e)}",
+            "error": f"Failed to initialize WhisperModel({safe_model_size}): {str(e)}",
             "success": False
         }
 

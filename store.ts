@@ -102,6 +102,8 @@ interface AppStore extends AgentState {
   setChatInputText: (txt: string) => void;
   interimInputText: string;
   setInterimInputText: (txt: string) => void;
+  isVoiceListening: boolean;
+  setVoiceListening: (listening: boolean) => void;
   
   // Creator Mode State
   isCreatorMode: boolean;
@@ -192,6 +194,7 @@ interface AppStore extends AgentState {
 let autoSaveTimeout: ReturnType<typeof setTimeout>;
 
 const getInitialAiPreference = (): AiPreference => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return 'vertex';
   const saved = localStorage.getItem('ai_preference');
   return (saved === 'gemini' || saved === 'ollama' || saved === 'vertex' || saved === 'auto') 
     ? (saved as AiPreference) 
@@ -199,10 +202,12 @@ const getInitialAiPreference = (): AiPreference => {
 };
 
 const getInitialGeminiApiKey = (): string => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return '';
   return localStorage.getItem('gemini_api_key') || '';
 };
 
 const getInitialOllamaBaseUrl = (): string => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return '';
   return localStorage.getItem('ollama_base_url') || '';
 };
 
@@ -260,6 +265,7 @@ const defaultVoiceConfig: VoiceConfig = {
 };
 
 const getInitialVoiceConfig = (): VoiceConfig => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return defaultVoiceConfig;
   try {
     const saved = localStorage.getItem('trido_voice_config');
     if (saved) {
@@ -285,6 +291,7 @@ export const defaultExperimentalConfig: ExperimentalConfig = {
 };
 
 const getInitialExperimentalConfig = (): ExperimentalConfig => {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return defaultExperimentalConfig;
   try {
     const saved = localStorage.getItem('trido_experimental_config');
     if (saved) return { ...defaultExperimentalConfig, ...JSON.parse(saved) };
@@ -650,6 +657,11 @@ export const useStore = create<AppStore>((set, get) => ({
       rotation: 0,
       zIndex: 10
     });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('addCanvasPlaceholder', {
+        detail: { id, x: 960, y: 540, width: 440, height: 480 }
+      }));
+    }
   },
 
   toggleScoreboard: () => {
@@ -668,6 +680,11 @@ export const useStore = create<AppStore>((set, get) => ({
       rotation: 0,
       zIndex: 10
     });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('addCanvasPlaceholder', {
+        detail: { id, x: 960, y: 540, width: 420, height: 380 }
+      }));
+    }
   },
 
   toggleMathGraph: () => {
@@ -686,6 +703,11 @@ export const useStore = create<AppStore>((set, get) => ({
       rotation: 0,
       zIndex: 10
     });
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('addCanvasPlaceholder', {
+        detail: { id, x: 960, y: 540, width: 460, height: 440 }
+      }));
+    }
   },
   
   isAssistiveMode: typeof window !== 'undefined' && localStorage.getItem('trido_assistive_mode') === 'true',
@@ -762,6 +784,8 @@ export const useStore = create<AppStore>((set, get) => ({
   setChatInputText: (txt: string) => set({ chatInputText: txt }),
   interimInputText: '',
   setInterimInputText: (txt: string) => set({ interimInputText: txt }),
+  isVoiceListening: false,
+  setVoiceListening: (listening: boolean) => set({ isVoiceListening: listening }),
   
   // Creator Defaults
   isCreatorMode: false,
@@ -776,15 +800,33 @@ export const useStore = create<AppStore>((set, get) => ({
   currentPageIndex: 0,
   
   addPage: (emptyState, previewDataUrl) => set((state) => {
-    const newPages = [...state.pages, { canvas: emptyState || {}, dom: {}, previewDataUrl: previewDataUrl || '', mindmapNodes: [] }];
-    return { pages: newPages, currentPageIndex: newPages.length - 1, activeMindmapNodes: [] };
+    const updatedPages = [...state.pages];
+    if (updatedPages[state.currentPageIndex]) {
+      updatedPages[state.currentPageIndex] = {
+        ...updatedPages[state.currentPageIndex],
+        dom: state.domElements,
+        mindmapNodes: state.activeMindmapNodes
+      };
+    }
+    const newPages = [...updatedPages, { canvas: emptyState || {}, dom: {}, previewDataUrl: previewDataUrl || '', mindmapNodes: [] }];
+    return { pages: newPages, currentPageIndex: newPages.length - 1, activeMindmapNodes: [], domElements: {} };
   }),
   switchPage: (index) => set((state) => {
-    if (index >= 0 && index < state.pages.length) {
-      const targetPage = state.pages[index];
+    if (index >= 0 && index < state.pages.length && index !== state.currentPageIndex) {
+      const updatedPages = [...state.pages];
+      if (updatedPages[state.currentPageIndex]) {
+        updatedPages[state.currentPageIndex] = {
+          ...updatedPages[state.currentPageIndex],
+          dom: state.domElements,
+          mindmapNodes: state.activeMindmapNodes
+        };
+      }
+      const targetPage = updatedPages[index];
       return { 
+        pages: updatedPages,
         currentPageIndex: index,
-        activeMindmapNodes: targetPage?.mindmapNodes || []
+        activeMindmapNodes: targetPage?.mindmapNodes || [],
+        domElements: targetPage?.dom || {}
       };
     }
     return {};
@@ -819,7 +861,8 @@ export const useStore = create<AppStore>((set, get) => ({
     return { 
       pages: newPages, 
       currentPageIndex: newIndex,
-      activeMindmapNodes: newPages[newIndex]?.mindmapNodes || []
+      activeMindmapNodes: newPages[newIndex]?.mindmapNodes || [],
+      domElements: newPages[newIndex]?.dom || {}
     };
   }),
 

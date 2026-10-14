@@ -170,10 +170,11 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
     });
 
     socket.on('viewport-update', ({ viewport }) => {
-      if (isCurrentlyViewer && canvasRef.current) {
-        if (viewport && Array.isArray(viewport)) {
-            canvasRef.current.setViewportTransform(viewport);
-            canvasRef.current.requestRenderAll();
+      if (isCurrentlyViewer && viewport && Array.isArray(viewport)) {
+        useStore.getState().setViewport(viewport[0] || 1, viewport);
+        if (canvasRef.current) {
+          canvasRef.current.setViewportTransform(viewport);
+          canvasRef.current.requestRenderAll();
         }
       }
     });
@@ -215,11 +216,12 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
     };
   }, []);
 
-  // Sync local canvas if host
+  // Sync local canvas if host (waits for canvasRef.current to mount if needed)
   useEffect(() => {
-     if (isViewer || !canvasRef.current || !socketRef.current || !roomId) return;
-     const canvas = canvasRef.current;
+     if (isViewer || !socketRef.current || !roomId) return;
      const socket = socketRef.current;
+     let attachedCanvas: any = null;
+     let pollTimer: ReturnType<typeof setInterval> | null = null;
 
      const emitDelta = (action: 'add' | 'modify' | 'remove', obj: any) => {
        if (!obj || obj.id === 'agent_cursor' || obj.id === 'spatial_indicator') return;
@@ -242,14 +244,35 @@ export const useSocketSync = (canvasRef: React.RefObject<any>) => {
      const handleObjectModified = (e: any) => emitDelta('modify', e.target);
      const handleObjectRemoved = (e: any) => emitDelta('remove', e.target);
 
-     canvas.on('object:added', handleObjectAdded);
-     canvas.on('object:modified', handleObjectModified);
-     canvas.on('object:removed', handleObjectRemoved);
+     const attachListeners = (canvas: any) => {
+       if (attachedCanvas === canvas) return;
+       attachedCanvas = canvas;
+       canvas.on('object:added', handleObjectAdded);
+       canvas.on('object:modified', handleObjectModified);
+       canvas.on('object:removed', handleObjectRemoved);
+     };
+
+     if (canvasRef.current) {
+       attachListeners(canvasRef.current);
+     } else {
+       pollTimer = setInterval(() => {
+         if (canvasRef.current) {
+           attachListeners(canvasRef.current);
+           if (pollTimer) {
+             clearInterval(pollTimer);
+             pollTimer = null;
+           }
+         }
+       }, 100);
+     }
 
      return () => {
-        canvas.off('object:added', handleObjectAdded);
-        canvas.off('object:modified', handleObjectModified);
-        canvas.off('object:removed', handleObjectRemoved);
+        if (pollTimer) clearInterval(pollTimer);
+        if (attachedCanvas) {
+          attachedCanvas.off('object:added', handleObjectAdded);
+          attachedCanvas.off('object:modified', handleObjectModified);
+          attachedCanvas.off('object:removed', handleObjectRemoved);
+        }
      };
   }, [roomId, isViewer]);
 

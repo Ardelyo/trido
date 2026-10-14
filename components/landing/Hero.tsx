@@ -138,10 +138,10 @@ export default function Hero({ onLaunchApp }: { onLaunchApp?: () => void }) {
               <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
             </a>
             <a
-              href="https://github.com/Ardelyo/trido/releases/latest"
+              href={t.hero.downloadUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center justify-center gap-2 rounded-full border-2 border-trido bg-sun/90 px-7 py-4 text-[15px] font-bold text-trido transition-all hover:bg-trido hover:text-white shadow-xs"
+              className="group inline-flex items-center justify-center gap-2 rounded-full border-2 border-trido bg-sun px-7 py-4 text-[15px] font-bold text-trido transition-all hover:bg-trido hover:text-white shadow-xs"
               title={t.hero.downloadExeSub || "Unduh Aplikasi Desktop Standalone"}
             >
               <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
@@ -156,6 +156,31 @@ export default function Hero({ onLaunchApp }: { onLaunchApp?: () => void }) {
             </a>
           </motion.div>
         </div>
+
+        {/* Trido Models & Personal API Key Reminder Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.18, duration: 0.7, ease }}
+          className="mt-6 rounded-3xl border-2 border-trido/20 bg-white/85 p-4 sm:px-6 sm:py-4 shadow-xs"
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="rounded-full bg-sun px-3 py-1 text-[11px] font-black uppercase tracking-wider text-trido-deep shrink-0">
+                {t.hero.modelReminderBadge}
+              </span>
+              <span className="text-[13.5px] font-extrabold text-trido-deep">
+                {t.hero.modelReminderTitle}
+              </span>
+            </div>
+            <span className="text-[11px] font-mono font-bold text-trido bg-trido/10 px-3 py-1 rounded-full w-fit">
+              ollama pull trido-model:latest · trido-gemma:2b
+            </span>
+          </div>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed font-medium text-ink/75">
+            {t.hero.modelReminderBody}
+          </p>
+        </motion.div>
 
         <motion.ul
           initial={{ opacity: 0 }}

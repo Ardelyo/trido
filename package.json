@@ -20,8 +20,8 @@
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "start": "NODE_ENV=production tsx server.ts",
-    "start:dev": "NODE_ENV=production tsx server.ts"
+    "start": "tsx server.ts",
+    "start:dev": "tsx server.ts"
   },
   "build": {
     "appId": "ai.trido.classroom",
@@ -31,6 +31,7 @@
       "output": "dist-release",
       "buildResources": "public"
     },
+    "asar": false,
     "files": [
       "dist-electron/**/*",
       "dist/**/*",
@@ -44,6 +45,8 @@
       }
     ],
     "win": {
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false,
       "target": [
         {
           "target": "nsis",

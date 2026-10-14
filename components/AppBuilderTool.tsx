@@ -17,6 +17,9 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
   const [device, setDevice] = useState<'DESKTOP' | 'MOBILE'>('DESKTOP');
   const [iframeKey, setIframeKey] = useState(0);
   
+  const safeCss = (config.css || '').replace(/<\/style>/gi, '<\\/style>');
+  const safeJs = (config.js || '').replace(/<\/script>/gi, '<\\/script>');
+
   const srcDoc = `
     <!DOCTYPE html>
     <html>
@@ -26,17 +29,20 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
           body { font-family: sans-serif; margin: 0; padding: 0; }
-          ${config.css || ''}
+          ${safeCss}
         </style>
       </head>
       <body>
         ${config.html}
         <script>
           try {
-            ${config.js || ''}
+            ${safeJs}
           } catch (e) {
             console.error('JS Error:', e);
-            document.body.innerHTML += '<div style="color: red; padding: 20px; background: #fee; border: 1px solid red; margin: 20px; border-radius: 8px;"><strong>JS Runtime Error:</strong> ' + e.message + '</div>';
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'color: red; padding: 20px; background: #fee; border: 1px solid red; margin: 20px; border-radius: 8px; font-weight: 600;';
+            errDiv.textContent = 'JS Runtime Error: ' + (e && e.message ? e.message : String(e));
+            document.body.appendChild(errDiv);
           }
         </script>
       </body>
@@ -104,7 +110,7 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
-              className="w-full h-full flex items-center justify-center p-4 bg-[radial-gradient(circle_at_center,#1e1e2e_0%,#0a0a0c_100%)]"
+              className="w-full h-full flex items-center justify-center p-4 bg-[#0a1a3a]"
             >
               <div 
                 className={`bg-white shadow-2xl rounded-sm transition-all duration-500 overflow-hidden ${device === 'MOBILE' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}
@@ -114,7 +120,7 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
                   srcDoc={srcDoc}
                   title="App View"
                   className="w-full h-full border-0"
-                  sandbox="allow-scripts allow-same-origin allow-forms"
+                  sandbox="allow-scripts allow-forms"
                 />
               </div>
             </motion.div>

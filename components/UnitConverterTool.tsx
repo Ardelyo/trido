@@ -41,10 +41,42 @@ export const UnitConverterTool: React.FC = () => {
   const [toUnitIndex, setToUnitIndex] = useState(1);
   const [value, setValue] = useState('1');
 
-  // Basic mock conversion for demo
   const convert = (val: string) => {
     if (!val) return '';
-    return (parseFloat(val) * 1.5).toFixed(2); // Mock logic just for visuals
+    const num = parseFloat(val);
+    if (isNaN(num)) return '';
+    if (fromUnitIndex === toUnitIndex) return num.toFixed(2);
+
+    if (category === 'Length') {
+      const toMeter = [1, 1000, 0.01, 0.001, 1609.344, 0.9144, 0.3048, 0.0254];
+      const meters = num * (toMeter[fromUnitIndex] ?? 1);
+      const res = meters / (toMeter[toUnitIndex] ?? 1);
+      return Number(res.toPrecision(6)).toString();
+    }
+    if (category === 'Weight') {
+      const toGram = [1000, 1, 0.001, 1000000, 453.59237, 28.349523125];
+      const grams = num * (toGram[fromUnitIndex] ?? 1);
+      const res = grams / (toGram[toUnitIndex] ?? 1);
+      return Number(res.toPrecision(6)).toString();
+    }
+    if (category === 'Volume') {
+      const toLiter = [1, 0.001, 3.785411784, 1000];
+      const liters = num * (toLiter[fromUnitIndex] ?? 1);
+      const res = liters / (toLiter[toUnitIndex] ?? 1);
+      return Number(res.toPrecision(6)).toString();
+    }
+    if (category === 'Temperature') {
+      // 0: Celsius, 1: Fahrenheit, 2: Kelvin
+      let celsius = num;
+      if (fromUnitIndex === 1) celsius = (num - 32) * (5 / 9);
+      else if (fromUnitIndex === 2) celsius = num - 273.15;
+
+      let out = celsius;
+      if (toUnitIndex === 1) out = (celsius * 9) / 5 + 32;
+      else if (toUnitIndex === 2) out = celsius + 273.15;
+      return out.toFixed(2);
+    }
+    return num.toFixed(2);
   };
 
   const activeLang = language === 'en' ? 'en' : 'id';
@@ -94,7 +126,15 @@ export const UnitConverterTool: React.FC = () => {
         </div>
 
         <div className="flex justify-center -my-3 z-10">
-          <button className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg hover:bg-blue-600 active:scale-95 transition-all">
+          <button
+            type="button"
+            onClick={() => {
+              setFromUnitIndex(toUnitIndex);
+              setToUnitIndex(fromUnitIndex);
+            }}
+            className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg hover:bg-blue-600 active:scale-95 transition-all cursor-pointer"
+            title="Tukar Satuan"
+          >
             <ArrowRightLeft size={18} />
           </button>
         </div>

@@ -9,17 +9,15 @@ This guide provides clean, step-by-step instructions in English on how to instal
 ## ✨ What's New in this Update?
 1. **Dynamic Model Selection UI:** Accessible directly from the **Settings** gear icon on the board. You can now choose from pre-loaded models for each provider.
 2. **Google Gemini (Cloud):** Select standard and next-generation models including:
-   - `gemini-3.5-flash-lite` (Default - Recommended)
-   - `gemini-3.5-flash` (High Intelligence)
-   - `gemini-3.1-flash-lite` (Ultra-fast)
+   - `gemini-3.8-flash` (Default - Recommended)
    - `gemini-2.5-flash` & `gemini-2.5-pro`
    - Custom environment overrides via `GEMINI_MODEL`.
 3. **Vertex AI (Enterprise Cloud):** Connect directly to enterprise-grade Google Cloud projects with:
+   - `gemini-3.8-flash` (Default Frontier Model)
    - `gemma-4-31b-it` (Next-gen Gemma 4 31B)
-   - `gemini-2.5-flash` / `gemini-2.5-pro`
 4. **Ollama (100% Offline/Local AI):** Run privately and with zero internet. Optimized for:
-   - `gemma4:31b` (Recommended Offline Model)
-   - `gemma4:e2b` (Lightweight Gemma 4 - default)
+   - `trido-model:latest` / `ornith-1.5:9b` (Recommended Local Flagship)
+   - `trido-gemma:2b` / `gemma4:e2b` (Lightweight Gemma 4 Edge)
    - Supports auto-detection and custom model additions.
 
 ---
@@ -70,8 +68,8 @@ AI_MODE=auto
 # Get a free API key at: https://aistudio.google.com/apikey
 GEMINI_API_KEY=your_gemini_api_key_here
 
-# Standard options or secret/test models: gemini-3.5-flash, gemini-3.1-flash-lite
-GEMINI_MODEL=gemini-3.5-flash-lite
+# Standard options: gemini-3.8-flash
+GEMINI_MODEL=gemini-3.8-flash
 
 # ── Ollama (Local/Offline) ───────────────────────────────────────────────────
 # Ensure Ollama is running and download your model of choice:

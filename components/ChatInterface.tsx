@@ -159,19 +159,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   };
   const { processUserPrompt } = useGeminiBrain();
 
-  if (isViewerUrl) {
-    return (
-      <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
-        <div className="absolute bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-40">
-           <div className="bg-slate-900/80 backdrop-blur-md text-white text-[13px] font-medium px-4 py-2.5 rounded-2xl shadow-lg border border-white/10 flex items-center gap-3">
-             <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-             <span className="tracking-wide">{t('watchingTeacher', 'Anda sedang menonton layar guru')}</span>
-           </div>
-        </div>
-      </div>
-    );
-  }
-
   const recognitionRef = useRef<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -228,11 +215,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const stopVisualizer = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
       audioContextRef.current.close().then(() => {
         audioContextRef.current = null;
-      });
+      }).catch(() => {});
+    }
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach(track => track.stop());
+      audioStreamRef.current = null;
     }
     setAudioVolume(0);
     setAudioData(new Uint8Array(0));
@@ -369,12 +361,42 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
     }
   }, [language]);
 
+  // Keep local input synchronized with store.chatInputText and isListening with store.isVoiceListening
+  const storeChatInputText = useStore(state => state.chatInputText);
+  useEffect(() => {
+    if (storeChatInputText !== input) {
+      setInput(storeChatInputText);
+    }
+  }, [storeChatInputText]);
+
+  useEffect(() => {
+    useStore.getState().setVoiceListening(isListening);
+  }, [isListening]);
+
   useEffect(() => {
     const handleStartMic = () => {
       if (!isListening) toggleListening();
     };
+    const handleToggleMic = () => {
+      toggleListening();
+    };
+    const handleExecuteVoicePrompt = (e: Event) => {
+      const customEvent = e as CustomEvent<{ prompt?: string }>;
+      const promptText = customEvent.detail?.prompt?.trim();
+      if (promptText) {
+        setInput(promptText);
+        useStore.getState().setChatInputText(promptText);
+        handleSubmitInternal(promptText);
+      }
+    };
     window.addEventListener('start-mic', handleStartMic);
-    return () => window.removeEventListener('start-mic', handleStartMic);
+    window.addEventListener('toggle-mic', handleToggleMic);
+    window.addEventListener('execute-voice-prompt', handleExecuteVoicePrompt);
+    return () => {
+      window.removeEventListener('start-mic', handleStartMic);
+      window.removeEventListener('toggle-mic', handleToggleMic);
+      window.removeEventListener('execute-voice-prompt', handleExecuteVoicePrompt);
+    };
   }, [isListening]);
 
   const toggleListening = async () => {
@@ -691,6 +713,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       </motion.button>
     );
   };
+
+  if (isViewerUrl) {
+    return (
+      <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+        <div className="absolute bottom-4 lg:bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto z-40">
+           <div className="bg-slate-900/80 backdrop-blur-md text-white text-[13px] font-medium px-4 py-2.5 rounded-2xl shadow-lg border border-white/10 flex items-center gap-3">
+             <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+             <span className="tracking-wide">{t('watchingTeacher', 'Anda sedang menonton layar guru')}</span>
+           </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden">

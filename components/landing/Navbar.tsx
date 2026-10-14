@@ -110,11 +110,11 @@ export default function Navbar({ onLaunchApp }: { onLaunchApp?: () => void }) {
           <div className="flex items-center gap-2">
             <LangToggle id="nav" />
             <a
-              href="https://github.com/Ardelyo/trido/releases/latest"
+              href={t.hero.downloadUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group hidden items-center gap-1.5 rounded-full border border-trido/30 bg-trido/5 hover:bg-trido hover:text-white py-2.5 px-4 text-[13px] font-semibold text-trido transition-colors md:inline-flex"
-              title="Unduh Aplikasi Desktop Standalone (.exe)"
+              className="group hidden items-center gap-1.5 rounded-full border border-trido/30 bg-sun/80 hover:bg-trido hover:text-white py-2.5 px-4 text-[13px] font-bold text-trido transition-colors md:inline-flex"
+              title={t.hero.downloadExeSub}
             >
               <Download className="h-3.5 w-3.5" />
               <span>Unduh .exe</span>
@@ -177,7 +177,9 @@ export default function Navbar({ onLaunchApp }: { onLaunchApp?: () => void }) {
               <div className="flex items-center justify-between">
                 <LangToggle light id="sheet" />
                 <a
-                  href="/download"
+                  href="https://github.com/Ardelyo/trido/releases/latest"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-4 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-white hover:text-trido"
                 >
                   <Download className="h-4 w-4" />

@@ -89,34 +89,36 @@ const TransitionCurtain: React.FC<{ isExiting: boolean; message?: string }> = ({
   );
 };
 
-export const RootRouter: React.FC = () => {
-  const determineInitialRoute = (): 'app' | 'landing' => {
-    if (typeof window === 'undefined') return 'app';
+export function determineRoute(): 'app' | 'landing' {
+  if (typeof window === 'undefined') return 'app';
 
-    const params = new URLSearchParams(window.location.search);
-    const pathname = window.location.pathname.toLowerCase();
+  const params = new URLSearchParams(window.location.search);
+  const pathname = window.location.pathname.toLowerCase();
 
-    // Explicit query param overrides
-    if (params.get('landing') === 'true' || params.get('preview') === 'landing') {
-      return 'landing';
-    }
-    if (params.get('app') === 'true' || params.has('room') || pathname.startsWith('/room')) {
-      return 'app';
-    }
-
-    // Direct path routing
-    if (pathname === '/app' || pathname === '/board' || pathname === '/classroom') {
-      return 'app';
-    }
-
-    // Localhost or Electron App Launch defaults directly to the smartboard canvas
-    if (isElectronEnv() || isLocalEnv()) {
-      return 'app';
-    }
-
-    // Web domain root defaults to the Landing Page
+  // Explicit query param overrides
+  if (params.get('landing') === 'true' || params.get('preview') === 'landing') {
     return 'landing';
-  };
+  }
+  if (params.get('app') === 'true' || params.has('room') || pathname.startsWith('/room')) {
+    return 'app';
+  }
+
+  // Direct path routing
+  if (pathname === '/app' || pathname === '/board' || pathname === '/classroom') {
+    return 'app';
+  }
+
+  // Localhost or Electron App Launch defaults directly to the smartboard canvas
+  if (isElectronEnv() || isLocalEnv()) {
+    return 'app';
+  }
+
+  // Web domain root defaults to the Landing Page
+  return 'landing';
+}
+
+export const RootRouter: React.FC = () => {
+  const determineInitialRoute = determineRoute;
 
   const [route, setRoute] = useState<'app' | 'landing'>(determineInitialRoute);
   const [isTransitioning, setIsTransitioning] = useState(false);

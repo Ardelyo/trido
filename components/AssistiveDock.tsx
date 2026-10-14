@@ -39,6 +39,9 @@ export const AssistiveDock: React.FC = () => {
       rotation: 0,
       zIndex: 10
     });
+    window.dispatchEvent(new CustomEvent('addCanvasPlaceholder', {
+      detail: { id, x: 960, y: 540, width: 320, height: 380 }
+    }));
     toast.success('⏱️ Timer 5 menit aktif di papan!');
   };
 
@@ -58,6 +61,9 @@ export const AssistiveDock: React.FC = () => {
       rotation: 0,
       zIndex: 10
     });
+    window.dispatchEvent(new CustomEvent('addCanvasPlaceholder', {
+      detail: { id, x: 960, y: 540, width: 440, height: 480 }
+    }));
     toast.success('🎲 Roda acak giliran siswa aktif!');
   };
 
