@@ -27,7 +27,7 @@ export default function Story() {
             <SectionPill n={s.pill} label={s.kicker} light />
           </Reveal>
           <Reveal delay={0.08}>
-            <h2 className="display mt-6 text-[clamp(2.6rem,8vw,7.4rem)] text-white" style={{ letterSpacing: "-0.06em" }}>
+            <h2 className="display mt-6 text-[clamp(2.1rem,4.8vw,4.3rem)] leading-[1.12] text-white" style={{ letterSpacing: "-0.045em" }}>
               {head} <Mark>{tail}</Mark>
             </h2>
           </Reveal>

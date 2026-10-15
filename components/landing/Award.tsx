@@ -38,7 +38,7 @@ export default function Award() {
 
         <div className="relative mt-6 grid gap-8 lg:grid-cols-12 lg:items-end">
           <Reveal className="lg:col-span-8">
-            <h2 className="display text-[clamp(3rem,11vw,10.5rem)] text-trido" style={{ letterSpacing: "-0.065em" }}>
+            <h2 className="display text-[clamp(2.6rem,8vw,7.5rem)] leading-[1.04] text-trido" style={{ letterSpacing: "-0.055em" }}>
               {a.title}
             </h2>
           </Reveal>

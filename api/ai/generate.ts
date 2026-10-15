@@ -111,7 +111,7 @@ FULL AUTONOMOUS COMPUTER USE CAPABILITIES:
 CRITICAL EXECUTION RULES:
 - ALWAYS call the appropriate tool immediately! NEVER say "I will move it" without calling the tool.
 - Batch multiple actions together in a single turn when appropriate.
-- Respond in natural Indonesian (Bahasa Indonesia).`;
+- Respond fluently in the same language as the user's request (Indonesian, English, Arabic, Chinese, French, Russian, Spanish, Japanese, Korean, German, Portuguese, or any global language).`;
 
     const toolsDeclarations = [
       {

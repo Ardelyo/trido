@@ -8,6 +8,7 @@ import { ChatMessage } from '../types';
 import { toast } from '../utils/toast';
 import { submitLogFeedback } from '../services/aiService';
 import { useStore } from '../store';
+import { useTranslation } from '../utils/translations';
 import gsap from 'gsap';
 
 interface ChatMessageItemProps {
@@ -21,6 +22,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
   isLatest,
   isThinking
 }) => {
+  const { t, language } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const isModel = message.role === 'model';
   const [copied, setCopied] = useState(false);
@@ -185,14 +187,19 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
 
     if (!cleanText) return;
 
+    const langLocaleMap: Record<string, string> = {
+      id: 'id-ID', en: 'en-US', ar: 'ar-SA', zh: 'zh-CN', fr: 'fr-FR',
+      ru: 'ru-RU', es: 'es-ES', ja: 'ja-JP', ko: 'ko-KR', de: 'de-DE', pt: 'pt-BR'
+    };
+    const targetLocale = langLocaleMap[language] || 'id-ID';
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'id-ID';
+    utterance.lang = targetLocale;
     utterance.rate = 1.05;
 
-    // Pick Indonesian voice if available
+    // Pick matching language voice if available
     const voices = window.speechSynthesis.getVoices();
-    const idVoice = voices.find(v => v.lang.startsWith('id'));
-    if (idVoice) utterance.voice = idVoice;
+    const matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(language.toLowerCase()));
+    if (matchedVoice) utterance.voice = matchedVoice;
 
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
@@ -205,7 +212,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
     return (
       <div ref={containerRef} className="flex flex-col items-end group w-full will-change-transform">
         <div className="flex items-center gap-1.5 mb-1 mr-1">
-          <span className="text-[11px] font-semibold text-slate-400">Anda</span>
+          <span className="text-[11px] font-semibold text-slate-400">{t('you', 'Anda')}</span>
           <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
             <User size={12} />
           </div>
@@ -226,7 +233,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
               <path d="M7 4.5v15l4.2-4.1 2.9 5.1 2.4-1.3-2.9-5H19L7 4.5Z" fill="#fff" stroke="#fff" strokeWidth="1.2" strokeLinejoin="round" />
             </svg>
           </div>
-          <span className="text-[11px] font-bold text-[#0a1a3a]">Trido AI Smartboard</span>
+          <span className="text-[11px] font-bold text-[#0a1a3a]">{t('assistant', 'Asisten')}</span>
           {message.tokens && (
             <span className="text-[10px] font-mono text-slate-400 flex items-center gap-0.5" title={`Model: ${displayModel}`}>
               <Zap size={10} className="text-amber-500" /> {message.tokens} tok

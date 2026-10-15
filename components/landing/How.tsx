@@ -89,27 +89,27 @@ export default function How() {
           <SectionPill n={t.how.pill} label={t.how.kicker} />
         </Reveal>
         <Reveal delay={0.08}>
-          <h2 className="display mt-6 max-w-[16ch] text-[clamp(2.4rem,7vw,6.2rem)] text-trido">{t.how.title}</h2>
+          <h2 className="display mt-6 max-w-[18ch] text-[clamp(2.2rem,5.5vw,5.2rem)] leading-[1.06] text-trido">{t.how.title}</h2>
         </Reveal>
 
         <div className="relative mt-12 grid gap-4 sm:mt-16 md:grid-cols-3 md:gap-5">
-          {t.how.steps.map((s, i) => (
-            <Reveal key={s.t} delay={i * 0.12} className="h-full">
-              <motion.article
-                whileHover={{ y: -6 }}
-                transition={{ type: "spring", stiffness: 300, damping: 22 }}
-                className="flex h-full flex-col rounded-[2rem] bg-white p-5 shadow-[0_1px_0_rgba(10,26,58,.04)] sm:p-6"
-              >
-                <div className="h-40 overflow-hidden rounded-[1.4rem] bg-paper/70">{arts[i]}</div>
-                <div className="mt-6 flex items-end justify-between">
-                  <h3 className="display text-[2.2rem] text-ink sm:text-[2.6rem]">{s.t}</h3>
-                  <span
-                    className="display text-[3.4rem] leading-none"
-                    style={{ WebkitTextStroke: "1.5px #1550AA", color: "transparent" }}
-                  >
-                    0{i + 1}
-                  </span>
-                </div>
+        {t.how.steps.map((s, i) => (
+          <Reveal key={s.t} delay={i * 0.12} className="h-full">
+            <motion.article
+              whileHover={{ y: -6 }}
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              className="flex h-full flex-col rounded-[2rem] bg-white p-5 shadow-[0_1px_0_rgba(10,26,58,.04)] sm:p-6"
+            >
+              <div className="h-40 overflow-hidden rounded-[1.4rem] bg-paper/70">{arts[i]}</div>
+              <div className="mt-6 flex items-baseline justify-between gap-3">
+                <h3 className="display text-[1.85rem] leading-[1.06] text-ink sm:text-[2.2rem]">{s.t}</h3>
+                <span
+                  className="display shrink-0 text-[2.8rem] leading-none sm:text-[3.2rem]"
+                  style={{ WebkitTextStroke: "1.5px #1550AA", color: "transparent" }}
+                >
+                  0{i + 1}
+                </span>
+              </div>
                 <p className="mt-3 text-[15px] leading-relaxed text-ink/70">{s.d}</p>
               </motion.article>
             </Reveal>

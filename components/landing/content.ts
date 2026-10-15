@@ -27,7 +27,7 @@ const en = {
   demo: {
     classroom: "Digital Classroom",
     cloud: "Cloud Mode",
-    assistant: "AI Smartboard",
+    assistant: "Assistant",
     share: "Share",
     save: "Save",
     teacher: "Teacher",
@@ -228,7 +228,7 @@ const id: Dict = {
   demo: {
     classroom: "Digital Classroom",
     cloud: "Mode Cloud",
-    assistant: "AI Smartboard",
+    assistant: "Asisten",
     share: "Bagikan",
     save: "Simpan",
     teacher: "Guru",

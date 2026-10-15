@@ -97,7 +97,7 @@ export function Mark({ children, className }: { children: ReactNode; className?:
   return (
     <span
       className={cn(
-        "box-decoration-clone rounded-[0.12em] bg-sun px-[0.14em] pb-[0.04em] text-trido",
+        "box-decoration-clone rounded-[0.12em] bg-sun px-[0.14em] py-[0.02em] leading-[1.12] text-trido",
         className
       )}
     >

@@ -190,8 +190,8 @@
 /* ── Trido Landing Page Styles ────────────────────────────────────────── */
 .display {
   font-family: var(--font-display);
-  letter-spacing: -0.055em;
-  line-height: 0.92;
+  letter-spacing: -0.045em;
+  line-height: 1.06;
   font-weight: 800;
 }
 

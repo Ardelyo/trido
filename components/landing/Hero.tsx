@@ -79,17 +79,17 @@ export default function Hero({ onLaunchApp }: { onLaunchApp?: () => void }) {
           <span className="truncate">{t.hero.badge}</span>
         </motion.div>
 
-        <div className="relative mt-6 sm:mt-8">
+        <div className="relative mt-6 sm:mt-8 lg:pr-44 xl:pr-48">
           <h1
             key={lang}
-            className="display text-[clamp(2.75rem,10.2vw,9.6rem)] text-trido"
-            style={{ letterSpacing: "-0.06em" }}
+            className="display text-[clamp(2.4rem,7.5vw,6.8rem)] leading-[1.06] text-trido"
+            style={{ letterSpacing: "-0.05em" }}
           >
             <span className="block">
               <Rise text={t.hero.h1a} delay={0.15} />
             </span>
             <motion.span
-              className="mt-1 inline-block sm:mt-2"
+              className="mt-2 inline-block sm:mt-3"
               initial={{ clipPath: "inset(0 100% 0 0)" }}
               animate={{ clipPath: "inset(0 0% 0 0)" }}
               transition={{ duration: 1, delay: 0.6, ease: [0.76, 0, 0.24, 1] }}
@@ -99,7 +99,7 @@ export default function Hero({ onLaunchApp }: { onLaunchApp?: () => void }) {
           </h1>
 
           <motion.div
-            className="absolute -top-2 right-0 hidden lg:block"
+            className="absolute top-0 right-0 hidden lg:block"
             initial={{ opacity: 0, scale: 0.5, rotate: -40 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: 1, delay: 1.1, ease }}
@@ -156,31 +156,6 @@ export default function Hero({ onLaunchApp }: { onLaunchApp?: () => void }) {
             </a>
           </motion.div>
         </div>
-
-        {/* Trido Models & Personal API Key Reminder Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.18, duration: 0.7, ease }}
-          className="mt-6 rounded-3xl border-2 border-trido/20 bg-white/85 p-4 sm:px-6 sm:py-4 shadow-xs"
-        >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="rounded-full bg-sun px-3 py-1 text-[11px] font-black uppercase tracking-wider text-trido-deep shrink-0">
-                {t.hero.modelReminderBadge}
-              </span>
-              <span className="text-[13.5px] font-extrabold text-trido-deep">
-                {t.hero.modelReminderTitle}
-              </span>
-            </div>
-            <span className="text-[11px] font-mono font-bold text-trido bg-trido/10 px-3 py-1 rounded-full w-fit">
-              ollama pull trido-model:latest · trido-gemma:2b
-            </span>
-          </div>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed font-medium text-ink/75">
-            {t.hero.modelReminderBody}
-          </p>
-        </motion.div>
 
         <motion.ul
           initial={{ opacity: 0 }}

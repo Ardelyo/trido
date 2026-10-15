@@ -268,7 +268,12 @@ export function useAmbientListener(options: UseAmbientListenerOptions = {}) {
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = useStore.getState().language === 'en' ? 'en-US' : 'id-ID';
+        const langLocaleMap: Record<string, string> = {
+          id: 'id-ID', en: 'en-US', ar: 'ar-SA', zh: 'zh-CN', fr: 'fr-FR',
+          ru: 'ru-RU', es: 'es-ES', ja: 'ja-JP', ko: 'ko-KR', de: 'de-DE', pt: 'pt-BR'
+        };
+        const activeLang = useStore.getState().language || 'id';
+        recognition.lang = langLocaleMap[activeLang] || 'id-ID';
 
         recognition.onresult = (event: any) => {
           let interim = '';

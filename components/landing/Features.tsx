@@ -188,7 +188,7 @@ export default function Features() {
           <SectionPill n={f.pill} label={f.kicker} />
         </Reveal>
         <Reveal delay={0.08}>
-          <h2 className="display mt-6 max-w-[18ch] text-[clamp(2.4rem,7vw,6.2rem)] text-trido">{f.title}</h2>
+          <h2 className="display mt-6 max-w-[20ch] text-[clamp(2.2rem,5.5vw,5rem)] leading-[1.08] text-trido">{f.title}</h2>
         </Reveal>
 
         <div className="mt-12 grid gap-4 sm:mt-16 lg:grid-cols-6 lg:gap-5">

@@ -340,7 +340,7 @@ const App: React.FC = () => {
 
             {/* Right Section: Actions */}
             <div className="flex items-center justify-end gap-2 shrink-0 z-10">
-              {/* AI Smartboard Studio Button */}
+              {/* Asisten Button */}
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
@@ -351,7 +351,7 @@ const App: React.FC = () => {
                     : 'text-[#1550aa] bg-white hover:bg-slate-50 border border-[#1550aa]/25'
                 }`}
               >
-                <Sparkles size={16} /> <span className="hidden sm:inline">AI Smartboard</span>
+                <Sparkles size={16} /> <span className="hidden sm:inline">{t('assistant', 'Asisten')}</span>
               </motion.button>
 
               <motion.button 
@@ -461,7 +461,7 @@ const App: React.FC = () => {
                       {/* 3. Export & Import */}
                       <SidebarItem
                         icon={Download}
-                        label="Ekspor & Impor"
+                        label={t('exportImport', 'Ekspor & Impor')}
                         active={isExportOpen}
                         onClick={() => {
                           setIsExportOpen(true);
@@ -486,7 +486,7 @@ const App: React.FC = () => {
                       {/* 5. Guide */}
                       <SidebarItem
                         icon={HelpCircle}
-                        label={language === 'id' ? 'Panduan Guru' : 'User Guide'}
+                        label={t('userGuide', 'Panduan Guru')}
                         active={isGuideOpen}
                         onClick={() => {
                           setIsGuideOpen(true);
@@ -500,7 +500,7 @@ const App: React.FC = () => {
                       {isWeb && (
                         <SidebarItem
                           icon={Home}
-                          label={language === 'id' ? 'Beranda / Info' : 'About / Home'}
+                          label={t('aboutHome', 'Beranda / Info')}
                           active={false}
                           onClick={navigateToLanding}
                         />
@@ -537,7 +537,7 @@ const App: React.FC = () => {
                               <Pencil size={12} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                           )}
-                          <div className="text-[12px] text-slate-500 font-medium">Pengajar Kelas</div>
+                          <div className="text-[12px] text-slate-500 font-medium">{t('classTeacher', 'Pengajar Kelas')}</div>
                         </div>
                       </div>
                     </div>
@@ -588,7 +588,7 @@ const App: React.FC = () => {
                   className={`w-8 h-8 flex items-center justify-center rounded-full text-slate-500 transition-all cursor-pointer ${
                     isThinking || isActing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 hover:text-[#1550aa]'
                   }`}
-                  title="Tambah Halaman Baru"
+                  title={t('addNewPage', 'Tambah Halaman Baru')}
                 >
                   <Plus size={16} strokeWidth={2.5} />
                 </button>
@@ -656,11 +656,11 @@ const App: React.FC = () => {
                         </span>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-[#0a1a3a] text-[15px]">Trido AI Smartboard</span>
+                            <span className="font-extrabold text-[#0a1a3a] text-[15px]">{t('assistant', 'Asisten')}</span>
                             <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} title={statusConfig.text} />
                           </div>
                           <div className="text-[11px] text-slate-500 font-semibold tracking-tight">
-                            {statusConfig.mode === 'ollama' ? 'Mode Offline (Ollama)' : 'Studio Smartboard Cloud'}
+                            {statusConfig.mode === 'ollama' ? t('modeLuring', 'Mode Offline (Ollama)') : t('modeCloud', 'Mode Cloud')}
                           </div>
                         </div>
                     </div>
@@ -669,9 +669,9 @@ const App: React.FC = () => {
                         type="button"
                         onClick={() => {
                           useStore.getState().clearMessages();
-                          toast.info('Riwayat percakapan dibersihkan.');
+                          toast.info(t('clearChatToast', 'Riwayat percakapan dibersihkan.'));
                         }}
-                        title="Bersihkan percakapan"
+                        title={t('clearChatHistory', 'Bersihkan percakapan')}
                         className="text-slate-400 hover:text-rose-600 bg-slate-50 hover:bg-rose-50 p-2.5 rounded-2xl transition-colors active:scale-95 cursor-pointer"
                       >
                         <Trash2 size={16} />
@@ -688,19 +688,23 @@ const App: React.FC = () => {
                     <div className="p-3 rounded-2xl bg-[#e4e3e0]/50 border border-[#0a1a3a]/10 text-[11.5px] leading-relaxed text-[#0a1a3a] flex flex-col gap-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-black text-[#1550aa] flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[9.5px] font-black uppercase">Info AI</span>
-                          Model Lokal Trido & Kunci API
+                          <span className="px-2 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[9.5px] font-black uppercase">AI</span>
+                          {language === 'id' ? 'Model Lokal Trido & Kunci API' : 'Trido Local Models & API Key'}
                         </span>
                         <button
                           type="button"
                           onClick={() => setIsSettingsOpen(true)}
                           className="text-[10.5px] font-extrabold text-[#1550aa] underline cursor-pointer"
                         >
-                          Buka Pengaturan →
+                          {t('settings', 'Pengaturan')} →
                         </button>
                       </div>
                       <p className="text-slate-600 font-medium">
-                        Server Cloud Demo (<code className="font-mono text-[10.5px]">gemma4good</code>) tidak gratis selamanya. Anda dapat mengunduh <strong>Model Lokal Trido (<code className="font-mono text-[10.5px]">trido-model:latest</code> / <code className="font-mono text-[10.5px]">trido-gemma:2b</code>)</strong> via Ollama atau memakai <strong>API Key Google AI Studio</strong> pribadi di Pengaturan.
+                        {language === 'id' ? (
+                          <>Server Cloud Demo (<code className="font-mono text-[10.5px]">gemma4good</code>) tidak gratis selamanya. Anda dapat mengunduh <strong>Model Lokal Trido (<code className="font-mono text-[10.5px]">trido-model:latest</code> / <code className="font-mono text-[10.5px]">trido-gemma:2b</code>)</strong> via Ollama atau memakai <strong>API Key Google AI Studio</strong> pribadi di Pengaturan.</>
+                        ) : (
+                          <>The Cloud Demo server (<code className="font-mono text-[10.5px]">gemma4good</code>) will not be free forever. You can download <strong>Trido Local Models (<code className="font-mono text-[10.5px]">trido-model:latest</code> / <code className="font-mono text-[10.5px]">trido-gemma:2b</code>)</strong> via Ollama or use your own <strong>Google AI Studio API Key</strong> in Settings.</>
+                        )}
                       </p>
                     </div>
                     {messages.length === 0 && (
@@ -744,8 +748,8 @@ const App: React.FC = () => {
                           <span className="w-2 h-2 rounded-full bg-[#ffcc00] animate-ping shrink-0" />
                           <span className="truncate">
                             {interimInputText
-                              ? `Mendengarkan: "${interimInputText}"`
-                              : 'Mode Suara Aktif — Silakan bicara...'}
+                              ? `${t('listeningTo', 'Mendengarkan')}: "${interimInputText}"`
+                              : t('voiceListeningActive', 'Mode Suara Aktif — Silakan bicara...')}
                           </span>
                         </div>
                         <button
@@ -753,7 +757,7 @@ const App: React.FC = () => {
                           onClick={() => window.dispatchEvent(new Event('toggle-mic'))}
                           className="px-2.5 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[10px] font-black shrink-0 cursor-pointer"
                         >
-                          Selesai
+                          {t('doneBtn', 'Selesai')}
                         </button>
                       </div>
                     )}
@@ -764,38 +768,44 @@ const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={async () => {
-                            const prompt = `Tolong buatkan peta konsep (mindmap) terstruktur dan lengkap dari dokumen "${attachedDocument.name}" ini di whiteboard.`;
+                            const prompt = language === 'id'
+                              ? `Tolong buatkan peta konsep (mindmap) terstruktur dan lengkap dari dokumen "${attachedDocument.name}" ini di whiteboard.`
+                              : `Please create a structured and comprehensive mind map from the document "${attachedDocument.name}" on the whiteboard.`;
                             useStore.getState().addMessage({ role: 'user', text: prompt });
                             await processUserPrompt(prompt, canvasRef);
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#1550aa] border border-blue-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
                         >
                           <Network size={12} />
-                          <span>🌳 Buat Peta Konsep</span>
+                          <span>{t('createMindmapBtn', '🌳 Buat Peta Konsep')}</span>
                         </button>
                         <button
                           type="button"
                           onClick={async () => {
-                            const prompt = `Tolong buatkan ringkasan materi akademik lengkap dari dokumen "${attachedDocument.name}" ini dan tampilkan sebagai catatan di whiteboard.`;
+                            const prompt = language === 'id'
+                              ? `Tolong buatkan ringkasan materi akademik lengkap dari dokumen "${attachedDocument.name}" ini dan tampilkan sebagai catatan di whiteboard.`
+                              : `Please create a comprehensive academic summary of the document "${attachedDocument.name}" and display it as a note on the whiteboard.`;
                             useStore.getState().addMessage({ role: 'user', text: prompt });
                             await processUserPrompt(prompt, canvasRef);
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
                         >
                           <FileText size={12} />
-                          <span>📝 Ringkas Materi</span>
+                          <span>{t('summarizeDocBtn', '📝 Ringkas Materi')}</span>
                         </button>
                         <button
                           type="button"
                           onClick={async () => {
-                            const prompt = `Tolong buatkan 5 soal kuis evaluasi pemahaman siswa berdasarkan isi dokumen "${attachedDocument.name}" ini.`;
+                            const prompt = language === 'id'
+                              ? `Tolong buatkan 5 soal kuis evaluasi pemahaman siswa berdasarkan isi dokumen "${attachedDocument.name}" ini.`
+                              : `Please create a 5-question student comprehension quiz based on the document "${attachedDocument.name}".`;
                             useStore.getState().addMessage({ role: 'user', text: prompt });
                             await processUserPrompt(prompt, canvasRef);
                           }}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
                         >
                           <HelpCircle size={12} />
-                          <span>❓ Buat Kuis Interaktif</span>
+                          <span>{t('createQuizBtn', '❓ Buat Kuis Interaktif')}</span>
                         </button>
                       </div>
                     )}

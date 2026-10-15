@@ -28,6 +28,22 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   id: {
     // App & Sidebar
     appName: 'Trido',
+    assistant: 'Asisten',
+    you: 'Anda',
+    exportImport: 'Ekspor & Impor',
+    aboutHome: 'Beranda / Info',
+    classTeacher: 'Pengajar Kelas',
+    addNewPage: 'Tambah Halaman Baru',
+    clearChatHistory: 'Bersihkan percakapan',
+    clearChatToast: 'Riwayat percakapan dibersihkan.',
+    tridoIsThinking: 'Trido sedang berpikir...',
+    createMindmapBtn: '🌳 Buat Peta Konsep',
+    summarizeDocBtn: '📝 Ringkas Materi',
+    createQuizBtn: '❓ Buat Kuis Interaktif',
+    voiceListeningActive: 'Mode Suara Aktif — Silakan bicara...',
+    listeningTo: 'Mendengarkan',
+    doneBtn: 'Selesai',
+    stopAndSendVoice: 'Hentikan & Kirim Suara',
     digitalClassroom: 'Digital Classroom',
     liveSession: 'Sesi Live',
     checkSession: 'Cek Sesi',
@@ -273,6 +289,22 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   en: {
     // App & Sidebar
     appName: 'Trido',
+    assistant: 'Assistant',
+    you: 'You',
+    exportImport: 'Export & Import',
+    aboutHome: 'About / Home',
+    classTeacher: 'Class Instructor',
+    addNewPage: 'Add New Page',
+    clearChatHistory: 'Clear conversation',
+    clearChatToast: 'Conversation history cleared.',
+    tridoIsThinking: 'Trido is thinking...',
+    createMindmapBtn: '🌳 Create Mind Map',
+    summarizeDocBtn: '📝 Summarize Material',
+    createQuizBtn: '❓ Create Interactive Quiz',
+    voiceListeningActive: 'Voice Mode Active — Please speak...',
+    listeningTo: 'Listening',
+    doneBtn: 'Done',
+    stopAndSendVoice: 'Stop & Send Voice',
     digitalClassroom: 'Digital Classroom',
     liveSession: 'Live Session',
     checkSession: 'Check Session',
@@ -517,6 +549,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   ar: {
     appName: 'تريدو (Trido)',
+    assistant: 'المساعد',
+    you: 'أنت',
+    exportImport: 'تصدير واستيراد',
+    aboutHome: 'الرئيسية / معلومات',
+    classTeacher: 'معلم الفصل',
+    addNewPage: 'إضافة صفحة جديدة',
+    clearChatHistory: 'مسح المحادثة',
     digitalClassroom: 'الفصل الدراسي الرقمي',
     liveSession: 'جلسة مباشرة',
     checkSession: 'فحص الجلسة',
@@ -547,6 +586,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   zh: {
     appName: 'Trido 智板',
+    assistant: 'AI 助手',
+    you: '您',
+    exportImport: '导出与导入',
+    aboutHome: '首页 / 关于',
+    classTeacher: '班级教师',
+    addNewPage: '添加新页面',
+    clearChatHistory: '清空对话',
     digitalClassroom: '数字化智能课堂',
     liveSession: '实时互动课堂',
     checkSession: '检查课堂',
@@ -582,6 +628,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   fr: {
     appName: 'Trido',
+    assistant: 'Assistant',
+    you: 'Vous',
+    exportImport: 'Exporter & Importer',
+    aboutHome: 'Accueil / Infos',
+    classTeacher: 'Enseignant',
+    addNewPage: 'Nouvelle Page',
+    clearChatHistory: 'Effacer la conversation',
     digitalClassroom: 'Classe Numérique',
     liveSession: 'Session en Direct',
     checkSession: 'Vérifier la Session',
@@ -614,6 +667,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   ru: {
     appName: 'Trido',
+    assistant: 'Ассистент',
+    you: 'Вы',
+    exportImport: 'Экспорт и Импорт',
+    aboutHome: 'Главная / Инфо',
+    classTeacher: 'Преподаватель',
+    addNewPage: 'Новая страница',
+    clearChatHistory: 'Очистить чат',
     digitalClassroom: 'Цифровой Класс',
     liveSession: 'Прямая Сессия',
     checkSession: 'Проверить Сессию',
@@ -646,6 +706,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   es: {
     appName: 'Trido',
+    assistant: 'Asistente',
+    you: 'Tú',
+    exportImport: 'Exportar e Importar',
+    aboutHome: 'Inicio / Info',
+    classTeacher: 'Profesor de Clase',
+    addNewPage: 'Añadir Página',
+    clearChatHistory: 'Borrar conversación',
     digitalClassroom: 'Aula Digital',
     liveSession: 'Sesión en Vivo',
     checkSession: 'Comprobar Sesión',
@@ -678,6 +745,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   ja: {
     appName: 'Trido',
+    assistant: 'アシスタント',
+    you: 'あなた',
+    exportImport: 'エクスポート・インポート',
+    aboutHome: 'ホーム / 情報',
+    classTeacher: '担当教員',
+    addNewPage: '新しいページを追加',
+    clearChatHistory: '会話をクリア',
     digitalClassroom: 'デジタル教室',
     liveSession: 'ライブ授業',
     checkSession: '授業確認',
@@ -710,6 +784,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   ko: {
     appName: 'Trido',
+    assistant: '어시스턴트',
+    you: '나',
+    exportImport: '내보내기 및 가져오기',
+    aboutHome: '홈 / 정보',
+    classTeacher: '담당 교사',
+    addNewPage: '새 페이지 추가',
+    clearChatHistory: '대화 지우기',
     digitalClassroom: '디지털 교실',
     liveSession: '라이브 수업',
     checkSession: '수업 확인',
@@ -742,6 +823,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   de: {
     appName: 'Trido',
+    assistant: 'Assistent',
+    you: 'Sie',
+    exportImport: 'Export & Import',
+    aboutHome: 'Startseite / Info',
+    classTeacher: 'Klassenlehrer/in',
+    addNewPage: 'Neue Seite hinzufügen',
+    clearChatHistory: 'Chatverlauf löschen',
     digitalClassroom: 'Digitales Klassenzimmer',
     liveSession: 'Live-Sitzung',
     checkSession: 'Sitzung prüfen',
@@ -774,6 +862,13 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   pt: {
     appName: 'Trido',
+    assistant: 'Assistente',
+    you: 'Você',
+    exportImport: 'Exportar e Importar',
+    aboutHome: 'Início / Info',
+    classTeacher: 'Professor da Turma',
+    addNewPage: 'Adicionar Nova Página',
+    clearChatHistory: 'Limpar conversa',
     digitalClassroom: 'Sala de Aula Digital',
     liveSession: 'Sessão ao Vivo',
     checkSession: 'Verificar Sessão',
@@ -811,7 +906,12 @@ export const useTranslation = () => {
   
   const t = (key: string, fallback?: string): string => {
     const dict = translations[language] || translations['en'] || translations['id'];
-    return dict?.[key] || fallback || translations['en']?.[key] || translations['id']?.[key] || key;
+    if (dict?.[key]) return dict[key];
+    // For non-Indonesian languages, prefer the English dictionary before an Indonesian fallback string
+    if (language !== 'id' && translations['en']?.[key]) {
+      return translations['en'][key];
+    }
+    return fallback || translations['en']?.[key] || translations['id']?.[key] || key;
   };
 
   const currentLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0];
