@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { dict, type Dict, type Lang } from "./content";
+import { useStore } from "../../store";
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: Dict };
 
@@ -7,13 +8,13 @@ const I18nContext = createContext<Ctx | null>(null);
 
 function initialLang(): Lang {
   try {
-    const saved = localStorage.getItem("trido-lang");
+    const saved = localStorage.getItem("trido-lang") || localStorage.getItem("trido_language");
     if (saved === "en" || saved === "id") return saved;
   } catch {
     /* ignore */
   }
   if (typeof navigator !== "undefined" && navigator.language?.toLowerCase().startsWith("id")) return "id";
-  return "en";
+  return "id";
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -23,6 +24,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLangState(l);
     try {
       localStorage.setItem("trido-lang", l);
+      localStorage.setItem("trido_language", l);
+      useStore.getState().setLanguage(l);
     } catch {
       /* ignore */
     }
