@@ -1,9 +1,10 @@
-name: Build & Publish Demo Release
+name: Build & Publish Release
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,7 +12,7 @@ permissions:
 jobs:
   # ── Windows .exe installer ─────────────────────────────────────────────────
   build-windows:
-    name: Build Windows Installer
+    name: Build Windows Installer (.exe)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,19 +23,29 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run check
 
       - name: Build frontend + Electron (Windows)
         run: npm run build:electron:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize hyphenated installer filename for Landing Page direct link
+        shell: bash
+        run: |
+          if [ -f "dist-release/Trido Setup 1.0.0.exe" ]; then
+            cp "dist-release/Trido Setup 1.0.0.exe" "dist-release/Trido-Setup-1.0.0.exe"
+          fi
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           path: dist-release/*.exe
-          retention-days: 1
+          retention-days: 3
 
   # ── macOS .dmg ─────────────────────────────────────────────────────────────
   build-macos:
@@ -49,7 +60,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Build frontend + Electron (macOS)
         run: npm run build:electron:mac
@@ -61,7 +72,7 @@ jobs:
         with:
           name: macos-dmg
           path: dist-release/*.dmg
-          retention-days: 1
+          retention-days: 3
 
   # ── Linux .AppImage ────────────────────────────────────────────────────────
   build-linux:
@@ -76,7 +87,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Build frontend + Electron (Linux)
         run: npm run build:electron:linux
@@ -88,7 +99,7 @@ jobs:
         with:
           name: linux-appimage
           path: dist-release/*.AppImage
-          retention-days: 1
+          retention-days: 3
 
   # ── Portable ZIP (Node.js required, all platforms) ─────────────────────────
   build-zip:
@@ -103,88 +114,36 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Build Vite frontend
         run: npm run build
 
-      - name: Create start.bat (Windows)
-        run: |
-          cat > start.bat << 'EOF'
-          @echo off
-          title Trido - AI Digital Classroom
-          color 0B
-          echo.
-          echo  =========================================
-          echo   Trido - AI-Powered Digital Classroom
-          echo  =========================================
-          echo.
-          where node >nul 2>&1
-          if %errorlevel% neq 0 (
-            echo [ERROR] Node.js not found. Download from https://nodejs.org
-            pause
-            exit /b 1
-          )
-          echo [1/3] Node.js found.
-          echo [2/3] Installing dependencies...
-          call npm install --omit=dev --silent
-          echo [3/3] Starting server...
-          echo.
-          echo  Open: http://localhost:3000
-          echo  Press Ctrl+C to stop.
-          echo.
-          start "" /b cmd /c "timeout /t 3 /nobreak >nul && start http://localhost:3000"
-          npm start
-          pause
-          EOF
-
-      - name: Create start.sh (macOS/Linux)
-        run: |
-          cat > start.sh << 'EOF'
-          #!/usr/bin/env bash
-          set -e
-          echo ""
-          echo " Trido — AI Digital Classroom"
-          echo " ============================="
-          echo ""
-          command -v node &>/dev/null || { echo "[ERROR] Node.js not found. Install from https://nodejs.org"; exit 1; }
-          echo "[1/3] Node.js $(node --version) found."
-          echo "[2/3] Installing dependencies..."
-          npm install --omit=dev --silent
-          echo "[3/3] Starting server..."
-          echo ""
-          echo " Open: http://localhost:3000"
-          echo " Press Ctrl+C to stop."
-          echo ""
-          (sleep 3 && (xdg-open http://localhost:3000 2>/dev/null || open http://localhost:3000 2>/dev/null || true)) &
-          npm start
-          EOF
-          chmod +x start.sh
-
       - name: Package portable ZIP
         run: |
           mkdir -p release-zip
-          cp -r dist release-zip/
-          cp -r server release-zip/
-          cp -r utils release-zip/
-          cp -r docs release-zip/
+          cp -r dist public server utils docs release-zip/
           cp server.ts constants.ts types.ts package.json package-lock.json release-zip/
-          cp tsconfig.json tsconfig.server.json .env.example release-zip/
-          cp start.bat start.sh release-zip/
-          cat > release-zip/README.txt << 'EOF'
-          Trido — AI Digital Classroom
-          ============================
-
-          QUICK START (No Install Required beyond Node.js):
-          - Windows: Double-click start.bat
-          - macOS/Linux: bash start.sh
-
-          REQUIREMENTS:
-          - Node.js v18+ (nodejs.org)
-          - Gemini API key → set in .env file (copy .env.example → .env)
-
-          The browser opens automatically at http://localhost:3000
+          cp tsconfig.json tsconfig.server.json .env.example start.bat JURY_INSTALL_GUIDE.md README.md release-zip/
+          cat > release-zip/start.sh << 'EOF'
+          #!/usr/bin/env bash
+          set -e
+          cd "$(dirname "$0")"
+          echo ""
+          echo " ======================================================="
+          echo "  TRIDO — AI Smartboard Classroom (Localhost Launcher)"
+          echo " ======================================================="
+          echo ""
+          command -v node &>/dev/null || { echo "[ERROR] Node.js not found. Install from https://nodejs.org"; exit 1; }
+          if [ ! -d "node_modules/tsx" ]; then
+            echo "[1/2] Installing dependencies..."
+            npm install --no-audit --no-fund --loglevel=error
+          fi
+          echo "[2/2] Starting Trido server at http://localhost:3000 ..."
+          (sleep 2 && (xdg-open "http://localhost:3000/?app=true" 2>/dev/null || open "http://localhost:3000/?app=true" 2>/dev/null || true)) &
+          npx tsx server.ts
           EOF
+          chmod +x release-zip/start.sh
           cd release-zip && zip -r ../trido-portable-${{ github.ref_name }}.zip . && cd ..
 
       - name: Upload ZIP artifact
@@ -192,7 +151,7 @@ jobs:
         with:
           name: portable-zip
           path: trido-portable-${{ github.ref_name }}.zip
-          retention-days: 1
+          retention-days: 3
 
   # ── Publish Release ────────────────────────────────────────────────────────
   publish:
@@ -215,31 +174,20 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: "Trido ${{ github.ref_name }}"
           body: |
-            ## 🎓 Trido — AI-Powered Digital Classroom
+            ## 🎓 Trido — AI Smartboard for Inclusive Classroom Education
 
             ### ⬇️ Downloads
 
             | Platform | File | Notes |
             |----------|------|-------|
-            | 🪟 Windows | `Trido Setup *.exe` | Installs Trido — just run the `.exe` |
-            | 🍎 macOS | `Trido-*.dmg` | Open DMG, drag to Applications |
+            | 🪟 Windows Installer | `Trido-Setup-1.0.0.exe` | 1-click Windows desktop installer (no Node.js or terminal required) |
+            | 🍎 macOS | `Trido-*.dmg` | Open DMG and drag to Applications |
             | 🐧 Linux | `Trido-*.AppImage` | `chmod +x` then run |
-            | 📦 All platforms | `trido-portable-*.zip` | Requires Node.js v18+ |
+            | 📦 Portable ZIP | `trido-portable-*.zip` | Cross-platform source + prebuilt `dist/` (`start.bat` / `start.sh`) |
 
-            ### 🚀 First Launch (Desktop Apps)
-            1. **Install** the `.exe` / `.dmg` / `.AppImage` for your platform
-            2. **Open Trido** — a setup screen appears
-            3. **Paste your Gemini API key** (free at [aistudio.google.com](https://aistudio.google.com/apikey))
-            4. Click **Start Trido** — the app opens, ready for demo!
-
-            > ✅ No terminal, no Node.js, no configuration needed beyond an API key.
-
-            ### ✨ Features
-            - 🎨 AI-powered infinite canvas whiteboard
-            - 🤖 Multi-model AI (Gemini, Ollama, Vertex AI)
-            - 🎤 Voice input (Chrome/Edge)
-            - 📊 Mindmap, Quiz, Timer, App Builder tools
-            - 🔄 Real-time classroom collaboration
+            ### 🧠 AI Model & API Key Options
+            - **Option 1 — 100% Free & Offline (Ollama Local Models):** Open **Settings → AI Configuration** and click **1-Click Download** for `trido-model:latest` or `trido-gemma:2b`.
+            - **Option 2 — Personal Cloud API Key:** Enter your free [Google AI Studio API Key](https://aistudio.google.com/apikey) (`GEMINI_API_KEY`) in Settings.
           files: release-files/*
           draft: false
           prerelease: false

@@ -1,130 +1,104 @@
-# Deployment Guide
+# Trido — Deployment & Desktop Packaging Guide
 
-## Prerequisites
-
-- Docker installed (for containerized deployment)
-- Node.js 18+ (for source deployment)
-- Gemini API key (for cloud mode)
-- Ollama installed on target machine (optional, for offline mode)
-
-## Local Production Deployment
-
-### 1. Build the Application
-
-```bash
-npm run build
-```
-
-This creates an optimized bundle in `dist/` folder (~2-3 MB).
-
-### 2. Start the Server
-
-```bash
-# Using npm
-npm start
-
-# Or directly with tsx
-tsx server.ts
-```
-
-The application will be available at `http://localhost:3000`.
-
-**Verify it's running:**
-```bash
-curl http://localhost:3000
-```
-
-### 3. Environment Setup
-
-Create `.env.local` with production values:
-
-```
-VITE_GEMINI_API_KEY=your_production_key_here
-OLLAMA_URL=http://localhost:11434
-SERVER_PORT=3000
-```
-
-**Important for production:**
-- Use a strong, unique Gemini API key
-- Restrict API key to your domain if using web-based auth
-- Store sensitive keys in environment variables, not in code
-- Consider using a secrets manager (AWS Secrets Manager, Azure Key Vault, etc.)
+This guide covers deploying and packaging **Trido** across four target environments:
+1. **Standalone Windows Desktop Installer (`.exe`)**
+2. **Local Production Server (`start.bat` / Node.js)**
+3. **Vercel Cloud + Serverless API Deployment**
+4. **Docker & Docker Compose (with Local Ollama)**
 
 ---
 
-## Docker Deployment
+## 1. Environment Variables Reference (`.env`)
 
-### Multi-Stage Dockerfile
+Copy `.env.example` to `.env`:
 
-Create a `Dockerfile` in the project root:
+```ini
+# Server Port (Default: 3000 for Web/CLI, 3030 inside Electron Desktop .exe)
+PORT=3000
 
-```dockerfile
-# Build stage
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
+# Option 1: Local Ollama (100% Free & Offline Forever)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=trido-model:latest
 
-# Runtime stage
-FROM node:18-alpine
-WORKDIR /app
-RUN apk add --no-cache curl
+# Option 2: Personal Google AI Studio API Key
+GEMINI_API_KEY=your_google_ai_studio_key_here
 
-# Copy only production dependencies
-COPY package*.json ./
-RUN npm ci --omit=dev
-
-# Copy built application
-COPY --from=builder /app/dist ./dist
-COPY server.ts constants.ts types.ts ./
-COPY server/ ./server/
-COPY utils/ ./utils/
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
-
-EXPOSE 3000
-ENV NODE_ENV=production
-CMD ["npm", "start"]
+# Option 3: Google Cloud Vertex AI (Optional — Evaluation / Enterprise)
+GOOGLE_CLOUD_PROJECT=gemma4good-494311
+GOOGLE_CLOUD_LOCATION=us-central1
 ```
 
+---
 
-### Build Docker Image
+## 2. Building the Standalone Windows Desktop App (`.exe`)
+
+Trido includes an automated Electron + Express + Faster-Whisper builder (`scripts/build-electron.js` + `electron-builder`) configured for **Windows 11 Smart App Control compatibility** (`"asar": false`, `"signAndEditExecutable": false`).
+
+### Build Command
+```bash
+npm run build:electron:win
+```
+
+### Generated Artifacts (`dist-release/`)
+- **`dist-release/Trido Setup 1.0.0.exe` (~168 MB):** Full NSIS installer that creates Desktop & Start Menu shortcuts and bundles the Node/Express server, frontend assets, Smartboard icon (`public/icon.ico`), and offline `whisperService.py`.
+- **`dist-release/win-unpacked/Trido.exe`:** Unpacked portable desktop executable.
+
+### Publishing to GitHub Releases & Vercel `/download`
+Pushing a `v*` tag triggers [`.github/workflows/release.yml`](../.github/workflows/release.yml) or you can upload manually with GitHub CLI:
+```bash
+cp "dist-release/Trido Setup 1.0.0.exe" "dist-release/Trido-Setup-1.0.0.exe"
+gh release upload v1.1.0 "dist-release/Trido-Setup-1.0.0.exe" --clobber
+```
+Both `vercel.json` (`/download`) and the Landing Page download buttons point directly to:
+`https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe`
+
+---
+
+## 3. Local Production Server Deployment
 
 ```bash
-docker build -t trido:latest .
+# 1. Install dependencies & verify TypeScript
+npm ci
+npm run check
+
+# 2. Build optimized Vite + PWA bundle into dist/
+npm run build
+
+# 3. Start production Express + Socket.IO server
+npm start
 ```
-
-### Run Container Locally
-
+Verify server health:
 ```bash
-docker run -p 3000:3000 \
-  -e VITE_GEMINI_API_KEY=your_key \
-  -e NODE_ENV=production \
-  trido:latest
+curl http://localhost:3000/api/health
 ```
 
-Access at `http://localhost:3000`.
+---
 
-### Docker Compose (Development)
+## 4. Vercel Cloud Deployment
 
-Create `docker-compose.yml`:
+Trido includes serverless API routes under `api/` (`api/health.ts`, `api/ai/status.ts`, `api/ai/generate.ts`, `api/ai/transcribe.ts`, `api/ai/tool-content.ts`) and routing rules in `vercel.json`:
+
+1. Import `Ardelyo/trido` into Vercel.
+2. Build Command: `npm run build` | Output Directory: `dist`.
+3. Configure optional Environment Variables in Vercel Project Settings (`GEMINI_API_KEY` or `GOOGLE_CLOUD_PROJECT`).
+4. Visiting `/download` on Vercel automatically redirects (`302`) to the latest `Trido-Setup-1.0.0.exe` on GitHub Releases.
+
+---
+
+## 5. Docker & Docker Compose (Self-Hosted School Server + Ollama)
 
 ```yaml
 version: '3.8'
 
 services:
-  app:
+  trido:
     build: .
     ports:
       - "3000:3000"
     environment:
-      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
-      - OLLAMA_URL=http://ollama:11434
-      - NODE_ENV=production
+      - PORT=3000
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=trido-model:latest
     depends_on:
       - ollama
 
@@ -139,438 +113,3 @@ services:
 volumes:
   ollama_data:
 ```
-
-**Start both services:**
-```bash
-docker-compose up
-```
-
-This starts both the app and Ollama; app will automatically detect Ollama at `http://ollama:11434`.
-
----
-
-## Cloud Deployment
-
-### Vercel Frontend + PaaS Backend (Recommended for Production)
-
-When deploying Trido to public cloud providers, **you must separate the static frontend from the Express/WebSocket backend**. 
-
-#### ⚠️ Crucial Architectural Clarification: Why Vercel Alone Fails
-If you deploy this repository directly to Vercel without a dedicated backend server, you will see the following browser console errors:
-```
-GET https://trido.vercel.app/socket.io/?EIO=4&transport=polling... 404 (Not Found)
-POST https://trido.vercel.app/api/ai/status 404 (Not Found)
-```
-**Reason:** Vercel is a *serverless* platform. It excels at serving static React/Vite assets, but it **cannot maintain persistent WebSocket connections** or run long-lived Node.js Express servers (`server.ts`). When the Vercel frontend attempts to poll `/socket.io` or reach `/api/ai/*`, Vercel returns 404 because no Node.js daemon is listening.
-
-#### How to Configure for Production
-
-To deploy successfully:
-1. **Host the Backend on a persistent PaaS** (such as [Railway](https://railway.app), [Render](https://render.com), or Heroku). 
-   - Deploy this repository to your PaaS provider.
-   - Set the build command to `npm run build:server` and start command to `npm start`.
-   - The PaaS will allocate a public domain (e.g., `https://trido-backend.up.railway.app`).
-
-2. **Host the Frontend on Vercel**.
-   - In your Vercel project settings, configure an environment variable pointing to your PaaS backend:
-     ```
-     VITE_API_URL=https://trido-backend.up.railway.app
-     ```
-   - When `VITE_API_URL` is set, the frontend automatically routes all Socket.IO connections and AI API calls to your persistent backend daemon instead of attempting to reach Vercel serverless routes.
-
----
-
-### Azure App Service
-
-
-#### Option 1: Deploy from Docker Image
-
-```bash
-# Push Docker image to Azure Container Registry
-az acr build --registry myregistry --image trido:latest .
-
-# Create App Service
-az appservice plan create \
-  --name smartboard-plan \
-  --resource-group mygroup \
-  --sku B2 --is-linux
-
-az webapp create \
-  --resource-group mygroup \
-  --plan smartboard-plan \
-  --name smartboard-app \
-  --deployment-container-image-name myregistry.azurecr.io/trido:latest
-
-# Configure environment variables
-az webapp config appsettings set \
-  --resource-group mygroup \
-  --name smartboard-app \
-  --settings VITE_GEMINI_API_KEY=your_key NODE_ENV=production
-```
-
-#### Option 2: Deploy from Source (GitHub)
-
-1. Push code to GitHub repository
-2. Connect App Service to GitHub:
-   ```bash
-   az webapp deployment github-actions add \
-     --repo YourUsername/trido \
-     --resource-group mygroup \
-     --name smartboard-app
-   ```
-3. App Service auto-deploys on push to main branch
-
-### Google Cloud Run
-
-```bash
-# Build and push to Google Container Registry
-gcloud builds submit --tag gcr.io/PROJECT_ID/trido
-
-# Deploy
-gcloud run deploy trido \
-  --image gcr.io/PROJECT_ID/trido \
-  --platform managed \
-  --region us-central1 \
-  --set-env-vars VITE_GEMINI_API_KEY=your_key,NODE_ENV=production \
-  --memory 512Mi \
-  --timeout 3600
-```
-
-### AWS ECS (Elastic Container Service)
-
-```bash
-# Create ECR repository
-aws ecr create-repository --repository-name trido
-
-# Build and push
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com
-docker build -t trido:latest .
-docker tag trido:latest YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/trido:latest
-docker push YOUR_AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/trido:latest
-
-# Create ECS task definition (save as task-definition.json)
-# Then register it
-aws ecs register-task-definition --cli-input-json file://task-definition.json
-```
-
----
-
-## Scaling Considerations
-
-### Session Storage
-
-By default, room state persists to `rooms_persistence.json` on the server's filesystem. For multi-server deployments, use a shared storage:
-
-**Option 1: Shared File System (NFS)**
-```typescript
-// In server.ts
-const ROOMS_FILE = '/shared-storage/rooms_persistence.json';
-```
-
-**Option 2: Redis-backed State**
-```typescript
-// server/redisStore.ts (example)
-import redis from 'redis';
-
-const client = redis.createClient({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379
-});
-
-export async function saveRooms(rooms: Map<string, RoomState>) {
-  const data = JSON.stringify(Array.from(rooms.entries()));
-  await client.set('rooms', data);
-}
-
-export async function loadRooms(): Promise<Map<string, RoomState>> {
-  const data = await client.get('rooms');
-  return data ? new Map(JSON.parse(data)) : new Map();
-}
-```
-
-### Load Balancing
-
-For multiple instances behind a load balancer, enable Socket.IO adapter:
-
-```bash
-npm install @socket.io/redis-adapter
-```
-
-**In server.ts:**
-```typescript
-import { createAdapter } from '@socket.io/redis-adapter';
-import redis from 'redis';
-
-const pubClient = redis.createClient({ host: process.env.REDIS_HOST });
-const subClient = pubClient.duplicate();
-
-io.adapter(createAdapter(pubClient, subClient));
-```
-
-This allows Socket.IO events to sync across multiple server instances.
-
----
-
-## Monitoring & Logging
-
-### Application Performance Monitoring (APM)
-
-**Azure Application Insights:**
-```bash
-npm install applicationinsights
-```
-
-**In server.ts:**
-```typescript
-import appInsights from 'applicationinsights';
-
-appInsights.setup(process.env.APPINSIGHTS_INSTRUMENTATION_KEY)
-  .setAutoCollectConsole(true)
-  .start();
-```
-
-### Structured Logging
-
-Already implemented in `utils/logger.ts`:
-
-```typescript
-import { createLogger } from './utils/logger';
-const logger = createLogger('module-name');
-
-logger.info('User action', { userId: '123', action: 'created_mindmap' });
-logger.error('API error', { status: 500, endpoint: '/api/generate' });
-```
-
-**In production**, configure log aggregation:
-- Azure: Application Insights
-- AWS: CloudWatch
-- Google Cloud: Cloud Logging
-- Self-hosted: ELK Stack, Loki, etc.
-
-### Health Checks
-
-Health check endpoint is available at `/health`:
-
-```bash
-curl http://localhost:3000/health
-# Response: {"status":"ok","timestamp":"2024-01-15T10:30:00Z"}
-```
-
-Configure your load balancer/orchestrator to periodically check this endpoint.
-
----
-
-## Performance Tuning for Production
-
-### 1. Enable Compression
-
-```typescript
-// In server.ts
-import compression from 'compression';
-app.use(compression());
-```
-
-### 2. Set Proper Node.js Flags
-
-```bash
-NODE_ENV=production node --max-old-space-size=2048 server.ts
-```
-
-### 3. Use Production AI Settings
-
-Update `constants.ts` for slower but cheaper inference:
-
-```typescript
-export const CONFIG = {
-  ai: {
-    gemini: {
-      generation: {
-        temperature: 0.5,  // Lower = more deterministic
-        maxOutputTokens: 1024,  // Reduce for faster responses
-      },
-    },
-    ollama: {
-      numCtx: 2048,  // Reduce context window for faster processing
-    },
-  },
-};
-```
-
-### 4. Database Indexing (if using SQL backend)
-
-If you switch from file-based storage to a database, ensure proper indexes:
-
-```sql
-CREATE INDEX idx_rooms_id ON rooms(id);
-CREATE INDEX idx_canvas_objects_room_id ON canvas_objects(room_id);
-```
-
----
-
-## SSL/TLS Configuration
-
-### Behind Nginx Reverse Proxy
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name smartboard.yourdomain.com;
-
-    ssl_certificate /etc/ssl/certs/your-cert.crt;
-    ssl_certificate_key /etc/ssl/private/your-key.key;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-
-    location /socket.io {
-        proxy_pass http://localhost:3000/socket.io;
-        proxy_http_version 1.1;
-        proxy_buffering off;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "Upgrade";
-    }
-}
-```
-
-### Let's Encrypt (Free SSL)
-
-```bash
-certbot certonly --standalone -d smartboard.yourdomain.com
-```
-
----
-
-## Database Migration (Optional)
-
-To persist room data to a proper database instead of `rooms_persistence.json`:
-
-**Example: PostgreSQL**
-
-1. Install driver:
-```bash
-npm install pg
-```
-
-2. Create schema:
-```sql
-CREATE TABLE rooms (
-  id VARCHAR PRIMARY KEY,
-  canvas_state JSONB NOT NULL,
-  viewports JSONB,
-  dom_elements JSONB,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-3. Update `server.ts` to query database instead of filesystem.
-
----
-
-## Rollback Procedure
-
-If a deployment goes wrong:
-
-```bash
-# Keep previous Docker image tagged
-docker tag trido:latest trido:v1.2.0
-
-# Deploy previous version
-docker run -p 3000:3000 trido:v1.2.0
-```
-
-For cloud platforms:
-- **Azure App Service**: Use Deployment Slots for blue/green deployment
-- **Google Cloud Run**: Each deployment is immutable; rollback is instant
-- **AWS ECS**: Update service to point to previous task definition
-
----
-
-## Disaster Recovery
-
-### Backup Room Data
-
-```bash
-# Automated daily backup
-0 2 * * * cp /app/rooms_persistence.json /backups/rooms_$(date +\%Y\%m\%d).json
-
-# Or use cloud storage
-aws s3 cp rooms_persistence.json s3://my-bucket/backups/rooms_$(date +%Y%m%d).json
-```
-
-### Recovery Process
-
-```bash
-# Restore from backup
-cp /backups/rooms_20240115.json /app/rooms_persistence.json
-npm start
-```
-
----
-
-## Troubleshooting Deployment
-
-### Application Won't Start
-
-```bash
-# Check logs
-docker logs container_id
-
-# Or tail logs
-npm run dev 2>&1 | tee deployment.log
-```
-
-Common issues:
-- Missing environment variables → Set `VITE_GEMINI_API_KEY`
-- Port already in use → Change `SERVER_PORT`
-- Node version too old → Upgrade to 18+
-
-### High Memory Usage
-
-```bash
-# Monitor memory
-docker stats container_id
-
-# Reduce canvas state size
-# Consider caching/pagination for large sessions
-```
-
-### Socket.IO Connection Issues
-
-- Verify CORS settings in server.ts
-- Check firewall allows WebSocket connections (port 3000)
-- Ensure `/socket.io` is not blocked by reverse proxy
-
----
-
-## Recommended Deployment Architecture
-
-```
-Load Balancer (Port 80/443)
-    ↓
-API Gateway (Optional, for rate limiting)
-    ↓
-Reverse Proxy (Nginx/HAProxy)
-    ↓
-App Instances (2-3 copies)
-    ↓
-Redis (for session sync)
-    ↓
-Shared Storage / Database (for room state)
-```
-
-This setup enables:
-- Zero-downtime deployments
-- Horizontal scaling
-- High availability
-- Easy monitoring
-
----
-

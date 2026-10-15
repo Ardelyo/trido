@@ -121,7 +121,7 @@ describe('Continuous Smartboard & In-Place Mutation Integration', () => {
     expect(mermaidSyntax).toContain('mindmap');
     expect(mermaidSyntax).toContain('root((Ekosistem Hutan))');
     expect(mermaidSyntax).toContain('Komponen Biotik');
-    expect(mermaidSyntax).toContain('Konsumen Primer: Herbivora');
+    expect(mermaidSyntax).toContain('Konsumen Primer - Herbivora');
     expect(mermaidSyntax).toContain('Rusa');
     expect(mermaidSyntax).toContain('Komponen Abiotik');
     expect(mermaidSyntax).toContain('Sinar Matahari');

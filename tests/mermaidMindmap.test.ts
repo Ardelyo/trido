@@ -30,10 +30,10 @@ describe('Mermaid Mindmap Engine, Sanitizer & Self-Healing Converter', () => {
     expect(result).toContain('mindmap');
     expect(result).toContain('root((Fotosintesis))');
     expect(result).toContain('Reaksi Terang');
-    expect(result).toContain('Tempat Tilakoid');
+    expect(result).toContain('Tempat - Tilakoid');
     expect(result).toContain('Klorofil');
     expect(result).toContain('Siklus Calvin');
-    expect(result).toContain('Tempat Stroma');
+    expect(result).toContain('Tempat - Stroma');
     expect(result).toContain('Fiksasi CO2');
   });
 
@@ -128,6 +128,6 @@ mindmap
 
     const healed = buildSafeMindmapFromRawText(corrupted, 'Pemulihan');
     expect(healed.startsWith('mindmap\n  root((Pemulihan))')).toBe(true);
-    expect(healed).toContain('Baris Lepas Nilai 100%');
+    expect(healed).toContain('Baris Lepas - Nilai 100%');
   });
 });

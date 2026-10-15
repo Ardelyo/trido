@@ -14,8 +14,10 @@ export function cleanMermaidNodeLabel(raw: string, fallback = 'Topik'): string {
     .replace(/\s*\(([^()]*)\)/g, ' - $1')
     .replace(/\s*\[([^\[\]]*)\]/g, ' - $1')
     .replace(/\s*\{([^{}]*)\}/g, ' - $1')
-    // Strip any remaining stray brackets, parens, quotes, colons, semicolons, hashes, backticks
-    .replace(/[()\[\]{}"'`:;#]/g, ' ')
+    .replace(/\s*:\s*/g, ' - ')
+    // Strip any remaining stray brackets, parens, quotes, semicolons, hashes, backticks
+    .replace(/[()\[\]{}"'`;#]/g, ' ')
+    .replace(/\s*-\s*-\s*/g, ' - ')
     // Strip leading dashes/hyphens left over from replacements
     .replace(/^[\s\-–—•*+]+/, '')
     .replace(/[\s\-–—]+$/, '')

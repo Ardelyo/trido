@@ -1,99 +1,69 @@
-# 🏆 Trido — AI Digital Classroom Judge Installation & Evaluation Guide
+# 🏆 Trido — Judge & Evaluator Installation Guide
 
-Welcome to the **Trido** evaluation guide. Trido is an AI-powered smart digital classroom designed specifically for interactive whiteboards and offline/hybrid classroom environments. 
-
-This guide provides clean, step-by-step instructions in English on how to install, configure, and launch Trido for evaluation.
+Welcome to the **Trido** evaluation guide. Trido is a voice-first, AI-powered smartboard designed with **Pak Damar** for inclusive, offline-capable classroom instruction.
 
 ---
 
-## ✨ What's New in this Update?
-1. **Dynamic Model Selection UI:** Accessible directly from the **Settings** gear icon on the board. You can now choose from pre-loaded models for each provider.
-2. **Google Gemini (Cloud):** Select standard and next-generation models including:
-   - `gemini-3.8-flash` (Default - Recommended)
-   - `gemini-2.5-flash` & `gemini-2.5-pro`
-   - Custom environment overrides via `GEMINI_MODEL`.
-3. **Vertex AI (Enterprise Cloud):** Connect directly to enterprise-grade Google Cloud projects with:
-   - `gemini-3.8-flash` (Default Frontier Model)
-   - `gemma-4-31b-it` (Next-gen Gemma 4 31B)
-4. **Ollama (100% Offline/Local AI):** Run privately and with zero internet. Optimized for:
-   - `trido-model:latest` / `ornith-1.5:9b` (Recommended Local Flagship)
-   - `trido-gemma:2b` / `gemma4:e2b` (Lightweight Gemma 4 Edge)
-   - Supports auto-detection and custom model additions.
+## 🚀 Option 1: Standalone Windows Desktop App (`.exe`) *(Fastest — Zero Setup)*
+
+No Node.js, Python, or terminal knowledge is required:
+
+1. **Download Installer:** [**Trido-Setup-1.0.0.exe (168 MB)**](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe) *(or use `dist-release/Trido Setup 1.0.0.exe` if building locally)*.
+2. **Install & Launch:** Double-click `Trido-Setup-1.0.0.exe` and open **Trido** from your Desktop shortcut.
+3. **Start Teaching:** The tactile intro screen boots the embedded local server on port `3030` and opens the Smartboard workspace automatically.
 
 ---
 
-## 🛠️ Step-by-Step Installation & Run
+## ⚡ Option 2: 1-Click Localhost Launcher (`start.bat` on Windows)
 
-### Option 1: Fast Launch with `start.bat` (Windows - Recommended)
-Double-clicking the smart launcher handles everything automatically:
-1. Locate the file **`start.bat`** in the root directory.
-2. **Double-click `start.bat`**.
-3. The script will:
-   - Check if **Node.js** is installed (will open Nodejs.org in your browser if missing).
-   - Install production dependencies automatically (`npm install`).
-   - Start the production server on port `3000`.
-   - Launch your default browser in **App Mode** (Chrome or Edge) at `http://localhost:3000` with a clean, native desktop look.
+If you cloned or unzipped the source repository on Windows:
+
+1. Double-click **`start.bat`** in the project root directory.
+2. `start.bat` automatically verifies Node.js, installs dependencies on first run (skipping redundant installs on subsequent launches), starts the server at `http://localhost:3000`, and opens Chrome/Edge directly to `http://localhost:3000/?app=true`.
 
 ---
 
-### Option 2: Manual Start (All Operating Systems)
-If you prefer running commands manually via the terminal/powershell:
-1. Open your terminal in the project directory.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Compile frontend and backend bundles:
-   ```bash
-   npm run build:all
-   ```
-4. Start the production server:
-   ```bash
-   npm start
-   ```
-5. Open your browser and navigate to `http://localhost:3000`.
-
----
-
-## ⚙️ Environment Variables Configuration (`.env`)
-
-To configure API keys or change defaults, rename `.env.example` to `.env` or edit the existing `.env` file in the root directory:
+## 🛠️ Option 3: Cross-Platform Terminal Launch (Windows / macOS / Linux)
 
 ```bash
-# ── AI Mode Selection ────────────────────────────────────────────────────────
-# Choices: 'auto' | 'gemini' | 'ollama' | 'vertex'
-AI_MODE=auto
-
-# ── Google Gemini (Cloud) ────────────────────────────────────────────────────
-# Get a free API key at: https://aistudio.google.com/apikey
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Standard options: gemini-3.8-flash
-GEMINI_MODEL=gemini-3.8-flash
-
-# ── Ollama (Local/Offline) ───────────────────────────────────────────────────
-# Ensure Ollama is running and download your model of choice:
-# e.g., "ollama pull gemma4:e2b" or "ollama pull gemma4:31b"
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=gemma4:e2b
-
-# ── Vertex AI (Google Cloud Enterprise) ──────────────────────────────────────
-# Set up your GCP project details if utilizing Vertex AI
-GOOGLE_CLOUD_PROJECT=your-gcp-project-id
-VERTEX_LOCATION=us-central1
+npm install
+npm run dev
 ```
+Open **`http://localhost:3000/?app=true`** in Chrome or Edge.
 
 ---
 
-## 🧭 Evaluation Checklist for Judges
-Once the app is open:
-1. **Open Settings:** Click the **Gear icon** in the top corner of the screen.
-2. **Profile Name:** Enter your name to customize your boarding session.
-3. **Configure AI:**
-   - Under **Mode AI**, select your preferred provider (**Gemini**, **Ollama**, or **Vertex AI**).
-   - Change models on the fly with the newly added **Model Dropdowns**.
-   - Press **Test Connection (Test Koneksi AI)** to verify status dynamically.
-   - Click **Save (Simpan)** to apply.
-4. **Test the Board:**
-   - Try creating a Mindmap, compiling a Quiz, or writing Markdown summaries.
-   - Speak to Trido via real-time microphone voice input (Voice Island).
+## 🧠 AI Model & API Key Configuration (Important Notice)
+
+Click the **Settings (⚙️)** icon in the left sidebar to choose your AI mode:
+
+> ⚠️ **Evaluation Notice:** The built-in Cloud Demo (`gemma4good`) is currently enabled so judges can test Trido immediately out of the box, **but it will not be free forever**. For permanent, independent classroom use, we strongly recommend Option A or Option B below:
+
+### Option A — Download Trido Local Models via Ollama (100% Free & Offline Forever)
+1. Install [Ollama](https://ollama.com).
+2. In Trido, open **Settings (⚙️) → Kecerdasan AI (AI Configuration)** and select **🏠 Ollama Lokal**.
+3. Choose **`trido-model:latest`** (9B Flagship) or **`trido-gemma:2b`** (Lightweight Edge) and click **"Unduh & Kalibrasi Model Lokal Otomatis (1-Klik)"** — or run in terminal:
+   ```bash
+   ollama pull trido-model:latest
+   ollama pull trido-gemma:2b
+   ```
+
+### Option B — Use Your Personal Google AI Studio API Key
+1. Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+2. In Trido, open **Settings (⚙️) → Kecerdasan AI**, select **✨ Gemini Cloud**, paste your `AIzaSy...` key, and click **Simpan (Save)**.
+
+---
+
+## 🧪 Quick Evaluation Checklist
+
+1. **Instant Voice / Chat Reflex (<15ms Jev-1 Engine):**
+   - Open the **`Asisten`** sidebar (top-right button) or click the **Voice Island Mic** at the bottom.
+   - Type or say: `"Halo Trido, tolong pasang timer sepuluh menit"` -> Watch a 10:00 countdown timer appear immediately on the board.
+2. **Self-Healing Mermaid Mindmap Generation & In-Place Expansion:**
+   - Say or type: `"Buatkan peta konsep tentang sistem peredaran darah manusia"`.
+   - Follow up with: `"Tambahkan cabang gangguan peredaran darah pada peta konsep tadi"` -> Watch Trido update the existing mindmap **in-place** without creating a duplicate widget.
+3. **120 FPS Dragging & Multi-Page Synchronization:**
+   - Drag any widget across the board (zero-lag `translate3d` GPU compositing).
+   - Click **`+`** (bottom-left) to add Page 2, then switch back to Page 1 — all widgets and diagrams on Page 1 are preserved intact.
+4. **Multilingual Switching:**
+   - Open **Settings (⚙️) → Bahasa & Tema** and switch between **Bahasa Indonesia**, **English**, **Arabic**, **Chinese**, **Japanese**, and 6 other languages.
