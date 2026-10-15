@@ -6,6 +6,7 @@ import { CALCULATOR_TEMPLATE, TIMER_TEMPLATE } from '../services/componentTempla
 import { createLogger } from '../utils/logger';
 import { sounds } from '../utils/sounds';
 import { layoutMindmap, expandMindmapNodes, findMatchingMindmapNode, NODE_STYLE_CONFIG, MindmapInputNode, MindmapLayoutNode } from '../utils/mindmapLayout';
+import { sanitizeMermaidCode, cleanMermaidNodeLabel } from '../utils/mermaidSanitizer';
 
 const logger = createLogger('gemini-brain');
 
@@ -293,6 +294,7 @@ const validateAndFixToolCall = (call: any): { valid: boolean; fixed?: any; error
           fixed: { ...args, code: 'mindmap\n  root((Peta Konsep))\n    Cabang 1\n    Cabang 2' }
         };
       }
+      args.code = sanitizeMermaidCode(args.code, args.title || 'Peta Konsep');
       return { valid: true };
 
     case 'add_mindmap_node':
@@ -846,15 +848,17 @@ ${jevDirective}
       // ── Mind map via Mermaid Engine (Pure Interactive Diagram) ─────────────
       if (mindmapCalls.length > 0) {
         const rootCall = mindmapCalls.find(c => c.args.style === 'MAIN_TOPIC' || !c.args.parentNodeText) || mindmapCalls[0];
-        const rootTitle = (rootCall.args.text || 'Peta Konsep').replace(/["'()\[\]{}]/g, '').trim();
+        const rootTitle = cleanMermaidNodeLabel(rootCall.args.text || 'Peta Konsep', 'Peta Konsep');
         
-        let mermaidCode = `mindmap\n  root((${rootTitle}))\n`;
+        let rawMermaid = `mindmap\n  root((${rootTitle}))\n`;
         const otherNodes = mindmapCalls.filter(c => c !== rootCall);
         
         for (const node of otherNodes) {
-          const cleanText = (node.args.text || 'Cabang').replace(/["'()\[\]{}]/g, '').trim();
-          mermaidCode += `    ${cleanText}\n`;
+          const cleanText = cleanMermaidNodeLabel(node.args.text || 'Cabang', 'Cabang');
+          const isDetail = node.args.style === 'DETAIL';
+          rawMermaid += `${isDetail ? '      ' : '    '}${cleanText}\n`;
         }
+        const mermaidCode = sanitizeMermaidCode(rawMermaid, rootTitle);
 
         otherActions.push({
           id: `action_mermaid_mindmap_${Date.now()}`,
@@ -934,6 +938,9 @@ ${jevDirective}
             } catch (_) {
               parsedUpdateConfig = {};
             }
+          }
+          if (parsedUpdateConfig?.code && typeof parsedUpdateConfig.code === 'string') {
+            parsedUpdateConfig.code = sanitizeMermaidCode(parsedUpdateConfig.code, parsedUpdateConfig.title || args.componentTitle || 'Peta Konsep');
           }
           payload = {
             objectId: args.objectId || args.componentId,
@@ -1021,6 +1028,7 @@ ${jevDirective}
         } else if (call.name === 'render_mermaid') {
           actionType = 'RENDER_HTML';
           const pos = getGridPos(args.gridPosition || 'CENTER');
+          const safeMermaidCode = sanitizeMermaidCode(args.code, args.title || 'Diagram Mermaid');
           payload = {
             html: '<div>MERMAID</div>',
             x: pos.x,
@@ -1028,7 +1036,7 @@ ${jevDirective}
             width: 720,
             height: 560,
             componentType: 'MERMAID_DIAGRAM',
-            config: { title: args.title || 'Diagram Mermaid', code: args.code }
+            config: { title: args.title || 'Diagram Mermaid', code: safeMermaidCode }
           };
 
         } else if (call.name === 'mark_attendance') {

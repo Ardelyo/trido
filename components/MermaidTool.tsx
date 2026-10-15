@@ -3,6 +3,13 @@ import { Download, Copy, RefreshCw, ZoomIn, ZoomOut, Check, AlertCircle, Edit3, 
 import { toast } from '../utils/toast';
 import { downloadFile, slugify } from '../utils/smartExport';
 import { useStore } from '../store';
+import {
+  markdownToMermaidMindmap,
+  sanitizeMermaidCode,
+  buildSafeMindmapFromRawText
+} from '../utils/mermaidSanitizer';
+
+export { markdownToMermaidMindmap, sanitizeMermaidCode, buildSafeMindmapFromRawText };
 
 interface MermaidToolProps {
   id?: string;
@@ -20,95 +27,26 @@ export const DEFAULT_MINDMAP = `mindmap
       Ventrikel Kiri & Kanan
       Katup Jantung
     Pembuluh Darah
-      Arteri (Nadi)
-      Vena (Balik)
+      Arteri - Nadi
+      Vena - Balik
       Kapiler
     Darah
-      Sel Darah Merah (Eritrosit)
-      Sel Darah Putih (Leukosit)
-      Keping Darah (Trombosit)
+      Sel Darah Merah - Eritrosit
+      Sel Darah Putih - Leukosit
+      Keping Darah - Trombosit
       Plasma Darah`;
 
 export const DEFAULT_FLOWCHART = `flowchart TD
-  A([Matahari]) -->|Fotosintesis| B[Tumbuhan Hijau / Produsen]
-  B -->|Dimakan| C[Konsumen I / Herbivora]
-  C -->|Dimakan| D[Konsumen II / Karnivora]
-  D -->|Mati| E[Pengurai / Dekomposer]
+  A(["Matahari"]) -->|Fotosintesis| B["Tumbuhan Hijau / Produsen"]
+  B -->|Dimakan| C["Konsumen I / Herbivora"]
+  C -->|Dimakan| D["Konsumen II / Karnivora"]
+  D -->|Mati| E["Pengurai / Dekomposer"]
   E -->|Unsur Hara| B
   style A fill:#fef3c7,stroke:#f59e0b,stroke-width:2px
   style B fill:#dcfce7,stroke:#10b981,stroke-width:2px
   style C fill:#e0e7ff,stroke:#6366f1,stroke-width:2px
   style D fill:#fee2e2,stroke:#ef4444,stroke-width:2px
   style E fill:#f3f4f6,stroke:#6b7280,stroke-width:2px`;
-
-/**
- * Robust converter from markdown hierarchical bullet lists / headings
- * into valid Mermaid mindmap syntax.
- */
-export function markdownToMermaidMindmap(md: string, fallbackTitle = 'Peta Konsep'): string {
-  const lines = md.split('\n');
-  const result: string[] = ['mindmap'];
-  let rootSet = false;
-  let rootTitle = fallbackTitle;
-  let currentHeadingLevel = 1;
-
-  const sanitizeNode = (str: string): string => {
-    // Remove characters that conflict with Mermaid syntax
-    const clean = str.replace(/["'()\[\]{}]/g, '').trim();
-    return clean || 'Node';
-  };
-
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line) continue;
-
-    // Heading parsing: # Root, ## Branch, ### Sub-branch
-    if (line.startsWith('#')) {
-      const match = line.match(/^(#+)\s+(.+)$/);
-      if (match) {
-        const level = match[1].length;
-        const text = sanitizeNode(match[2]);
-        if (level === 1 && !rootSet) {
-          rootTitle = text;
-          rootSet = true;
-          result.push(`  root((${rootTitle}))`);
-          currentHeadingLevel = 1;
-        } else {
-          if (!rootSet) {
-            rootSet = true;
-            result.push(`  root((${rootTitle}))`);
-          }
-          currentHeadingLevel = level;
-          const indent = '  '.repeat(Math.max(2, level));
-          result.push(`${indent}${text}`);
-        }
-        continue;
-      }
-    }
-
-    // Bullet parsing: - Item, * Item
-    const bulletMatch = rawLine.match(/^(\s*)[-*+]\s+(.+)$/);
-    if (bulletMatch) {
-      if (!rootSet) {
-        rootSet = true;
-        result.push(`  root((${rootTitle}))`);
-      }
-      const rawSpaces = bulletMatch[1].replace(/\t/g, '  ').length;
-      const bulletDepth = Math.floor(rawSpaces / 2);
-      const effectiveLevel = currentHeadingLevel + 1 + bulletDepth;
-      const text = sanitizeNode(bulletMatch[2]);
-      const indent = '  '.repeat(Math.max(2, effectiveLevel));
-      result.push(`${indent}${text}`);
-      continue;
-    }
-  }
-
-  if (!rootSet) {
-    result.push(`  root((${rootTitle}))`);
-  }
-
-  return result.join('\n');
-}
 
 // Standalone Mermaid Loader
 let mermaidPromise: Promise<any> | null = null;
@@ -169,7 +107,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
   // Resolve code: prioritize config.code, then convert config.markdown, then fallback to DEFAULT_MINDMAP
   const resolvedInitialCode = useMemo(() => {
     if (config.code && config.code.trim()) {
-      return config.code.trim();
+      return sanitizeMermaidCode(config.code, config.title || 'Peta Konsep');
     }
     if (config.markdown && config.markdown.trim()) {
       return markdownToMermaidMindmap(config.markdown, config.title || 'Peta Konsep');
@@ -194,7 +132,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
     return c.startsWith('flowchart') || c.startsWith('graph');
   }, [activeCode]);
 
-  // Render diagram on change
+  // Render diagram on change with 2-stage self-healing fallback
   useEffect(() => {
     let isMounted = true;
     const renderDiagram = async () => {
@@ -203,15 +141,18 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
         const mm = await getMermaidInstance();
         if (!mm) throw new Error('Engine Mermaid belum siap dimuat');
 
+        const safeCode = sanitizeMermaidCode(activeCode, title);
+        const renderAsMindmap = safeCode.trim().startsWith('mindmap');
+
         mm.initialize({
           startOnLoad: false,
-          theme: isMindmap ? 'base' : 'neutral',
-          themeVariables: isMindmap ? {
-            primaryColor: '#6366f1',
+          theme: renderAsMindmap ? 'base' : 'neutral',
+          themeVariables: renderAsMindmap ? {
+            primaryColor: '#1550aa',
             primaryTextColor: '#ffffff',
-            primaryBorderColor: '#4f46e5',
-            lineColor: '#818cf8',
-            secondaryColor: '#ec4899',
+            primaryBorderColor: '#0a1a3a',
+            lineColor: '#1550aa',
+            secondaryColor: '#ffcc00',
             tertiaryColor: '#10b981',
             fontFamily: 'Inter, system-ui, sans-serif'
           } : {
@@ -222,9 +163,20 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
         });
 
         const uniqueId = `mermaid_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-        const { svg } = await mm.render(uniqueId, activeCode);
-        if (isMounted) {
-          setSvgHtml(svg);
+        try {
+          const { svg } = await mm.render(uniqueId, safeCode);
+          if (isMounted) {
+            setSvgHtml(svg);
+          }
+        } catch (_firstErr) {
+          // Stage 2 Self-Healing Fallback: rebuild a guaranteed-valid mindmap from raw text lines
+          const healedCode = buildSafeMindmapFromRawText(activeCode, title);
+          const healedId = `${uniqueId}_healed`;
+          const { svg } = await mm.render(healedId, healedCode);
+          if (isMounted) {
+            setSvgHtml(svg);
+            setActiveCode(healedCode);
+          }
         }
       } catch (err: any) {
         console.error('Mermaid render error:', err);

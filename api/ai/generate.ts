@@ -116,7 +116,7 @@ CRITICAL EXECUTION RULES:
     const toolsDeclarations = [
       {
         name: "render_mermaid",
-        description: "Render an interactive mindmap, flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For ALL mindmaps and concept maps, ALWAYS use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Fotosintesis))\\n    Reaksi Terang\\n      Tilakoid\\n    Siklus Calvin').",
+        description: "Render an interactive mindmap, flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For ALL mindmaps and concept maps, ALWAYS use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Fotosintesis))\\n    Reaksi Terang\\n      Tilakoid\\n    Siklus Calvin'). STRICT SYNTAX RULE: Inside mindmap child nodes, NEVER use parentheses (), brackets [], colons :, or markdown bullets - (write 'Arteri - Pembuluh Nadi' instead of 'Arteri (Pembuluh Nadi)'). Only root((Title)) uses double parentheses.",
         parameters: {
           type: "OBJECT",
           properties: {

@@ -1,5 +1,6 @@
 import { CanvasObjectData } from "../types";
 import { createLogger } from "../utils/logger";
+import { sanitizeMermaidCode } from "../utils/mermaidSanitizer";
 
 export const Type = {
   TYPE_UNSPECIFIED: "TYPE_UNSPECIFIED",
@@ -130,7 +131,7 @@ export const getCapability = (modelName: string): ModelCapability => {
 export const tools: FunctionDeclaration[] = [
   {
     name: "render_mermaid",
-    description: "Render an interactive mindmap, science flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For ALL mindmaps and concept maps, ALWAYS use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Bahasa Indonesia))\\n    Tata Bahasa\\n      Morfologi\\n      Sintaksis\\n    Kesusastraan\\n      Puisi\\n      Prosa').",
+    description: "Render an interactive mindmap, science flowchart, biological cycle, timeline, or sequence diagram using Mermaid.js syntax. For ALL mindmaps and concept maps, ALWAYS use the 'mindmap' syntax with root((Central Topic)) and indented sub-branches (e.g. 'mindmap\\n  root((Bahasa Indonesia))\\n    Tata Bahasa\\n      Morfologi\\n      Sintaksis\\n    Kesusastraan\\n      Puisi\\n      Prosa'). STRICT SYNTAX RULE: Inside mindmap child nodes, NEVER use parentheses (), brackets [], colons :, or markdown bullets - (write 'Arteri - Pembuluh Nadi' instead of 'Arteri (Pembuluh Nadi)'). Only root((Title)) uses double parentheses.",
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -931,6 +932,10 @@ export const validateFunctionCalls = (
           continue;
         }
       }
+    }
+
+    if (call.name === 'render_mermaid' && typeof call.args.code === 'string') {
+      call.args.code = sanitizeMermaidCode(call.args.code, call.args.title || 'Peta Konsep');
     }
 
     if (call.name === 'add_component' && call.args.configJson) {
