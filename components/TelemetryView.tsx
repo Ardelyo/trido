@@ -339,7 +339,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
           </div>
 
           {/* Google Sheets Status & Cloud Banner */}
-          <div className="bg-slate-900 text-white p-5 rounded-3xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 border border-slate-800">
+          <div className="bg-slate-900 text-white p-5 rounded-sheet shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 border border-slate-800">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-emerald-400">
                 <FileSpreadsheet size={26} />
@@ -433,7 +433,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
           </div>
 
           {/* Interactive Logs Table */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-sheet border border-slate-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -569,7 +569,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
           >
-            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-white space-y-4 max-h-[85vh] flex flex-col">
+            <div className="bg-white rounded-sheet max-w-2xl w-full p-6 shadow-2xl border border-white space-y-4 max-h-[85vh] flex flex-col">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <h3 className="font-black text-slate-800 text-base">Detail Telemetri Log</h3>
@@ -651,7 +651,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-60 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
           >
-            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-white space-y-4 max-h-[90vh] flex flex-col">
+            <div className="bg-white rounded-sheet max-w-2xl w-full p-6 shadow-2xl border border-white space-y-4 max-h-[90vh] flex flex-col">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <FileSpreadsheet size={20} className="text-emerald-600" />

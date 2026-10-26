@@ -62,7 +62,8 @@
         }
       ],
       "icon": "public/icon.ico",
-      "requestedExecutionLevel": "asInvoker"
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -99,7 +100,14 @@
       ],
       "icon": "public/pwa-512x512.png",
       "category": "Education"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Ardelyo",
+        "repo": "trido"
+      }
+    ]
   },
   "dependencies": {
     "@google-cloud/vertexai": "^1.12.0",
@@ -110,6 +118,7 @@
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
+    "electron-updater": "^6.8.11",
     "express": "^5.2.1",
     "google-auth-library": "^11.0.2",
     "gsap": "^3.15.0",

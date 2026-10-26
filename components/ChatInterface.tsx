@@ -781,7 +781,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95, pointerEvents: 'none' }}
                 transition={spring.snappy}
-                className="pointer-events-auto w-[min(88vw,520px)] bg-white/97 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-blue-100 p-4"
+                className="pointer-events-auto w-[min(88vw,520px)] bg-white/97 backdrop-blur-xl rounded-sheet shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-blue-100 p-4"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-semibold text-blue-500 uppercase tracking-wider flex items-center gap-1.5">

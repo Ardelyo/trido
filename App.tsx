@@ -1,4 +1,4 @@
-import { isElectronEnv } from './utils/electron';
+import { isElectronEnv, getElectron } from './utils/electron';
 import React, { useRef, useState, useEffect } from 'react';
 import { CanvasManager } from './components/CanvasManager';
 import { ChatInterface } from './components/ChatInterface';
@@ -63,6 +63,15 @@ const App: React.FC = () => {
     pages, currentPageIndex, switchPage, addPage, isThinking, isActing,
     abortTask, isVoiceListening, interimInputText
   } = useStore();
+
+  // Desktop (.exe): announce auto-updates downloaded in the background
+  useEffect(() => {
+    return getElectron()?.onUpdateStatus?.(({ state, version }) => {
+      toast.info(state === 'ready'
+        ? `Pembaruan Trido v${version} siap dan akan terpasang saat aplikasi ditutup.`
+        : `Pembaruan Trido v${version} sedang diunduh…`);
+    });
+  }, []);
 
   useEffect(() => {
     loadSessions();
@@ -549,7 +558,7 @@ const App: React.FC = () => {
             </AnimatePresence>
 
             {/* 3 & 4. CANVAS AREA & VERTICAL TOOLBAR */}
-            <main className="flex-1 min-w-0 relative h-full bg-white rounded-3xl lg:rounded-[2.5rem] border-2 border-trido/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
+            <main className="flex-1 min-w-0 relative h-full bg-white rounded-sheet lg:rounded-[2.5rem] border-2 border-trido/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
 
                {/* Dot Grid Background */}
                <div
@@ -711,7 +720,7 @@ const App: React.FC = () => {
                     </div>
                     {messages.length === 0 && (
                       <div className="h-full flex flex-col items-center justify-center text-center opacity-50 px-4">
-                        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                        <div className="w-16 h-16 rounded-sheet bg-slate-100 flex items-center justify-center mb-4">
                            <Sparkles size={28} className="text-slate-400" />
                         </div>
                         <p className="text-[15px] font-medium text-slate-500">{t('emptyChatPrompt', 'Tanyakan apapun atau unggah gambar untuk memulai percakapan dengan AI.')}</p>
@@ -827,7 +836,7 @@ const App: React.FC = () => {
                         useStore.getState().addMessage({ role: 'user', text });
                         await processUserPrompt(text, canvasRef);
                       }}
-                      className="flex items-end gap-2 w-full border-[1.5px] border-slate-200 rounded-3xl p-1.5 bg-slate-50/50 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-inner"
+                      className="flex items-end gap-2 w-full border-[1.5px] border-slate-200 rounded-sheet p-1.5 bg-slate-50/50 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-inner"
                     >
                         <div className="flex items-center pb-0.5">
                           <FileUploadButton

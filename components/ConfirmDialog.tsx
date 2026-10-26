@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle } from 'lucide-react';
 import { useTranslation } from '../utils/translations';
-import { spring } from '../design/motion';
+import { spring, tween } from '../design/motion';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={tween.fast}
             className="fixed inset-0 bg-slate-900/25 backdrop-blur-sm z-[150]"
             onClick={onCancel}
           />
@@ -45,7 +45,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 10 }}
             transition={spring.snappy}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[151] bg-white rounded-3xl p-6 shadow-2xl shadow-black/10 w-[340px] max-w-[calc(100vw-2rem)] border border-slate-100"
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[151] bg-white rounded-sheet p-6 shadow-2xl shadow-black/10 w-[340px] max-w-[calc(100vw-2rem)] border border-slate-100"
           >
             <div className="flex items-start gap-4 mb-6">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${

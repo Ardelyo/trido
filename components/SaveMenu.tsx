@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../utils/translations';
 import { toast } from '../utils/toast';
 import { downloadFile } from '../utils/smartExport';
+import { tween } from '../design/motion';
 
 interface SaveMenuProps {
   onExportClick: () => void;
@@ -140,8 +141,8 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200 z-50 overflow-hidden"
+            transition={tween.fast}
+            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-sheet shadow-2xl border border-slate-200 z-50 overflow-hidden"
           >
             {/* Header: Title Editor */}
             <div className="p-4 border-b border-slate-100 bg-slate-50/70 space-y-2">

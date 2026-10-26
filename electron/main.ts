@@ -67,6 +67,29 @@ function saveWindowState(win: BrowserWindow): void {
   } catch { /* ignore */ }
 }
 
+// ── Auto-update (GitHub Releases via electron-updater) ─────────────────────────
+// Only active in packaged builds. Failures (offline classroom, no release) are logged, never shown.
+function setupAutoUpdate(): void {
+  if (!app.isPackaged) return;
+  try {
+    const { autoUpdater } = require('electron-updater');
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.on('error', (err: Error) => log('warn', 'Update check failed:', err.message));
+    autoUpdater.on('update-available', (info: { version: string }) => {
+      log('info', 'Update available:', info.version);
+      mainWindow?.webContents.send('update-status', { state: 'available', version: info.version });
+    });
+    autoUpdater.on('update-downloaded', (info: { version: string }) => {
+      log('info', 'Update downloaded:', info.version);
+      mainWindow?.webContents.send('update-status', { state: 'ready', version: info.version });
+    });
+    autoUpdater.checkForUpdates().catch((err: Error) => log('warn', 'Update check failed:', err.message));
+  } catch (err) {
+    log('warn', 'Auto-updater unavailable:', err as Error);
+  }
+}
+
 // ── Trust checks ───────────────────────────────────────────────────────────────
 
 function isTrustedUrl(url: string): boolean {
@@ -296,6 +319,11 @@ ipcMain.handle('get-app-info', (event) => {
   };
 });
 
+ipcMain.handle('install-update', (event) => {
+  if (!isTrustedSender(event) || !app.isPackaged) return;
+  try { require('electron-updater').autoUpdater.quitAndInstall(); } catch (err) { log('warn', 'quitAndInstall failed:', err as Error); }
+});
+
 ipcMain.handle('toggle-fullscreen', (event) => {
   if (!isTrustedSender(event) || !mainWindow) return false;
   mainWindow.setFullScreen(!mainWindow.isFullScreen());
@@ -351,7 +379,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     setupPermissions();
     setupSecurityHeaders();
-    createWindow();
+    createWindow().then(setupAutoUpdate);
   });
 }
 

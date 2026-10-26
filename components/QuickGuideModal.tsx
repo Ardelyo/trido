@@ -9,6 +9,7 @@ import {
   Layers, ExternalLink, ArrowRight, CornerDownLeft
 } from 'lucide-react';
 import { useStore } from '../store';
+import { tween } from '../design/motion';
 
 interface QuickGuideModalProps {
   isOpen: boolean;
@@ -443,8 +444,8 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
             initial={{ opacity: 0, scale: 0.97, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 12 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-5xl bg-[#f8f7f5] rounded-3xl shadow-2xl border border-slate-300 overflow-hidden flex flex-col max-h-[90vh]"
+            transition={tween.fade}
+            className="w-full max-w-5xl bg-[#f8f7f5] rounded-sheet shadow-2xl border border-slate-300 overflow-hidden flex flex-col max-h-[90vh]"
           >
             {/* Header: Pure Minimalist Structure (No Emojis) */}
             <div className="px-6 py-5 bg-white border-b border-slate-200/90 flex flex-wrap items-center justify-between gap-4 shrink-0">

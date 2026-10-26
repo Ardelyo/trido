@@ -10,6 +10,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { toast } from '../utils/toast';
 import { BoardSession } from '../types';
 import { downloadFile } from '../utils/smartExport';
+import { tween } from '../design/motion';
 
 const formatSize = (bytes: number) => {
   if (!bytes || bytes === 0) return '0 B';
@@ -148,7 +149,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        transition={tween.fade}
         className="absolute inset-0 z-40 bg-[#f8f7f5] overflow-hidden flex flex-col font-sans"
       >
         {/* Header */}
@@ -389,7 +390,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
           ) : (
             /* Empty State */
             <div className="flex flex-col items-center justify-center h-80 text-center space-y-3">
-              <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 mx-auto">
+              <div className="w-16 h-16 bg-slate-100 rounded-sheet flex items-center justify-center text-slate-400 mx-auto">
                 <Search size={28} />
               </div>
               <h3 className="text-base font-extrabold text-ink">

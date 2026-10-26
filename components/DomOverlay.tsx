@@ -480,7 +480,7 @@ export const DomOverlay: React.FC = () => {
           />
 
           {/* Desktop Fullscreen Window Card */}
-          <div className="relative w-full h-full max-w-7xl max-h-[95vh] bg-white rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.6)] border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 z-10">
+          <div className="relative w-full h-full max-w-7xl max-h-[95vh] bg-white rounded-sheet shadow-[0_30px_100px_rgba(0,0,0,0.6)] border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 z-10">
             {/* Titlebar */}
             <div className="flex h-14 px-6 items-center justify-between bg-slate-50 border-b border-slate-200/90 shrink-0 select-none">
               <div className="flex items-center gap-3 min-w-0">

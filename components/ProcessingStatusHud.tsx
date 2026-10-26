@@ -99,7 +99,7 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.98 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className={`w-full max-w-md bg-white rounded-3xl border-2 border-trido/15 shadow-md p-4 flex flex-col gap-3 font-sans select-none pointer-events-auto ${className}`}
+      className={`w-full max-w-md bg-white rounded-sheet border-2 border-trido/15 shadow-md p-4 flex flex-col gap-3 font-sans select-none pointer-events-auto ${className}`}
     >
       {/* Top Header: Model, Status & Cancel Button */}
       <div className="flex items-center justify-between gap-2">

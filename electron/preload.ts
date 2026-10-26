@@ -16,6 +16,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('fullscreen-changed', handler);
     return () => ipcRenderer.removeListener('fullscreen-changed', handler);
   },
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  onUpdateStatus: (cb: (status: { state: 'available' | 'ready'; version: string }) => void) => {
+    const handler = (_: unknown, value: { state: 'available' | 'ready'; version: string }) => cb(value);
+    ipcRenderer.on('update-status', handler);
+    return () => ipcRenderer.removeListener('update-status', handler);
+  },
   saveFile: (data: ArrayBuffer | Uint8Array, defaultName: string, filters?: FileFilter[]) =>
     ipcRenderer.invoke('save-file', { data, defaultName, filters }),
   openFile: (filters?: FileFilter[]) => ipcRenderer.invoke('open-file', { filters }),

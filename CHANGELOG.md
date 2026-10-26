@@ -7,7 +7,13 @@
 - Brand colours, shape and elevation are now theme tokens (`bg-trido`, `text-ink`, `bg-sun`, `rounded-sheet`, `shadow-float`); added `.touch-target` utility; `h-screen` → `h-dvh`.
 - Smartboard dock uses pointer events (touch-friendly magnification).
 
+### Refactor
+- `ExportDialog` export/import logic extracted to `hooks/useBoardExport.ts`; `CanvasManager` drag & drop extracted to `hooks/useCanvasDrop.ts`.
+- Dialog radii/transitions use `rounded-sheet` and `tween` presets.
+
 ### Added (Desktop .exe)
+- Auto-update via `electron-updater` (GitHub Releases; release workflow now uploads `latest*.yml` + blockmaps) with in-app notice.
+- Tests for smartboard dock and native save bridge.
 - Single-instance lock, free-port fallback, navigation guard, security headers, IPC sender validation, file logging, window-state persistence, F11 fullscreen.
 - Typed `window.electronAPI` (`getAppInfo`, `toggleFullscreen`, `saveFile`, `openFile`); exports use the native Save dialog in the desktop app.
 - ESLint (lenient), Prettier and EditorConfig; `puppeteer` moved to devDependencies.

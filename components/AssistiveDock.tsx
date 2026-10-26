@@ -111,7 +111,7 @@ export const AssistiveDock: React.FC = () => {
       </AnimatePresence>
 
       {/* Large-Target Assistive Dock (56px touch buttons) */}
-      <div className="bg-slate-900/95 backdrop-blur-xl border-2 border-slate-700/80 p-2.5 rounded-3xl shadow-2xl flex items-center gap-2.5">
+      <div className="bg-slate-900/95 backdrop-blur-xl border-2 border-slate-700/80 p-2.5 rounded-sheet shadow-2xl flex items-center gap-2.5">
         {/* 0. Hands-Free Ambient Voice Assistant (Pak Damar Special) */}
         <button
           onClick={toggleAmbient}

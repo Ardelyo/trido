@@ -21,7 +21,7 @@ interface SettingsViewProps {
 type SettingsTab = 'ai' | 'features' | 'audio' | 'language' | 'data';
 
 const Section: React.FC<{ title: string; subtitle?: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
-  <div className="bg-white rounded-3xl border border-slate-200/70 shadow-xs overflow-hidden">
+  <div className="bg-white rounded-sheet border border-slate-200/70 shadow-xs overflow-hidden">
     <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
       <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">{title}</h3>
       {subtitle && <p className="text-xs text-slate-500 font-medium mt-0.5">{subtitle}</p>}
@@ -312,7 +312,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
           {activeTab === 'ai' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               {/* Panduan Cepat Pemula & Pengingat Penting Model Trido / API Key */}
-              <div className="bg-white rounded-3xl border-2 border-trido/20 p-5 shadow-xs space-y-3">
+              <div className="bg-white rounded-sheet border-2 border-trido/20 p-5 shadow-xs space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-1 rounded-full bg-sun text-ink text-[11px] font-black uppercase tracking-wider">
@@ -951,7 +951,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
               </Section>
 
               {/* Danger Zone */}
-              <div className="bg-rose-50/60 border border-rose-200 border-dashed rounded-3xl p-5 space-y-2">
+              <div className="bg-rose-50/60 border border-rose-200 border-dashed rounded-sheet p-5 space-y-2">
                 <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">{t('dangerZone', 'Zona Berbahaya')}</h3>
                 <button
                   onClick={handleClearAllData}

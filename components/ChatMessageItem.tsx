@@ -217,7 +217,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             <User size={12} />
           </div>
         </div>
-        <div className="bg-blue-600 text-white rounded-3xl rounded-tr-sm px-5 py-3.5 max-w-[88%] text-[14.5px] font-medium leading-relaxed shadow-md shadow-blue-600/10 select-text">
+        <div className="bg-blue-600 text-white rounded-sheet rounded-tr-sm px-5 py-3.5 max-w-[88%] text-[14.5px] font-medium leading-relaxed shadow-md shadow-blue-600/10 select-text">
           {fullText}
         </div>
       </div>
@@ -322,7 +322,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         </div>
       </div>
 
-      <div className="bg-white text-slate-800 border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-3xl rounded-tl-sm p-4 lg:p-5 max-w-[95%] w-full overflow-hidden transition-all select-text">
+      <div className="bg-white text-slate-800 border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-sheet rounded-tl-sm p-4 lg:p-5 max-w-[95%] w-full overflow-hidden transition-all select-text">
         <div className="chat-markdown prose prose-slate max-w-none text-[14.5px] leading-relaxed">
           <ReactMarkdown
             remarkPlugins={[remarkMath, remarkGfm]}

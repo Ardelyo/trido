@@ -4,6 +4,7 @@ import { X, Copy, CheckCircle2, Share2, Globe, Wifi, QrCode, Smartphone, Users }
 import { QRCodeSVG } from 'qrcode.react';
 import { useTranslation } from '../utils/translations';
 import { toast } from '../utils/toast';
+import { tween } from '../design/motion';
 
 interface ShareDialogProps {
   isOpen: boolean;
@@ -71,8 +72,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
             initial={{ opacity: 0, scale: 0.95, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col z-[101]"
+            transition={tween.fade}
+            className="relative w-full max-w-md bg-white rounded-sheet shadow-2xl border border-slate-200 overflow-hidden flex flex-col z-[101]"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 bg-slate-50/80 border-b border-slate-200">
