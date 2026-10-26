@@ -312,17 +312,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
           {activeTab === 'ai' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               {/* Panduan Cepat Pemula & Pengingat Penting Model Trido / API Key */}
-              <div className="bg-white rounded-3xl border-2 border-[#1550aa]/20 p-5 shadow-xs space-y-3">
+              <div className="bg-white rounded-3xl border-2 border-trido/20 p-5 shadow-xs space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[11px] font-black uppercase tracking-wider">
+                    <span className="px-3 py-1 rounded-full bg-sun text-ink text-[11px] font-black uppercase tracking-wider">
                       Penting untuk Pengguna
                     </span>
-                    <span className="text-xs font-extrabold text-[#0a1a3a]">
+                    <span className="text-xs font-extrabold text-ink">
                       Unduh Model Lokal Trido atau Gunakan Kunci API Pribadi Anda
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#1550aa]/10 text-[#1550aa]">
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-trido/10 text-trido">
                     trido-model:latest • trido-gemma:2b
                   </span>
                 </div>
@@ -330,16 +330,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   ⚠️ <strong>Catatan Server Demo (gemma4good):</strong> Akses Cloud Demo bawaan saat ini diaktifkan untuk kemudahan evaluasi & uji coba, namun <strong>tidak akan gratis selamanya</strong>. Untuk penggunaan kelas sehari-hari tanpa batas, silakan pilih salah satu dari 2 opsi mandiri di bawah ini:
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3.5 rounded-2xl bg-[#e4e3e0]/40 border border-[#0a1a3a]/10">
-                    <div className="font-black text-[#0a1a3a] mb-1">1. Unduh Model Lokal Trido (100% Gratis Selamanya)</div>
+                  <div className="p-3.5 rounded-2xl bg-paper/40 border border-ink/10">
+                    <div className="font-black text-ink mb-1">1. Unduh Model Lokal Trido (100% Gratis Selamanya)</div>
                     <p className="text-slate-600 font-medium leading-relaxed">
                       Pilih <strong>🏠 Ollama Lokal</strong> di bawah, lalu klik <strong>Unduh & Kalibrasi Model Lokal Otomatis (`trido-model:latest` / `trido-gemma:2b`)</strong>. Berjalan 100% offline di laptop Anda tanpa biaya & tanpa internet.
                     </p>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-[#1550aa]/5 border border-[#1550aa]/15">
-                    <div className="font-black text-[#1550aa] mb-1">2. Gunakan Kunci API Google AI Studio Pribadi</div>
+                  <div className="p-3.5 rounded-2xl bg-trido/5 border border-trido/15">
+                    <div className="font-black text-trido mb-1">2. Gunakan Kunci API Google AI Studio Pribadi</div>
                     <p className="text-slate-600 font-medium leading-relaxed">
-                      Pilih <strong>✨ Gemini Cloud</strong>, buat <strong>Kunci API (`GEMINI_API_KEY`)</strong> gratis milik Anda sendiri di <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-[#1550aa] underline font-bold">aistudio.google.com/apikey</a>, tempel di bawah, lalu klik <strong>Simpan</strong>.
+                      Pilih <strong>✨ Gemini Cloud</strong>, buat <strong>Kunci API (`GEMINI_API_KEY`)</strong> gratis milik Anda sendiri di <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-trido underline font-bold">aistudio.google.com/apikey</a>, tempel di bawah, lalu klik <strong>Simpan</strong>.
                     </p>
                   </div>
                 </div>
@@ -471,9 +471,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                           <button
                             type="button"
                             onClick={handlePullModel}
-                            className="w-full py-2.5 px-4 bg-[#1550aa] hover:bg-[#0a1a3a] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                            className="w-full py-2.5 px-4 bg-trido hover:bg-ink text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                           >
-                            <Download size={14} className="text-[#ffcc00]" />
+                            <Download size={14} className="text-sun" />
                             <span>Unduh & Kalibrasi Model Lokal Otomatis (1-Klik)</span>
                           </button>
                         )}
@@ -482,10 +482,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                           <div className="p-3.5 bg-white rounded-xl border border-amber-300 space-y-2.5 font-sans shadow-2xs">
                             <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                               <span className="flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#1550aa] animate-ping" />
+                                <span className="w-2.5 h-2.5 rounded-full bg-trido animate-ping" />
                                 <span className="capitalize">{pullProgress?.status || 'Mengunduh model...'}</span>
                               </span>
-                              <span className="font-mono text-[#1550aa]">
+                              <span className="font-mono text-trido">
                                 {pullProgress?.percent !== null && pullProgress?.percent !== undefined ? `${pullProgress.percent}%` : 'Memproses...'}
                               </span>
                             </div>
@@ -493,7 +493,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                             {/* Animated Progress Bar */}
                             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden relative border border-slate-200">
                               <div
-                                className="h-full bg-[#1550aa] rounded-full transition-all duration-300"
+                                className="h-full bg-trido rounded-full transition-all duration-300"
                                 style={{ width: `${Math.max(5, pullProgress?.percent || (isPullingModel ? 25 : 0))}%` }}
                               />
                             </div>

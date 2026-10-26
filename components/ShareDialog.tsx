@@ -77,11 +77,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 bg-slate-50/80 border-b border-slate-200">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#1550aa] flex items-center justify-center text-white shadow-2xs">
+                <div className="w-9 h-9 rounded-xl bg-trido flex items-center justify-center text-white shadow-2xs">
                   <Share2 size={18} strokeWidth={2.4} />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-[#0a1a3a]">
+                  <h3 className="font-extrabold text-sm text-ink">
                     {t('share', 'Bagikan')} Papan Tulis
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
@@ -107,7 +107,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                 onClick={() => setActiveTab('qr')}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'qr'
-                    ? 'bg-white text-[#1550aa] shadow-2xs'
+                    ? 'bg-white text-trido shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -119,7 +119,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                 onClick={() => setActiveTab('link')}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'link'
-                    ? 'bg-white text-[#1550aa] shadow-2xs'
+                    ? 'bg-white text-trido shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -142,8 +142,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                     />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-extrabold text-[#0a1a3a] flex items-center justify-center gap-1.5">
-                      <Smartphone size={14} className="text-[#1550aa]" />
+                    <p className="text-xs font-extrabold text-ink flex items-center justify-center gap-1.5">
+                      <Smartphone size={14} className="text-trido" />
                       <span>Arahkan Kamera HP / Tablet Siswa</span>
                     </p>
                     <p className="text-[11px] text-slate-500 font-medium max-w-xs leading-relaxed">
@@ -164,7 +164,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-2xl font-mono font-black text-[#1550aa] tracking-widest">
+                      <span className="text-2xl font-mono font-black text-trido tracking-widest">
                         {roomId}
                       </span>
                       <button
@@ -181,7 +181,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                   {/* Direct Classroom URL */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
-                      <Wifi size={13} className="text-[#1550aa]" />
+                      <Wifi size={13} className="text-trido" />
                       <span>Tautan WiFi / Jaringan Kelas:</span>
                     </label>
                     <div className="flex items-center gap-2 p-1.5 bg-slate-50 rounded-xl border border-slate-300">
@@ -194,7 +194,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                       <button
                         type="button"
                         onClick={handleCopyLink}
-                        className="px-3.5 py-1.5 bg-[#1550aa] hover:bg-[#0a1a3a] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                        className="px-3.5 py-1.5 bg-trido hover:bg-ink text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer shrink-0"
                       >
                         {copiedLink ? <CheckCircle2 size={13} /> : <Copy size={13} />}
                         <span>{copiedLink ? 'Tersalin' : 'Salin'}</span>

@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Unified motion system in `design/motion.ts` (spring/tween/variants); all UI now uses `motion/react` (removed `framer-motion` imports) with `MotionConfig reducedMotion="user"`.
+- Brand colours, shape and elevation are now theme tokens (`bg-trido`, `text-ink`, `bg-sun`, `rounded-sheet`, `shadow-float`); added `.touch-target` utility; `h-screen` → `h-dvh`.
+- Smartboard dock uses pointer events (touch-friendly magnification).
+
+### Added (Desktop .exe)
+- Single-instance lock, free-port fallback, navigation guard, security headers, IPC sender validation, file logging, window-state persistence, F11 fullscreen.
+- Typed `window.electronAPI` (`getAppInfo`, `toggleFullscreen`, `saveFile`, `openFile`); exports use the native Save dialog in the desktop app.
+- ESLint (lenient), Prettier and EditorConfig; `puppeteer` moved to devDependencies.
+
+
 All notable changes to **Trido — AI Smartboard for Inclusive Classroom Education** are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

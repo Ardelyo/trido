@@ -11,6 +11,7 @@ import {
 import { useStore } from '../store';
 import { CreatorTool, FontFamily } from '../types';
 import { useTranslation } from '../utils/translations';
+import { spring } from '../design/motion';
 
 // ── Palette & sizes ──────────────────────────────────────────────────────────
 const PALETTE = [
@@ -70,8 +71,8 @@ const Flyout: React.FC<FlyoutProps> = ({ open, children, align = 'top' }) => {
           initial={{ opacity: 0, x: -8, scale: 0.94 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={{ opacity: 0, x: -8, scale: 0.94 }}
-          transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-          className={`absolute left-full ml-3.5 z-50 bg-white/95 backdrop-blur-2xl border-2 border-[#1550aa]/15 shadow-2xl shadow-slate-900/10 rounded-[1.75rem] p-3.5 w-56 ${positionClass}`}
+          transition={spring.snappy}
+          className={`absolute left-full ml-3.5 z-50 bg-white/95 backdrop-blur-2xl border-2 border-trido/15 shadow-2xl shadow-slate-900/10 rounded-[1.75rem] p-3.5 w-56 ${positionClass}`}
         >
           {children}
         </motion.div>
@@ -92,8 +93,8 @@ const Btn: React.FC<{
     onClick={onClick}
     className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-all cursor-pointer select-none ${
       active
-        ? 'bg-[#1550aa] text-white shadow-md shadow-[#1550aa]/30 ring-2 ring-[#ffcc00]'
-        : 'text-[#0a1a3a]/75 hover:bg-slate-100/90 hover:text-[#1550aa]'
+        ? 'bg-trido text-white shadow-md shadow-trido/30 ring-2 ring-sun'
+        : 'text-ink/75 hover:bg-slate-100/90 hover:text-trido'
     }`}
   >
     <Icon size={19} strokeWidth={active ? 2.5 : 2} />
@@ -177,12 +178,12 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         <motion.div
           initial={{ opacity: 0, x: -14 }}
           animate={{ opacity: 1, x: 0 }}
-          className="relative flex flex-col items-center gap-1.5 bg-white/95 backdrop-blur-2xl border-2 border-[#1550aa]/15 shadow-xl shadow-slate-900/10 rounded-full p-2"
+          className="relative flex flex-col items-center gap-1.5 bg-white/95 backdrop-blur-2xl border-2 border-trido/15 shadow-xl shadow-slate-900/10 rounded-full p-2"
         >
           {/* 1. SELECT */}
           <Btn icon={MousePointer2} active={activeTool === 'SELECT'} title={`${t('selectElement', 'Pilih Elemen')} (V)`} onClick={() => { setActiveTool('SELECT'); close(); }} />
 
-          <div className="w-5 h-px bg-[#0a1a3a]/10" />
+          <div className="w-5 h-px bg-ink/10" />
 
           {/* 2. DRAWING (Pencil, Eraser, Colors, Thickness combined) */}
           <div className="relative">

@@ -1,6 +1,7 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useI18n } from "./i18n";
 import { Reveal, SectionPill } from "./shared";
+import { spring } from '../../design/motion';
 
 function SpeakArt() {
   return (
@@ -97,7 +98,7 @@ export default function How() {
           <Reveal key={s.t} delay={i * 0.12} className="h-full">
             <motion.article
               whileHover={{ y: -6 }}
-              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              transition={spring.smooth}
               className="flex h-full flex-col rounded-[2rem] bg-white p-5 shadow-[0_1px_0_rgba(10,26,58,.04)] sm:p-6"
             >
               <div className="h-40 overflow-hidden rounded-[1.4rem] bg-paper/70">{arts[i]}</div>

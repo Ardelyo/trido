@@ -69,7 +69,7 @@ export const DocumentBlock: React.FC<DocumentBlockProps> = ({ config }) => {
     >
       {/* Printable Document Header (Appears only on print) */}
       <div className="hidden print:block border-b-2 border-slate-900 pb-4 mb-6">
-        <div className="text-[10px] font-black uppercase tracking-widest text-[#1550aa]">TRIDO ACADEMIC DOCUMENT</div>
+        <div className="text-[10px] font-black uppercase tracking-widest text-trido">TRIDO ACADEMIC DOCUMENT</div>
         <h1 className="text-2xl font-black text-slate-900 uppercase mt-1">{title}</h1>
         <div className="text-xs text-slate-500 mt-1">Tanggal: {new Date().toLocaleDateString('id-ID')}</div>
       </div>

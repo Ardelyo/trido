@@ -110,7 +110,7 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
-              className="w-full h-full flex items-center justify-center p-4 bg-[#0a1a3a]"
+              className="w-full h-full flex items-center justify-center p-4 bg-ink"
             >
               <div 
                 className={`bg-white shadow-2xl rounded-sm transition-all duration-500 overflow-hidden ${device === 'MOBILE' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}

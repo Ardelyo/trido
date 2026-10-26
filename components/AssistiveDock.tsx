@@ -94,13 +94,13 @@ export const AssistiveDock: React.FC = () => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#0a1a3a]/95 text-white border border-white/20 shadow-xl backdrop-blur-md text-xs font-semibold max-w-xs truncate"
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-ink/95 text-white border border-white/20 shadow-xl backdrop-blur-md text-xs font-semibold max-w-xs truncate"
           >
             <span className="flex items-center gap-1 shrink-0">
               {[0, 1, 2, 3].map((b) => (
                 <span
                   key={b}
-                  className="w-1 bg-[#ffcc00] rounded-full animate-pulse"
+                  className="w-1 bg-sun rounded-full animate-pulse"
                   style={{ height: `${8 + ((b * 6) % 12)}px`, animationDelay: `${b * 0.15}s` }}
                 />
               ))}
@@ -117,7 +117,7 @@ export const AssistiveDock: React.FC = () => {
           onClick={toggleAmbient}
           className={`relative w-14 h-14 rounded-2xl flex flex-col items-center justify-center gap-0.5 shadow-md transition cursor-pointer active:scale-90 select-none ${
             isAmbientActive 
-              ? 'bg-[#ffcc00] text-[#0a1a3a] ring-4 ring-[#ffcc00]/30 font-black' 
+              ? 'bg-sun text-ink ring-4 ring-sun/30 font-black' 
               : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
           }`}
           title={isAmbientActive ? 'Mode Bebas Genggam Aktif (Klik untuk Matikan)' : 'Aktifkan Mode Bebas Genggam (Bicara Tanpa Sentuh)'}
@@ -126,10 +126,10 @@ export const AssistiveDock: React.FC = () => {
             <motion.span
               animate={{ scale: [1, 1.25, 1], opacity: [0.4, 0.8, 0.4] }}
               transition={{ duration: 1.6, repeat: Infinity }}
-              className="absolute -inset-1 rounded-2xl border-2 border-[#ffcc00] pointer-events-none"
+              className="absolute -inset-1 rounded-2xl border-2 border-sun pointer-events-none"
             />
           )}
-          <Mic size={22} className={isAmbientActive ? 'text-[#0a1a3a]' : 'text-slate-300'} />
+          <Mic size={22} className={isAmbientActive ? 'text-ink' : 'text-slate-300'} />
           <span className="text-[9px] font-black uppercase tracking-tight">{isAmbientActive ? 'Dengar' : 'Suara'}</span>
         </button>
 

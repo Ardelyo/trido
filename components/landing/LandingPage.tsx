@@ -1,4 +1,4 @@
-import { MotionConfig, motion, useScroll, useSpring } from "framer-motion";
+import { MotionConfig, motion, useScroll, useSpring } from "motion/react";
 import { I18nProvider } from "./i18n";
 import Navbar from "./Navbar";
 import Hero from "./Hero";
@@ -27,7 +27,7 @@ export interface LandingPageProps {
 
 export default function LandingPage({ onLaunchApp }: LandingPageProps) {
   return (
-    <div className="min-h-screen bg-[#e4e3e0] text-[#0a1a3a] antialiased selection:bg-[#ffcc00] selection:text-[#0d3a80]">
+    <div className="min-h-screen bg-paper text-ink antialiased selection:bg-sun selection:text-trido-deep">
       <I18nProvider>
         <MotionConfig reducedMotion="user">
           <Progress />

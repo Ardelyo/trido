@@ -406,11 +406,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 bg-slate-50/80 border-b border-slate-200 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#1550aa] flex items-center justify-center text-white shadow-2xs">
+                <div className="w-10 h-10 rounded-2xl bg-trido flex items-center justify-center text-white shadow-2xs">
                   <Download size={20} strokeWidth={2.4} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#0a1a3a]">
+                  <h3 className="text-base font-extrabold text-ink">
                     Pusat Ekspor & Impor Papan Tulis
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
@@ -436,7 +436,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                 onClick={() => setActiveTab('visual')}
                 className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   activeTab === 'visual'
-                    ? 'bg-white text-[#1550aa] shadow-2xs'
+                    ? 'bg-white text-trido shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -449,7 +449,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                 onClick={() => setActiveTab('project')}
                 className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   activeTab === 'project'
-                    ? 'bg-white text-[#1550aa] shadow-2xs'
+                    ? 'bg-white text-trido shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -462,7 +462,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                 onClick={() => setActiveTab('objects')}
                 className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   activeTab === 'objects'
-                    ? 'bg-white text-[#1550aa] shadow-2xs'
+                    ? 'bg-white text-trido shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -497,7 +497,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   <div className="lg:col-span-5 space-y-3">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                       <span className="flex items-center gap-1.5">
-                        <Eye size={14} className="text-[#1550aa]" />
+                        <Eye size={14} className="text-trido" />
                         <span>Pratinjau Hasil Ekspor</span>
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono">Halaman {currentPageIndex + 1}</span>
@@ -532,7 +532,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                           type="button"
                           onClick={() => setBgColor('#ffffff')}
                           className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                            bgColor === '#ffffff' ? 'border-[#1550aa] bg-white text-[#1550aa] ring-2 ring-[#1550aa]/15' : 'border-slate-300 bg-white text-slate-700'
+                            bgColor === '#ffffff' ? 'border-trido bg-white text-trido ring-2 ring-trido/15' : 'border-slate-300 bg-white text-slate-700'
                           }`}
                         >
                           <span className="w-3 h-3 rounded-full border border-slate-300 bg-white" />
@@ -542,7 +542,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                           type="button"
                           onClick={() => setBgColor('#0f172a')}
                           className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                            bgColor === '#0f172a' ? 'border-[#1550aa] bg-white text-[#1550aa] ring-2 ring-[#1550aa]/15' : 'border-slate-300 bg-white text-slate-700'
+                            bgColor === '#0f172a' ? 'border-trido bg-white text-trido ring-2 ring-trido/15' : 'border-slate-300 bg-white text-slate-700'
                           }`}
                         >
                           <span className="w-3 h-3 rounded-full bg-slate-900" />
@@ -552,7 +552,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                           type="button"
                           onClick={() => setBgColor('transparent')}
                           className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                            bgColor === 'transparent' ? 'border-[#1550aa] bg-white text-[#1550aa] ring-2 ring-[#1550aa]/15' : 'border-slate-300 bg-white text-slate-700'
+                            bgColor === 'transparent' ? 'border-trido bg-white text-trido ring-2 ring-trido/15' : 'border-slate-300 bg-white text-slate-700'
                           }`}
                         >
                           <span className="w-3 h-3 rounded-full border border-dashed border-slate-400 bg-transparent" />
@@ -567,14 +567,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     <span className="text-xs font-bold text-slate-700 block">Pilihan Format Ekspor:</span>
 
                     {/* PNG High-Res Card */}
-                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#1550aa]/40 transition-all space-y-3">
+                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-trido/40 transition-all space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1550aa] flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-trido flex items-center justify-center">
                             <ImageIcon size={18} />
                           </div>
                           <div>
-                            <h4 className="font-extrabold text-sm text-[#0a1a3a]">Gambar PNG Berkualitas Tinggi</h4>
+                            <h4 className="font-extrabold text-sm text-ink">Gambar PNG Berkualitas Tinggi</h4>
                             <p className="text-[11px] text-slate-500 font-medium">Anti-layar hitam, resolusi tajam untuk presentasi</p>
                           </div>
                         </div>
@@ -587,7 +587,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                               type="button"
                               onClick={() => setMultiplier(m)}
                               className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
-                                multiplier === m ? 'bg-[#1550aa] text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                                multiplier === m ? 'bg-trido text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                               }`}
                             >
                               {m === 4 ? '4K' : `${m}x`}
@@ -600,7 +600,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                         <button
                           type="button"
                           onClick={handleExportPNG}
-                          className="flex-1 py-2 px-3 bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                          className="flex-1 py-2 px-3 bg-trido hover:bg-ink text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                         >
                           <Download size={14} />
                           <span>Unduh Gambar PNG ({multiplier === 4 ? '4K' : `${multiplier}x`})</span>
@@ -618,13 +618,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     </div>
 
                     {/* PDF Document A4 Landscape */}
-                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#1550aa]/40 transition-all flex items-center justify-between gap-3">
+                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-trido/40 transition-all flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
                           <FileText size={18} />
                         </div>
                         <div>
-                          <h4 className="font-extrabold text-sm text-[#0a1a3a]">Dokumen PDF Siap Cetak (A4)</h4>
+                          <h4 className="font-extrabold text-sm text-ink">Dokumen PDF Siap Cetak (A4)</h4>
                           <p className="text-[11px] text-slate-500 font-medium">Layout landscape rapi untuk lembar kerja & hand-out siswa</p>
                         </div>
                       </div>
@@ -641,13 +641,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     </div>
 
                     {/* Scalable Vector SVG */}
-                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-[#1550aa]/40 transition-all flex items-center justify-between gap-3">
+                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-trido/40 transition-all flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
                           <FileCode size={18} />
                         </div>
                         <div>
-                          <h4 className="font-extrabold text-sm text-[#0a1a3a]">Vektor Skalabel SVG</h4>
+                          <h4 className="font-extrabold text-sm text-ink">Vektor Skalabel SVG</h4>
                           <p className="text-[11px] text-slate-500 font-medium">Dapat dibuka & diedit kembali di Canva, Figma, Illustrator</p>
                         </div>
                       </div>
@@ -672,10 +672,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     {/* Backup Section */}
                     <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-left">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#1550aa] flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-xl bg-blue-100 text-trido flex items-center justify-center">
                           <Download size={16} />
                         </div>
-                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Cadangkan Proyek Lengkap</h4>
+                        <h4 className="font-extrabold text-sm text-ink">Cadangkan Proyek Lengkap</h4>
                       </div>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
                         Simpan seluruh status kanvas, halaman, elemen interaktif, dan riwayat obrolan ke berkas tunggal <code>.trido</code>.
@@ -683,7 +683,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                       <button
                         type="button"
                         onClick={handleExportJSON}
-                        className="w-full py-2.5 px-4 bg-[#1550aa] hover:bg-[#0a1a3a] text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                        className="w-full py-2.5 px-4 bg-trido hover:bg-ink text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                       >
                         <FileJson size={15} />
                         <span>Unduh Berkas Cadangan (.trido)</span>
@@ -696,7 +696,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                         <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                           <ImageIcon size={16} />
                         </div>
-                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Sisipkan Gambar ke Papan</h4>
+                        <h4 className="font-extrabold text-sm text-ink">Sisipkan Gambar ke Papan</h4>
                       </div>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
                         Masukkan diagram, foto materi pelajaran, atau bagan (PNG, JPG, SVG) langsung ke posisi tengah papan aktif.
@@ -713,12 +713,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   </div>
 
                   {/* Import Dropzone Area */}
-                  <div className="p-6 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 hover:bg-blue-50/30 hover:border-[#1550aa] transition-all text-center space-y-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1550aa] flex items-center justify-center mx-auto shadow-2xs">
+                  <div className="p-6 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 hover:bg-blue-50/30 hover:border-trido transition-all text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-trido flex items-center justify-center mx-auto shadow-2xs">
                       <FolderUp size={24} />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="font-extrabold text-sm text-[#0a1a3a]">
+                      <h4 className="font-extrabold text-sm text-ink">
                         Pulihkan / Buka Berkas Proyek Trido
                       </h4>
                       <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto">
@@ -736,15 +736,15 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
 
                     {/* Pending Import Inspection Card */}
                     {pendingImportData && (
-                      <div className="mt-4 p-4 bg-white rounded-2xl border-2 border-[#1550aa] text-left space-y-3 shadow-md max-w-lg mx-auto">
+                      <div className="mt-4 p-4 bg-white rounded-2xl border-2 border-trido text-left space-y-3 shadow-md max-w-lg mx-auto">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] uppercase font-bold text-[#1550aa] bg-blue-50 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] uppercase font-bold text-trido bg-blue-50 px-2 py-0.5 rounded-full">
                             Berkas Siap Dipulihkan
                           </span>
                           <span className="text-xs text-slate-400 font-mono">{pendingImportData.sizeKb} KB</span>
                         </div>
                         <div>
-                          <h5 className="font-extrabold text-sm text-[#0a1a3a]">{pendingImportData.title}</h5>
+                          <h5 className="font-extrabold text-sm text-ink">{pendingImportData.title}</h5>
                           <p className="text-xs text-slate-500">
                             Terdiri dari {pendingImportData.pageCount} halaman • Dicadangkan {pendingImportData.exportedAt}
                           </p>
@@ -754,7 +754,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                             type="button"
                             onClick={handleApplyImport}
                             disabled={isImporting}
-                            className="flex-1 py-2 bg-[#1550aa] hover:bg-[#0a1a3a] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                            className="flex-1 py-2 bg-trido hover:bg-ink text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
                           >
                             {isImporting ? 'Memulihkan...' : 'Buka Proyek Ini di Papan ↵'}
                           </button>
@@ -776,7 +776,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
               {activeTab === 'objects' && (
                 <div className="space-y-4 text-left">
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-3">
-                    <Sparkles size={18} className="text-[#1550aa] shrink-0 mt-0.5" />
+                    <Sparkles size={18} className="text-trido shrink-0 mt-0.5" />
                     <p className="text-xs text-slate-600 leading-relaxed font-medium">
                       Trido dapat mengekspor diagram konsep, dokumen materi, simulasi interaktif, dan kuis evaluasi di papan ke format standar agar dapat langsung digunakan di Canva, Notion, atau LMS sekolah (Moodle/Canvas).
                     </p>
@@ -786,8 +786,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   {Object.values(domElements).filter((el: any) => el.componentType === 'MERMAID_DIAGRAM').map((el: any) => (
                     <div key={el.id} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center gap-2">
-                        <GitBranch size={16} className="text-[#1550aa]" />
-                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">{el.config?.title || 'Diagram Mermaid'}</h4>
+                        <GitBranch size={16} className="text-trido" />
+                        <h4 className="font-extrabold text-sm text-ink">{el.config?.title || 'Diagram Mermaid'}</h4>
                       </div>
                       <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-slate-800 max-h-32 overflow-y-auto custom-scrollbar border border-slate-200 whitespace-pre-wrap">
                         {el.config?.code || ''}
@@ -801,7 +801,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                             toast.success('Sintaks Mermaid disalin!');
                             setTimeout(() => setCopiedMermaid(false), 2000);
                           }}
-                          className="px-3 py-1.5 bg-[#1550aa] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 bg-trido text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
                         >
                           {copiedMermaid ? <Check size={14} /> : <Copy size={14} />}
                           <span>{copiedMermaid ? 'Tersalin' : 'Salin Kode Mermaid'}</span>
@@ -824,8 +824,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   {detected.mindmap.hasNodes && (
                     <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center gap-2">
-                        <GitBranch size={16} className="text-[#1550aa]" />
-                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Diagram Mindmap Kanvas ({detected.mindmap.rootText})</h4>
+                        <GitBranch size={16} className="text-trido" />
+                        <h4 className="font-extrabold text-sm text-ink">Diagram Mindmap Kanvas ({detected.mindmap.rootText})</h4>
                       </div>
                       <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-slate-800 max-h-32 overflow-y-auto custom-scrollbar border border-slate-200 whitespace-pre-wrap">
                         {exportMindmapToMermaid(activeMindmapNodes)}
@@ -840,7 +840,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                             toast.success('Sintaks Mermaid disalin!');
                             setTimeout(() => setCopiedMermaid(false), 2000);
                           }}
-                          className="px-3 py-1.5 bg-[#1550aa] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 bg-trido text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
                         >
                           {copiedMermaid ? <Check size={14} /> : <Copy size={14} />}
                           <span>{copiedMermaid ? 'Tersalin' : 'Salin Kode Mermaid'}</span>
@@ -877,8 +877,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <CheckSquare size={16} className="text-[#1550aa]" />
-                          <h4 className="font-extrabold text-sm text-[#0a1a3a]">Kuis & Evaluasi ({detected.quizzes.length})</h4>
+                          <CheckSquare size={16} className="text-trido" />
+                          <h4 className="font-extrabold text-sm text-ink">Kuis & Evaluasi ({detected.quizzes.length})</h4>
                         </div>
                         <button
                           type="button"
@@ -887,7 +887,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                             downloadFile(gift, `kuis_moodle_${Date.now()}.gift.txt`, 'text/plain;charset=utf-8');
                             toast.success('Format GIFT Moodle/LMS berhasil diunduh!');
                           }}
-                          className="px-3 py-1.5 bg-[#1550aa] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 bg-trido text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
                         >
                           <Download size={13} /> Ekspor Semua ke Moodle GIFT
                         </button>
@@ -916,8 +916,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   {detected.documents.length > 0 && (
                     <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
                       <div className="flex items-center gap-2">
-                        <FileText size={16} className="text-[#1550aa]" />
-                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Dokumen & Catatan ({detected.documents.length})</h4>
+                        <FileText size={16} className="text-trido" />
+                        <h4 className="font-extrabold text-sm text-ink">Dokumen & Catatan ({detected.documents.length})</h4>
                       </div>
                       {detected.documents.map((doc) => (
                         <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
@@ -954,8 +954,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   {detected.apps.filter(a => a.html).length > 0 && (
                     <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
                       <div className="flex items-center gap-2">
-                        <FileCode size={16} className="text-[#1550aa]" />
-                        <h4 className="font-extrabold text-sm text-[#0a1a3a]">Simulasi & Aplikasi Mini</h4>
+                        <FileCode size={16} className="text-trido" />
+                        <h4 className="font-extrabold text-sm text-ink">Simulasi & Aplikasi Mini</h4>
                       </div>
                       {detected.apps.filter(a => a.html).map((app) => (
                         <div key={app.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">

@@ -19,9 +19,11 @@
     "electron:dev": "node scripts/build-electron.js && electron .",
     "preview": "vite preview",
     "check": "tsc --noEmit",
-    "lint": "tsc --noEmit",
+    "lint": "eslint . --max-warnings=100000",
     "start": "tsx server.ts",
-    "start:dev": "tsx server.ts"
+    "start:dev": "tsx server.ts",
+    "lint:types": "tsc --noEmit",
+    "format": "prettier --write \"design/**/*.ts\" \"utils/electron.ts\" \"types/**/*.ts\" \"electron/*.ts\""
   },
   "build": {
     "appId": "ai.trido.classroom",
@@ -36,7 +38,11 @@
       "dist-electron/**/*",
       "dist/**/*",
       "node_modules/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/**/{test,tests,__tests__,docs,example,examples}/**",
+      "!node_modules/**/*.{md,map,ts,flow}",
+      "!node_modules/.cache/**",
+      "!node_modules/puppeteer*/**"
     ],
     "extraFiles": [
       {
@@ -55,14 +61,19 @@
           ]
         }
       ],
-      "icon": "public/icon.ico"
+      "icon": "public/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Trido"
+      "shortcutName": "Trido",
+      "deleteAppDataOnUninstall": false,
+      "perMachine": false,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico"
     },
     "mac": {
       "target": [
@@ -112,7 +123,6 @@
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^2.4.5",
     "perfect-freehand": "^1.2.3",
-    "puppeteer": "^25.5.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -129,6 +139,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/cors": "^2.8.19",
@@ -141,8 +152,13 @@
     "electron": "^42.1.0",
     "electron-builder": "^26.8.1",
     "esbuild": "^0.28.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "jsdom": "^27.0.1",
+    "prettier": "^3.9.10",
+    "puppeteer": "^25.5.0",
     "typescript": "~5.8.2",
+    "typescript-eslint": "^8.72.0",
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^3.2.4",

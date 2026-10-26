@@ -376,11 +376,11 @@ export const DomOverlay: React.FC = () => {
           return (
             <div
               key={el.id}
-              className={`absolute flex flex-col overflow-hidden rounded-[2rem] bg-white border-2 will-change-transform select-none ${
+              className={`absolute flex flex-col overflow-hidden rounded-sheet bg-white border-2 will-change-transform select-none ${
                 isActing ? 'opacity-50' : 'opacity-100'
               } ${
                 isDragging
-                  ? 'shadow-[0_24px_70px_rgba(10,26,58,0.22)] border-[#1550aa] scale-[1.018] z-40 ring-4 ring-[#1550aa]/15'
+                  ? 'shadow-[0_24px_70px_rgba(10,26,58,0.22)] border-trido scale-[1.018] z-40 ring-4 ring-trido/15'
                   : 'shadow-[0_12px_45px_rgba(10,26,58,0.10)] border-slate-200/90 hover:border-slate-300'
               }`}
               style={{
@@ -400,7 +400,7 @@ export const DomOverlay: React.FC = () => {
                 onMouseDown={(e) => handleTitlebarMouseDown(el, e)}
                 onDoubleClick={() => setFullscreenWidgetId(el.id)}
                 className={`flex h-12 w-full items-center justify-between px-3.5 border-b border-slate-200/80 shrink-0 select-none transition-colors cursor-grab active:cursor-grabbing ${
-                  isDragging ? 'bg-[#1550aa]/10' : 'bg-slate-50/90 hover:bg-slate-100/90'
+                  isDragging ? 'bg-trido/10' : 'bg-slate-50/90 hover:bg-slate-100/90'
                 }`}
                 title="Tahan dan geser di mana saja pada judul untuk memindahkan widget • Klik ganda untuk Layar Penuh"
               >
@@ -412,7 +412,7 @@ export const DomOverlay: React.FC = () => {
                   <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0">
                     {getComponentIcon(el.componentType)}
                   </div>
-                  <div className="font-extrabold text-[12.5px] text-[#0a1a3a] tracking-tight truncate font-sans">
+                  <div className="font-extrabold text-[12.5px] text-ink tracking-tight truncate font-sans">
                     {title}
                   </div>
                 </div>
@@ -422,7 +422,7 @@ export const DomOverlay: React.FC = () => {
                   {/* Fullscreen / Focus Mode */}
                   <button
                     onClick={() => setFullscreenWidgetId(el.id)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-200/70 text-slate-400 hover:text-[#1550aa] transition cursor-pointer"
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-200/70 text-slate-400 hover:text-trido transition cursor-pointer"
                     title="Layar Penuh (Fokus)"
                   >
                     <Maximize2 size={14} />
@@ -458,9 +458,9 @@ export const DomOverlay: React.FC = () => {
                 className="absolute bottom-0 right-0 w-8 h-8 flex items-end justify-end p-1.5 cursor-nwse-resize z-40 select-none group/resize touch-none"
                 title="Tarik sudut untuk mengubah ukuran widget"
               >
-                <div className="w-3.5 h-3.5 rounded-br-sm border-b-2 border-r-2 border-[#1550aa] group-hover/resize:border-[#ffcc00] group-hover/resize:scale-125 transition-all" />
+                <div className="w-3.5 h-3.5 rounded-br-sm border-b-2 border-r-2 border-trido group-hover/resize:border-sun group-hover/resize:scale-125 transition-all" />
                 {isResizing && (
-                  <div className="absolute -top-7 right-0 px-2 py-0.5 rounded-full bg-[#0a1a3a] text-white text-[10px] font-mono font-bold whitespace-nowrap shadow-md pointer-events-none">
+                  <div className="absolute -top-7 right-0 px-2 py-0.5 rounded-full bg-ink text-white text-[10px] font-mono font-bold whitespace-nowrap shadow-md pointer-events-none">
                     {el.width} × {el.height}
                   </div>
                 )}

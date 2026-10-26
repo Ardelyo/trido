@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeftRight,
   Calculator,
@@ -24,6 +24,7 @@ import {
 import { useI18n } from "./i18n";
 import { Reveal, SectionPill } from "./shared";
 import { cn } from "./cn";
+import { spring } from '../../design/motion';
 
 const widgetIcons = [Calculator, Timer, FileText, CircleHelp, ArrowLeftRight, FlaskConical, Users, ListChecks, Dices, Trophy, Sigma];
 
@@ -42,7 +43,7 @@ function Card({
     <Reveal delay={delay} className={cn("h-full", className)}>
       <motion.article
         whileHover={{ y: -5 }}
-        transition={{ type: "spring", stiffness: 300, damping: 24 }}
+        transition={spring.smooth}
         className="relative h-full overflow-hidden rounded-[2rem] p-6 sm:p-8"
         style={{ background: bg }}
       >
@@ -147,7 +148,7 @@ function CloudToggle() {
         <motion.span
           className="absolute inset-y-1.5 w-[calc(50%-0.375rem)] rounded-full bg-trido"
           animate={{ left: cloud ? "0.375rem" : "50%" }}
-          transition={{ type: "spring", stiffness: 380, damping: 32 }}
+          transition={spring.snappy}
         />
         <span className={cn("relative z-10 flex-1 py-2.5 transition-colors", cloud && "text-white")}>{t.features.cloudOn}</span>
         <span className={cn("relative z-10 flex-1 py-2.5 transition-colors", !cloud && "text-white")}>{t.features.cloudOff}</span>

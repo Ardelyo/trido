@@ -449,12 +449,12 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
             {/* Header: Pure Minimalist Structure (No Emojis) */}
             <div className="px-6 py-5 bg-white border-b border-slate-200/90 flex flex-wrap items-center justify-between gap-4 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#1550aa] flex items-center justify-center text-white shadow-xs">
+                <div className="w-10 h-10 rounded-2xl bg-trido flex items-center justify-center text-white shadow-xs">
                   <HelpCircle size={20} strokeWidth={2.2} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-black text-[#0a1a3a] tracking-tight">
+                    <h2 className="text-lg font-black text-ink tracking-tight">
                       {isIndo ? 'Panduan Penggunaan Trido' : 'Trido User Guide'}
                     </h2>
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
@@ -478,7 +478,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={isIndo ? 'Cari panduan, tombol, rumus...' : 'Search guides, keys, tools...'}
-                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100/80 border border-slate-200 rounded-full text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:border-[#1550aa] transition-all font-medium"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100/80 border border-slate-200 rounded-full text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:border-trido transition-all font-medium"
                   />
                   {searchQuery && (
                     <button
@@ -513,7 +513,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                     onClick={() => setActiveCategory(tab.id)}
                     className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                       isActive 
-                        ? 'bg-[#1550aa] text-white shadow-xs' 
+                        ? 'bg-trido text-white shadow-xs' 
                         : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/90 hover:bg-slate-50'
                     }`}
                   >
@@ -557,11 +557,11 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                         <div className="space-y-3">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-[#1550aa] shrink-0">
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center text-trido shrink-0">
                                 <Icon size={20} strokeWidth={2} />
                               </div>
                               <div>
-                                <h3 className="font-black text-sm text-[#0a1a3a] leading-tight">
+                                <h3 className="font-black text-sm text-ink leading-tight">
                                   {item.title}
                                 </h3>
                                 <p className="text-[11px] text-slate-500 font-medium leading-normal mt-0.5">
@@ -577,7 +577,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                                 </span>
                               )}
                               {item.badge && (
-                                <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/70 text-[#1550aa] font-bold text-[10px]">
+                                <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/70 text-trido font-bold text-[10px]">
                                   {item.badge}
                                 </span>
                               )}
@@ -593,7 +593,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                           <div className="bg-slate-50/70 rounded-xl border border-slate-200/70 p-3 space-y-1.5 text-[11px] text-slate-600">
                             {item.details.map((detail, dIdx) => (
                               <div key={dIdx} className="flex items-start gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#1550aa] shrink-0 mt-1.5" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-trido shrink-0 mt-1.5" />
                                 <span className="leading-relaxed">{detail}</span>
                               </div>
                             ))}
@@ -609,7 +609,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                             <button
                               type="button"
                               onClick={() => handleCopyPrompt(item.actionPrompt!, item.id)}
-                              className="flex items-center gap-1 px-3 py-1 bg-[#1550aa] hover:bg-[#0a1a3a] text-white text-[11px] font-bold rounded-full transition-colors cursor-pointer shrink-0 shadow-2xs"
+                              className="flex items-center gap-1 px-3 py-1 bg-trido hover:bg-ink text-white text-[11px] font-bold rounded-full transition-colors cursor-pointer shrink-0 shadow-2xs"
                             >
                               {copiedId === item.id ? (
                                 <>
@@ -647,7 +647,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-5 py-2 bg-[#1550aa] hover:bg-[#0a1a3a] text-white text-xs font-bold rounded-full transition-all cursor-pointer shadow-xs"
+                  className="px-5 py-2 bg-trido hover:bg-ink text-white text-xs font-bold rounded-full transition-all cursor-pointer shadow-xs"
                 >
                   {isIndo ? 'Tutup & Mulai Mengajar' : 'Close & Start Teaching'}
                 </button>

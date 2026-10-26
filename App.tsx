@@ -1,3 +1,4 @@
+import { isElectronEnv } from './utils/electron';
 import React, { useRef, useState, useEffect } from 'react';
 import { CanvasManager } from './components/CanvasManager';
 import { ChatInterface } from './components/ChatInterface';
@@ -33,6 +34,7 @@ import { ToastContainer } from './components/Toast';
 import { useTranslation } from './utils/translations';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ProcessingStatusHud } from './components/ProcessingStatusHud';
+import { spring } from './design/motion';
 
 const App: React.FC = () => {
   const { t } = useTranslation();
@@ -117,7 +119,7 @@ const App: React.FC = () => {
   }, []);
 
   const isWeb = typeof window !== 'undefined' &&
-    !((window as any).electronAPI || (window as any).process?.type === 'renderer' || navigator.userAgent.toLowerCase().includes('electron')) &&
+    !isElectronEnv() &&
     !['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname) &&
     !window.location.hostname.endsWith('.local') &&
     !['3000', '3030', '5173'].includes(window.location.port);
@@ -242,7 +244,7 @@ const App: React.FC = () => {
   } = useStore();
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden bg-[#e4e3e0] font-sans text-[#0a1a3a] selection:bg-[#ffcc00] selection:text-[#0a1a3a]">
+    <div className="flex flex-col h-dvh w-full overflow-hidden bg-paper font-sans text-ink selection:bg-sun selection:text-ink">
 
       {/* VIEWER MODE (CINEMA MODE) */}
       {isViewer ? (
@@ -279,22 +281,22 @@ const App: React.FC = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#e4e3e0] z-60 p-6"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-paper z-60 p-6"
               >
-                <div className="bg-white border-2 border-[#0a1a3a]/10 rounded-[2rem] px-8 py-7 shadow-xl flex flex-col items-center gap-4 max-w-md w-full text-center">
-                  <div className="px-4 py-2 rounded-full border border-[#0a1a3a]/10 bg-white flex items-center gap-2">
+                <div className="bg-white border-2 border-ink/10 rounded-sheet px-8 py-7 shadow-xl flex flex-col items-center gap-4 max-w-md w-full text-center">
+                  <div className="px-4 py-2 rounded-full border border-ink/10 bg-white flex items-center gap-2">
                     <Logo />
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[10px] font-black uppercase tracking-wider">Live</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-sun text-ink text-[10px] font-black uppercase tracking-wider">Live</span>
                   </div>
-                  <div className="text-xs font-extrabold tracking-widest text-[#0a1a3a] uppercase">
+                  <div className="text-xs font-extrabold tracking-widest text-ink uppercase">
                     {t('connectingToBoard', 'Menghubungkan ke Papan')} {userName}...
                   </div>
-                  <div className="w-full h-2 bg-[#e4e3e0] rounded-full overflow-hidden relative">
+                  <div className="w-full h-2 bg-paper rounded-full overflow-hidden relative">
                     <motion.div
                       initial={{ left: '-40%', width: '40%' }}
                       animate={{ left: '100%', width: '45%' }}
                       transition={{ duration: 1.1, repeat: Infinity, ease: [0.22, 1, 0.36, 1] }}
-                      className="absolute inset-y-0 bg-[#1550aa] rounded-full"
+                      className="absolute inset-y-0 bg-trido rounded-full"
                     />
                   </div>
                 </div>
@@ -310,7 +312,7 @@ const App: React.FC = () => {
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="h-16 lg:h-20 bg-white/80 backdrop-blur-xl border-b border-[#0a1a3a]/10 flex items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 z-20 relative gap-2 sm:gap-4 select-none shadow-xs"
+            className="h-16 lg:h-20 bg-white/80 backdrop-blur-xl border-b border-ink/10 flex items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 z-20 relative gap-2 sm:gap-4 select-none shadow-xs"
           >
             {/* Left Section: Menu & Brand */}
             <div className="flex items-center gap-2 lg:gap-3 shrink-0 z-10">
@@ -318,7 +320,7 @@ const App: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
-                className="w-11 h-11 rounded-full bg-white/80 hover:bg-white text-slate-700 hover:text-[#1550aa] border border-slate-200/80 shadow-xs flex items-center justify-center transition-all cursor-pointer"
+                className="w-11 h-11 rounded-full bg-white/80 hover:bg-white text-slate-700 hover:text-trido border border-slate-200/80 shadow-xs flex items-center justify-center transition-all cursor-pointer"
               >
                 <Menu size={20} />
               </motion.button>
@@ -347,8 +349,8 @@ const App: React.FC = () => {
                 onClick={toggleAiDrawer}
                 className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all shadow-xs cursor-pointer ${
                   isAiDrawerOpen 
-                    ? 'bg-[#1550aa] text-white shadow-[#1550aa]/30 ring-4 ring-[#1550aa]/15' 
-                    : 'text-[#1550aa] bg-white hover:bg-slate-50 border border-[#1550aa]/25'
+                    ? 'bg-trido text-white shadow-trido/30 ring-4 ring-trido/15' 
+                    : 'text-trido bg-white hover:bg-slate-50 border border-trido/25'
                 }`}
               >
                 <Sparkles size={16} /> <span className="hidden sm:inline">{t('assistant', 'Asisten')}</span>
@@ -358,7 +360,7 @@ const App: React.FC = () => {
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => setIsShareOpen(true)} 
-                className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-[#0a1a3a] border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs cursor-pointer"
+                className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-ink border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs cursor-pointer"
               >
                 <Share2 size={16} /> <span className="hidden lg:inline">{t('share', 'Bagikan')}</span>
               </motion.button>
@@ -370,7 +372,7 @@ const App: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsGuideOpen(true)}
-                className="w-11 h-11 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-[#1550aa] shadow-xs transition-all cursor-pointer"
+                className="w-11 h-11 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-trido shadow-xs transition-all cursor-pointer"
                 title="Panduan Cara Penggunaan Trido (Bantuan)"
               >
                 <HelpCircle size={18} />
@@ -384,7 +386,7 @@ const App: React.FC = () => {
                 title={t('userMenu', 'Menu Pengguna')} 
                 onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}
               >
-                <div className="w-full h-full bg-[#1550aa] flex items-center justify-center text-white font-black text-sm">
+                <div className="w-full h-full bg-trido flex items-center justify-center text-white font-black text-sm">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               </motion.button>
@@ -547,7 +549,7 @@ const App: React.FC = () => {
             </AnimatePresence>
 
             {/* 3 & 4. CANVAS AREA & VERTICAL TOOLBAR */}
-            <main className="flex-1 min-w-0 relative h-full bg-white rounded-3xl lg:rounded-[2.5rem] border-2 border-[#1550aa]/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
+            <main className="flex-1 min-w-0 relative h-full bg-white rounded-3xl lg:rounded-[2.5rem] border-2 border-trido/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
 
                {/* Dot Grid Background */}
                <div
@@ -564,7 +566,7 @@ const App: React.FC = () => {
                </div>
 
                {/* Page Navigation Indicator */}
-               <div className="absolute bottom-6 left-6 z-10 flex items-center gap-1.5 p-1.5 bg-white/95 backdrop-blur-xl rounded-full shadow-lg border-2 border-[#1550aa]/15">
+               <div className="absolute bottom-6 left-6 z-10 flex items-center gap-1.5 p-1.5 bg-white/95 backdrop-blur-xl rounded-full shadow-lg border-2 border-trido/15">
                 {pages.map((_, idx) => (
                   <button
                     key={idx}
@@ -574,19 +576,19 @@ const App: React.FC = () => {
                       isThinking || isActing ? 'opacity-50 cursor-not-allowed' : ''
                     } ${
                       currentPageIndex === idx 
-                        ? 'bg-[#1550aa] text-white shadow-sm ring-2 ring-[#ffcc00]' 
-                        : 'text-slate-500 hover:bg-slate-100 hover:text-[#0a1a3a]'
+                        ? 'bg-trido text-white shadow-sm ring-2 ring-sun' 
+                        : 'text-slate-500 hover:bg-slate-100 hover:text-ink'
                     }`}
                   >
                     {idx + 1}
                   </button>
                 ))}
-                <div className="w-px h-4 bg-[#0a1a3a]/15 mx-1" />
+                <div className="w-px h-4 bg-ink/15 mx-1" />
                 <button 
                   disabled={isThinking || isActing}
                   onClick={() => addPage()}
                   className={`w-8 h-8 flex items-center justify-center rounded-full text-slate-500 transition-all cursor-pointer ${
-                    isThinking || isActing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 hover:text-[#1550aa]'
+                    isThinking || isActing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 hover:text-trido'
                   }`}
                   title={t('addNewPage', 'Tambah Halaman Baru')}
                 >
@@ -637,13 +639,13 @@ const App: React.FC = () => {
                   initial={{ x: '100%', opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: '100%', opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  transition={spring.smooth}
                   className={`absolute right-4 lg:right-8 top-4 lg:top-8 bottom-4 lg:bottom-8 w-[calc(100%-2rem)] sm:w-95 bg-white/95 backdrop-blur-2xl rounded-4xl border border-white flex flex-col z-50 shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden`}
                 >
                   {/* Header */}
                   <div className="h-16 lg:h-18 border-b border-slate-100 flex items-center justify-between px-5 font-sans bg-white/70">
                     <div className="flex items-center gap-3">
-                        <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#1550aa] shrink-0 shadow-xs">
+                        <span className="grid h-9 w-9 place-items-center rounded-xl bg-trido shrink-0 shadow-xs">
                           <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none">
                             <path
                               d="M7 4.5v15l4.2-4.1 2.9 5.1 2.4-1.3-2.9-5H19L7 4.5Z"
@@ -656,7 +658,7 @@ const App: React.FC = () => {
                         </span>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-[#0a1a3a] text-[15px]">{t('assistant', 'Asisten')}</span>
+                            <span className="font-extrabold text-ink text-[15px]">{t('assistant', 'Asisten')}</span>
                             <div className={`w-2 h-2 rounded-full ${statusConfig.dot}`} title={statusConfig.text} />
                           </div>
                           <div className="text-[11px] text-slate-500 font-semibold tracking-tight">
@@ -685,16 +687,16 @@ const App: React.FC = () => {
                   {/* Chat Content */}
                   <div className="flex-1 overflow-y-auto px-4 py-5 space-y-4 custom-scrollbar scroll-smooth">
                     {/* Reminder Pill for Demo Cloud / Trido Local Models & Personal API Key */}
-                    <div className="p-3 rounded-2xl bg-[#e4e3e0]/50 border border-[#0a1a3a]/10 text-[11.5px] leading-relaxed text-[#0a1a3a] flex flex-col gap-1.5">
+                    <div className="p-3 rounded-2xl bg-paper/50 border border-ink/10 text-[11.5px] leading-relaxed text-ink flex flex-col gap-1.5">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-black text-[#1550aa] flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[9.5px] font-black uppercase">AI</span>
+                        <span className="font-black text-trido flex items-center gap-1.5">
+                          <span className="px-2 py-0.5 rounded-full bg-sun text-ink text-[9.5px] font-black uppercase">AI</span>
                           {language === 'id' ? 'Model Lokal Trido & Kunci API' : 'Trido Local Models & API Key'}
                         </span>
                         <button
                           type="button"
                           onClick={() => setIsSettingsOpen(true)}
-                          className="text-[10.5px] font-extrabold text-[#1550aa] underline cursor-pointer"
+                          className="text-[10.5px] font-extrabold text-trido underline cursor-pointer"
                         >
                           {t('settings', 'Pengaturan')} →
                         </button>
@@ -743,9 +745,9 @@ const App: React.FC = () => {
 
                     {/* Live Voice Mode Synchronization Banner inside Studio Drawer */}
                     {isVoiceListening && (
-                      <div className="flex items-center justify-between gap-2 px-3.5 py-2 mb-2.5 rounded-full bg-[#1550aa] text-white text-xs font-bold shadow-xs">
+                      <div className="flex items-center justify-between gap-2 px-3.5 py-2 mb-2.5 rounded-full bg-trido text-white text-xs font-bold shadow-xs">
                         <div className="flex items-center gap-2 truncate">
-                          <span className="w-2 h-2 rounded-full bg-[#ffcc00] animate-ping shrink-0" />
+                          <span className="w-2 h-2 rounded-full bg-sun animate-ping shrink-0" />
                           <span className="truncate">
                             {interimInputText
                               ? `${t('listeningTo', 'Mendengarkan')}: "${interimInputText}"`
@@ -755,7 +757,7 @@ const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => window.dispatchEvent(new Event('toggle-mic'))}
-                          className="px-2.5 py-0.5 rounded-full bg-[#ffcc00] text-[#0a1a3a] text-[10px] font-black shrink-0 cursor-pointer"
+                          className="px-2.5 py-0.5 rounded-full bg-sun text-ink text-[10px] font-black shrink-0 cursor-pointer"
                         >
                           {t('doneBtn', 'Selesai')}
                         </button>
@@ -774,7 +776,7 @@ const App: React.FC = () => {
                             useStore.getState().addMessage({ role: 'user', text: prompt });
                             await processUserPrompt(prompt, canvasRef);
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-[#1550aa] border border-blue-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-trido border border-blue-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
                         >
                           <Network size={12} />
                           <span>{t('createMindmapBtn', '🌳 Buat Peta Konsep')}</span>
@@ -843,7 +845,7 @@ const App: React.FC = () => {
                             className={`transition-all p-2.5 rounded-full active:scale-95 cursor-pointer ${
                               useStore.getState().isVoiceListening
                                 ? 'bg-red-500 text-white animate-pulse shadow-sm'
-                                : 'text-slate-400 hover:text-[#1550aa] hover:bg-blue-50'
+                                : 'text-slate-400 hover:text-trido hover:bg-blue-50'
                             } ${isThinking ? 'opacity-40 pointer-events-none' : ''}`}
                             title={useStore.getState().isVoiceListening ? 'Hentikan & Kirim Suara' : t('switchToVoice', 'Bicara dengan Suara (Sinkron dengan Smartboard)')}
                           >

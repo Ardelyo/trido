@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Sparkles, X, FileText, Cpu, Clock } from 'lucide-react';
 import { useStore } from '../store';
 import { useTranslation } from '../utils/translations';
@@ -99,21 +99,21 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.98 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className={`w-full max-w-md bg-white rounded-3xl border-2 border-[#1550aa]/15 shadow-md p-4 flex flex-col gap-3 font-sans select-none pointer-events-auto ${className}`}
+      className={`w-full max-w-md bg-white rounded-3xl border-2 border-trido/15 shadow-md p-4 flex flex-col gap-3 font-sans select-none pointer-events-auto ${className}`}
     >
       {/* Top Header: Model, Status & Cancel Button */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-[#1550aa] text-white shrink-0 shadow-xs">
+          <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-trido text-white shrink-0 shadow-xs">
             <Sparkles size={16} className="animate-pulse" />
-            <span className="absolute -inset-1 rounded-full border border-[#ffcc00]/50 animate-ping opacity-40 pointer-events-none" />
+            <span className="absolute -inset-1 rounded-full border border-sun/50 animate-ping opacity-40 pointer-events-none" />
           </div>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-[13px] text-[#0a1a3a] tracking-tight truncate">
+              <span className="font-extrabold text-[13px] text-ink tracking-tight truncate">
                 {language === 'en' ? 'Trido AI Processing' : 'Trido Sedang Berpikir'}
               </span>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-[#1550aa] border border-blue-200/60 truncate">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-trido border border-blue-200/60 truncate">
                 {activeModel}
               </span>
             </div>
@@ -123,7 +123,7 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
         {/* Live Elapsed Timer & Cancel Button */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-1 text-[11px] font-mono text-slate-500 font-semibold bg-slate-50 px-2 py-1 rounded-full border border-slate-200/70">
-            <Clock size={12} className="text-[#1550aa]" />
+            <Clock size={12} className="text-trido" />
             <span>{elapsedSecs.toFixed(1)}s</span>
           </div>
           <button
@@ -141,13 +141,13 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
       {/* Middle: Active Phase & Document Indicator */}
       <div className="space-y-1.5">
         {attachedDocument && (
-          <div className="flex items-center gap-2 px-2.5 py-1 bg-blue-50/70 rounded-xl border border-blue-100 text-xs text-[#1550aa] font-semibold truncate">
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-blue-50/70 rounded-xl border border-blue-100 text-xs text-trido font-semibold truncate">
             <FileText size={13} className="shrink-0" />
             <span className="truncate">{attachedDocument.name}</span>
           </div>
         )}
         <div className="text-xs font-semibold text-slate-700 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#1550aa] animate-ping" />
+          <span className="w-1.5 h-1.5 rounded-full bg-trido animate-ping" />
           <span>{getPhaseText()}</span>
         </div>
       </div>
@@ -162,9 +162,9 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
               key={label}
               className={`px-2 py-1 rounded-full text-[10px] font-bold text-center transition-colors border ${
                 isCurrent
-                  ? 'bg-[#1550aa] text-white border-[#1550aa]'
+                  ? 'bg-trido text-white border-trido'
                   : isDone
-                  ? 'bg-[#ffcc00] text-[#0a1a3a] border-[#ffcc00]'
+                  ? 'bg-sun text-ink border-sun'
                   : 'bg-slate-50 text-slate-400 border-slate-200/70'
               }`}
             >
@@ -175,7 +175,7 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
       </div>
 
       {/* Rotating Pedagogical Insight */}
-      <div className="text-[11px] text-slate-500 font-medium bg-[#e4e3e0]/40 px-3 py-1.5 rounded-2xl border border-[#0a1a3a]/5 leading-snug">
+      <div className="text-[11px] text-slate-500 font-medium bg-paper/40 px-3 py-1.5 rounded-2xl border border-ink/5 leading-snug">
         {activeInsight}
       </div>
 
@@ -185,7 +185,7 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
           initial={{ left: "-35%", width: "35%" }}
           animate={{ left: "100%", width: "45%" }}
           transition={{ duration: 1.1, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute inset-y-0 bg-[#ffcc00] rounded-full"
+          className="absolute inset-y-0 bg-sun rounded-full"
         />
       </div>
     </motion.div>

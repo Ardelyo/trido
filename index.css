@@ -14,6 +14,14 @@
   --color-trido-deep: #0d3a80;
   --color-ink: #0a1a3a;
   --color-sun: #ffcc00;
+  --color-sun-soft: #ffd633;
+
+  /* Shape + elevation scale (use these instead of ad-hoc radii/shadows) */
+  --radius-control: 0.75rem;   /* buttons, inputs, chips */
+  --radius-surface: 1.25rem;   /* cards, panels, popovers */
+  --radius-sheet: 1.75rem;     /* docks, drawers, dialogs */
+  --shadow-float: 0 16px 48px rgba(10, 26, 58, 0.14);
+  --shadow-lift: 0 6px 20px rgba(10, 26, 58, 0.10);
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -96,6 +104,15 @@
 }
 
 @layer utilities {
+  /* Smartboard touch: minimum 44px hit area, no tap highlight, no accidental text selection */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
   .glass {
     @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm text-foreground;
   }
