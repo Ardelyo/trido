@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal, ThumbsUp, ThumbsDown, Zap, Pin } from 'lucide-react';
+import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal, ThumbsUp, ThumbsDown, Zap, Pin, Pencil } from 'lucide-react';
 import { ChatMessage } from '../types';
 import { toast } from '../utils/toast';
 import { submitLogFeedback } from '../services/aiService';
@@ -419,6 +419,16 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
           )}
         </div>
       </div>
+
+      {message.edits && message.edits.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2 max-w-[95%]" aria-label="Perubahan pada papan">
+          {message.edits.map((e, i) => (
+            <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-[11.5px] font-semibold">
+              <Pencil size={10} /> {e}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

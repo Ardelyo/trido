@@ -11,6 +11,13 @@
 - App is usable on phones and portrait/landscape tablets: header no longer clips, undo/redo/delete/zoom and page switcher are available on small canvases, voice bar fits narrow screens, sidebar closes after navigation and includes Share, floating tools clamp to the viewport, safe-area insets and `overscroll-behavior` set.
 - Canvas overlay layout is driven by container queries (`@4xl`), so it adapts to the canvas width (also fixes narrow desktop windows with the sidebar open); the desktop layout at >= 896px canvas width is unchanged.
 
+### AI precise editing
+- New `edit_component` tool (Express adapters + Vercel `api/ai/generate.ts`): one-operation edits instead of rewriting a component — documents (insert/replace/delete/move block, append to section), diagrams (add/rename/delete/move node for mermaid mindmap, flowchart and markmap), quizzes (question/options/correct answer, per-question), todo & attendance lists.
+- Pure, unit-tested engine in `utils/boardEdit.ts` (34 tests): deterministic results across models, ambiguity detection with candidate lists, 1-based indexes, sanitizer-safe diagrams.
+- The AI now receives an addressable outline of every component (block ids, node names, numbered items) and validation recovers from wrong ids instead of failing the turn.
+- Each AI turn is one transaction: one-tap **Batalkan** undo (`AiResultBar`), failure summary in chat, edit chips on replies, contextual suggestion chips, and live progress (n/m + current step) in the dynamic island.
+- Todo widget now follows/persists its config so AI and user edits stay in sync.
+
 ### Zoom & navigation (desktop)
 - Wheel zoom now works over DOM widgets as well as the canvas (Ctrl/Cmd+wheel and trackpad pinch always zoom and no longer trigger browser page-zoom; a plain wheel scrolls widget content first, then zooms the board).
 - Middle-button or Space+drag pans even when the cursor is over a widget.

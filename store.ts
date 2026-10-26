@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig, SupportedLanguage, SmartboardLayoutMode } from './types';
+import { AgentState, AiTransaction, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig, SupportedLanguage, SmartboardLayoutMode } from './types';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 import { findMatchingMindmapNode } from './utils/mindmapLayout';
 
@@ -124,6 +124,10 @@ interface AppStore extends AgentState {
   setAccuracy: (val: number) => void;
   setThinking: (thinking: boolean) => void;
   setActing: (acting: boolean) => void;
+  aiTransaction: AiTransaction | null;
+  setAiTransaction: (tx: AiTransaction | null) => void;
+  revertAiTransaction: () => void;
+  setRevertAiTransaction: (fn: () => void) => void;
   setClicking: (clicking: boolean) => void;
   setCurrentAction: (action: string | null) => void;
   setAgentMessage: (msg: string | null) => void;
@@ -572,6 +576,10 @@ export const useStore = create<AppStore>((set, get) => ({
   accuracy: 100,
   isThinking: false,
   isActing: false,
+  aiTransaction: null,
+  setAiTransaction: (tx) => set({ aiTransaction: tx }),
+  revertAiTransaction: () => {},
+  setRevertAiTransaction: (fn) => set({ revertAiTransaction: fn }),
   isClicking: false,
   currentAction: null,
   agentMessage: null,

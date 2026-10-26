@@ -72,12 +72,17 @@ export default async function handler(req: any, res: any) {
             const code = cfg.code ? ` code="${cfg.code.replace(/\n/g, ' ')}"` : cfg.markdown ? ` markdown="${cfg.markdown.replace(/\n/g, ' ')}"` : '';
             detail = `${code}`;
           }
-          return `  - [Widget ID: ${id}] ${d.componentType || 'Widget'} at X=${d.x || 0}, Y=${d.y || 0} title="${cfg.title || d.title || ''}"${detail}`;
+          const outline = typeof d.outline === 'string' && d.outline.trim()
+            ? '\n' + d.outline.split('\n').map((l: string) => '      ' + l).join('\n')
+            : '';
+          return `  - [Widget ID: ${id}] ${d.componentType || 'Widget'} at X=${d.x || 0}, Y=${d.y || 0} title="${cfg.title || d.title || ''}"${detail}${outline}`;
         }).join('\n')
       : '  (None)';
 
     const systemInstruction = `You are Trido, an autonomous agentic interactive whiteboard and pedagogical AI.
 You have FULL AUTONOMOUS COMPUTER USE capabilities to create, draw, move, and manipulate content on the whiteboard canvas.
+
+PRECISE EDITING: for any change to something already on the board (ubah, ganti, hapus, sisipkan, pindahkan, sambung, lanjutkan, tambah cabang), call edit_component with the component's exact Widget ID and ONE operation per call. Read the structure listed under each widget (block ids b1.., node names, numbered items) and quote names/ids exactly; indexes are 1-based. Never recreate or fully rewrite a component for a partial change. If the target is ambiguous or missing, ask one short clarifying question.
 
 CURRENT CANVAS STATE:
 - Viewport: width=${viewport.width}, height=${viewport.height}
@@ -268,6 +273,30 @@ CRITICAL EXECUTION RULES:
           }
         }
       },
+    {
+      name: "edit_component",
+      description: "PRECISE edit of ONE part of an existing component without rewriting it. PREFER this over update_component whenever the user wants to change, insert, delete, move, rename or continue part of existing content. Use the structure listed under 'Interactive components' (block ids b1.., node names, item numbers). Indexes are 1-based. One call = one operation; send several calls for several changes.\nDocuments/notes: insert_after(blockId|'start'|'end', text) · replace_block(blockId, text) · delete_block(blockId) · move_block(blockId, afterBlockId|'start') · append_to_section(target=heading, text).\nDiagrams (mindmap/markmap/flowchart): add_node(parent, text) · rename_node(target, text) · delete_node(target) · move_node(target, parent). Use the node's exact name.\nQuizzes: set_question(text, itemIndex?) · set_option(index, text) · add_option(text) · remove_option(index) · set_correct(index).\nTodo/attendance: add_item(text) · remove_item(index|target) · update_item(index|target, text?, value?) · toggle_item(index|target). For attendance value is H/I/S/A.",
+      parameters: {
+        type: "OBJECT",
+        properties: {
+          objectId: { type: "STRING", description: "Exact component ID from the 'Interactive components' list (e.g. web_123)" },
+          operation: {
+            type: "STRING",
+            enum: ["insert_after", "replace_block", "delete_block", "move_block", "append_to_section", "add_node", "rename_node", "delete_node", "move_node", "set_question", "set_option", "add_option", "remove_option", "set_correct", "add_item", "remove_item", "update_item", "toggle_item"],
+            description: "The single edit operation to apply"
+          },
+          blockId: { type: "STRING", description: "Document block id (b1, b2, …) — or 'start'/'end' for insert_after" },
+          afterBlockId: { type: "STRING", description: "move_block destination: place after this block id, or 'start'" },
+          target: { type: "STRING", description: "Exact existing node name / list item text / section heading to act on" },
+          parent: { type: "STRING", description: "Exact name of the parent node (add_node, move_node)" },
+          text: { type: "STRING", description: "New or replacement text. Markdown allowed for documents; several items/nodes may be separated by newlines" },
+          index: { type: "INTEGER", description: "1-based option / item number" },
+          itemIndex: { type: "INTEGER", description: "1-based question number for multi-question quizzes" },
+          value: { type: "STRING", description: "Extra value, e.g. attendance status H/I/S/A or done/not-done for a task" }
+        },
+        required: ["objectId", "operation"]
+      }
+    },
       {
         name: "modify_object",
         description: "Modify, recolor, resize, rename, or delete ANY object or element on the canvas. Target by elementText (label) or objectId.",

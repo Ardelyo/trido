@@ -1,3 +1,5 @@
+import { AiResultBar } from './components/AiResultBar';
+import { AiSuggestionChips } from './components/AiSuggestionChips';
 import { isElectronEnv, getElectron } from './utils/electron';
 import React, { useRef, useState, useEffect } from 'react';
 import { CanvasManager } from './components/CanvasManager';
@@ -784,6 +786,22 @@ const App: React.FC = () => {
                           {t('doneBtn', 'Selesai')}
                         </button>
                       </div>
+                    )}
+
+                    {/* Result of the last AI turn: what changed + one-tap undo */}
+                    <AiResultBar className="mb-2.5" />
+
+                    {/* Contextual next-step suggestions */}
+                    {!attachedDocument && !isThinking && (
+                      <AiSuggestionChips
+                        language={language}
+                        className="mb-2.5"
+                        onFill={(prompt) => setChatInputText(prompt)}
+                        onSend={async (prompt) => {
+                          useStore.getState().addMessage({ role: 'user', text: prompt });
+                          await processUserPrompt(prompt, canvasRef);
+                        }}
+                      />
                     )}
 
                     {/* Quick Document Action Pills (Only when document is attached) */}

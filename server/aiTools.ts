@@ -319,6 +319,30 @@ STEM_SIMULATION or INTERACTIVE_APP: {"title":"string","html":"HTML string with c
     }
   },
   {
+    name: "edit_component",
+    description: "PRECISE edit of ONE part of an existing component without rewriting it. PREFER this over update_component whenever the user wants to change, insert, delete, move, rename or continue part of existing content. Use the structure listed under 'Interactive components' (block ids b1.., node names, item numbers). Indexes are 1-based. One call = one operation; send several calls for several changes.\nDocuments/notes: insert_after(blockId|'start'|'end', text) · replace_block(blockId, text) · delete_block(blockId) · move_block(blockId, afterBlockId|'start') · append_to_section(target=heading, text).\nDiagrams (mindmap/markmap/flowchart): add_node(parent, text) · rename_node(target, text) · delete_node(target) · move_node(target, parent). Use the node's exact name.\nQuizzes: set_question(text, itemIndex?) · set_option(index, text) · add_option(text) · remove_option(index) · set_correct(index).\nTodo/attendance: add_item(text) · remove_item(index|target) · update_item(index|target, text?, value?) · toggle_item(index|target). For attendance value is H/I/S/A.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        objectId: { type: Type.STRING, description: "Exact component ID from the 'Interactive components' list (e.g. web_123)" },
+        operation: {
+          type: Type.STRING,
+          enum: ["insert_after", "replace_block", "delete_block", "move_block", "append_to_section", "add_node", "rename_node", "delete_node", "move_node", "set_question", "set_option", "add_option", "remove_option", "set_correct", "add_item", "remove_item", "update_item", "toggle_item"],
+          description: "The single edit operation to apply"
+        },
+        blockId: { type: Type.STRING, description: "Document block id (b1, b2, …) — or 'start'/'end' for insert_after" },
+        afterBlockId: { type: Type.STRING, description: "move_block destination: place after this block id, or 'start'" },
+        target: { type: Type.STRING, description: "Exact existing node name / list item text / section heading to act on" },
+        parent: { type: Type.STRING, description: "Exact name of the parent node (add_node, move_node)" },
+        text: { type: Type.STRING, description: "New or replacement text. Markdown allowed for documents; several items/nodes may be separated by newlines" },
+        index: { type: Type.INTEGER, description: "1-based option / item number" },
+        itemIndex: { type: Type.INTEGER, description: "1-based question number for multi-question quizzes" },
+        value: { type: Type.STRING, description: "Extra value, e.g. attendance status H/I/S/A or done/not-done for a task" }
+      },
+      required: ["objectId", "operation"]
+    }
+  },
+  {
     name: "modify_object",
     description: "Modify, recolor, resize, rename, restyle border, or delete ANY object or element on the canvas. Target by elementText (label) or objectId.",
     parameters: {
@@ -638,7 +662,10 @@ export const buildSystemInstruction = (
       } else if (elTitle) {
         detail = ` "${elTitle}"`;
       }
-      return `  - [${id}] ${type}${detail}`;
+      const outline = typeof el.outline === 'string' && el.outline.trim()
+        ? `\n${el.outline.split('\n').map((l: string) => `      ${l}`).join('\n')}`
+        : '';
+      return `  - [${id}] ${type}${detail}${outline}`;
     })
     .join('\n') || '  (none)';
 
@@ -764,6 +791,13 @@ Generate quiz based on current lesson topic (not generic)
 | Penjelasan panjang & rumus | add_component → DOCUMENT_PAGE |
 | Latihan soal interaktif | add_component → QUIZ_* |
 | Simulasi interaktif / game | add_interactive_app |
+
+## PRECISE EDITING (edit_component) — USE THIS FIRST FOR ANY CHANGE TO EXISTING CONTENT
+- For "ubah / ganti / hapus / sisipkan / pindahkan / sambung / lanjutkan / tambah cabang / perbaiki" on something already on the board, call **edit_component** with the component's exact objectId and ONE operation per call. Never recreate the component and never rewrite all of it.
+- Read the structure under "Interactive components" first: documents list blocks (b1, b2, …), diagrams list node names, quizzes list Q1/options, lists are numbered. Quote node names and block ids EXACTLY as listed. Indexes are 1-based.
+- "Sambung / lanjutkan / tambah detail": add_node under the correct parent (diagrams) or insert_after / append_to_section (documents). Keep everything that already exists.
+- If the request is ambiguous (two components could match, or the node/block does not exist), ask ONE short clarifying question instead of guessing.
+- Use update_component REPLACE only when the user explicitly wants the whole component regenerated.
 
 ## FULL WHITEBOARD EDITING & EXPERIMENTAL CAPABILITIES ("MENGEDIT SEMUA ELEMEN")
 You have full capability to mutate and update ANY object on the whiteboard without deleting and recreating it:
@@ -895,6 +929,29 @@ export const validateFunctionCalls = (
           continue;
         }
       }
+    }
+
+    if (call.name === 'edit_component') {
+      const validIds = Object.keys(domElements);
+      let id = call.args.objectId;
+      if (!id || (validIds.length > 0 && !validIds.includes(id))) {
+        // Recover from a title / sole-component instead of rejecting the whole turn
+        const title = String(call.args.componentTitle || call.args.objectId || '').toLowerCase();
+        const byTitle = title
+          ? validIds.filter(k => {
+              const t = String(domElements[k]?.title || domElements[k]?.config?.title || '').toLowerCase();
+              return t && (t.includes(title) || title.includes(t));
+            })
+          : [];
+        if (byTitle.length === 1) call.args.objectId = byTitle[0];
+        else if (!byTitle.length && validIds.length === 1) call.args.objectId = validIds[0];
+        else {
+          errors.push(`Call ${index}: edit_component objectId "${id ?? ''}" is missing or ambiguous. Valid: ${validIds.join(', ') || '(none)'}`);
+          continue;
+        }
+      }
+      if (call.args.index !== undefined) call.args.index = Number(call.args.index);
+      if (call.args.itemIndex !== undefined) call.args.itemIndex = Number(call.args.itemIndex);
     }
 
     if (call.name === 'update_component') {

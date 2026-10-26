@@ -299,7 +299,7 @@ export const DomOverlay: React.FC = () => {
         case 'PRESENSI':
           return <AttendanceTool config={el.config} />;
         case 'TODOLIST':
-          return <TodoListTool />;
+          return <TodoListTool config={el.config} onChange={(tasks) => useStore.getState().updateDomElement(el.id, { config: { ...(el.config || {}), tasks } })} />;
         case 'SPIN_WHEEL':
         case 'RODA_ACAK':
           return <SpinWheelTool config={el.config} />;

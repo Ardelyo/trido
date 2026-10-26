@@ -7,6 +7,7 @@ import { createLogger } from '../utils/logger';
 import { sounds } from '../utils/sounds';
 import { layoutMindmap, expandMindmapNodes, findMatchingMindmapNode, NODE_STYLE_CONFIG, MindmapInputNode, MindmapLayoutNode } from '../utils/mindmapLayout';
 import { sanitizeMermaidCode, cleanMermaidNodeLabel } from '../utils/mermaidSanitizer';
+import { describeComponentForAI } from '../utils/boardEdit';
 
 const logger = createLogger('gemini-brain');
 
@@ -474,6 +475,10 @@ const detectLessonStart = (prompt: string): ParsedLesson => {
   };
 };
 
+/** Attach an addressable outline (block ids / node names / item numbers) so the model can target edits precisely. */
+const withComponentOutlines = (doms: Record<string, any>): Record<string, any> =>
+  Object.fromEntries(Object.entries(doms || {}).map(([id, el]) => [id, { ...el, outline: describeComponentForAI(el) }]));
+
 export const useGeminiBrain = () => {
   const { setThinking, addAction, addLog, addMessage, setAgentMessage } = useStore();
   const isProcessingRef = React.useRef(false); // Ref Lock
@@ -695,7 +700,7 @@ ${jevDirective}
         inputDocMedia,
         storeState.messages.slice(-historyDepth).map(m => ({ role: m.role, text: m.text })),
         { current: storeState.currentPageIndex, total: storeState.pages.length },
-        storeState.domElements,
+        withComponentOutlines(storeState.domElements),
         intent,
         forceTools,
         lessonContextObj,
@@ -947,6 +952,22 @@ ${jevDirective}
             componentTitle: args.componentTitle,
             action: args.action || 'REPLACE',
             config: parsedUpdateConfig
+          };
+
+        } else if (call.name === 'edit_component') {
+          actionType = 'EDIT_COMPONENT';
+          payload = {
+            objectId: args.objectId || args.componentId,
+            componentTitle: args.componentTitle,
+            operation: args.operation,
+            blockId: args.blockId,
+            afterBlockId: args.afterBlockId,
+            target: args.target,
+            parent: args.parent,
+            text: args.text,
+            index: args.index,
+            itemIndex: args.itemIndex,
+            value: args.value
           };
 
         } else if (call.name === 'update_mindmap_node') {

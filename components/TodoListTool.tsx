@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from '../utils/translations';
 
@@ -8,28 +8,42 @@ interface Todo {
   completed: boolean;
 }
 
-export const TodoListTool: React.FC = () => {
+export const TodoListTool: React.FC<{ config?: any; onChange?: (tasks: Todo[]) => void }> = ({ config, onChange }) => {
   const { t, language } = useTranslation();
-  const [todos, setTodos] = useState<Todo[]>(() => [
+  const fromConfig = (cfg: any): Todo[] | null =>
+    Array.isArray(cfg?.tasks) && cfg.tasks.length >= 0 && cfg.tasks.every((t: any) => typeof t?.text === 'string')
+      ? cfg.tasks.map((t: any, i: number) => ({ id: String(t.id ?? `c${i}`), text: t.text, completed: !!t.completed }))
+      : null;
+  const [todos, setTodos] = useState<Todo[]>(() => fromConfig(config) ?? [
     { id: '1', text: language === 'en' ? 'Discuss Chapter 4' : 'Bahas Bab 4', completed: true },
     { id: '2', text: language === 'en' ? 'Math Exercises' : 'Latihan Soal Matematika', completed: false },
     { id: '3', text: language === 'en' ? 'Group Assignment' : 'Tugas Kelompok', completed: false },
   ]);
   const [input, setInput] = useState('');
 
+  // Stay in sync when the AI edits the list (edit_component)
+  useEffect(() => {
+    const next = fromConfig(config);
+    if (next) setTodos(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config?.tasks]);
+
+  // Persist user edits into the component config so the AI always edits the real, current list
+  const commit = (next: Todo[]) => { setTodos(next); onChange?.(next); };
+
   const addTodo = () => {
     if (input.trim()) {
-      setTodos([...todos, { id: Date.now().toString(), text: input.trim(), completed: false }]);
+      commit([...todos, { id: Date.now().toString(), text: input.trim(), completed: false }]);
       setInput('');
     }
   };
 
   const toggleTodo = (id: string) => {
-    setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    commit(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
   const deleteTodo = (id: string) => {
-    setTodos(todos.filter(t => t.id !== id));
+    commit(todos.filter(t => t.id !== id));
   };
 
   return (

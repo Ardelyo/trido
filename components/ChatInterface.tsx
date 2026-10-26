@@ -1,3 +1,5 @@
+import { AiResultBar } from './AiResultBar';
+import { useActionProgress } from '../hooks/useActionProgress';
 import { computeFitTransform, clampZoom, ZOOM_STEP } from '../utils/canvasView';
 import { getBoardContentBoundingBox } from '../utils/smartExport';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -82,6 +84,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   } = useStore();
 
   const liveAiStatus = useAiStatus();
+  const progress = useActionProgress();
+  const currentActionLabel = useStore(s => s.currentAction);
   const isOfflineMode = aiPreference === 'ollama' || liveAiStatus.mode === 'ollama';
   const activeModelDisplay = isOfflineMode
     ? (selectedOllamaModel || (liveAiStatus.mode === 'ollama' ? liveAiStatus.model : 'trido-model:latest') || 'trido-model:latest')
@@ -838,6 +842,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
             )}
           </AnimatePresence>
 
+          {/* What the AI just changed (+ undo) — sits right above the island */}
+          {!isAiDrawerOpen && <AiResultBar />}
+
           {/* Voice island bar — stays compact, never stretches sideways */}
           <AnimatePresence>
             {!isAiDrawerOpen && (
@@ -846,25 +853,38 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                  animate={{ opacity: 1, y: 0, scale: 1 }}
                  exit={{ opacity: 0, y: 20, scale: 0.95, pointerEvents: 'none' }}
                  transition={spring.snappy}
-                 className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-2.5 sm:py-3 max-w-[calc(100vw-1.5rem)] bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
+                 className="pointer-events-auto relative overflow-hidden flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-2.5 sm:py-3 max-w-[calc(100vw-1.5rem)] bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
               >
+                 {progress.active && progress.total > 0 && (
+                   <motion.div
+                     aria-hidden
+                     className="absolute left-0 bottom-0 h-[3px] bg-trido rounded-full"
+                     initial={false}
+                     animate={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
+                     transition={spring.smooth}
+                   />
+                 )}
                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <div className={`flex items-center justify-center text-blue-600 transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-blue-50/80 border border-blue-100 shadow-sm'}`}>
                        {isListening ? <AudioVisualizer isListening={isListening} audioData={audioData} /> :
                         isThinking ? <Loader2 size={20} className="animate-spin" /> :
+                        progress.active ? <Sparkles size={20} className="animate-pulse text-trido" /> :
                         isTranscribing ? <Activity size={20} className="animate-pulse" /> :
                         <Sparkles size={20} />}
                     </div>
                     <div className="flex flex-col min-w-0">
                        <span className="text-[13.5px] font-bold text-slate-800 leading-tight whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-none">
-                         {isThinking ? `${t('processingWithModel', 'Memproses dengan AI...')} (${activeModelDisplay})` :
+                         {progress.active && !isThinking ? `${t('applyingChanges', 'Menerapkan perubahan')}${progress.total > 1 ? ` ${progress.done + 1}/${progress.total}` : ''}` :
+                          isThinking ? `${t('processingWithModel', 'Memproses dengan AI...')} (${activeModelDisplay})` :
                           isTranscribing ? t('transcribingVoice', 'Menerjemahkan...') :
                           isListening ? (speechSupported ? t('listening', 'Mendengarkan...') : t('recordingVoice', 'Merekam...')) :
                           voiceNotice ? '⚠️ Perhatian' :
                           t('allSystemsReady', 'Semua Sistem Siap')}
                        </span>
                        <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-none">
-                         {isListening || isThinking ? (
+                         {progress.active && !isThinking ? (
+                            <span className="text-trido font-semibold">{currentActionLabel || 'Menyusun papan…'}</span>
+                         ) : isListening || isThinking ? (
                             <span className="flex gap-1.5 items-center">
                               <span className={isOfflineMode ? "text-emerald-600 font-bold" : "text-blue-600 font-bold"}>
                                 {activeModelDisplay} • {isOfflineMode ? 'Mode Offline (Ollama)' : 'Cloud Realtime'}
