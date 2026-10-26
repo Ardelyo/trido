@@ -4,6 +4,8 @@ import { getStroke } from 'perfect-freehand';
 import { useStore } from '../store';
 import { useAgentProcessor } from '../hooks/useAgentProcessor';
 import { useCanvasDrop } from '../hooks/useCanvasDrop';
+import { wheelZoomFactor, clampZoom, ZOOM_STEP, canScrollInDirection, computeFitTransform } from '../utils/canvasView';
+import { getBoardContentBoundingBox } from '../utils/smartExport';
 import { AgentCursor } from './AgentCursor';
 import { DomOverlay } from './DomOverlay';
 import { motion, AnimatePresence } from 'motion/react';
@@ -231,21 +233,27 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
         canvas.requestRenderAll();
       }
 
-      // Zoom Keyboard Shortcuts
-      if (e.key === '=' || e.key === '+') {
-        const zoom = Math.min(canvas.getZoom() * 1.1, 20);
-        canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, zoom);
+      // Zoom Keyboard Shortcuts (+ / - / 0, also with Ctrl/Cmd so the browser page-zoom never fights the board)
+      const zoomBy = (factor: number) => {
+        canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, clampZoom(canvas.getZoom() * factor));
         setViewport(canvas.getZoom(), [...canvas.viewportTransform]);
-      }
-      if (e.key === '-' || e.key === '_') {
-        const zoom = Math.max(canvas.getZoom() / 1.1, 0.01);
-        canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, zoom);
-        setViewport(canvas.getZoom(), [...canvas.viewportTransform]);
-      }
+      };
+      if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomBy(ZOOM_STEP); }
+      if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomBy(1 / ZOOM_STEP); }
       if (e.key === '0') {
+        e.preventDefault();
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         canvas.setZoom(1);
         setViewport(1, [1, 0, 0, 1, 0, 0]);
+      }
+      if (e.key === '1' && !(e.ctrlKey || e.metaKey)) {
+        // "1" = fit all content to screen
+        const fit = computeFitTransform(
+          getBoardContentBoundingBox(canvas, useStore.getState().domElements),
+          canvas.width, canvas.height,
+        );
+        canvas.setViewportTransform(fit.transform);
+        setViewport(fit.zoom, [...fit.transform]);
       }
 
       // Deletion
@@ -321,22 +329,53 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       }
     });
 
-    canvas.on('mouse:wheel', function(opt: any) {
-      if (isViewerUrl) {
-         opt.e.preventDefault();
-         opt.e.stopPropagation();
-         return;
-      }
-      const delta = opt.e.deltaY;
-      let zoom = canvas.getZoom();
-      zoom *= 0.999 ** delta;
-      if (zoom > 20) zoom = 20;
-      if (zoom < 0.01) zoom = 0.01;
-      canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
-      opt.e.preventDefault();
-      opt.e.stopPropagation();
+    // Zoom / pan over BOTH the canvas and DOM widgets. Widgets sit above the canvas, so a wheel
+    // handler on the fabric canvas alone never fires over them — that made zooming "stick".
+    // Capture phase on the stage container lets us decide first:
+    //  • Ctrl/Cmd+wheel (and trackpad pinch) always zooms, page zoom is suppressed.
+    //  • Plain wheel over a widget keeps scrolling the widget's content until it hits the end,
+    //    then zooms the board instead of doing nothing.
+    const stage = containerRef.current;
+    const handleStageWheel = (e: WheelEvent) => {
+      const target = e.target as Element | null;
+      const widget = target?.closest?.('[data-widget-root]') ?? null;
+      if (isViewerUrl) { if (!widget) e.preventDefault(); return; }
+      const zoomIntent = e.ctrlKey || e.metaKey;
+      if (widget && !zoomIntent && canScrollInDirection(target, widget, e.deltaY, e.deltaX)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = stage!.getBoundingClientRect();
+      canvas.zoomToPoint(
+        { x: e.clientX - rect.left, y: e.clientY - rect.top },
+        clampZoom(canvas.getZoom() * wheelZoomFactor(e)),
+      );
       setViewport(canvas.getZoom(), [...canvas.viewportTransform]);
-    });
+    };
+    stage?.addEventListener('wheel', handleStageWheel, { passive: false, capture: true });
+
+    // Pan while the cursor is over a widget (middle button, or Space + drag) — fabric never sees those events.
+    const handleStagePanStart = (e: MouseEvent) => {
+      if (isViewerUrl) return;
+      const widget = (e.target as Element | null)?.closest?.('[data-widget-root]');
+      if (!widget || !(e.button === 1 || (e.button === 0 && isSpaceDown))) return;
+      e.preventDefault();
+      e.stopPropagation();
+      let lx = e.clientX, ly = e.clientY;
+      const move = (m: MouseEvent) => {
+        const vpt = canvas.viewportTransform;
+        vpt[4] += m.clientX - lx;
+        vpt[5] += m.clientY - ly;
+        lx = m.clientX; ly = m.clientY;
+        canvas.setViewportTransform(vpt);
+        setViewport(canvas.getZoom(), [...vpt]);
+      };
+      const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+    };
+    stage?.addEventListener('mousedown', handleStagePanStart, { capture: true });
+    // Middle-click would otherwise start browser autoscroll
+    stage?.addEventListener('auxclick', (e) => { if (e.button === 1) e.preventDefault(); });
 
     canvas.on('touch:gesture', function(opt: any) {
       if (opt.e.touches && opt.e.touches.length === 2) {
@@ -718,6 +757,8 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       canvas.dispose();
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('orientationchange', resizeCanvas);
+      stage?.removeEventListener('wheel', handleStageWheel, { capture: true } as EventListenerOptions);
+      stage?.removeEventListener('mousedown', handleStagePanStart, { capture: true } as EventListenerOptions);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('removeCanvasObject', handleRemoteRemove);

@@ -1,3 +1,5 @@
+import { computeFitTransform, clampZoom, ZOOM_STEP } from '../utils/canvasView';
+import { getBoardContentBoundingBox } from '../utils/smartExport';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../store';
 import { useGeminiBrain } from '../hooks/useGeminiBrain';
@@ -145,18 +147,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
-    let newZoom = canvas.getZoom();
-    if (direction === 'in') newZoom = Math.min(newZoom * 1.1, 20);
-    else if (direction === 'out') newZoom = Math.max(newZoom / 1.1, 0.01);
-    else newZoom = 1;
 
     if (direction === 'reset') {
-      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-      canvas.setZoom(1);
-    } else {
-      canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, newZoom);
+      // "Paskan ke Layar": fit all content (falls back to 100% on an empty board)
+      const fit = computeFitTransform(
+        getBoardContentBoundingBox(canvas, useStore.getState().domElements),
+        canvas.width, canvas.height,
+      );
+      canvas.setViewportTransform(fit.transform);
+      setViewport(fit.zoom, [...fit.transform]);
+      return;
     }
-    setViewport(newZoom, [...canvas.viewportTransform]);
+
+    const newZoom = clampZoom(direction === 'in' ? canvas.getZoom() * ZOOM_STEP : canvas.getZoom() / ZOOM_STEP);
+    canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, newZoom);
+    setViewport(canvas.getZoom(), [...canvas.viewportTransform]);
   };
   const { processUserPrompt } = useGeminiBrain();
 

@@ -376,6 +376,7 @@ export const DomOverlay: React.FC = () => {
           return (
             <div
               key={el.id}
+              data-widget-root=""
               className={`absolute flex flex-col overflow-hidden rounded-sheet bg-white border-2 will-change-transform select-none ${
                 isActing ? 'opacity-50' : 'opacity-100'
               } ${
