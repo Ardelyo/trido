@@ -55,9 +55,9 @@ export const TodoListTool: React.FC<{ config?: any; onChange?: (tasks: Todo[]) =
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addTodo()}
           placeholder={t('todoPlaceholder', 'Tambah tugas baru...')}
-          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium outline-none focus:border-blue-500"
+          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium outline-none focus:border-trido/50"
         />
-        <button onClick={addTodo} className="w-10 h-10 bg-blue-600 text-white flex items-center justify-center rounded-xl shadow-md hover:bg-blue-700 active:scale-95 transition-all">
+        <button onClick={addTodo} className="w-10 h-10 bg-trido text-white flex items-center justify-center rounded-xl shadow-md hover:bg-trido-deep active:scale-95 transition-all">
           <Plus size={18} />
         </button>
       </div>
@@ -66,7 +66,7 @@ export const TodoListTool: React.FC<{ config?: any; onChange?: (tasks: Todo[]) =
           <div key={todo.id} className={`flex items-center gap-3 p-3 rounded-xl border bg-white shadow-sm transition-all group ${todo.completed ? 'border-slate-100 opacity-60' : 'border-slate-200'}`}>
             <button 
               onClick={() => toggleTodo(todo.id)}
-              className={`w-6 h-6 rounded-md flex items-center justify-center border transition-colors shrink-0 ${todo.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-blue-500'}`}
+              className={`w-6 h-6 rounded-md flex items-center justify-center border transition-colors shrink-0 ${todo.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-trido/50'}`}
             >
               {todo.completed && <Check size={14} strokeWidth={3} />}
             </button>

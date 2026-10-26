@@ -22,7 +22,7 @@ export interface MindmapLayoutNode extends MindmapInputNode {
 
 // Visual dimensions by style
 export const NODE_STYLE_CONFIG: Record<string, { fill: string; width: number; height: number }> = {
-  MAIN_TOPIC: { fill: '#4F46E5', width: 260, height: 100 },
+  MAIN_TOPIC: { fill: '#1550aa', width: 260, height: 100 },
   SUBTOPIC:   { fill: '#0EA5E9', width: 210, height: 80  },
   DETAIL:     { fill: '#475569', width: 170, height: 60  },
   HIGHLIGHT:  { fill: '#F59E0B', width: 210, height: 80  },

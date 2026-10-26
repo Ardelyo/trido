@@ -1047,20 +1047,20 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={tween.fast}
-            className="absolute inset-4 z-50 pointer-events-none rounded-sheet border-3 border-dashed border-indigo-500 bg-indigo-50/80 backdrop-blur-md flex flex-col items-center justify-center gap-4 text-indigo-950 shadow-2xl"
+            className="absolute inset-4 z-50 pointer-events-none rounded-sheet border-3 border-dashed border-trido/50 bg-trido/5 backdrop-blur-md flex flex-col items-center justify-center gap-4 text-ink shadow-2xl"
           >
-            <div className="w-16 h-16 rounded-sheet bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 animate-bounce">
+            <div className="w-16 h-16 rounded-sheet bg-trido text-white flex items-center justify-center shadow-lg shadow-trido/30 animate-bounce">
               <UploadCloud size={32} />
             </div>
             <div className="text-center space-y-1">
-              <h3 className="text-xl font-extrabold text-indigo-900 font-sans">
+              <h3 className="font-display text-xl font-extrabold text-ink font-sans">
                 Lepaskan File di Kanvas
               </h3>
-              <p className="text-xs text-indigo-700 font-medium max-w-sm">
+              <p className="text-xs text-trido-deep font-medium max-w-sm">
                 Tarik gambar (.png, .jpg), dokumen (.pdf, .docx), atau catatan (.md) untuk ditaruh langsung ke posisi kursor.
               </p>
             </div>
-            <div className="flex items-center gap-3 text-[11px] font-bold text-indigo-600 bg-white/80 px-4 py-1.5 rounded-full border border-indigo-200">
+            <div className="flex items-center gap-3 text-[11px] font-bold text-trido bg-white/80 px-4 py-1.5 rounded-full border border-trido/20">
               <span className="flex items-center gap-1"><ImageIcon size={12} /> Gambar</span>
               <span>•</span>
               <span className="flex items-center gap-1"><Sparkles size={12} /> Mermaid Mindmap</span>

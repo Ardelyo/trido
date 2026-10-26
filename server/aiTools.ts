@@ -187,7 +187,7 @@ export const tools: FunctionDeclaration[] = [
         },
         strokeColor: {
           type: Type.STRING,
-          description: "Hex stroke color (default #3B82F6)"
+          description: "Hex stroke color (default #1550aa)"
         }
       }
     }
@@ -363,7 +363,7 @@ STEM_SIMULATION or INTERACTIVE_APP: {"title":"string","html":"HTML string with c
         },
         value: {
           type: Type.STRING,
-          description: "New value: new text for UPDATE_TEXT, hex fill color for CHANGE_COLOR (e.g. #10B981), hex border for CHANGE_STROKE (e.g. #3B82F6), dimensions (e.g. '500x400') for RESIZE, or grid position"
+          description: "New value: new text for UPDATE_TEXT, hex fill color for CHANGE_COLOR (e.g. #10B981), hex border for CHANGE_STROKE (e.g. #1550aa), dimensions (e.g. '500x400') for RESIZE, or grid position"
         }
       },
       required: ["action"]
@@ -514,7 +514,7 @@ STEM_SIMULATION or INTERACTIVE_APP: {"title":"string","html":"HTML string with c
         y: { type: Type.NUMBER, description: "Center Y position" },
         width: { type: Type.NUMBER, description: "Width in pixels" },
         height: { type: Type.NUMBER, description: "Height in pixels" },
-        fill: { type: Type.STRING, description: "Hex fill color (e.g. #3b82f6)" },
+        fill: { type: Type.STRING, description: "Hex fill color (e.g. #1550aa)" },
         strokeColor: { type: Type.STRING, description: "Hex stroke/border color (optional)" },
         strokeWidth: { type: Type.NUMBER, description: "Stroke line width in pixels (optional)" },
         text: { type: Type.STRING, description: "Optional text label inside shape" }
@@ -812,7 +812,7 @@ You have full capability to mutate and update ANY object on the whiteboard witho
 
 2. **Mengedit Bentuk & Shape (modify_object)**:
    - Recolor fill: action "CHANGE_COLOR", value "#10B981"
-   - Restyle stroke/border: action "CHANGE_STROKE", value "#3B82F6"
+   - Restyle stroke/border: action "CHANGE_STROKE", value "#1550aa"
    - Edit text label: action "UPDATE_TEXT", value "Teks Baru"
    - Resize geometry: action "RESIZE", value "600x400"
    - Reposition: action "MOVE_TO_GRID", value "TOP_RIGHT"

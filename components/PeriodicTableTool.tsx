@@ -22,7 +22,7 @@ const getTypeColor = (type: string) => {
     case 'alkaline': return 'bg-amber-100 text-amber-800 border-amber-200';
     case 'metalloid': return 'bg-teal-100 text-teal-800 border-teal-200';
     case 'halogen': return 'bg-purple-100 text-purple-800 border-purple-200';
-    default: return 'bg-slate-100 text-slate-800 border-slate-200';
+    default: return 'bg-slate-100 text-ink border-slate-200';
   }
 };
 
@@ -30,7 +30,7 @@ export const PeriodicTableTool: React.FC = () => {
   return (
     <div className="flex flex-col h-full bg-white font-sans overflow-auto p-4 custom-scrollbar">
       <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-4 text-center">
-         <div className="font-extrabold text-slate-800 text-lg">Tabel Periodik Mini</div>
+         <div className="font-extrabold text-ink text-lg">Tabel Periodik Mini</div>
          <div className="text-xs text-slate-500 mt-1">Interaktif (Sampel Data)</div>
       </div>
       <div className="grid grid-cols-8 gap-2">

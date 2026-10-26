@@ -550,7 +550,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
 
           if (typeof sx === 'number' && typeof sy === 'number' && typeof tx === 'number' && typeof ty === 'number') {
             await execute((sx + tx) / 2, (sy + ty) / 2, isArrow ? 'Drawing Arrow...' : 'Drawing Line...', () => {
-              const effectiveColor = strokeColor || '#3B82F6';
+              const effectiveColor = strokeColor || '#1550aa';
               const effectiveWidth = strokeWidth || 3;
               const hasArrow = isArrow !== false && (!lineStyle || lineStyle === 'ARROW_STRAIGHT' || lineStyle === 'ARROW_CURVED');
               let pathStr = lineStyle === 'ARROW_CURVED'
@@ -799,7 +799,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                       const pathStr = `M ${parent.x} ${parent.y} L ${node.x} ${node.y}`;
                       const path = new window.fabric.Path(pathStr, {
                         fill: 'transparent',
-                        stroke: '#3B82F6',
+                        stroke: '#1550aa',
                         strokeWidth: 2.5,
                         strokeLineCap: 'round',
                         id: `path_${Date.now()}_${Math.random()}`
@@ -973,7 +973,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                     const pathStr = `M ${parent.x} ${parent.y} L ${node.x} ${node.y}`;
                     const path = new window.fabric.Path(pathStr, {
                       fill: 'transparent',
-                      stroke: '#3B82F6',
+                      stroke: '#1550aa',
                       strokeWidth: 2.5,
                       strokeLineCap: 'round',
                       id: `path_${Date.now()}_${Math.random()}`

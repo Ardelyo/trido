@@ -78,7 +78,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   <Download size={20} strokeWidth={2.4} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-ink">
+                  <h3 className="font-display text-base font-extrabold text-ink">
                     Pusat Ekspor & Impor Papan Tulis
                   </h3>
                   <p className="text-xs text-slate-500 font-medium">
@@ -105,7 +105,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                 className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   activeTab === 'visual'
                     ? 'bg-white text-trido shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 hover:text-ink'
                 }`}
               >
                 <ImageIcon size={15} />
@@ -118,7 +118,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                 className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   activeTab === 'project'
                     ? 'bg-white text-trido shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 hover:text-ink'
                 }`}
               >
                 <FolderUp size={15} />
@@ -131,7 +131,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                 className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
                   activeTab === 'objects'
                     ? 'bg-white text-trido shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 hover:text-ink'
                 }`}
               >
                 <Sparkles size={15} />
@@ -238,11 +238,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-trido/40 transition-all space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-trido flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-xl bg-trido/5 text-trido flex items-center justify-center">
                             <ImageIcon size={18} />
                           </div>
                           <div>
-                            <h4 className="font-extrabold text-sm text-ink">Gambar PNG Berkualitas Tinggi</h4>
+                            <h4 className="font-display font-extrabold text-sm text-ink">Gambar PNG Berkualitas Tinggi</h4>
                             <p className="text-[11px] text-slate-500 font-medium">Anti-layar hitam, resolusi tajam untuk presentasi</p>
                           </div>
                         </div>
@@ -255,7 +255,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                               type="button"
                               onClick={() => setMultiplier(m)}
                               className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
-                                multiplier === m ? 'bg-trido text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                                multiplier === m ? 'bg-trido text-white shadow-2xs' : 'text-slate-600 hover:text-ink'
                               }`}
                             >
                               {m === 4 ? '4K' : `${m}x`}
@@ -292,7 +292,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                           <FileText size={18} />
                         </div>
                         <div>
-                          <h4 className="font-extrabold text-sm text-ink">Dokumen PDF Siap Cetak (A4)</h4>
+                          <h4 className="font-display font-extrabold text-sm text-ink">Dokumen PDF Siap Cetak (A4)</h4>
                           <p className="text-[11px] text-slate-500 font-medium">Layout landscape rapi untuk lembar kerja & hand-out siswa</p>
                         </div>
                       </div>
@@ -301,7 +301,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                         type="button"
                         disabled={isExportingPdf}
                         onClick={handleExportPDF}
-                        className="py-2 px-4 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                        className="py-2 px-4 bg-white hover:bg-slate-100 border border-slate-300 text-ink font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
                       >
                         <Printer size={14} />
                         <span>{isExportingPdf ? 'Menyusun...' : 'Unduh PDF'}</span>
@@ -315,7 +315,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                           <FileCode size={18} />
                         </div>
                         <div>
-                          <h4 className="font-extrabold text-sm text-ink">Vektor Skalabel SVG</h4>
+                          <h4 className="font-display font-extrabold text-sm text-ink">Vektor Skalabel SVG</h4>
                           <p className="text-[11px] text-slate-500 font-medium">Dapat dibuka & diedit kembali di Canva, Figma, Illustrator</p>
                         </div>
                       </div>
@@ -323,7 +323,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                       <button
                         type="button"
                         onClick={handleExportSVG}
-                        className="py-2 px-4 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                        className="py-2 px-4 bg-white hover:bg-slate-100 border border-slate-300 text-ink font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
                       >
                         <ExternalLink size={14} />
                         <span>Unduh SVG</span>
@@ -340,10 +340,10 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     {/* Backup Section */}
                     <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-left">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-blue-100 text-trido flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-xl bg-trido/10 text-trido flex items-center justify-center">
                           <Download size={16} />
                         </div>
-                        <h4 className="font-extrabold text-sm text-ink">Cadangkan Proyek Lengkap</h4>
+                        <h4 className="font-display font-extrabold text-sm text-ink">Cadangkan Proyek Lengkap</h4>
                       </div>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
                         Simpan seluruh status kanvas, halaman, elemen interaktif, dan riwayat obrolan ke berkas tunggal <code>.trido</code>.
@@ -364,7 +364,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                         <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                           <ImageIcon size={16} />
                         </div>
-                        <h4 className="font-extrabold text-sm text-ink">Sisipkan Gambar ke Papan</h4>
+                        <h4 className="font-display font-extrabold text-sm text-ink">Sisipkan Gambar ke Papan</h4>
                       </div>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
                         Masukkan diagram, foto materi pelajaran, atau bagan (PNG, JPG, SVG) langsung ke posisi tengah papan aktif.
@@ -372,7 +372,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                       <button
                         type="button"
                         onClick={() => imageFileInputRef.current?.click()}
-                        className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 border border-slate-300 text-ink font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <Upload size={15} />
                         <span>Pilih Gambar dari Komputer</span>
@@ -381,12 +381,12 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                   </div>
 
                   {/* Import Dropzone Area */}
-                  <div className="p-6 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 hover:bg-blue-50/30 hover:border-trido transition-all text-center space-y-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-trido flex items-center justify-center mx-auto shadow-2xs">
+                  <div className="p-6 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 hover:bg-trido/2 hover:border-trido transition-all text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-trido/5 text-trido flex items-center justify-center mx-auto shadow-2xs">
                       <FolderUp size={24} />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="font-extrabold text-sm text-ink">
+                      <h4 className="font-display font-extrabold text-sm text-ink">
                         Pulihkan / Buka Berkas Proyek Trido
                       </h4>
                       <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto">
@@ -397,7 +397,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     <button
                       type="button"
                       onClick={() => projectFileInputRef.current?.click()}
-                      className="px-5 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold text-xs rounded-xl transition-colors cursor-pointer shadow-2xs"
+                      className="px-5 py-2 bg-white hover:bg-slate-100 border border-slate-300 text-ink font-bold text-xs rounded-xl transition-colors cursor-pointer shadow-2xs"
                     >
                       Jelajahi Berkas Cadangan (.trido)
                     </button>
@@ -406,7 +406,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     {pendingImportData && (
                       <div className="mt-4 p-4 bg-white rounded-2xl border-2 border-trido text-left space-y-3 shadow-md max-w-lg mx-auto">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] uppercase font-bold text-trido bg-blue-50 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] uppercase font-bold text-trido bg-trido/5 px-2 py-0.5 rounded-full">
                             Berkas Siap Dipulihkan
                           </span>
                           <span className="text-xs text-slate-400 font-mono">{pendingImportData.sizeKb} KB</span>
@@ -429,7 +429,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                           <button
                             type="button"
                             onClick={() => setPendingImportData(null)}
-                            className="py-2 px-3 text-slate-500 hover:text-slate-800 text-xs font-bold cursor-pointer"
+                            className="py-2 px-3 text-slate-500 hover:text-ink text-xs font-bold cursor-pointer"
                           >
                             Batal
                           </button>
@@ -455,9 +455,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     <div key={el.id} className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center gap-2">
                         <GitBranch size={16} className="text-trido" />
-                        <h4 className="font-extrabold text-sm text-ink">{el.config?.title || 'Diagram Mermaid'}</h4>
+                        <h4 className="font-display font-extrabold text-sm text-ink">{el.config?.title || 'Diagram Mermaid'}</h4>
                       </div>
-                      <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-slate-800 max-h-32 overflow-y-auto custom-scrollbar border border-slate-200 whitespace-pre-wrap">
+                      <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-ink max-h-32 overflow-y-auto custom-scrollbar border border-slate-200 whitespace-pre-wrap">
                         {el.config?.code || ''}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -493,9 +493,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
                       <div className="flex items-center gap-2">
                         <GitBranch size={16} className="text-trido" />
-                        <h4 className="font-extrabold text-sm text-ink">Diagram Mindmap Kanvas ({detected.mindmap.rootText})</h4>
+                        <h4 className="font-display font-extrabold text-sm text-ink">Diagram Mindmap Kanvas ({detected.mindmap.rootText})</h4>
                       </div>
-                      <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-slate-800 max-h-32 overflow-y-auto custom-scrollbar border border-slate-200 whitespace-pre-wrap">
+                      <div className="p-3 bg-slate-50 rounded-xl font-mono text-xs text-ink max-h-32 overflow-y-auto custom-scrollbar border border-slate-200 whitespace-pre-wrap">
                         {exportMindmapToMermaid(activeMindmapNodes)}
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -546,7 +546,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <CheckSquare size={16} className="text-trido" />
-                          <h4 className="font-extrabold text-sm text-ink">Kuis & Evaluasi ({detected.quizzes.length})</h4>
+                          <h4 className="font-display font-extrabold text-sm text-ink">Kuis & Evaluasi ({detected.quizzes.length})</h4>
                         </div>
                         <button
                           type="button"
@@ -585,7 +585,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
                       <div className="flex items-center gap-2">
                         <FileText size={16} className="text-trido" />
-                        <h4 className="font-extrabold text-sm text-ink">Dokumen & Catatan ({detected.documents.length})</h4>
+                        <h4 className="font-display font-extrabold text-sm text-ink">Dokumen & Catatan ({detected.documents.length})</h4>
                       </div>
                       {detected.documents.map((doc) => (
                         <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
@@ -623,7 +623,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({ isOpen, onClose, can
                     <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2.5">
                       <div className="flex items-center gap-2">
                         <FileCode size={16} className="text-trido" />
-                        <h4 className="font-extrabold text-sm text-ink">Simulasi & Aplikasi Mini</h4>
+                        <h4 className="font-display font-extrabold text-sm text-ink">Simulasi & Aplikasi Mini</h4>
                       </div>
                       {detected.apps.filter(a => a.html).map((app) => (
                         <div key={app.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">

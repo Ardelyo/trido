@@ -57,13 +57,13 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
           <div className="flex bg-slate-950/50 p-1 rounded-lg">
             <button 
               onClick={() => setActiveTab('PREVIEW')}
-              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${activeTab === 'PREVIEW' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${activeTab === 'PREVIEW' ? 'bg-trido text-white shadow-lg shadow-trido/50/20' : 'text-slate-400 hover:text-slate-200'}`}
             >
               <div className="flex items-center gap-1.5"><Eye size={12} /> PREVIEW</div>
             </button>
             <button 
               onClick={() => setActiveTab('CODE')}
-              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${activeTab === 'CODE' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${activeTab === 'CODE' ? 'bg-trido text-white shadow-lg shadow-trido/50/20' : 'text-slate-400 hover:text-slate-200'}`}
             >
               <div className="flex items-center gap-1.5"><Code size={12} /> CODE</div>
             </button>
@@ -72,8 +72,8 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
           <div className="h-4 w-[1px] bg-slate-700" />
           
           <div className="flex gap-2">
-            <button onClick={() => setDevice('DESKTOP')} className={`p-1.5 rounded hover:bg-slate-700 transition ${device === 'DESKTOP' ? 'text-indigo-400' : 'text-slate-500'}`} title="Desktop View"><Monitor size={14} /></button>
-            <button onClick={() => setDevice('MOBILE')} className={`p-1.5 rounded hover:bg-slate-700 transition ${device === 'MOBILE' ? 'text-indigo-400' : 'text-slate-500'}`} title="Mobile View"><Smartphone size={14} /></button>
+            <button onClick={() => setDevice('DESKTOP')} className={`p-1.5 rounded hover:bg-slate-700 transition ${device === 'DESKTOP' ? 'text-trido/70' : 'text-slate-500'}`} title="Desktop View"><Monitor size={14} /></button>
+            <button onClick={() => setDevice('MOBILE')} className={`p-1.5 rounded hover:bg-slate-700 transition ${device === 'MOBILE' ? 'text-trido/70' : 'text-slate-500'}`} title="Mobile View"><Smartphone size={14} /></button>
           </div>
         </div>
         
@@ -134,7 +134,7 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
             >
               <div className="space-y-6 max-w-4xl mx-auto">
                 <section>
-                  <label className="text-indigo-400 text-[10px] font-black uppercase tracking-widest mb-2 block">index.html</label>
+                  <label className="text-trido/70 text-[10px] font-black uppercase tracking-widest mb-2 block">index.html</label>
                   <pre className="bg-slate-950 p-4 rounded-xl text-slate-300 border border-slate-800 overflow-x-auto">
                     <code>{config.html}</code>
                   </pre>
@@ -162,7 +162,7 @@ export const AppBuilderTool: React.FC<AppBuilderToolProps> = ({ config }) => {
       </div>
 
       {/* Footer bar */}
-      <div className="h-6 bg-indigo-600 px-3 flex items-center justify-between">
+      <div className="h-6 bg-trido px-3 flex items-center justify-between">
          <div className="text-[9px] font-bold text-white uppercase tracking-tighter">APP_READY: {config.title || 'Untitled App'}</div>
          <div className="flex gap-2">
            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

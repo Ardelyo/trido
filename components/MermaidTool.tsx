@@ -226,18 +226,18 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
   };
 
   return (
-    <div className="flex flex-col w-full h-full bg-[#fafafa] text-slate-800 overflow-hidden font-sans select-none relative">
+    <div className="flex flex-col w-full h-full bg-[#fafafa] text-ink overflow-hidden font-sans select-none relative">
       {/* Code Editor Drawer */}
       {isEditing && (
         <div className="bg-slate-900 text-slate-100 p-3 border-b border-slate-800 text-xs flex flex-col gap-2 shrink-0 z-30">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[11px] text-slate-400 flex items-center gap-1.5">
-              <Sparkles size={12} className="text-indigo-400" /> Editor Kode Mermaid:
+              <Sparkles size={12} className="text-trido/70" /> Editor Kode Mermaid:
             </span>
             <div className="flex items-center gap-1.5">
               <button
                 onClick={handleSwitchToMindmapTemplate}
-                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-indigo-300 transition cursor-pointer"
+                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-trido/30 transition cursor-pointer"
               >
                 Template Mindmap
               </button>
@@ -249,7 +249,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
               </button>
               <button
                 onClick={handleSaveCodeEdit}
-                className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] transition cursor-pointer flex items-center gap-1"
+                className="px-2.5 py-1 rounded bg-trido hover:bg-trido/50 text-white font-bold text-[10px] transition cursor-pointer flex items-center gap-1"
               >
                 <Check size={11} /> Terapkan
               </button>
@@ -259,7 +259,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
             value={activeCode}
             onChange={(e) => setActiveCode(e.target.value)}
             rows={5}
-            className="w-full bg-slate-950 font-mono text-[11px] p-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-indigo-500 text-slate-200 resize-y"
+            className="w-full bg-slate-950 font-mono text-[11px] p-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-trido/50 text-slate-200 resize-y"
             placeholder="mindmap&#10;  root((Judul))&#10;    Cabang 1&#10;      Detail A"
           />
         </div>
@@ -279,7 +279,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setIsEditing(true)}
-                className="px-3 py-1 bg-white hover:bg-indigo-50 border border-indigo-300 text-indigo-700 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                className="px-3 py-1 bg-white hover:bg-trido/5 border border-trido/30 text-trido-deep rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
               >
                 <Edit3 size={12} /> Buka Editor
               </button>
@@ -305,7 +305,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
         <button
           onClick={() => setIsEditing(!isEditing)}
           className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer ${
-            isEditing ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
+            isEditing ? 'bg-trido/10 text-trido-deep' : 'text-slate-600 hover:bg-slate-100'
           }`}
           title="Edit Kode Mermaid"
         >
@@ -315,7 +315,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
         <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
         <button
           onClick={() => setZoom(z => Math.max(0.4, z - 0.15))}
-          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-ink transition cursor-pointer"
           title="Perkecil"
         >
           <ZoomOut size={13} />
@@ -329,7 +329,7 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
         </button>
         <button
           onClick={() => setZoom(z => Math.min(2.5, z + 0.15))}
-          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-ink transition cursor-pointer"
           title="Perbesar"
         >
           <ZoomIn size={13} />
@@ -337,14 +337,14 @@ export const MermaidTool: React.FC<MermaidToolProps> = ({ id, config }) => {
         <div className="w-[1px] h-3.5 bg-slate-200 mx-0.5" />
         <button
           onClick={handleCopyCode}
-          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-ink transition cursor-pointer"
           title="Salin Kode Mermaid"
         >
           {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
         </button>
         <button
           onClick={handleExportSvg}
-          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition cursor-pointer"
+          className="p-1 rounded-md text-slate-500 hover:bg-slate-100 hover:text-ink transition cursor-pointer"
           title="Unduh Vektor SVG"
         >
           <Download size={13} />

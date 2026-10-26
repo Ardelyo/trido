@@ -20,7 +20,7 @@ export const QuizEssay: React.FC<QuizEssayProps> = ({ config }) => {
         <span className="text-sm font-bold text-amber-600 uppercase tracking-wide">Esai</span>
       </div>
 
-      <h3 className="mb-4 text-lg font-bold text-slate-800">
+      <h3 className="font-display mb-4 text-lg font-bold text-ink">
         {config?.question || 'Tuliskan jawaban Anda di bawah ini.'}
       </h3>
       

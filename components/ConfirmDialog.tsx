@@ -49,12 +49,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           >
             <div className="flex items-start gap-4 mb-6">
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                confirmVariant === 'danger' ? 'bg-rose-50' : 'bg-blue-50'
+                confirmVariant === 'danger' ? 'bg-rose-50' : 'bg-trido/5'
               }`}>
-                <AlertTriangle size={20} className={confirmVariant === 'danger' ? 'text-rose-500' : 'text-blue-500'} />
+                <AlertTriangle size={20} className={confirmVariant === 'danger' ? 'text-rose-500' : 'text-trido/50'} />
               </div>
               <div>
-                <h3 className="font-black text-slate-900 text-[16px] leading-tight mb-1.5">{title}</h3>
+                <h3 className="font-display font-black text-ink text-[16px] leading-tight mb-1.5">{title}</h3>
                 <p className="text-[13.5px] text-slate-500 font-medium leading-relaxed">{message}</p>
               </div>
             </div>
@@ -70,7 +70,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 className={`px-5 py-2.5 rounded-xl text-[13.5px] font-bold text-white transition-all active:scale-95 shadow-md ${
                   confirmVariant === 'danger'
                     ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-200'
-                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                    : 'bg-trido hover:bg-trido-deep shadow-trido/20'
                 }`}
               >
                 {resolvedConfirm}

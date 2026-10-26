@@ -89,7 +89,7 @@ export const UnitConverterTool: React.FC = () => {
           {t('unitConverterCategory', 'Kategori Set')}
         </label>
         <select 
-          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"
+          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 outline-none focus:border-trido/50"
           value={category}
           onChange={(e) => {
             const cat = e.target.value as keyof typeof categories;
@@ -121,7 +121,7 @@ export const UnitConverterTool: React.FC = () => {
             type="number" 
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            className="w-full text-3xl font-black text-slate-800 bg-transparent outline-none"
+            className="w-full text-3xl font-black text-ink bg-transparent outline-none"
           />
         </div>
 
@@ -132,7 +132,7 @@ export const UnitConverterTool: React.FC = () => {
               setFromUnitIndex(toUnitIndex);
               setToUnitIndex(fromUnitIndex);
             }}
-            className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg hover:bg-blue-600 active:scale-95 transition-all cursor-pointer"
+            className="w-10 h-10 rounded-full bg-trido/50 text-white flex items-center justify-center shadow-lg hover:bg-trido active:scale-95 transition-all cursor-pointer"
             title="Tukar Satuan"
           >
             <ArrowRightLeft size={18} />
@@ -149,7 +149,7 @@ export const UnitConverterTool: React.FC = () => {
               <option key={index} value={index}>{unitName}</option>
             ))}
           </select>
-          <div className="w-full text-3xl font-black text-slate-800">
+          <div className="w-full text-3xl font-black text-ink">
             {convert(value)}
           </div>
         </div>

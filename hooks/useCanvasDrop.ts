@@ -98,7 +98,7 @@ export function useCanvasDrop(
             const rect = new window.fabric.Rect({
               left: worldPos.x, top: worldPos.y, width, height,
               fill: 'rgba(255,255,255,0.01)',
-              stroke: '#6366f1', strokeWidth: 1,
+              stroke: '#1550aa', strokeWidth: 1,
               originX: 'center', originY: 'center',
               id, isDomPlaceholder: true
             });
@@ -137,7 +137,7 @@ export function useCanvasDrop(
             const rect = new window.fabric.Rect({
               left: worldPos.x, top: worldPos.y, width, height,
               fill: 'rgba(255,255,255,0.01)',
-              stroke: '#3b82f6', strokeWidth: 1,
+              stroke: '#1550aa', strokeWidth: 1,
               originX: 'center', originY: 'center',
               id, isDomPlaceholder: true
             });
@@ -184,7 +184,7 @@ export function useCanvasDrop(
         const rect = new window.fabric.Rect({
           left: worldPos.x, top: worldPos.y, width, height,
           fill: 'rgba(255,255,255,0.01)',
-          stroke: '#6366f1', strokeWidth: 1,
+          stroke: '#1550aa', strokeWidth: 1,
           originX: 'center', originY: 'center',
           id, isDomPlaceholder: true
         });

@@ -57,12 +57,12 @@ export const QuizApp: React.FC<QuizAppProps> = ({ config }) => {
   return (
     <div className="flex w-full h-full flex-col bg-white p-6 font-sans relative">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-bold text-slate-800 leading-snug">
+        <h3 className="font-display text-xl font-bold text-ink leading-snug">
           {title}
         </h3>
         <button 
           onClick={handleCopy}
-          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors no-print"
+          className="p-2 text-slate-400 hover:text-trido hover:bg-trido/5 rounded-lg transition-colors no-print"
           title="Salin Teks Kuis"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
@@ -77,7 +77,7 @@ export const QuizApp: React.FC<QuizAppProps> = ({ config }) => {
             return (
               <div key={i} className="border-b border-slate-100 pb-6 last:border-0">
                 <div className="font-bold text-slate-700 mb-3 flex gap-2">
-                  <span className="text-indigo-600">{i + 1}.</span> 
+                  <span className="text-trido">{i + 1}.</span> 
                   <span>{q.question}</span>
                 </div>
 
@@ -99,7 +99,7 @@ export const QuizApp: React.FC<QuizAppProps> = ({ config }) => {
                           optClass = "border-slate-100 text-slate-400 opacity-60";
                         }
                       } else if (isSelected) {
-                        optClass = "border-indigo-500 bg-indigo-50 text-indigo-800 ring-1 ring-indigo-500";
+                        optClass = "border-trido/50 bg-trido/5 text-trido-deep ring-1 ring-trido/50";
                       }
 
                       return (
@@ -111,7 +111,7 @@ export const QuizApp: React.FC<QuizAppProps> = ({ config }) => {
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0
                             ${submitted && isCorrect ? 'border-emerald-500 bg-emerald-500 text-white' : 
                               (submitted && isWrong ? 'border-rose-400 bg-rose-400 text-white' : 
-                              (isSelected ? 'border-indigo-500 bg-indigo-500' : 'border-slate-300'))
+                              (isSelected ? 'border-trido/50 bg-trido/50' : 'border-slate-300'))
                             }
                           `}>
                             {submitted && isCorrect && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-3 h-3 text-white"><polyline points="20 6 9 17 4 12"></polyline></svg>}
@@ -131,12 +131,12 @@ export const QuizApp: React.FC<QuizAppProps> = ({ config }) => {
                       value={answers[i] || ''}
                       onChange={(e) => setAnswers({ ...answers, [i]: e.target.value })}
                       disabled={submitted}
-                      className="w-full h-24 p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none font-medium text-slate-700 disabled:bg-slate-50 disabled:text-slate-500"
+                      className="w-full h-24 p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-trido/50 focus:border-trido/50 outline-none resize-none font-medium text-slate-700 disabled:bg-slate-50 disabled:text-slate-500"
                     />
                     {submitted && q.expectedAnswer && (
-                      <div className="mt-3 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-indigo-400 block mb-1">Kunci Jawaban Ekspektasi</span>
-                        <p className="text-sm font-medium text-indigo-800">{q.expectedAnswer}</p>
+                      <div className="mt-3 p-4 bg-trido/5 border border-trido/10 rounded-xl">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-trido/70 block mb-1">Kunci Jawaban Ekspektasi</span>
+                        <p className="text-sm font-medium text-trido-deep">{q.expectedAnswer}</p>
                       </div>
                     )}
                   </div>
@@ -152,7 +152,7 @@ export const QuizApp: React.FC<QuizAppProps> = ({ config }) => {
           {!submitted ? (
             <button 
               onClick={() => setSubmitted(true)}
-              className="w-full bg-indigo-600 font-bold text-white py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition uppercase tracking-widest text-xs no-print"
+              className="w-full bg-trido font-bold text-white py-3 rounded-xl shadow-lg shadow-trido/20 hover:bg-trido-deep transition uppercase tracking-widest text-xs no-print"
             >
               Selesaikan Kuis
             </button>
@@ -161,7 +161,7 @@ export const QuizApp: React.FC<QuizAppProps> = ({ config }) => {
               {total > 0 && (
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-center">
                   <span className="text-xs font-bold text-slate-500 block uppercase tracking-wider mb-1">Skor Pilihan Ganda</span>
-                  <span className="text-xl font-black text-indigo-600">{correct} / {total}</span>
+                  <span className="text-xl font-black text-trido">{correct} / {total}</span>
                 </div>
               )}
               <button 

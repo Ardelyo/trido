@@ -28,9 +28,9 @@ export const QuizTrueFalse: React.FC<QuizTrueFalseProps> = ({ config }) => {
         return "border-slate-100 bg-slate-50 text-slate-400 opacity-60";
       }
     } else if (selected === val) {
-      return "border-indigo-600 bg-indigo-50 text-indigo-900 ring-2 ring-indigo-500";
+      return "border-trido bg-trido/5 text-ink ring-2 ring-trido/50";
     }
-    return "border-slate-200 text-slate-700 hover:border-indigo-300 hover:bg-slate-50";
+    return "border-slate-200 text-slate-700 hover:border-trido/30 hover:bg-slate-50";
   };
 
   const isCorrect = selected === expectedBool;
@@ -38,10 +38,10 @@ export const QuizTrueFalse: React.FC<QuizTrueFalseProps> = ({ config }) => {
   return (
     <div className="flex w-full h-full flex-col bg-white p-6 font-sans select-none">
       <div className="flex-1 flex flex-col justify-center items-center text-center">
-        <span className="text-[11px] font-black tracking-widest text-indigo-600 uppercase mb-3 bg-indigo-50 px-3 py-1 rounded-full">
+        <span className="text-[11px] font-black tracking-widest text-trido uppercase mb-3 bg-trido/5 px-3 py-1 rounded-full">
           ⚖️ Benar atau Salah
         </span>
-        <h3 className="mb-6 text-lg font-bold text-slate-800 leading-relaxed max-w-sm">
+        <h3 className="font-display mb-6 text-lg font-bold text-ink leading-relaxed max-w-sm">
           {statementText}
         </h3>
         
@@ -73,7 +73,7 @@ export const QuizTrueFalse: React.FC<QuizTrueFalseProps> = ({ config }) => {
            <button 
              disabled={selected === null}
              onClick={() => setSubmitted(true)}
-             className="w-full bg-indigo-600 font-bold text-white py-3 rounded-xl shadow-md shadow-indigo-200 hover:bg-indigo-700 transition disabled:opacity-40 disabled:shadow-none uppercase tracking-wider text-xs no-print"
+             className="w-full bg-trido font-bold text-white py-3 rounded-xl shadow-md shadow-trido/20 hover:bg-trido-deep transition disabled:opacity-40 disabled:shadow-none uppercase tracking-wider text-xs no-print"
            >
              Periksa Jawaban
            </button>

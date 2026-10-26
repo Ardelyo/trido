@@ -59,21 +59,21 @@ export const QuizMultipleChoice: React.FC<QuizMultipleChoiceProps> = ({ config }
           navigator.clipboard.writeText(text);
           toast.success('Soal berhasil disalin!');
         }}
-        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors no-print"
+        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-trido hover:bg-trido/5 rounded-lg transition-colors no-print"
         title="Salin Teks Soal"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
       </button>
 
-      <span className="text-[11px] font-black tracking-widest text-indigo-600 uppercase mb-2">🎯 Kuis Pilihan Ganda</span>
+      <span className="text-[11px] font-black tracking-widest text-trido uppercase mb-2">🎯 Kuis Pilihan Ganda</span>
 
-      <h3 className="mb-5 text-lg font-bold text-slate-800 leading-snug pr-8">
+      <h3 className="font-display mb-5 text-lg font-bold text-ink leading-snug pr-8">
         {questionText}
       </h3>
 
       <div className="flex-1 space-y-2.5 overflow-y-auto pr-2 custom-scrollbar">
         {options.map((opt, i) => {
-          let optClass = "border-slate-200 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50/50";
+          let optClass = "border-slate-200 text-slate-700 hover:border-trido/70 hover:bg-trido/3";
           if (submitted) {
             if (i === correctIdx) {
               optClass = "border-emerald-500 bg-emerald-50 text-emerald-800 font-semibold ring-2 ring-emerald-500/20";
@@ -83,7 +83,7 @@ export const QuizMultipleChoice: React.FC<QuizMultipleChoiceProps> = ({ config }
               optClass = "border-slate-100 text-slate-400 opacity-60";
             }
           } else if (selected === i) {
-            optClass = "border-indigo-600 bg-indigo-50 text-indigo-900 font-semibold ring-2 ring-indigo-500/20";
+            optClass = "border-trido bg-trido/5 text-ink font-semibold ring-2 ring-trido/50/20";
           }
 
           return (
@@ -95,7 +95,7 @@ export const QuizMultipleChoice: React.FC<QuizMultipleChoiceProps> = ({ config }
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors font-bold text-xs
                 ${submitted && i === correctIdx ? 'border-emerald-500 bg-emerald-500 text-white' : 
                   (submitted && selected === i ? 'border-rose-400 bg-rose-400 text-white' : 
-                  (selected === i ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 text-slate-500'))
+                  (selected === i ? 'border-trido bg-trido text-white' : 'border-slate-300 text-slate-500'))
                 }
               `}>
                 {submitted && i === correctIdx ? (
@@ -117,7 +117,7 @@ export const QuizMultipleChoice: React.FC<QuizMultipleChoiceProps> = ({ config }
            <button 
              disabled={selected === null}
              onClick={() => setSubmitted(true)}
-             className="w-full bg-indigo-600 font-bold text-white py-3 rounded-xl shadow-md shadow-indigo-200 hover:bg-indigo-700 transition disabled:opacity-40 disabled:shadow-none uppercase tracking-wider text-xs no-print"
+             className="w-full bg-trido font-bold text-white py-3 rounded-xl shadow-md shadow-trido/20 hover:bg-trido-deep transition disabled:opacity-40 disabled:shadow-none uppercase tracking-wider text-xs no-print"
            >
              Periksa Jawaban
            </button>

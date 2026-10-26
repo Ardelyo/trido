@@ -11,6 +11,12 @@
 - App is usable on phones and portrait/landscape tablets: header no longer clips, undo/redo/delete/zoom and page switcher are available on small canvases, voice bar fits narrow screens, sidebar closes after navigation and includes Share, floating tools clamp to the viewport, safe-area insets and `overscroll-behavior` set.
 - Canvas overlay layout is driven by container queries (`@4xl`), so it adapts to the canvas width (also fixes narrow desktop windows with the sidebar open); the desktop layout at >= 896px canvas width is unchanged.
 
+### Branding
+- App chrome moved from generic Tailwind blue/indigo to brand tokens (`trido`, `trido-deep`, `ink`, `sun`) via opacity tints; headings use `font-display`; dark text uses `ink`.
+- One product name ("Trido — AI Smartboard Classroom") and one theme colour (`#1550aa`) across `index.html`, PWA manifest and `vite.config.ts` (removed "Trido++", `#2563eb`); PWA starts at `/?app=true`.
+- AI/export defaults (arrows, drop placeholders, mindmap root, exported SVG) use the brand blue.
+- Rules documented in `design/BRAND.md`; `tests/brandConsistency.test.ts` guards against regressions.
+
 ### AI precise editing
 - New `edit_component` tool (Express adapters + Vercel `api/ai/generate.ts`): one-operation edits instead of rewriting a component — documents (insert/replace/delete/move block, append to section), diagrams (add/rename/delete/move node for mermaid mindmap, flowchart and markmap), quizzes (question/options/correct answer, per-question), todo & attendance lists.
 - Pure, unit-tested engine in `utils/boardEdit.ts` (34 tests): deterministic results across models, ambiguity detection with candidate lists, 1-based indexes, sanitizer-safe diagrams.

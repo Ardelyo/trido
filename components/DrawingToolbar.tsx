@@ -206,7 +206,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
               <button
                 onClick={() => setActiveTool('PENCIL')}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
-                  activeTool === 'PENCIL' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  activeTool === 'PENCIL' ? 'bg-trido text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 <Pencil size={12} /> {t('pencil', 'Pensil')}
@@ -214,7 +214,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
               <button
                 onClick={() => setActiveTool('ERASER')}
                 className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
-                  activeTool === 'ERASER' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  activeTool === 'ERASER' ? 'bg-trido text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 <Eraser size={12} /> {t('eraser', 'Penghapus')}
@@ -228,7 +228,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   key={c}
                   onClick={() => setBrushColor(c)}
                   className={`w-6 h-6 rounded-lg transition-transform hover:scale-110 ${
-                    brushColor === c ? 'ring-2 ring-blue-500 ring-offset-1 scale-110' : 'ring-1 ring-slate-200'
+                    brushColor === c ? 'ring-2 ring-trido/50 ring-offset-1 scale-110' : 'ring-1 ring-slate-200'
                   }`}
                   style={{ background: c }}
                 />
@@ -248,7 +248,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   key={s}
                   onClick={() => setBrushWidth(s)}
                   className={`flex-1 h-8 flex items-center justify-center rounded-lg transition-colors ${
-                    brushWidth === s ? 'bg-blue-600' : 'bg-slate-100 hover:bg-slate-200'
+                    brushWidth === s ? 'bg-trido' : 'bg-slate-100 hover:bg-slate-200'
                   }`}
                 >
                   <div
@@ -281,7 +281,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   title={t(s.tKey, s.label)}
                   onClick={() => { setActiveTool(s.tool); close(); }}
                   className={`w-9 h-9 flex items-center justify-center rounded-xl transition-colors ${
-                    activeTool === s.tool ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 text-slate-600'
+                    activeTool === s.tool ? 'bg-trido text-white' : 'hover:bg-slate-100 text-slate-600'
                   }`}
                 >
                   <s.icon size={15} />
@@ -292,7 +292,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
             <button
               onClick={() => setShapeFilled(!isShapeFilled)}
               className={`w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                isShapeFilled ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                isShapeFilled ? 'bg-trido text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               <PaintBucket size={12} />
@@ -324,7 +324,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                 onClick={() => setFontFamily(f.value)}
                 style={{ fontFamily: f.value }}
                 className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold mb-0.5 transition-colors ${
-                  fontFamily === f.value ? 'bg-blue-600 text-white font-bold' : 'hover:bg-slate-100 text-slate-700'
+                  fontFamily === f.value ? 'bg-trido text-white font-bold' : 'hover:bg-slate-100 text-slate-700'
                 }`}
               >
                 {f.label}
@@ -337,7 +337,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                   key={s}
                   onClick={() => setFontSize(s)}
                   className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
-                    fontSize === s ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    fontSize === s ? 'bg-trido text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
                 >
                   {s}
@@ -362,7 +362,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
                 <button
                   key={app.key}
                   onClick={() => { appActions[app.key](); close(); }}
-                  className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-colors text-[10px] font-bold touch-manipulation"
+                  className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-trido/5 text-slate-600 hover:text-trido transition-colors text-[10px] font-bold touch-manipulation"
                 >
                   <app.icon size={16} />
                   {t(app.tKey, app.label)}

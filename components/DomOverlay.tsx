@@ -255,9 +255,9 @@ export const DomOverlay: React.FC = () => {
     switch (type) {
       case 'MARKDOWN_NOTE':
       case 'DOCUMENT_PAGE':
-        return <BookOpen size={14} className="text-indigo-600" />;
+        return <BookOpen size={14} className="text-trido" />;
       case 'MARKMAP_MINDMAP':
-        return <Compass size={14} className="text-blue-600" />;
+        return <Compass size={14} className="text-trido" />;
       case 'MERMAID_DIAGRAM':
         return <Layers size={14} className="text-emerald-600" />;
       case 'INTERACTIVE_APP':
@@ -268,12 +268,12 @@ export const DomOverlay: React.FC = () => {
         return <Calculator size={14} className="text-slate-600" />;
       case 'ATTENDANCE':
       case 'PRESENSI':
-        return <Users size={14} className="text-blue-600" />;
+        return <Users size={14} className="text-trido" />;
       case 'TODOLIST':
         return <SquareCheckBig size={14} className="text-emerald-600" />;
       default:
         if (type?.startsWith('QUIZ')) return <HelpCircle size={14} className="text-rose-600" />;
-        return <Sparkles size={14} className="text-blue-600" />;
+        return <Sparkles size={14} className="text-trido" />;
     }
   };
 
@@ -489,7 +489,7 @@ export const DomOverlay: React.FC = () => {
                   {getComponentIcon(activeFullscreenEl.componentType)}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight truncate">
+                  <h3 className="font-display font-extrabold text-sm sm:text-base text-ink tracking-tight truncate">
                     {activeFullscreenEl.config?.title || activeFullscreenEl.componentType?.replace(/_/g, ' ') || 'KOMPONEN'}
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">Mode Fokus Layar Penuh (Tekan ESC untuk kembali)</p>

@@ -35,7 +35,7 @@ export const GsapInteractionEffects: React.FC = () => {
 
       // Spawn subtle ripple ring
       const ripple = document.createElement('div');
-      ripple.className = 'pointer-events-none fixed rounded-full border border-blue-500/50 z-[9999]';
+      ripple.className = 'pointer-events-none fixed rounded-full border border-trido/50/50 z-[9999]';
       ripple.style.left = `${e.clientX}px`;
       ripple.style.top = `${e.clientY}px`;
       ripple.style.width = '8px';
@@ -77,7 +77,7 @@ export const GsapInteractionEffects: React.FC = () => {
       {/* Subtle trailing glow dot */}
       <div
         ref={dotRef}
-        className="fixed top-0 left-0 w-3 h-3 -mt-1.5 -ml-1.5 rounded-full bg-blue-600/30 backdrop-blur-xs opacity-0 scale-50 pointer-events-none will-change-transform"
+        className="fixed top-0 left-0 w-3 h-3 -mt-1.5 -ml-1.5 rounded-full bg-trido/30 backdrop-blur-xs opacity-0 scale-50 pointer-events-none will-change-transform"
       />
     </div>
   );

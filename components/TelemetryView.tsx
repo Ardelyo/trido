@@ -186,16 +186,16 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
         {/* 1. Header */}
         <div className="h-20 lg:h-22 px-6 lg:px-10 flex items-center justify-between border-b border-slate-100 bg-white/80 backdrop-blur shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+            <div className="w-12 h-12 rounded-2xl bg-trido flex items-center justify-center text-white shadow-lg shadow-trido/50/20">
               <Database size={24} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Data & Telemetri AI</h2>
+                <h2 className="font-display text-xl font-black text-ink tracking-tight">Data & Telemetri AI</h2>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200/60 flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> LIVE SYNC
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-trido/5 text-trido-deep border border-trido/12">
                   GCP: gemma4good-494311
                 </span>
               </div>
@@ -210,7 +210,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
-                autoRefresh ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-slate-50 text-slate-500 border-slate-200'
+                autoRefresh ? 'bg-trido/5 text-trido-deep border-trido/20' : 'bg-slate-50 text-slate-500 border-slate-200'
               }`}
               title="Perbarui otomatis setiap 10 detik"
             >
@@ -240,7 +240,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:text-ink hover:bg-slate-200 flex items-center justify-center transition-colors"
             >
               <X size={18} />
             </button>
@@ -256,10 +256,10 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
             <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-400">
                 <span className="text-[11px] font-black uppercase tracking-wider">Total Permintaan</span>
-                <Sparkles size={16} className="text-blue-500" />
+                <Sparkles size={16} className="text-trido/50" />
               </div>
               <div className="mt-3">
-                <div className="text-2xl font-black text-slate-900 tracking-tight">{summary.totalRequests.toLocaleString()}</div>
+                <div className="text-2xl font-black text-ink tracking-tight">{summary.totalRequests.toLocaleString()}</div>
                 <div className="text-[11px] font-bold text-emerald-600 mt-0.5 flex items-center gap-1">
                   <CheckCircle2 size={12} /> {summary.successRate}% Berhasil
                 </div>
@@ -273,7 +273,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                 <Zap size={16} className="text-amber-500" />
               </div>
               <div className="mt-3">
-                <div className="text-2xl font-black text-slate-900 tracking-tight">
+                <div className="text-2xl font-black text-ink tracking-tight">
                   {summary.totalTokens > 1000 ? `${(summary.totalTokens / 1000).toFixed(1)}k` : summary.totalTokens}
                 </div>
                 <div className="text-[11px] font-semibold text-slate-400 mt-0.5">
@@ -289,7 +289,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                 <DollarSign size={16} className="text-emerald-500" />
               </div>
               <div className="mt-3">
-                <div className="text-2xl font-black text-slate-900 tracking-tight">
+                <div className="text-2xl font-black text-ink tracking-tight">
                   ${summary.totalCostUsd.toFixed(4)}
                 </div>
                 <div className="text-[11px] font-bold text-emerald-700 mt-0.5">
@@ -302,10 +302,10 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
             <div className="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
               <div className="flex items-center justify-between text-slate-400">
                 <span className="text-[11px] font-black uppercase tracking-wider">Rata-rata Latensi</span>
-                <Clock size={16} className="text-indigo-500" />
+                <Clock size={16} className="text-trido/50" />
               </div>
               <div className="mt-3">
-                <div className="text-2xl font-black text-slate-900 tracking-tight">
+                <div className="text-2xl font-black text-ink tracking-tight">
                   {(summary.avgLatencyMs / 1000).toFixed(2)}s
                 </div>
                 <div className="text-[11px] font-semibold text-slate-400 mt-0.5">
@@ -321,7 +321,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                 <FileSpreadsheet size={16} className="text-emerald-600" />
               </div>
               <div className="mt-3">
-                <div className="text-2xl font-black text-slate-900 tracking-tight">
+                <div className="text-2xl font-black text-ink tracking-tight">
                   {summary.syncedToSheetCount} <span className="text-sm font-semibold text-slate-400">baris</span>
                 </div>
                 <div className="text-[11px] font-bold text-slate-500 mt-0.5 flex items-center justify-between">
@@ -329,7 +329,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                   <button
                     onClick={handleManualSync}
                     disabled={syncing}
-                    className="text-[10px] text-blue-600 font-bold hover:underline"
+                    className="text-[10px] text-trido font-bold hover:underline"
                   >
                     {syncing ? 'Sinkron...' : 'Sync Now'}
                   </button>
@@ -346,7 +346,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-base tracking-tight">Integrasi Google Sheets & Google Cloud Live</h3>
+                  <h3 className="font-display font-extrabold text-base tracking-tight">Integrasi Google Sheets & Google Cloud Live</h3>
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     ACTIVE
                   </span>
@@ -393,7 +393,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Cari prompt, model, atau aksi..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs font-semibold text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-trido/50"
                 />
               </div>
 
@@ -404,7 +404,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                     key={p}
                     onClick={() => setSelectedProvider(p)}
                     className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase transition-all ${
-                      selectedProvider === p ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                      selectedProvider === p ? 'bg-white text-trido shadow-sm' : 'text-slate-500 hover:text-ink'
                     }`}
                   >
                     {p}
@@ -462,7 +462,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                       <tr
                         key={log.id}
                         onClick={() => setSelectedLog(log)}
-                        className="hover:bg-blue-50/40 cursor-pointer transition-colors group"
+                        className="hover:bg-trido/2 cursor-pointer transition-colors group"
                       >
                         <td className="py-3 px-4 font-mono text-[11px] text-slate-500 whitespace-nowrap">
                           {log.timestampLocal?.split(' ')[1] || log.timestamp?.slice(11, 19)}
@@ -471,10 +471,10 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             <span className={`w-2 h-2 rounded-full ${
-                              log.provider === 'vertex' ? 'bg-indigo-500' :
-                              log.provider === 'gemini' ? 'bg-blue-500' : 'bg-emerald-500'
+                              log.provider === 'vertex' ? 'bg-trido/50' :
+                              log.provider === 'gemini' ? 'bg-trido/50' : 'bg-emerald-500'
                             }`} />
-                            <span className="font-bold text-slate-800 uppercase text-[11px]">{log.provider}</span>
+                            <span className="font-bold text-ink uppercase text-[11px]">{log.provider}</span>
                           </div>
                           <div className="text-[10px] text-slate-400 font-mono mt-0.5">{log.model}</div>
                         </td>
@@ -488,12 +488,12 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                         </td>
 
                         <td className="py-3 px-4 text-center font-mono whitespace-nowrap">
-                          <span className="font-bold text-slate-800">{log.totalTokens}</span>
+                          <span className="font-bold text-ink">{log.totalTokens}</span>
                           <span className="text-[10px] text-slate-400 block">({log.promptTokens}/{log.outputTokens})</span>
                         </td>
 
                         <td className="py-3 px-4 text-right font-mono whitespace-nowrap">
-                          <div className="font-bold text-slate-800">${log.costUsd?.toFixed(4)}</div>
+                          <div className="font-bold text-ink">${log.costUsd?.toFixed(4)}</div>
                           <div className="text-[10px] text-emerald-700">Rp {Math.round(log.costIdr || 0)}</div>
                         </td>
 
@@ -572,7 +572,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
             <div className="bg-white rounded-sheet max-w-2xl w-full p-6 shadow-2xl border border-white space-y-4 max-h-[85vh] flex flex-col">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-black text-slate-800 text-base">Detail Telemetri Log</h3>
+                  <h3 className="font-display font-black text-ink text-base">Detail Telemetri Log</h3>
                   <span className="text-xs font-mono text-slate-400">({selectedLog.id})</span>
                 </div>
                 <button
@@ -588,15 +588,15 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                     <span className="text-[10px] text-slate-400 font-bold uppercase block">Provider</span>
-                    <span className="font-bold text-slate-800 uppercase">{selectedLog.provider}</span>
+                    <span className="font-bold text-ink uppercase">{selectedLog.provider}</span>
                   </div>
                   <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                     <span className="text-[10px] text-slate-400 font-bold uppercase block">Model</span>
-                    <span className="font-bold text-slate-800">{selectedLog.model}</span>
+                    <span className="font-bold text-ink">{selectedLog.model}</span>
                   </div>
                   <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                     <span className="text-[10px] text-slate-400 font-bold uppercase block">Total Tokens</span>
-                    <span className="font-bold text-slate-800">{selectedLog.totalTokens} ({selectedLog.promptTokens} in / {selectedLog.outputTokens} out)</span>
+                    <span className="font-bold text-ink">{selectedLog.totalTokens} ({selectedLog.promptTokens} in / {selectedLog.outputTokens} out)</span>
                   </div>
                   <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                     <span className="text-[10px] text-slate-400 font-bold uppercase block">Biaya</span>
@@ -607,7 +607,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                 {/* Prompt */}
                 <div className="space-y-1">
                   <span className="font-black text-[11px] text-slate-400 uppercase tracking-wider">Prompt Pengguna</span>
-                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 font-mono text-slate-800 leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 font-mono text-ink leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">
                     {selectedLog.prompt}
                   </div>
                 </div>
@@ -615,7 +615,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                 {/* Response / Actions */}
                 <div className="space-y-1">
                   <span className="font-black text-[11px] text-slate-400 uppercase tracking-wider">Respon AI & Aksi</span>
-                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 font-mono text-slate-800 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 font-mono text-ink leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
                     {selectedLog.responseTextSnippet || 'Tidak ada teks respon'}
                   </div>
                 </div>
@@ -655,7 +655,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <FileSpreadsheet size={20} className="text-emerald-600" />
-                  <h3 className="font-black text-slate-800 text-base">Konfigurasi Sinkronisasi Google Sheets</h3>
+                  <h3 className="font-display font-black text-ink text-base">Konfigurasi Sinkronisasi Google Sheets</h3>
                 </div>
                 <button
                   onClick={() => setIsConfigOpen(false)}
@@ -682,14 +682,14 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                       value={webhookUrl}
                       onChange={e => setWebhookUrl(e.target.value)}
                       placeholder="https://script.google.com/macros/s/.../exec"
-                      className="w-full bg-white border border-emerald-300 rounded-xl py-2 px-3 text-xs font-mono font-medium text-slate-800 focus:outline-none focus:border-emerald-600"
+                      className="w-full bg-white border border-emerald-300 rounded-xl py-2 px-3 text-xs font-mono font-medium text-ink focus:outline-none focus:border-emerald-600"
                     />
                   </div>
                 </div>
 
                 {/* Method 2: Direct GCP Service Account Sheets API */}
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
-                  <span className="font-black text-slate-800 text-xs block">Metode 2: Google Sheets API via Google Cloud Project (gemma4good-494311)</span>
+                  <span className="font-black text-ink text-xs block">Metode 2: Google Sheets API via Google Cloud Project (gemma4good-494311)</span>
                   <p className="text-[11px] text-slate-500">
                     Gunakan jika service account GCP Anda sudah diberi izin editor ke Spreadsheet Google.
                   </p>
@@ -701,7 +701,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                         value={sheetId}
                         onChange={e => setSheetId(e.target.value)}
                         placeholder="Contoh: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
-                        className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-mono font-medium text-slate-800 focus:outline-none focus:border-blue-500"
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-mono font-medium text-ink focus:outline-none focus:border-trido/50"
                       />
                     </div>
                     <div>
@@ -711,7 +711,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                         value={sheetName}
                         onChange={e => setSheetName(e.target.value)}
                         placeholder="Trido_Telemetry"
-                        className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500"
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-ink focus:outline-none focus:border-trido/50"
                       />
                     </div>
                   </div>
@@ -724,7 +724,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                     id="autosync"
                     checked={autoSync}
                     onChange={e => setAutoSync(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded"
+                    className="w-4 h-4 text-trido rounded"
                   />
                   <label htmlFor="autosync" className="font-bold text-slate-700 cursor-pointer">
                     Aktifkan sinkronisasi otomatis langsung (Live sync setiap kali AI menjawab)
@@ -739,7 +739,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                     </span>
                     <button
                       onClick={handleCopyScript}
-                      className="flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800"
+                      className="flex items-center gap-1 text-[11px] font-bold text-trido hover:text-trido-deep"
                     >
                       {copiedScript ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
                       <span>{copiedScript ? 'Tersalin!' : 'Salin Kode'}</span>
@@ -761,7 +761,7 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ isOpen, onClose })
                 <button
                   onClick={handleSaveConfig}
                   disabled={savingConfig}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-600/20"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-trido hover:bg-trido-deep text-white rounded-xl font-bold text-xs shadow-lg shadow-trido/20"
                 >
                   <CheckCircle2 size={15} />
                   <span>{savingConfig ? 'Menyimpan...' : 'Simpan Konfigurasi'}</span>

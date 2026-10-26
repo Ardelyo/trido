@@ -82,7 +82,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                   <Share2 size={18} strokeWidth={2.4} />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-ink">
+                  <h3 className="font-display font-extrabold text-sm text-ink">
                     {t('share', 'Bagikan')} Papan Tulis
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">
@@ -109,7 +109,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                 className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'qr'
                     ? 'bg-white text-trido shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 hover:text-ink'
                 }`}
               >
                 <QrCode size={14} />
@@ -121,7 +121,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                 className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   activeTab === 'link'
                     ? 'bg-white text-trido shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 hover:text-ink'
                 }`}
               >
                 <Globe size={14} />
@@ -190,7 +190,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ isOpen, onClose, roomI
                         type="text"
                         readOnly
                         value={shareUrl}
-                        className="flex-1 bg-transparent border-none outline-hidden text-xs font-mono font-semibold text-slate-800 px-2 truncate"
+                        className="flex-1 bg-transparent border-none outline-hidden text-xs font-mono font-semibold text-ink px-2 truncate"
                       />
                       <button
                         type="button"

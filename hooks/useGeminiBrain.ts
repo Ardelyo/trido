@@ -898,7 +898,7 @@ ${jevDirective}
             toY: call.args.toY,
             direction: call.args.direction,
             lineStyle: call.args.lineStyle || 'ARROW_STRAIGHT',
-            strokeColor: call.args.strokeColor || '#3B82F6',
+            strokeColor: call.args.strokeColor || '#1550aa',
             isArrow: call.args.isArrow !== false
           },
           status: 'PENDING'
@@ -922,7 +922,7 @@ ${jevDirective}
             toY: args.toY,
             direction: args.direction,
             lineStyle: args.lineStyle || 'ARROW_STRAIGHT',
-            strokeColor: args.color || args.strokeColor || '#3B82F6',
+            strokeColor: args.color || args.strokeColor || '#1550aa',
             isArrow: args.isArrow !== false
           };
 

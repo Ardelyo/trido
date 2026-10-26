@@ -715,8 +715,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         }}
         className={`flex items-center justify-center w-9.5 h-9.5 lg:w-10.5 lg:h-10.5 rounded-xl lg:rounded-[1.1rem] transition-colors ${
           isActive
-            ? 'text-white bg-blue-600 shadow-[0_8px_16px_rgba(37,99,235,0.25)] ring-4 ring-blue-600/10'
-            : 'text-slate-500 hover:text-blue-600'
+            ? 'text-white bg-trido shadow-[0_8px_16px_rgba(37,99,235,0.25)] ring-4 ring-trido/10'
+            : 'text-slate-500 hover:text-trido'
         } ${className}`}
       >
         <Icon size={isActive ? 20 : 18} strokeWidth={isActive ? 2.5 : 2} />
@@ -801,11 +801,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95, pointerEvents: 'none' }}
                 transition={spring.snappy}
-                className="pointer-events-auto w-[min(88vw,520px)] bg-white/97 backdrop-blur-xl rounded-sheet shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-blue-100 p-4"
+                className="pointer-events-auto w-[min(88vw,520px)] bg-white/97 backdrop-blur-xl rounded-sheet shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-trido/10 p-4"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-semibold text-blue-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                  <span className="text-[11px] font-semibold text-trido/50 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-trido/50 rounded-full animate-pulse" />
                     Transkripsi
                   </span>
                   <button
@@ -817,7 +817,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                   </button>
                 </div>
                 <div className="max-h-36 overflow-y-auto">
-                  <p className="text-[13.5px] leading-relaxed text-slate-800">
+                  <p className="text-[13.5px] leading-relaxed text-ink">
                     {input}
                     {interimInput && <span className="text-slate-400 italic"> {interimInput}</span>}
                     {voiceNotice && !input && !interimInput && <span className="text-amber-600">{voiceNotice}</span>}
@@ -835,7 +835,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 onClick={() => setShowTranscript(true)}
-                className="pointer-events-auto text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
+                className="pointer-events-auto text-[11px] font-semibold text-trido bg-trido/5 hover:bg-trido/10 border border-trido/20 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
               >
                 <ChevronUp size={12} /> Tampilkan transkripsi
               </motion.button>
@@ -865,7 +865,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                    />
                  )}
                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                    <div className={`flex items-center justify-center text-blue-600 transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-blue-50/80 border border-blue-100 shadow-sm'}`}>
+                    <div className={`flex items-center justify-center text-trido transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-trido/4 border border-trido/10 shadow-sm'}`}>
                        {isListening ? <AudioVisualizer isListening={isListening} audioData={audioData} /> :
                         isThinking ? <Loader2 size={20} className="animate-spin" /> :
                         progress.active ? <Sparkles size={20} className="animate-pulse text-trido" /> :
@@ -873,7 +873,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                         <Sparkles size={20} />}
                     </div>
                     <div className="flex flex-col min-w-0">
-                       <span className="text-[13.5px] font-bold text-slate-800 leading-tight whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-none">
+                       <span className="text-[13.5px] font-bold text-ink leading-tight whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-none">
                          {progress.active && !isThinking ? `${t('applyingChanges', 'Menerapkan perubahan')}${progress.total > 1 ? ` ${progress.done + 1}/${progress.total}` : ''}` :
                           isThinking ? `${t('processingWithModel', 'Memproses dengan AI...')} (${activeModelDisplay})` :
                           isTranscribing ? t('transcribingVoice', 'Menerjemahkan...') :
@@ -886,20 +886,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                             <span className="text-trido font-semibold">{currentActionLabel || 'Menyusun papan…'}</span>
                          ) : isListening || isThinking ? (
                             <span className="flex gap-1.5 items-center">
-                              <span className={isOfflineMode ? "text-emerald-600 font-bold" : "text-blue-600 font-bold"}>
+                              <span className={isOfflineMode ? "text-emerald-600 font-bold" : "text-trido font-bold"}>
                                 {activeModelDisplay} • {isOfflineMode ? 'Mode Offline (Ollama)' : 'Cloud Realtime'}
                               </span>
                               <div className="flex gap-1">
-                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} />
-                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} style={{animationDelay: '0.1s'}} />
-                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} style={{animationDelay: '0.2s'}} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-trido/50'} rounded-full animate-bounce`} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-trido/50'} rounded-full animate-bounce`} style={{animationDelay: '0.1s'}} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-trido/50'} rounded-full animate-bounce`} style={{animationDelay: '0.2s'}} />
                               </div>
                             </span>
                          ) : voiceNotice ? (
                             <span className="text-amber-500">{voiceNotice.slice(0, 40)}{voiceNotice.length > 40 ? '…' : ''}</span>
                          ) : speechSupported ? (
                             <span className="flex items-center gap-1.5 font-medium">
-                              <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                              <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-emerald-500' : 'bg-trido/50'}`} />
                               <span>{activeModelDisplay}</span>
                               <span className="text-slate-400 hidden sm:inline">•</span>
                               <span className={`hidden sm:inline ${isOfflineMode ? 'text-emerald-600 font-semibold' : 'text-slate-500'}`}>
@@ -914,7 +914,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                  <div className="flex items-center gap-1 sm:gap-1.5 border-l-2 border-slate-200/60 pl-2 sm:pl-4 shrink-0">
                     <AttachedDocumentBadge compact className="mr-2" />
                     <FileUploadButton
-                      className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95"
+                      className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-trido hover:bg-trido/5 rounded-[1.2rem] transition-colors active:scale-95"
                       icon={<Plus size={22} />}
                       title={t('uploadFileOrImage', 'Unggah file / dokumen / gambar')}
                     />
@@ -923,7 +923,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                       onClick={() => { setShowTranscript(true); toggleListening(); }}
                       disabled={isTranscribing || isThinking}
                       title={speechSupported ? t('startVoiceInput', 'Mulai input suara') : t('recordVoiceForTranscription', 'Rekam suara')}
-                      className={`w-12 h-12 flex items-center justify-center rounded-[1.3rem] text-white shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 shadow-red-500/25 animate-pulse scale-105 ring-4 ring-red-500/10' : 'bg-blue-600 shadow-blue-600/30 hover:scale-105 hover:bg-blue-500'} disabled:opacity-50 disabled:pointer-events-none active:scale-95 shrink-0`}
+                      className={`w-12 h-12 flex items-center justify-center rounded-[1.3rem] text-white shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 shadow-red-500/25 animate-pulse scale-105 ring-4 ring-red-500/10' : 'bg-trido shadow-trido/30 hover:scale-105 hover:bg-trido/50'} disabled:opacity-50 disabled:pointer-events-none active:scale-95 shrink-0`}
                     >
                       <Mic size={20} />
                     </button>
@@ -955,14 +955,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
              <button
                onClick={() => undoCanvas()}
                title={language === 'en' ? 'Undo' : 'Batal (Undo)'}
-               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
+               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-trido hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
              >
                <Undo2 size={16} />
              </button>
              <button
                onClick={() => redoCanvas()}
                title={language === 'en' ? 'Redo' : 'Ulangi (Redo)'}
-               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
+               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-trido hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
              >
                <Redo2 size={16} />
              </button>
@@ -983,17 +983,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
              transition={{ duration: 0.5, delay: 0.1 }}
              className="flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80"
            >
-             <button onClick={() => handleZoom('out')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
+             <button onClick={() => handleZoom('out')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-ink hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
                <Minus size={18} />
              </button>
              <span className="text-[13.5px] font-extrabold text-slate-700 min-w-14 text-center tracking-tight">
                 {Math.round(zoom * 100)}%
              </span>
-             <button onClick={() => handleZoom('in')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
+             <button onClick={() => handleZoom('in')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-ink hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
                <Plus size={18} />
              </button>
              <div className="w-0.5 h-5 bg-slate-200/80 mx-1.5 rounded-full" />
-             <button onClick={() => handleZoom('reset')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95" title={t('fitToScreen', 'Paskan ke Layar')}>
+             <button onClick={() => handleZoom('reset')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-ink hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95" title={t('fitToScreen', 'Paskan ke Layar')}>
                <Maximize size={18} />
              </button>
            </motion.div>

@@ -168,7 +168,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
             key={m}
             onClick={() => setMode(m)}
             className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
-              mode === m ? 'text-indigo-600 bg-white border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-600'
+              mode === m ? 'text-trido bg-white border-b-2 border-trido' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             {m}
@@ -188,7 +188,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
           >
             {mode === 'CLOCK' && (
               <div className="text-center">
-                <div className="text-5xl font-black text-slate-800 tracking-tighter font-mono">
+                <div className="text-5xl font-black text-ink tracking-tighter font-mono">
                   {currentTime.toLocaleTimeString(language === 'en' ? 'en-US' : 'id-ID', { hour12: false })}
                 </div>
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">
@@ -226,7 +226,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                      <div className={`text-3xl font-black font-mono tracking-tight ${timeLeft === 0 ? 'text-rose-500 animate-pulse' : 'text-slate-800'}`}>
+                      <div className={`text-3xl font-black font-mono tracking-tight ${timeLeft === 0 ? 'text-rose-500 animate-pulse' : 'text-ink'}`}>
                         {formatTime(timeLeft)}
                       </div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
@@ -235,7 +235,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
                     </div>
                   </div>
                 ) : (
-                  <div className={`text-6xl font-black tracking-tighter font-mono ${timeLeft === 0 ? 'text-rose-500 animate-pulse' : 'text-slate-800'}`}>
+                  <div className={`text-6xl font-black tracking-tighter font-mono ${timeLeft === 0 ? 'text-rose-500 animate-pulse' : 'text-ink'}`}>
                     {formatTime(timeLeft)}
                   </div>
                 )}
@@ -245,7 +245,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
                     onClick={() => setIsVisualPie(!isVisualPie)}
                     className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition flex items-center gap-1.5 cursor-pointer ${
                       isVisualPie
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
+                        ? 'bg-trido/5 border-trido/20 text-trido'
                         : 'bg-white border-slate-200 text-slate-500 hover:text-slate-700'
                     }`}
                     title="Beralih Mode Visual Lingkaran"
@@ -258,31 +258,31 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
                 <div className="flex flex-wrap items-center justify-center gap-1 mt-2.5">
                   <button
                     onClick={() => { setIsActive(false); setTotalSeconds(1500); setTimeLeft(1500); }}
-                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-trido/5 hover:text-trido text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     🍅 25m
                   </button>
                   <button
                     onClick={() => { setIsActive(false); setTotalSeconds(600); setTimeLeft(600); }}
-                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-trido/5 hover:text-trido text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     🗣️ 10m
                   </button>
                   <button
                     onClick={() => { setIsActive(false); setTotalSeconds(300); setTimeLeft(300); }}
-                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-trido/5 hover:text-trido text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     🎤 5m
                   </button>
                   <button
                     onClick={() => { setIsActive(false); setTotalSeconds(180); setTimeLeft(180); }}
-                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-trido/5 hover:text-trido text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     ⚖️ 3m
                   </button>
                   <button
                     onClick={() => { setIsActive(false); setTotalSeconds(60); setTimeLeft(60); }}
-                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-[10px] font-bold text-slate-600 transition cursor-pointer"
+                    className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-trido/5 hover:text-trido text-[10px] font-bold text-slate-600 transition cursor-pointer"
                   >
                     ⚡ 1m
                   </button>
@@ -301,7 +301,7 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
 
             {mode === 'STOPWATCH' && (
               <div className="flex flex-col items-center">
-                <div className="text-6xl font-black tracking-tighter text-slate-800 font-mono">
+                <div className="text-6xl font-black tracking-tighter text-ink font-mono">
                   {formatTime(stopwatchTime)}
                 </div>
                 <div className="mt-6 flex gap-4">
@@ -317,17 +317,17 @@ export const TimerTool: React.FC<TimerToolProps> = ({ config }) => {
 
             {mode === 'ALARM' && (
               <div className="flex flex-col items-center w-full max-w-[200px]">
-                <Bell size={40} className={`mb-4 ${isAlarmActive ? 'text-indigo-600 animate-bounce' : 'text-slate-300'}`} />
+                <Bell size={40} className={`mb-4 ${isAlarmActive ? 'text-trido animate-bounce' : 'text-slate-300'}`} />
                 <input
                   type="time"
                   value={alarmTime}
                   onChange={(e) => setAlarmTime(e.target.value)}
-                  className="w-full text-2xl font-black text-center border-b-2 border-slate-200 focus:border-indigo-500 outline-none py-2 bg-transparent text-slate-800"
+                  className="w-full text-2xl font-black text-center border-b-2 border-slate-200 focus:border-trido/50 outline-none py-2 bg-transparent text-ink"
                 />
                 <button
                   onClick={() => setIsAlarmActive(!isAlarmActive)}
                   className={`mt-6 w-full py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 ${
-                    isAlarmActive ? 'bg-rose-500 text-white' : 'bg-indigo-600 text-white'
+                    isAlarmActive ? 'bg-rose-500 text-white' : 'bg-trido text-white'
                   }`}
                 >
                   {isAlarmActive ? t('cancelAlarm', 'BATALKAN ALARM') : t('setAlarm', 'SETEL ALARM')}
