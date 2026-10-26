@@ -100,6 +100,10 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     overflow-x: hidden;
+    /* Mobile: no pull-to-refresh / rubber-band while drawing; no iOS font inflation */
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 }
 

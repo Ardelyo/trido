@@ -740,11 +740,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       />
       <input id="canvas-upload" type="file" className="hidden" accept="image/*" onChange={handleCanvasImageUpload} />
 
+      {/* Mobile canvas controls (undo/redo/delete/zoom) — desktop uses the bottom-right cards */}
+      <div className="@4xl:hidden pointer-events-auto absolute top-3 right-3 z-40 flex items-center gap-0.5 p-1 bg-white/95 backdrop-blur-xl rounded-full border-2 border-trido/15 shadow-lg">
+        <button onClick={() => undoCanvas()} aria-label="Undo" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Undo2 size={18} /></button>
+        <button onClick={() => redoCanvas()} aria-label="Redo" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Redo2 size={18} /></button>
+        <button onClick={handleDeleteSelection} aria-label="Delete" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-rose-50 active:text-rose-600"><Trash2 size={18} /></button>
+        <div className="w-px h-5 bg-slate-200 mx-0.5" />
+        <button onClick={() => handleZoom('out')} aria-label="Zoom out" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Minus size={18} /></button>
+        <button onClick={() => handleZoom('in')} aria-label="Zoom in" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Plus size={18} /></button>
+        <button onClick={() => handleZoom('reset')} aria-label="Fit to screen" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Maximize size={18} /></button>
+      </div>
+
       {/* ====== BOTTOM CONTROLS ====== */}
-      <div className="absolute bottom-4 lg:bottom-6 left-3 lg:left-6 right-3 lg:right-6 pointer-events-none flex flex-col md:flex-row items-center md:items-end md:justify-between z-40 gap-4">
+      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] lg:bottom-6 left-3 lg:left-6 right-3 lg:right-6 pointer-events-none flex flex-col @4xl:flex-row items-center @4xl:items-end @4xl:justify-between z-40 gap-4">
 
         {/* Left: Empty for flex space */}
-        <div className="flex-1 hidden md:block"></div>
+        <div className="flex-1 hidden @4xl:block"></div>
 
         {/* Center: AI Status & Voice Control */}
         <div className="relative flex flex-col items-center gap-2">
@@ -830,24 +841,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                  animate={{ opacity: 1, y: 0, scale: 1 }}
                  exit={{ opacity: 0, y: 20, scale: 0.95, pointerEvents: 'none' }}
                  transition={spring.snappy}
-                 className="pointer-events-auto flex items-center gap-3 px-3 py-3 bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
+                 className="pointer-events-auto flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-2.5 sm:py-3 max-w-[calc(100vw-1.5rem)] bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
               >
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <div className={`flex items-center justify-center text-blue-600 transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-blue-50/80 border border-blue-100 shadow-sm'}`}>
                        {isListening ? <AudioVisualizer isListening={isListening} audioData={audioData} /> :
                         isThinking ? <Loader2 size={20} className="animate-spin" /> :
                         isTranscribing ? <Activity size={20} className="animate-pulse" /> :
                         <Sparkles size={20} />}
                     </div>
-                    <div className="flex flex-col">
-                       <span className="text-[13.5px] font-bold text-slate-800 leading-tight whitespace-nowrap">
+                    <div className="flex flex-col min-w-0">
+                       <span className="text-[13.5px] font-bold text-slate-800 leading-tight whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-none">
                          {isThinking ? `${t('processingWithModel', 'Memproses dengan AI...')} (${activeModelDisplay})` :
                           isTranscribing ? t('transcribingVoice', 'Menerjemahkan...') :
                           isListening ? (speechSupported ? t('listening', 'Mendengarkan...') : t('recordingVoice', 'Merekam...')) :
                           voiceNotice ? '⚠️ Perhatian' :
                           t('allSystemsReady', 'Semua Sistem Siap')}
                        </span>
-                       <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
+                       <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-none">
                          {isListening || isThinking ? (
                             <span className="flex gap-1.5 items-center">
                               <span className={isOfflineMode ? "text-emerald-600 font-bold" : "text-blue-600 font-bold"}>
@@ -865,8 +876,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                             <span className="flex items-center gap-1.5 font-medium">
                               <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'}`} />
                               <span>{activeModelDisplay}</span>
-                              <span className="text-slate-400">•</span>
-                              <span className={isOfflineMode ? 'text-emerald-600 font-semibold' : 'text-slate-500'}>
+                              <span className="text-slate-400 hidden sm:inline">•</span>
+                              <span className={`hidden sm:inline ${isOfflineMode ? 'text-emerald-600 font-semibold' : 'text-slate-500'}`}>
                                 {isOfflineMode ? '100% Offline' : t('standbyMode', 'Mode Siaga')}
                               </span>
                             </span>
@@ -875,7 +886,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                     </div>
                  </div>
 
-                 <div className="flex items-center gap-1.5 border-l-2 border-slate-200/60 pl-4">
+                 <div className="flex items-center gap-1 sm:gap-1.5 border-l-2 border-slate-200/60 pl-2 sm:pl-4 shrink-0">
                     <AttachedDocumentBadge compact className="mr-2" />
                     <FileUploadButton
                       className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95"
@@ -908,7 +919,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         </div>
 
         {/* Right: Zoom Controls & History Controls */}
-        <div className="pointer-events-auto flex-1 hidden md:flex justify-end gap-3">
+        <div className="pointer-events-auto flex-1 hidden @4xl:flex justify-end gap-3">
            {/* Sleek History & Action Card */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}

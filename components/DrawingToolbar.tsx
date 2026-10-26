@@ -173,7 +173,7 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         />
       )}
 
-      <div className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 pointer-events-auto z-50">
+      <div className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 origin-left [@media(max-height:520px)]:scale-[0.7] pointer-events-auto z-50">
         {/* ── Vertical Pill (Only 6 Clustered Buttons) ── */}
         <motion.div
           initial={{ opacity: 0, x: -14 }}

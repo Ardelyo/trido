@@ -7,6 +7,10 @@
 - Brand colours, shape and elevation are now theme tokens (`bg-trido`, `text-ink`, `bg-sun`, `rounded-sheet`, `shadow-float`); added `.touch-target` utility; `h-screen` → `h-dvh`.
 - Smartboard dock uses pointer events (touch-friendly magnification).
 
+### Mobile web
+- App is usable on phones and portrait/landscape tablets: header no longer clips, undo/redo/delete/zoom and page switcher are available on small canvases, voice bar fits narrow screens, sidebar closes after navigation and includes Share, floating tools clamp to the viewport, safe-area insets and `overscroll-behavior` set.
+- Canvas overlay layout is driven by container queries (`@4xl`), so it adapts to the canvas width (also fixes narrow desktop windows with the sidebar open); the desktop layout at >= 896px canvas width is unchanged.
+
 ### Refactor
 - `ExportDialog` export/import logic extracted to `hooks/useBoardExport.ts`; `CanvasManager` drag & drop extracted to `hooks/useCanvasDrop.ts`.
 - Dialog radii/transitions use `rounded-sheet` and `tween` presets.

@@ -350,13 +350,13 @@ const App: React.FC = () => {
             </div>
 
             {/* Right Section: Actions */}
-            <div className="flex items-center justify-end gap-2 shrink-0 z-10">
+            <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 z-10">
               {/* Asisten Button */}
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={toggleAiDrawer}
-                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all shadow-xs cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 text-sm font-bold rounded-full transition-all shadow-xs cursor-pointer ${
                   isAiDrawerOpen 
                     ? 'bg-trido text-white shadow-trido/30 ring-4 ring-trido/15' 
                     : 'text-trido bg-white hover:bg-slate-50 border border-trido/25'
@@ -381,7 +381,7 @@ const App: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsGuideOpen(true)}
-                className="w-11 h-11 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-trido shadow-xs transition-all cursor-pointer"
+                className="hidden sm:flex w-11 h-11 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 items-center justify-center text-slate-600 hover:text-trido shadow-xs transition-all cursor-pointer"
                 title="Panduan Cara Penggunaan Trido (Bantuan)"
               >
                 <HelpCircle size={18} />
@@ -444,7 +444,10 @@ const App: React.FC = () => {
                   className="absolute lg:relative left-2 top-0 bottom-2 lg:left-0 lg:bottom-0 max-h-full bg-white/95 backdrop-blur-xl rounded-4xl flex flex-col z-40 lg:z-10 shrink-0 border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden"
                 >
                   <div className="w-65 h-full flex flex-col">
-                    <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 custom-scrollbar">
+                    <nav
+                      onClick={() => { if (isMobileLayout) setIsSidebarOpen(false); }}
+                      className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 custom-scrollbar"
+                    >
                       {/* 1. Whiteboard Core */}
                       <SidebarItem
                         icon={Square}
@@ -507,6 +510,16 @@ const App: React.FC = () => {
                         }}
                       />
 
+                      {/* Mobile-only shortcuts for header actions hidden on small screens */}
+                      <div className="sm:hidden">
+                        <SidebarItem
+                          icon={Share2}
+                          label={t('share', 'Bagikan')}
+                          active={false}
+                          onClick={() => setIsShareOpen(true)}
+                        />
+                      </div>
+
                       {/* 6. Landing / About (Web Only) */}
                       {isWeb && (
                         <SidebarItem
@@ -558,7 +571,7 @@ const App: React.FC = () => {
             </AnimatePresence>
 
             {/* 3 & 4. CANVAS AREA & VERTICAL TOOLBAR */}
-            <main className="flex-1 min-w-0 relative h-full bg-white rounded-sheet lg:rounded-[2.5rem] border-2 border-trido/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
+            <main className="@container flex-1 min-w-0 relative h-full bg-white rounded-sheet lg:rounded-[2.5rem] border-2 border-trido/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
 
                {/* Dot Grid Background */}
                <div
@@ -575,7 +588,7 @@ const App: React.FC = () => {
                </div>
 
                {/* Page Navigation Indicator */}
-               <div className="absolute bottom-6 left-6 z-10 flex items-center gap-1.5 p-1.5 bg-white/95 backdrop-blur-xl rounded-full shadow-lg border-2 border-trido/15">
+               <div className="absolute top-[4.75rem] right-3 @4xl:top-auto @4xl:right-auto @4xl:bottom-6 @4xl:left-6 z-10 flex items-center gap-1.5 p-1.5 max-w-[70%] overflow-x-auto @4xl:max-w-none @4xl:overflow-visible bg-white/95 backdrop-blur-xl rounded-full shadow-lg border-2 border-trido/15">
                 {pages.map((_, idx) => (
                   <button
                     key={idx}
