@@ -1,3 +1,4 @@
+import { getElectron } from './electron';
 import { DomElementState, MindmapNodeRecord } from '../types';
 import { MindmapLayoutNode } from './mindmapLayout';
 import { toPng, toBlob } from 'html-to-image';
@@ -33,6 +34,20 @@ export function downloadFile(content: string | Blob, filename: string, mimeType:
     blob = new Blob([String(content)], { type: mimeType });
   }
 
+  // Desktop (.exe): native "Save as…" dialog; falls back to the browser download if unavailable
+  const electron = getElectron();
+  if (electron?.saveFile) {
+    const ext = filename.includes('.') ? filename.split('.').pop()! : '';
+    blob.arrayBuffer()
+      .then(buf => electron.saveFile(buf, filename, ext ? [{ name: ext.toUpperCase(), extensions: [ext] }] : undefined))
+      .then(res => { if (!res.ok && !res.canceled) browserDownload(blob, filename); })
+      .catch(() => browserDownload(blob, filename));
+    return;
+  }
+  browserDownload(blob, filename);
+}
+
+function browserDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

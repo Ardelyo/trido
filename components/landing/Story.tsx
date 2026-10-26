@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform } from "motion/react";
 import { Mic } from "lucide-react";
 import { useI18n } from "./i18n";
 import { Mark, Reveal, SectionPill } from "./shared";

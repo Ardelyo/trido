@@ -21,6 +21,7 @@ import { sounds } from '../utils/sounds';
 import { useTranslation } from '../utils/translations';
 import { toast } from '../utils/toast';
 import { useAiStatus } from '../hooks/useAiStatus';
+import { spring } from '../design/motion';
 
 interface ChatInterfaceProps {
   canvasRef: React.MutableRefObject<any>;
@@ -779,7 +780,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95, pointerEvents: 'none' }}
-                transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                transition={spring.snappy}
                 className="pointer-events-auto w-[min(88vw,520px)] bg-white/97 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-blue-100 p-4"
               >
                 <div className="flex items-center justify-between mb-2">
@@ -828,8 +829,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
                  animate={{ opacity: 1, y: 0, scale: 1 }}
                  exit={{ opacity: 0, y: 20, scale: 0.95, pointerEvents: 'none' }}
-                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                 className="pointer-events-auto flex items-center gap-3 px-3 py-3 bg-white/95 backdrop-blur-xl rounded-4xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
+                 transition={spring.snappy}
+                 className="pointer-events-auto flex items-center gap-3 px-3 py-3 bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
               >
                  <div className="flex items-center gap-3">
                     <div className={`flex items-center justify-center text-blue-600 transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-blue-50/80 border border-blue-100 shadow-sm'}`}>
@@ -944,7 +945,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.5, delay: 0.1 }}
-             className="flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-xl rounded-4xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80"
+             className="flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80"
            >
              <button onClick={() => handleZoom('out')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
                <Minus size={18} />

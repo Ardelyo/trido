@@ -1,8 +1,9 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { LayoutDashboard, Compass, CircleDot } from 'lucide-react';
 import { useStore } from '../../store';
 import type { SmartboardLayoutMode } from '../../types';
+import { spring } from '../../design/motion';
 
 interface LayoutOption {
   id: SmartboardLayoutMode;
@@ -23,7 +24,7 @@ export const LayoutSwitcher: React.FC<{ className?: string }> = ({ className = '
     <div
       role="radiogroup"
       aria-label="Mode Tampilan Smartboard"
-      className={`relative inline-flex items-center gap-1 p-1 bg-white/70 backdrop-blur-md rounded-full border border-[#0a1a3a]/10 shadow-sm ${className}`}
+      className={`relative inline-flex items-center gap-1 p-1 bg-white/70 backdrop-blur-md rounded-full border border-ink/10 shadow-sm ${className}`}
     >
       {OPTIONS.map((opt) => {
         const active = smartboardLayoutMode === opt.id;
@@ -35,17 +36,17 @@ export const LayoutSwitcher: React.FC<{ className?: string }> = ({ className = '
             role="radio"
             aria-checked={active}
             className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors cursor-pointer select-none ${
-              active ? 'text-white' : 'text-[#0a1a3a]/70 hover:text-[#0a1a3a]'
+              active ? 'text-white' : 'text-ink/70 hover:text-ink'
             }`}
           >
             {active && (
               <motion.span
                 layoutId="active-layout-pill"
-                className="absolute inset-0 -z-10 rounded-full bg-[#1550aa] shadow-sm"
-                transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                className="absolute inset-0 -z-10 rounded-full bg-trido shadow-sm"
+                transition={spring.snappy}
               />
             )}
-            <Icon size={14} className={active ? 'text-[#ffcc00]' : 'text-[#1550aa]'} />
+            <Icon size={14} className={active ? 'text-sun' : 'text-trido'} />
             <span className="hidden sm:inline">{opt.label}</span>
           </button>
         );

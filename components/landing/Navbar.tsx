@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Menu, X, ArrowUpRight, Download } from "lucide-react";
 import { useI18n } from "./i18n";
 import { Logo } from "./shared";
 import { cn } from "./cn";
 import type { Lang } from "./content";
+import { spring } from '../../design/motion';
 
 export function LangToggle({ light, id = "lang" }: { light?: boolean; id?: string }) {
   const { lang, setLang } = useI18n();
@@ -32,7 +33,7 @@ export function LangToggle({ light, id = "lang" }: { light?: boolean; id?: strin
             <motion.span
               layoutId={`${id}-pill`}
               className={cn("absolute inset-0 -z-10 rounded-full", light ? "bg-white" : "bg-trido")}
-              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+              transition={spring.snappy}
             />
           )}
           {o}

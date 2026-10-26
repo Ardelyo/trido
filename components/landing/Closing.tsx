@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { ArrowUp, ArrowUpRight, Check, Download, Plus } from "lucide-react";
 import { useI18n } from "./i18n";
 import { LangToggle } from "./Navbar";

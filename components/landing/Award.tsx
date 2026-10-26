@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { animate, motion, useInView } from "framer-motion";
+import { animate, motion, useInView } from "motion/react";
 import { useI18n } from "./i18n";
 import { Reveal, SectionPill } from "./shared";
 

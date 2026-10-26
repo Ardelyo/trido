@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { MotionConfig } from 'motion/react';
 import RootRouter from './components/RootRouter';
 import { registerSW } from 'virtual:pwa-register';
 
@@ -50,7 +51,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <RootRouter />
+      <MotionConfig reducedMotion="user">
+        <RootRouter />
+      </MotionConfig>
     </ErrorBoundary>
   </React.StrictMode>
 );

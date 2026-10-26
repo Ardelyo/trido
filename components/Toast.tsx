@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, XCircle, Info, AlertTriangle, X } from 'lucide-react';
 import { toast, ToastEvent } from '../utils/toast';
+import { spring } from '../design/motion';
 
 interface ToastItem extends ToastEvent {}
 
@@ -46,7 +47,7 @@ export const ToastContainer: React.FC = () => {
               initial={{ opacity: 0, y: 30, scale: 0.88 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.92, transition: { duration: 0.2 } }}
-              transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+              transition={spring.snappy}
               className={`pointer-events-auto flex items-start gap-3 px-4 py-3.5 rounded-2xl border shadow-xl shadow-black/8 backdrop-blur-2xl ${colors.bg} min-w-[280px] max-w-[400px] relative overflow-hidden`}
             >
               {/* Progress bar */}

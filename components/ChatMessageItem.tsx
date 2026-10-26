@@ -228,12 +228,12 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
     <div ref={containerRef} className="flex flex-col items-start group w-full will-change-transform" onClick={handleSkipStream}>
       <div className="flex items-center justify-between w-full mb-1 ml-1 px-1">
         <div className="flex items-center gap-1.5">
-          <div className="w-5 h-5 rounded-md bg-[#1550aa] flex items-center justify-center p-0.5 shadow-2xs">
+          <div className="w-5 h-5 rounded-md bg-trido flex items-center justify-center p-0.5 shadow-2xs">
             <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none">
               <path d="M7 4.5v15l4.2-4.1 2.9 5.1 2.4-1.3-2.9-5H19L7 4.5Z" fill="#fff" stroke="#fff" strokeWidth="1.2" strokeLinejoin="round" />
             </svg>
           </div>
-          <span className="text-[11px] font-bold text-[#0a1a3a]">{t('assistant', 'Asisten')}</span>
+          <span className="text-[11px] font-bold text-ink">{t('assistant', 'Asisten')}</span>
           {message.tokens && (
             <span className="text-[10px] font-mono text-slate-400 flex items-center gap-0.5" title={`Model: ${displayModel}`}>
               <Zap size={10} className="text-amber-500" /> {message.tokens} tok
@@ -314,7 +314,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
               handlePinToBoard();
             }}
             title="Tempelkan Respons AI ini langsung ke Papan Tulis (Pin to Canvas)"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#1550aa]/10 hover:bg-[#1550aa] text-[#1550aa] hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-trido/10 hover:bg-trido text-trido hover:text-white transition-all cursor-pointer"
           >
             <Pin size={11} className="rotate-45" />
             <span className="hidden sm:inline">Tempel ke Papan</span>

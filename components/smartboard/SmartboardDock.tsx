@@ -1,11 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { motion, useMotionValue, useTransform, useSpring, useAnimationControls, type MotionValue } from 'framer-motion';
+import { motion, useMotionValue, useTransform, useSpring, useAnimationControls, type MotionValue } from 'motion/react';
 import {
   Clock, PencilRuler, FileText, HelpCircle, Activity, Network, Users,
   CheckSquare, Mic, Sparkles, MousePointer, Pencil, Eraser, Square, Type
 } from 'lucide-react';
 import { useStore } from '../../store';
 import { toast } from '../../utils/toast';
+import { spring } from '../../design/motion';
 
 interface DockItemDef {
   id: string;
@@ -162,7 +163,7 @@ function DockIcon({
   // Smooth magnification spring (50px -> 74px)
   const size = useSpring(
     useTransform(distance, [-140, 0, 140], [50, 74, 50]),
-    { mass: 0.1, stiffness: 220, damping: 14 }
+    spring.dock
   );
 
   const iconScale = useTransform(size, [50, 74], [22, 32]);
@@ -187,7 +188,7 @@ function DockIcon({
           initial={{ opacity: 0, y: 10, scale: 0.9 }}
           animate={{ opacity: 1, y: -8, scale: 1 }}
           exit={{ opacity: 0, y: 10 }}
-          className="absolute -top-9 px-2.5 py-1 rounded-full bg-[#0a1a3a] text-white text-[11px] font-bold whitespace-nowrap shadow-md pointer-events-none z-50"
+          className="absolute -top-9 px-2.5 py-1 rounded-full bg-ink text-white text-[11px] font-bold whitespace-nowrap shadow-md pointer-events-none z-50"
         >
           {item.label}
         </motion.div>
@@ -200,9 +201,9 @@ function DockIcon({
         onClick={handleClick}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className={`relative flex items-center justify-center rounded-2xl border transition-all cursor-pointer select-none ${
+        className={`relative flex items-center justify-center rounded-2xl border transition-colors cursor-pointer touch-target ${
           active
-            ? 'bg-[#1550aa] text-white border-[#1550aa] shadow-md ring-2 ring-[#ffcc00]'
+            ? 'bg-trido text-white border-trido shadow-md ring-2 ring-sun'
             : `${item.bg} ${item.color} border-slate-200/80 shadow-xs hover:shadow-md`
         }`}
       >
@@ -214,7 +215,7 @@ function DockIcon({
       {/* Running active dot indicator */}
       <span
         className={`h-1.5 w-1.5 rounded-full mt-1 transition-all ${
-          active ? 'bg-[#1550aa] scale-100 shadow-[0_0_6px_rgba(21,80,170,0.6)]' : 'bg-transparent scale-0'
+          active ? 'bg-trido scale-100 shadow-[0_0_6px_rgba(21,80,170,0.6)]' : 'bg-transparent scale-0'
         }`}
       />
     </div>
@@ -242,13 +243,14 @@ export const SmartboardDock: React.FC = () => {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center pointer-events-auto select-none">
       <motion.div
-        onMouseMove={(e) => mouseX.set(e.clientX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
+        onPointerMove={(e) => mouseX.set(e.clientX)}
+        onPointerLeave={() => mouseX.set(Infinity)}
+        onPointerUp={() => mouseX.set(Infinity)}
         initial={{ y: 80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 80, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 26 }}
-        className="flex items-end gap-1.5 px-3 py-2 bg-white/90 backdrop-blur-2xl rounded-3xl border-2 border-[#1550aa]/15 shadow-[0_16px_48px_rgba(10,26,58,0.14)]"
+        transition={spring.smooth}
+        className="flex items-end gap-1.5 px-3 py-2 bg-white/90 backdrop-blur-2xl rounded-sheet border-2 border-trido/15 shadow-float"
       >
         {/* Drawing Tools & Classroom Tools */}
         {DOCK_ITEMS.map((item) => (
@@ -256,7 +258,7 @@ export const SmartboardDock: React.FC = () => {
         ))}
 
         {/* Separator */}
-        <div className="h-10 w-px bg-[#0a1a3a]/15 mx-1 mb-2 self-center" />
+        <div className="h-10 w-px bg-ink/15 mx-1 mb-2 self-center" />
 
         {/* AI Voice & Smartboard Studio Trigger */}
         <div className="relative flex flex-col items-center">
@@ -265,20 +267,20 @@ export const SmartboardDock: React.FC = () => {
             onClick={handleMicClick}
             className={`w-[52px] h-[52px] flex items-center justify-center rounded-2xl border transition-all cursor-pointer shadow-md ${
               store.isAiDrawerOpen
-                ? 'bg-[#1550aa] text-white border-[#1550aa] ring-2 ring-[#ffcc00]'
-                : 'bg-[#ffcc00] text-[#0a1a3a] hover:bg-[#ffd633] border-[#ffcc00]'
+                ? 'bg-trido text-white border-trido ring-2 ring-sun'
+                : 'bg-sun text-ink hover:bg-sun-soft border-sun'
             }`}
             title="Kontrol Suara AI Smartboard"
           >
             {store.isThinking ? (
-              <Sparkles size={24} className="animate-spin text-[#1550aa]" />
+              <Sparkles size={24} className="animate-spin text-trido" />
             ) : (
-              <Mic size={24} className={store.isAiDrawerOpen ? 'text-white' : 'text-[#0a1a3a]'} />
+              <Mic size={24} className={store.isAiDrawerOpen ? 'text-white' : 'text-ink'} />
             )}
           </motion.button>
           <span
             className={`h-1.5 w-1.5 rounded-full mt-1 transition-all ${
-              store.isAiDrawerOpen ? 'bg-[#ffcc00] scale-100' : 'bg-transparent scale-0'
+              store.isAiDrawerOpen ? 'bg-sun scale-100' : 'bg-transparent scale-0'
             }`}
           />
         </div>

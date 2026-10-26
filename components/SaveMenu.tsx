@@ -119,7 +119,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
         className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs active:scale-95 cursor-pointer"
         title="Simpan sesi papan tulis ke penyimpanan lokal (Ctrl+S)"
       >
-        <Save size={16} className={isSaving ? "animate-pulse text-[#1550aa]" : isSavedDone ? "text-emerald-600" : "text-[#1550aa]"} /> 
+        <Save size={16} className={isSaving ? "animate-pulse text-trido" : isSavedDone ? "text-emerald-600" : "text-trido"} /> 
         <span className="hidden md:inline">{isSavedDone ? 'Tersimpan' : t('save', 'Simpan')}</span>
         <ChevronDown size={14} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -131,7 +131,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
         className="flex sm:hidden p-2.5 text-slate-700 hover:text-slate-900 border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs active:scale-95 cursor-pointer"
         title="Simpan"
       >
-        <Save size={18} className="text-[#1550aa]" />
+        <Save size={18} className="text-trido" />
       </button>
 
       <AnimatePresence>
@@ -156,7 +156,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                 )}
               </div>
 
-              <div className="flex items-center bg-white border border-slate-300 rounded-xl px-3 py-1.5 focus-within:border-[#1550aa] focus-within:ring-2 focus-within:ring-[#1550aa]/15 transition-all">
+              <div className="flex items-center bg-white border border-slate-300 rounded-xl px-3 py-1.5 focus-within:border-trido focus-within:ring-2 focus-within:ring-trido/15 transition-all">
                 <input
                   ref={titleInputRef}
                   type="text"
@@ -181,7 +181,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                 className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all cursor-pointer text-left group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1550aa] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-trido flex items-center justify-center shrink-0">
                     <HardDrive size={16} />
                   </div>
                   <div>
@@ -230,7 +230,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                 className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all cursor-pointer text-left group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1550aa] flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-trido flex items-center justify-center shrink-0">
                     <Download size={16} />
                   </div>
                   <div>
@@ -254,7 +254,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                   setIsOpen(false);
                   toggleHistory();
                 }}
-                className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-blue-50/70 border border-transparent hover:border-blue-200 transition-all cursor-pointer text-left text-slate-700 hover:text-[#1550aa]"
+                className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-blue-50/70 border border-transparent hover:border-blue-200 transition-all cursor-pointer text-left text-slate-700 hover:text-trido"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">

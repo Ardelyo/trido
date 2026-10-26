@@ -154,12 +154,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
         {/* Header */}
         <div className="h-20 px-6 lg:px-12 flex justify-between items-center bg-white border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#1550aa] flex items-center justify-center text-white shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-trido flex items-center justify-center text-white shadow-2xs">
               <Clock size={20} strokeWidth={2.4} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-[#0a1a3a] tracking-tight">
+                <h2 className="text-lg font-black text-ink tracking-tight">
                   Riwayat Papan Tulis Lokal
                 </h2>
                 <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
@@ -181,7 +181,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                 placeholder="Cari riwayat papan..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-100/80 border border-slate-200 rounded-full py-1.5 pl-9 pr-3 text-xs font-semibold text-slate-800 outline-hidden focus:bg-white focus:border-[#1550aa] transition-all placeholder:text-slate-400"
+                className="w-full bg-slate-100/80 border border-slate-200 rounded-full py-1.5 pl-9 pr-3 text-xs font-semibold text-slate-800 outline-hidden focus:bg-white focus:border-trido transition-all placeholder:text-slate-400"
               />
               {searchQuery && (
                 <button
@@ -198,7 +198,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
             <button
               type="button"
               onClick={handleSaveActiveNow}
-              className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-[#1550aa] hover:bg-[#0a1a3a] text-white text-xs font-bold rounded-full transition-all shadow-xs cursor-pointer"
+              className="hidden md:flex items-center gap-1.5 px-4 py-2 bg-trido hover:bg-ink text-white text-xs font-bold rounded-full transition-all shadow-xs cursor-pointer"
             >
               <Plus size={14} />
               <span>Simpan Papan Aktif</span>
@@ -245,7 +245,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                     transition={{ delay: idx * 0.03, duration: 0.2 }}
                     className={`group flex flex-col bg-white border rounded-2xl overflow-hidden transition-all shadow-2xs hover:shadow-md ${
                       isActiveSession 
-                        ? 'border-[#1550aa] ring-2 ring-[#1550aa]/15' 
+                        ? 'border-trido ring-2 ring-trido/15' 
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -259,7 +259,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                         />
                       ) : (
                         <div className="text-center space-y-1 text-slate-400 select-none">
-                          <Layers size={28} className="mx-auto opacity-40 text-[#1550aa]" />
+                          <Layers size={28} className="mx-auto opacity-40 text-trido" />
                           <span className="text-[10px] font-bold block uppercase tracking-wider text-slate-400">
                             Papan Pelajaran
                           </span>
@@ -272,7 +272,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                           {item.pages.length} Hlm
                         </span>
                         {isActiveSession && (
-                          <span className="bg-[#1550aa] text-white px-2 py-0.5 rounded-md text-[9px] font-black tracking-wide uppercase shadow-2xs">
+                          <span className="bg-trido text-white px-2 py-0.5 rounded-md text-[9px] font-black tracking-wide uppercase shadow-2xs">
                             Aktif
                           </span>
                         )}
@@ -284,7 +284,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                           type="button"
                           title="Duplikasi sesi papan"
                           onClick={() => handleDuplicateSession(item)}
-                          className="w-7 h-7 rounded-lg bg-white/90 hover:bg-white text-slate-600 hover:text-[#1550aa] flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                          className="w-7 h-7 rounded-lg bg-white/90 hover:bg-white text-slate-600 hover:text-trido flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                         >
                           <Copy size={13} />
                         </button>
@@ -292,7 +292,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                           type="button"
                           title="Unduh berkas cadangan (.trido)"
                           onClick={() => handleExportProjectFile(item)}
-                          className="w-7 h-7 rounded-lg bg-white/90 hover:bg-white text-slate-600 hover:text-[#1550aa] flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                          className="w-7 h-7 rounded-lg bg-white/90 hover:bg-white text-slate-600 hover:text-trido flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                         >
                           <Download size={13} />
                         </button>
@@ -321,12 +321,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                                 if (e.key === 'Enter') handleSaveRename(item);
                                 if (e.key === 'Escape') setEditingTitleId(null);
                               }}
-                              className="flex-1 text-xs font-bold border border-[#1550aa] rounded px-2 py-1 outline-hidden"
+                              className="flex-1 text-xs font-bold border border-trido rounded px-2 py-1 outline-hidden"
                             />
                             <button
                               type="button"
                               onClick={() => handleSaveRename(item)}
-                              className="px-2 py-1 bg-[#1550aa] text-white text-[10px] font-bold rounded cursor-pointer"
+                              className="px-2 py-1 bg-trido text-white text-[10px] font-bold rounded cursor-pointer"
                             >
                               Simpan
                             </button>
@@ -338,7 +338,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                                 setEditingTitleId(item.id);
                                 setNewTitleValue(item.title);
                               }}
-                              className="font-extrabold text-sm text-[#0a1a3a] leading-tight line-clamp-1 cursor-pointer hover:text-[#1550aa] transition-colors"
+                              className="font-extrabold text-sm text-ink leading-tight line-clamp-1 cursor-pointer hover:text-trido transition-colors"
                               title="Klik ganda untuk mengubah nama"
                             >
                               {item.title}
@@ -374,8 +374,8 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                         }}
                         className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                           isActiveSession 
-                            ? 'bg-blue-50 text-[#1550aa] border border-blue-200' 
-                            : 'bg-[#1550aa] hover:bg-[#0a1a3a] text-white shadow-2xs'
+                            ? 'bg-blue-50 text-trido border border-blue-200' 
+                            : 'bg-trido hover:bg-ink text-white shadow-2xs'
                         }`}
                       >
                         <CornerDownLeft size={13} />
@@ -392,7 +392,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
               <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 mx-auto">
                 <Search size={28} />
               </div>
-              <h3 className="text-base font-extrabold text-[#0a1a3a]">
+              <h3 className="text-base font-extrabold text-ink">
                 {searchQuery ? 'Tidak ada sesi yang cocok' : 'Belum ada sesi tersimpan'}
               </h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">

@@ -1,16 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import App from '../App';
 import LandingPage from './landing/LandingPage';
-
-function isElectronEnv(): boolean {
-  if (typeof window === 'undefined') return false;
-  return Boolean(
-    (window as any).electronAPI ||
-    (window as any).process?.type === 'renderer' ||
-    navigator.userAgent.toLowerCase().includes('electron')
-  );
-}
+import { isElectronEnv } from '../utils/electron';
 
 function isLocalEnv(): boolean {
   if (typeof window === 'undefined') return false;
@@ -36,7 +28,7 @@ const TransitionCurtain: React.FC<{ isExiting: boolean; message?: string }> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0a1a3a] text-white select-none pointer-events-auto"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-ink text-white select-none pointer-events-auto"
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 15 }}
@@ -59,7 +51,7 @@ const TransitionCurtain: React.FC<{ isExiting: boolean; message?: string }> = ({
             </svg>
           </div>
           <motion.span
-            className="absolute -inset-1.5 rounded-[1.5rem] border border-[#ffcc00]/50"
+            className="absolute -inset-1.5 rounded-[1.5rem] border border-sun/50"
             animate={{ scale: [1, 1.14, 1], opacity: [0.3, 0.8, 0.3] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           />
@@ -68,7 +60,7 @@ const TransitionCurtain: React.FC<{ isExiting: boolean; message?: string }> = ({
         <div>
           <div className="flex items-center justify-center gap-2">
             <span className="font-extrabold text-2xl tracking-tight text-white">TRIDO</span>
-            <span className="text-sm font-semibold px-2 py-0.5 rounded-full bg-[#1550aa] text-white">Smartboard</span>
+            <span className="text-sm font-semibold px-2 py-0.5 rounded-full bg-trido text-white">Smartboard</span>
           </div>
           <p className="mt-2 text-sm text-white/70 font-medium">
             {message || 'Mempersiapkan Digital Classroom...'}
@@ -78,7 +70,7 @@ const TransitionCurtain: React.FC<{ isExiting: boolean; message?: string }> = ({
         {/* Minimal Solid Loading Bar (Strictly Zero Gradient) */}
         <div className="w-48 h-1 rounded-full bg-white/10 overflow-hidden relative mt-1">
           <motion.div
-            className="absolute inset-y-0 left-0 bg-[#ffcc00] rounded-full"
+            className="absolute inset-y-0 left-0 bg-sun rounded-full"
             initial={{ left: "-40%", width: "40%" }}
             animate={{ left: "100%", width: "50%" }}
             transition={{ duration: 0.85, repeat: Infinity, ease: [0.16, 1, 0.3, 1] }}
@@ -155,7 +147,7 @@ export const RootRouter: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full min-h-screen bg-[#f8fafc]">
+    <div className="relative w-full min-h-dvh bg-[#f8fafc]">
       <AnimatePresence mode="wait">
         {route === 'landing' ? (
           <motion.div
@@ -186,7 +178,7 @@ export const RootRouter: React.FC = () => {
               scale: 0.99,
               transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } 
             }}
-            className="w-full h-screen overflow-hidden"
+            className="w-full h-dvh overflow-hidden"
           >
             <App />
           </motion.div>
