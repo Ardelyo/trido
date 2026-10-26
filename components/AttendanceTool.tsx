@@ -224,15 +224,15 @@ export const AttendanceTool: React.FC<AttendanceToolProps> = ({ config }) => {
     : 'https://trido.vercel.app';
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 font-sans select-none text-slate-800 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-50 font-sans select-none text-ink overflow-hidden">
       {/* Header */}
       <div className="p-3 bg-white border-b border-slate-100 flex items-center justify-between shrink-0 shadow-xs">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-trido/5 text-trido flex items-center justify-center shrink-0">
             <Users size={16} />
           </div>
           <div className="min-w-0">
-            <h4 className="font-extrabold text-slate-800 text-xs sm:text-sm truncate leading-tight">
+            <h4 className="font-display font-extrabold text-ink text-xs sm:text-sm truncate leading-tight">
               {title}
             </h4>
             <span className="text-[10px] font-bold text-slate-400 block truncate">
@@ -251,7 +251,7 @@ export const AttendanceTool: React.FC<AttendanceToolProps> = ({ config }) => {
           </span>
           <button
             onClick={() => setShowQr(!showQr)}
-            className={`p-1.5 rounded-lg transition cursor-pointer ${showQr ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
+            className={`p-1.5 rounded-lg transition cursor-pointer ${showQr ? 'bg-trido text-white' : 'text-slate-400 hover:text-trido hover:bg-trido/5'}`}
             title="Tampilkan QR Check-in Mandiri Siswa"
           >
             <QrCode size={14} />
@@ -265,7 +265,7 @@ export const AttendanceTool: React.FC<AttendanceToolProps> = ({ config }) => {
           </button>
           <button
             onClick={handleCopyReport}
-            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-trido hover:bg-trido/5 rounded-lg transition cursor-pointer"
             title="Salin ringkasan laporan presensi"
           >
             {isCopied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
@@ -373,11 +373,11 @@ export const AttendanceTool: React.FC<AttendanceToolProps> = ({ config }) => {
             value={newStudentName}
             onChange={e => setNewStudentName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAddStudent()}
-            className="w-24 sm:w-28 text-[11px] bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-blue-500"
+            className="w-24 sm:w-28 text-[11px] bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none focus:border-trido/50"
           />
           <button
             onClick={handleAddStudent}
-            className="p-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer"
+            className="p-1 bg-trido text-white rounded-lg hover:bg-trido-deep cursor-pointer"
             title="Tambah siswa"
           >
             <Plus size={12} />

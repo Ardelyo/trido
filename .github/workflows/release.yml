@@ -44,7 +44,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: dist-release/*.exe
+          path: |
+            dist-release/*.exe
+            dist-release/*.exe.blockmap
+            dist-release/latest.yml
           retention-days: 3
 
   # ── macOS .dmg ─────────────────────────────────────────────────────────────
@@ -71,7 +74,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-dmg
-          path: dist-release/*.dmg
+          path: |
+            dist-release/*.dmg
+            dist-release/*.dmg.blockmap
+            dist-release/latest-mac.yml
           retention-days: 3
 
   # ── Linux .AppImage ────────────────────────────────────────────────────────
@@ -98,7 +104,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
-          path: dist-release/*.AppImage
+          path: |
+            dist-release/*.AppImage
+            dist-release/latest-linux.yml
           retention-days: 3
 
   # ── Portable ZIP (Node.js required, all platforms) ─────────────────────────

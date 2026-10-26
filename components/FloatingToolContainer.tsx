@@ -17,9 +17,12 @@ interface FloatingToolContainerProps {
 export const FloatingToolContainer: React.FC<FloatingToolContainerProps> = ({ 
   title, isOpen, onClose, children, icon: Icon, 
   defaultPosition = { x: 100, y: 100 },
-  width = 340,
-  height = 500
+  width: preferredWidth = 340,
+  height: preferredHeight = 500
 }) => {
+  // Clamp to the viewport so tools never spill off-screen on phones (no-op on desktop).
+  const width = typeof window !== 'undefined' ? Math.min(preferredWidth, window.innerWidth - 24) : preferredWidth;
+  const height = typeof window !== 'undefined' ? Math.min(preferredHeight, window.innerHeight - 100) : preferredHeight;
   const safeLeft = typeof window !== 'undefined' ? Math.min(Math.max(16, defaultPosition.x), Math.max(16, window.innerWidth - width - 20)) : defaultPosition.x;
   const safeTop = typeof window !== 'undefined' ? Math.min(Math.max(60, defaultPosition.y), Math.max(60, window.innerHeight - height - 20)) : defaultPosition.y;
 
@@ -42,7 +45,7 @@ export const FloatingToolContainer: React.FC<FloatingToolContainerProps> = ({
           transition={spring.smooth}
           style={{ 
             width, 
-            maxHeight: 'calc(100vh - 80px)',
+            maxHeight: 'calc(100dvh - 80px)',
             height,
             top: safeTop,
             left: safeLeft,

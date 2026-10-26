@@ -59,7 +59,7 @@ export const MarkmapTool: React.FC<MarkmapToolProps> = ({ config }) => {
           autoFit: true,
           duration: 350,
           color: (node: any) => {
-            const colors = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#db2777'];
+            const colors = ['#1550aa', '#059669', '#d97706', '#dc2626', '#7c3aed', '#db2777'];
             const depth = node.depth || 0;
             return colors[depth % colors.length];
           }
@@ -104,15 +104,15 @@ export const MarkmapTool: React.FC<MarkmapToolProps> = ({ config }) => {
   };
 
   return (
-    <div ref={containerRef} className="flex flex-col w-full h-full bg-[#f8fafc] text-slate-800 overflow-hidden font-sans select-none">
+    <div ref={containerRef} className="flex flex-col w-full h-full bg-[#f8fafc] text-ink overflow-hidden font-sans select-none">
       {/* Top Toolbar */}
       <div className="flex items-center justify-between px-3 py-2 bg-white border-b border-slate-200/90 text-xs shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse" />
+          <div className="w-2.5 h-2.5 rounded-full bg-trido animate-pulse" />
           <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider line-clamp-1">
             {title}
           </span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-bold hidden sm:inline">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-trido/5 text-trido font-bold hidden sm:inline">
             D3 Mindmap
           </span>
         </div>

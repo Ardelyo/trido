@@ -62,10 +62,10 @@ export const FileUploadButton: React.FC<FileUploadButtonProps> = ({
         type="button" 
         onClick={() => fileInputRef.current?.click()} 
         disabled={disabled || isProcessing}
-        className={`${className || "text-slate-400 hover:text-blue-500 transition-colors p-2 rounded-xl hover:bg-blue-50"} ${(disabled || isProcessing) ? 'opacity-40 pointer-events-none' : ''}`} 
+        className={`${className || "text-slate-400 hover:text-trido/50 transition-colors p-2 rounded-xl hover:bg-trido/5"} ${(disabled || isProcessing) ? 'opacity-40 pointer-events-none' : ''}`} 
         title={title}
       >
-        {isProcessing ? <Loader2 size={18} className="animate-spin text-blue-600" /> : icon}
+        {isProcessing ? <Loader2 size={18} className="animate-spin text-trido" /> : icon}
       </button>
       <input 
         type="file" 

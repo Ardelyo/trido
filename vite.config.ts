@@ -23,10 +23,13 @@ export default defineConfig(({ mode }) => {
           registerType: 'autoUpdate',
           includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
           manifest: {
-            name: 'Trido++ Digital Classroom',
-            short_name: 'Trido++',
-            description: 'AI-Powered Digital Classroom for Local & Cloud Learning',
-            theme_color: '#2563eb',
+            name: 'Trido — AI Smartboard Classroom',
+            short_name: 'Trido',
+            description: 'Voice-driven AI smartboard for inclusive classrooms — cloud or fully offline.',
+            theme_color: '#1550aa',
+            background_color: '#e4e3e0',
+            start_url: '/?app=true',
+            display: 'standalone',
             icons: [
               {
                 src: 'pwa-192x192.png',

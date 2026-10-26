@@ -27,24 +27,24 @@ export const FlashcardTool: React.FC<FlashcardToolProps> = ({ config }) => {
       >
         {/* Front */}
         <div 
-          className="absolute inset-0 w-full h-full bg-white border-2 border-indigo-200 rounded-2xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
+          className="absolute inset-0 w-full h-full bg-white border-2 border-trido/20 rounded-2xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
-          <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-4">Pertanyaan</span>
-          <h2 className="text-2xl font-bold text-slate-800 text-center leading-tight">
+          <span className="text-xs font-bold text-trido/30 uppercase tracking-widest mb-4">Pertanyaan</span>
+          <h2 className="font-display text-2xl font-bold text-ink text-center leading-tight">
             {config.front || 'Front of Card'}
           </h2>
         </div>
 
         {/* Back */}
         <div 
-          className="absolute inset-0 w-full h-full bg-indigo-600 border-2 border-indigo-400 rounded-2xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
+          className="absolute inset-0 w-full h-full bg-trido border-2 border-trido/70 rounded-2xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
           style={{ 
             backfaceVisibility: 'hidden', 
             transform: 'rotateY(180deg)' 
           }}
         >
-          <span className="text-xs font-bold text-indigo-200 uppercase tracking-widest mb-4">Jawaban</span>
+          <span className="text-xs font-bold text-trido/20 uppercase tracking-widest mb-4">Jawaban</span>
           <p className="text-xl text-white text-center leading-relaxed font-medium">
             {config.back || 'Back of Card'}
           </p>

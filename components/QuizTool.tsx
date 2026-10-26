@@ -20,7 +20,7 @@ export const QuizTool: React.FC = () => {
       icon: CheckSquare,
       title: t('quiz_type_mc', 'Pilihan Ganda'),
       desc: t('quiz_type_mc_desc', 'Satu jawaban benar'),
-      color: 'bg-blue-100 text-blue-600',
+      color: 'bg-trido/10 text-trido',
       defaultConfig: {
         title: 'Kuis Pilihan Ganda',
         question: 'Manakah di bawah ini yang merupakan fungsi utama klorofil dalam fotosintesis?',
@@ -119,10 +119,10 @@ export const QuizTool: React.FC = () => {
             className="flex-1 p-6 overflow-y-auto custom-scrollbar"
           >
             <div className="mb-6">
-               <h4 className="text-[14px] font-black text-slate-400 uppercase tracking-widest mb-4">{t('quiz_createNew', 'Buat Baru')}</h4>
+               <h4 className="font-display text-[14px] font-black text-slate-400 uppercase tracking-widest mb-4">{t('quiz_createNew', 'Buat Baru')}</h4>
                <button 
                  onClick={() => setView('create')}
-                 className="w-full h-32 rounded-[1.5rem] bg-indigo-600 flex flex-col items-center justify-center text-white shadow-xl shadow-indigo-600/20 hover:scale-[1.02] active:scale-98 transition-all group"
+                 className="w-full h-32 rounded-[1.5rem] bg-trido flex flex-col items-center justify-center text-white shadow-xl shadow-trido/20 hover:scale-[1.02] active:scale-98 transition-all group"
                >
                   <Sparkles size={32} className="mb-2 group-hover:rotate-12 transition-transform" />
                   <span className="font-bold text-[16px]">{t('quiz_generateViaAi', 'Generate Kuis via AI')}</span>
@@ -131,23 +131,23 @@ export const QuizTool: React.FC = () => {
             </div>
 
             <div>
-               <h4 className="text-[14px] font-black text-slate-400 uppercase tracking-widest mb-4">{t('quiz_templates', 'Template Kuis')}</h4>
+               <h4 className="font-display text-[14px] font-black text-slate-400 uppercase tracking-widest mb-4">{t('quiz_templates', 'Template Kuis')}</h4>
                <div className="grid grid-cols-1 gap-3">
                   {quizTypes.map((type, i) => (
                     <button
                       key={i}
                       type="button"
                       onClick={() => handleSpawnTemplate(type)}
-                      className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50/50 transition-all group text-left cursor-pointer"
+                      className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-200 hover:border-trido/70 hover:bg-trido/3 transition-all group text-left cursor-pointer"
                     >
                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${type.color} group-hover:scale-110 transition-transform shadow-sm`}>
                           <type.icon size={24} />
                        </div>
                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-slate-800 text-[15px]">{type.title}</div>
+                          <div className="font-bold text-ink text-[15px]">{type.title}</div>
                           <div className="text-[12px] text-slate-500 font-medium truncate">{type.desc}</div>
                        </div>
-                       <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500" />
+                       <ChevronRight size={18} className="text-slate-300 group-hover:text-trido/50" />
                     </button>
                   ))}
                </div>
@@ -161,10 +161,10 @@ export const QuizTool: React.FC = () => {
             exit={{ opacity: 0, x: -20 }}
             className="flex-1 p-6 flex flex-col"
           >
-             <button onClick={() => setView('hub')} className="text-[12px] font-bold text-slate-500 mb-4 flex items-center gap-1 hover:text-slate-800 cursor-pointer">
+             <button onClick={() => setView('hub')} className="text-[12px] font-bold text-slate-500 mb-4 flex items-center gap-1 hover:text-ink cursor-pointer">
                <ChevronRight size={14} className="rotate-180" /> {t('quiz_back', 'Kembali')}
              </button>
-             <h3 className="text-xl font-extrabold text-slate-900 mb-2">{t('quiz_automation', 'Automasi Kuis')}</h3>
+             <h3 className="font-display text-xl font-extrabold text-ink mb-2">{t('quiz_automation', 'Automasi Kuis')}</h3>
              <p className="text-[14px] text-slate-500 mb-4 font-medium">{t('quiz_automationDesc', 'Trido AI akan membaca isi papan tulis Anda dan membuat pertanyaan yang relevan.')}</p>
              
              <div className="space-y-4">
@@ -175,7 +175,7 @@ export const QuizTool: React.FC = () => {
                     value={topicInput}
                     onChange={(e) => setTopicInput(e.target.value)}
                     placeholder="Kosongkan untuk otomatis dari papan tulis..."
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-indigo-500"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-ink outline-none focus:border-trido/50"
                   />
                 </div>
 
@@ -189,8 +189,8 @@ export const QuizTool: React.FC = () => {
                          onClick={() => setQuestionCount(n)}
                          className={`flex-1 py-3 border rounded-xl font-bold transition-colors cursor-pointer ${
                            questionCount === n
-                             ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                             : 'bg-white border-slate-200 text-slate-700 hover:bg-indigo-50 hover:border-indigo-300'
+                             ? 'bg-trido text-white border-trido shadow-sm'
+                             : 'bg-white border-slate-200 text-slate-700 hover:bg-trido/5 hover:border-trido/30'
                          }`}
                        >
                          {n}
@@ -202,7 +202,7 @@ export const QuizTool: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleStartGenerate}
-                  className="w-full py-4 mt-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg shadow-indigo-600/20 active:scale-95 transition-all cursor-pointer"
+                  className="w-full py-4 mt-4 bg-trido hover:bg-trido-deep text-white rounded-2xl font-bold shadow-lg shadow-trido/20 active:scale-95 transition-all cursor-pointer"
                 >
                    {t('quiz_startGenerate', 'MULAI GENERATE')}
                 </button>

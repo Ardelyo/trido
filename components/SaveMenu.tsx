@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from '../utils/translations';
 import { toast } from '../utils/toast';
 import { downloadFile } from '../utils/smartExport';
+import { tween } from '../design/motion';
 
 interface SaveMenuProps {
   onExportClick: () => void;
@@ -116,7 +117,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
       <button 
         type="button"
         onClick={() => setIsOpen(!isOpen)} 
-        className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs active:scale-95 cursor-pointer"
+        className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:text-ink border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs active:scale-95 cursor-pointer"
         title="Simpan sesi papan tulis ke penyimpanan lokal (Ctrl+S)"
       >
         <Save size={16} className={isSaving ? "animate-pulse text-trido" : isSavedDone ? "text-emerald-600" : "text-trido"} /> 
@@ -128,7 +129,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
       <button 
         type="button"
         onClick={() => setIsOpen(!isOpen)} 
-        className="flex sm:hidden p-2.5 text-slate-700 hover:text-slate-900 border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs active:scale-95 cursor-pointer"
+        className="flex sm:hidden p-2.5 text-slate-700 hover:text-ink border border-slate-200/80 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-xs active:scale-95 cursor-pointer"
         title="Simpan"
       >
         <Save size={18} className="text-trido" />
@@ -140,8 +141,8 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-200 z-50 overflow-hidden"
+            transition={tween.fast}
+            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-sheet shadow-2xl border border-slate-200 z-50 overflow-hidden"
           >
             {/* Header: Title Editor */}
             <div className="p-4 border-b border-slate-100 bg-slate-50/70 space-y-2">
@@ -163,7 +164,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ketik judul materi papan..."
-                  className="w-full text-xs font-bold text-slate-800 outline-hidden bg-transparent"
+                  className="w-full text-xs font-bold text-ink outline-hidden bg-transparent"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveToDb();
                   }}
@@ -181,11 +182,11 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                 className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all cursor-pointer text-left group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-trido flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-trido/5 text-trido flex items-center justify-center shrink-0">
                     <HardDrive size={16} />
                   </div>
                   <div>
-                    <div className="font-extrabold text-slate-800 flex items-center gap-1.5">
+                    <div className="font-extrabold text-ink flex items-center gap-1.5">
                       <span>Simpan ke Database Laptop</span>
                       {isSavedDone && <Check size={13} className="text-emerald-600" />}
                     </div>
@@ -210,7 +211,7 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                     <FileJson size={16} />
                   </div>
                   <div>
-                    <div className="font-extrabold text-slate-800">
+                    <div className="font-extrabold text-ink">
                       Unduh Berkas Proyek (.trido)
                     </div>
                     <div className="text-[10px] text-slate-400 font-medium">
@@ -230,11 +231,11 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                 className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all cursor-pointer text-left group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-trido flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-trido/5 text-trido flex items-center justify-center shrink-0">
                     <Download size={16} />
                   </div>
                   <div>
-                    <div className="font-extrabold text-slate-800">
+                    <div className="font-extrabold text-ink">
                       Pusat Ekspor Gambar & PDF
                     </div>
                     <div className="text-[10px] text-slate-400 font-medium">
@@ -254,14 +255,14 @@ export const SaveMenu: React.FC<SaveMenuProps> = ({ onExportClick }) => {
                   setIsOpen(false);
                   toggleHistory();
                 }}
-                className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-blue-50/70 border border-transparent hover:border-blue-200 transition-all cursor-pointer text-left text-slate-700 hover:text-trido"
+                className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-trido/4 border border-transparent hover:border-trido/20 transition-all cursor-pointer text-left text-slate-700 hover:text-trido"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
                     <History size={16} />
                   </div>
                   <div>
-                    <div className="font-extrabold text-slate-800">
+                    <div className="font-extrabold text-ink">
                       Buka Riwayat Papan
                     </div>
                     <div className="text-[10px] text-slate-400 font-medium">

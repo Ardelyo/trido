@@ -97,15 +97,15 @@ export const AgentCursor: React.FC = () => {
       {displayMessage && (
         <div className="absolute bottom-8 left-4 z-50 animate-in slide-in-from-bottom-2 fade-in duration-300 pointer-events-auto">
           <details className="relative rounded-2xl rounded-bl-none bg-white shadow-2xl border border-slate-200 overflow-hidden group min-w-[200px] max-w-[320px]">
-            <summary className="p-3 text-sm font-semibold text-blue-600 cursor-pointer hover:bg-slate-50 list-none flex items-center gap-2 select-none [&::-webkit-details-marker]:hidden relative">
+            <summary className="p-3 text-sm font-semibold text-trido cursor-pointer hover:bg-slate-50 list-none flex items-center gap-2 select-none [&::-webkit-details-marker]:hidden relative">
               <span className="relative flex h-2 w-2 mr-1">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-600 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-trido opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-trido"></span>
               </span>
               Trido AI Merespons
               <ChevronDown size={16} className="ml-auto group-open:rotate-180 transition-transform" />
             </summary>
-            <div className="px-3 pb-3 pt-1 text-xs font-medium text-slate-800 border-t border-slate-100 max-h-[300px] overflow-y-auto whitespace-pre-wrap">
+            <div className="px-3 pb-3 pt-1 text-xs font-medium text-ink border-t border-slate-100 max-h-[300px] overflow-y-auto whitespace-pre-wrap">
               {displayMessage}
             </div>
             {/* Tail */}
@@ -125,7 +125,7 @@ export const AgentCursor: React.FC = () => {
         >
           <path 
             d="M3 3L10.5 20.5L13.5 13.5L20.5 10.5L3 3Z" 
-            fill={isClicking ? "#ef4444" : "#2563eb"} 
+            fill={isClicking ? "#ef4444" : "#1550aa"} 
             stroke="white" 
             strokeWidth="1.5"
             strokeLinejoin="round"
@@ -134,7 +134,7 @@ export const AgentCursor: React.FC = () => {
         
         {/* Click Ripple Effect */}
         {isClicking && (
-          <div className="absolute -left-2 -top-2 h-10 w-10 animate-ping rounded-full border-2 border-blue-600 opacity-75"></div>
+          <div className="absolute -left-2 -top-2 h-10 w-10 animate-ping rounded-full border-2 border-trido opacity-75"></div>
         )}
       </div>
 
@@ -143,7 +143,7 @@ export const AgentCursor: React.FC = () => {
         ref={badgeRef}
         className={`
           absolute left-5 top-5 flex items-center gap-2 whitespace-nowrap rounded-br-xl rounded-bl-xl rounded-tr-xl 
-          bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-xl
+          bg-trido px-3 py-1.5 text-xs font-bold text-white shadow-xl
           transition-all duration-300 origin-top-left
           ${(isThinking || currentAction) ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
         `}

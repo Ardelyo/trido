@@ -21,9 +21,9 @@ interface SettingsViewProps {
 type SettingsTab = 'ai' | 'features' | 'audio' | 'language' | 'data';
 
 const Section: React.FC<{ title: string; subtitle?: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
-  <div className="bg-white rounded-3xl border border-slate-200/70 shadow-xs overflow-hidden">
+  <div className="bg-white rounded-sheet border border-slate-200/70 shadow-xs overflow-hidden">
     <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-      <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">{title}</h3>
+      <h3 className="font-display font-extrabold text-ink text-sm tracking-tight">{title}</h3>
       {subtitle && <p className="text-xs text-slate-500 font-medium mt-0.5">{subtitle}</p>}
     </div>
     <div className="p-6 space-y-4">{children}</div>
@@ -38,7 +38,7 @@ const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode 
   </div>
 );
 
-const inputCls = "w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 transition-all";
+const inputCls = "w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-sm font-semibold text-ink placeholder:text-slate-400 focus:outline-none focus:border-trido focus:ring-4 focus:ring-trido/10 transition-all";
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   const { t } = useTranslation();
@@ -250,14 +250,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
       {/* Header */}
       <div className="h-20 lg:h-22 px-6 lg:px-12 flex justify-between items-center bg-white border-b border-slate-200/80 shrink-0">
         <div>
-          <h2 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight">{t('settingsTitle', 'Pengaturan')}</h2>
+          <h2 className="font-display text-xl lg:text-2xl font-black text-ink tracking-tight">{t('settingsTitle', 'Pengaturan')}</h2>
           <p className="text-xs lg:text-sm font-semibold text-slate-500 mt-0.5">{t('settingsSubtitle', 'Konfigurasi AI cerdas, fitur kelas, dan preferensi smartboard')}</p>
         </div>
         <div className="flex items-center gap-3">
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
             onClick={handleSave}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-600/20 hover:bg-blue-700 transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 bg-trido text-white rounded-xl font-bold text-sm shadow-md shadow-trido/20 hover:bg-trido-deep transition-colors cursor-pointer"
           >
             <AnimatePresence mode="wait">
               {saved ? (
@@ -292,8 +292,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-trido text-white shadow-sm shadow-trido/20'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-ink'
                 }`}
               >
                 <Icon size={15} />
@@ -312,7 +312,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
           {activeTab === 'ai' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               {/* Panduan Cepat Pemula & Pengingat Penting Model Trido / API Key */}
-              <div className="bg-white rounded-3xl border-2 border-trido/20 p-5 shadow-xs space-y-3">
+              <div className="bg-white rounded-sheet border-2 border-trido/20 p-5 shadow-xs space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="px-3 py-1 rounded-full bg-sun text-ink text-[11px] font-black uppercase tracking-wider">
@@ -361,11 +361,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                         onClick={() => setLocalAiPref(opt.val)}
                         className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                           localAiPref === opt.val
-                            ? 'border-blue-600 bg-blue-50/50 shadow-xs'
+                            ? 'border-trido bg-trido/3 shadow-xs'
                             : 'border-slate-200 bg-white hover:border-slate-300'
                         }`}
                       >
-                        <div className={`font-bold text-xs ${localAiPref === opt.val ? 'text-blue-700' : 'text-slate-800'}`}>
+                        <div className={`font-bold text-xs ${localAiPref === opt.val ? 'text-trido-deep' : 'text-ink'}`}>
                           {opt.label}
                         </div>
                         <div className="text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">
@@ -388,7 +388,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   </div>
                   <button
                     onClick={handleProbe}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                    className="text-[11px] font-bold text-trido hover:text-trido-deep hover:underline cursor-pointer"
                   >
                     Uji Ulang Koneksi
                   </button>
@@ -398,7 +398,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 {isOllamaMode && (
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
                     <div className="flex items-center justify-between">
-                      <div className="font-extrabold text-xs text-slate-900 flex items-center gap-2">
+                      <div className="font-extrabold text-xs text-ink flex items-center gap-2">
                         <HardDrive size={15} className="text-emerald-600" />
                         Konfigurasi Model Lokal (Ollama)
                       </div>
@@ -480,7 +480,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
 
                         {(isPullingModel || pullProgress) && (
                           <div className="p-3.5 bg-white rounded-xl border border-amber-300 space-y-2.5 font-sans shadow-2xs">
-                            <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                            <div className="flex items-center justify-between text-xs font-bold text-ink">
                               <span className="flex items-center gap-2">
                                 <span className="w-2.5 h-2.5 rounded-full bg-trido animate-ping" />
                                 <span className="capitalize">{pullProgress?.status || 'Mengunduh model...'}</span>
@@ -518,8 +518,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 {/* Gemini / Vertex Cloud Section */}
                 {(isGeminiMode || isVertexMode) && (
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
-                    <div className="font-extrabold text-xs text-slate-900 flex items-center gap-2">
-                      <Sparkles size={15} className="text-blue-600" />
+                    <div className="font-extrabold text-xs text-ink flex items-center gap-2">
+                      <Sparkles size={15} className="text-trido" />
                       Konfigurasi Cloud Frontier (Google AI)
                     </div>
 
@@ -568,15 +568,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 title="✨ Fitur Cerdas Smartboard (Core Engine)"
                 subtitle="Kemampuan bawaan papan tulis: Diagram Mermaid, Jev System 1 Reflex, Inking Halus, Timer Visual, Presensi, dan Otomasi Multi-Task"
               >
-                <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <div className="p-3.5 bg-trido/5 rounded-2xl border border-trido/16 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-trido text-white flex items-center justify-center shrink-0 shadow-xs">
                     <Sparkles size={16} />
                   </div>
                   <div>
-                    <h5 className="text-xs font-black text-blue-950">
+                    <h5 className="text-xs font-black text-ink">
                       Seluruh Fitur Smartboard Aktif Penuh (Full Production Core)
                     </h5>
-                    <p className="text-[11px] text-blue-800 font-medium leading-tight mt-0.5">
+                    <p className="text-[11px] text-trido-deep font-medium leading-tight mt-0.5">
                       Trido dirancang dengan kemampuan spasial lengkap: mutasi in-place, formula LaTeX KaTeX, presensi kelas, dan pembuatan materi otomatis tanpa batas.
                     </p>
                   </div>
@@ -586,8 +586,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   {/* 1. Mermaid.js Diagram */}
                   <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-blue-600" />
+                      <div className="text-xs font-bold text-ink flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-trido" />
                         Mermaid Diagram & Mindmap
                       </div>
                       <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
@@ -599,7 +599,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                       onClick={() => setLocalExpConfig({ ...localExpConfig, mermaidEnabled: !localExpConfig.mermaidEnabled })}
                       className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
                         localExpConfig.mermaidEnabled
-                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          ? 'bg-trido/5 border-trido/30 text-trido-deep'
                           : 'bg-white border-slate-200 text-slate-400'
                       }`}
                     >
@@ -611,7 +611,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   {/* 2. Jev-Mode System 1 Reflex */}
                   <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <div className="text-xs font-bold text-ink flex items-center gap-1.5">
                         <Zap size={14} className="text-amber-500" />
                         Jev-Mode (System 1 Reflex & In-Place Mutation)
                       </div>
@@ -636,8 +636,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   {/* 3. Smooth Inking */}
                   <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                      <div className="text-xs font-bold text-ink flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-trido" />
                         Smooth Inking (Goresan Halus)
                       </div>
                       <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
@@ -649,7 +649,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                       onClick={() => setLocalExpConfig({ ...localExpConfig, smoothInkingEnabled: !localExpConfig.smoothInkingEnabled })}
                       className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
                         localExpConfig.smoothInkingEnabled
-                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                          ? 'bg-trido/5 border-trido/30 text-trido-deep'
                           : 'bg-white border-slate-200 text-slate-400'
                       }`}
                     >
@@ -661,7 +661,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   {/* 4. Visual Pie Timer */}
                   <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <div className="text-xs font-bold text-ink flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-600" />
                         Visual Countdown Timer
                       </div>
@@ -686,8 +686,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   {/* 5. Smart Presensi */}
                   <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <Users size={14} className="text-blue-600" />
+                      <div className="text-xs font-bold text-ink flex items-center gap-1.5">
+                        <Users size={14} className="text-trido" />
                         Presensi & Absensi Kelas
                       </div>
                       <p className="text-[11px] text-slate-500 leading-relaxed mt-1">
@@ -699,7 +699,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                       onClick={() => setLocalExpConfig({ ...localExpConfig, attendanceEnabled: !localExpConfig.attendanceEnabled })}
                       className={`py-1.5 px-3 rounded-xl text-[11px] font-bold border transition flex items-center justify-between cursor-pointer ${
                         localExpConfig.attendanceEnabled
-                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          ? 'bg-trido/5 border-trido/30 text-trido-deep'
                           : 'bg-white border-slate-200 text-slate-400'
                       }`}
                     >
@@ -711,7 +711,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   {/* 6. Multi-Task Orchestration */}
                   <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <div className="text-xs font-bold text-ink flex items-center gap-1.5">
                         <Workflow size={14} className="text-violet-600" />
                         Orkestrasi Alur Multi-Tasking
                       </div>
@@ -748,11 +748,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                       onClick={() => setLocalTranscribeMode('faster_whisper')}
                       className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                         localTranscribeMode === 'faster_whisper'
-                          ? 'border-blue-600 bg-blue-50/50'
+                          ? 'border-trido bg-trido/3'
                           : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                     >
-                      <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                      <div className="font-bold text-xs text-ink flex items-center gap-1.5">
                         <Mic size={14} className="text-emerald-600" />
                         Faster-Whisper (100% Offline Lokal)
                       </div>
@@ -766,12 +766,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                       onClick={() => setLocalTranscribeMode('webspeech')}
                       className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                         localTranscribeMode === 'webspeech'
-                          ? 'border-blue-600 bg-blue-50/50'
+                          ? 'border-trido bg-trido/3'
                           : 'border-slate-200 bg-white hover:border-slate-300'
                       }`}
                     >
-                      <div className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                        <Sparkles size={14} className="text-blue-600" />
+                      <div className="font-bold text-xs text-ink flex items-center gap-1.5">
+                        <Sparkles size={14} className="text-trido" />
                         Web Speech Standard
                       </div>
                       <div className="text-[10px] text-slate-500 font-medium mt-0.5">
@@ -790,7 +790,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   <div className="flex items-center gap-3">
                     <HeartHandshake size={20} className={isAssistiveMode ? 'text-amber-600' : 'text-slate-400'} />
                     <div>
-                      <div className="font-bold text-xs text-slate-900">
+                      <div className="font-bold text-xs text-ink">
                         Large-Target Assistive Dock (56px)
                       </div>
                       <div className="text-[11px] text-slate-500 font-medium mt-0.5">
@@ -848,13 +848,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     <div className="flex bg-slate-50 p-1.5 rounded-2xl gap-1 border border-slate-200/80">
                       <button
                         onClick={() => theme === 'dark' && toggleTheme()}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${theme === 'light' ? 'bg-white shadow-xs text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${theme === 'light' ? 'bg-white shadow-xs text-trido' : 'text-slate-500 hover:text-slate-700'}`}
                       >
                         <Sun size={15} /> {t('light', 'Terang')}
                       </button>
                       <button
                         onClick={() => theme === 'light' && toggleTheme()}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${theme === 'dark' ? 'bg-white shadow-xs text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${theme === 'dark' ? 'bg-white shadow-xs text-trido' : 'text-slate-500 hover:text-slate-700'}`}
                       >
                         <Moon size={15} /> {t('dark', 'Gelap')}
                       </button>
@@ -900,10 +900,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Database size={16} className="text-blue-600" />
-                      <span className="font-extrabold text-slate-800 text-xs">Live Analytics & Offline Telemetry</span>
+                      <Database size={16} className="text-trido" />
+                      <span className="font-extrabold text-ink text-xs">Live Analytics & Offline Telemetry</span>
                     </div>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-blue-100 text-blue-700">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-trido/10 text-trido-deep">
                       gemma4good-494311
                     </span>
                   </div>
@@ -932,27 +932,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
 
               <Section title="⚖️ Hak Cipta & Informasi Resmi Trido">
                 <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl text-[11px] leading-relaxed text-slate-600 font-medium space-y-1">
-                  <div className="font-black text-slate-900 text-xs">TRIDO 2026</div>
-                  <div className="font-bold text-slate-800">Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia</div>
+                  <div className="font-black text-ink text-xs">TRIDO 2026</div>
+                  <div className="font-bold text-ink">Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia</div>
                   <div className="text-[10px] text-slate-400">(Ministry of Law, Republic of Indonesia)</div>
                   <div className="text-[10px] text-slate-500 font-semibold pt-1">Copyright © 2026 TRIDO by Ardellio Satria Anindito. All rights reserved.</div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500 pt-1">
                   <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60">
-                    <div className="text-slate-900 font-black text-sm">v1.0.0 Production</div>
+                    <div className="text-ink font-black text-sm">v1.0.0 Production</div>
                     <div className="text-[11px] text-slate-400 font-medium">Versi Aplikasi</div>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60">
-                    <div className="text-slate-900 font-black text-sm">Trido AI Spatial Core</div>
+                    <div className="text-ink font-black text-sm">Trido AI Spatial Core</div>
                     <div className="text-[11px] text-slate-400 font-medium">Engine Cerdas</div>
                   </div>
                 </div>
               </Section>
 
               {/* Danger Zone */}
-              <div className="bg-rose-50/60 border border-rose-200 border-dashed rounded-3xl p-5 space-y-2">
-                <h3 className="text-[11px] font-black text-rose-600 uppercase tracking-widest">{t('dangerZone', 'Zona Berbahaya')}</h3>
+              <div className="bg-rose-50/60 border border-rose-200 border-dashed rounded-sheet p-5 space-y-2">
+                <h3 className="font-display text-[11px] font-black text-rose-600 uppercase tracking-widest">{t('dangerZone', 'Zona Berbahaya')}</h3>
                 <button
                   onClick={handleClearAllData}
                   className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-rose-600 font-bold text-xs rounded-xl border border-rose-200 hover:bg-rose-600 hover:text-white transition-all cursor-pointer shadow-2xs"

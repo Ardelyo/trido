@@ -255,9 +255,9 @@ export const DomOverlay: React.FC = () => {
     switch (type) {
       case 'MARKDOWN_NOTE':
       case 'DOCUMENT_PAGE':
-        return <BookOpen size={14} className="text-indigo-600" />;
+        return <BookOpen size={14} className="text-trido" />;
       case 'MARKMAP_MINDMAP':
-        return <Compass size={14} className="text-blue-600" />;
+        return <Compass size={14} className="text-trido" />;
       case 'MERMAID_DIAGRAM':
         return <Layers size={14} className="text-emerald-600" />;
       case 'INTERACTIVE_APP':
@@ -268,12 +268,12 @@ export const DomOverlay: React.FC = () => {
         return <Calculator size={14} className="text-slate-600" />;
       case 'ATTENDANCE':
       case 'PRESENSI':
-        return <Users size={14} className="text-blue-600" />;
+        return <Users size={14} className="text-trido" />;
       case 'TODOLIST':
         return <SquareCheckBig size={14} className="text-emerald-600" />;
       default:
         if (type?.startsWith('QUIZ')) return <HelpCircle size={14} className="text-rose-600" />;
-        return <Sparkles size={14} className="text-blue-600" />;
+        return <Sparkles size={14} className="text-trido" />;
     }
   };
 
@@ -299,7 +299,7 @@ export const DomOverlay: React.FC = () => {
         case 'PRESENSI':
           return <AttendanceTool config={el.config} />;
         case 'TODOLIST':
-          return <TodoListTool />;
+          return <TodoListTool config={el.config} onChange={(tasks) => useStore.getState().updateDomElement(el.id, { config: { ...(el.config || {}), tasks } })} />;
         case 'SPIN_WHEEL':
         case 'RODA_ACAK':
           return <SpinWheelTool config={el.config} />;
@@ -376,6 +376,7 @@ export const DomOverlay: React.FC = () => {
           return (
             <div
               key={el.id}
+              data-widget-root=""
               className={`absolute flex flex-col overflow-hidden rounded-sheet bg-white border-2 will-change-transform select-none ${
                 isActing ? 'opacity-50' : 'opacity-100'
               } ${
@@ -480,7 +481,7 @@ export const DomOverlay: React.FC = () => {
           />
 
           {/* Desktop Fullscreen Window Card */}
-          <div className="relative w-full h-full max-w-7xl max-h-[95vh] bg-white rounded-3xl shadow-[0_30px_100px_rgba(0,0,0,0.6)] border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 z-10">
+          <div className="relative w-full h-full max-w-7xl max-h-[95vh] bg-white rounded-sheet shadow-[0_30px_100px_rgba(0,0,0,0.6)] border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 z-10">
             {/* Titlebar */}
             <div className="flex h-14 px-6 items-center justify-between bg-slate-50 border-b border-slate-200/90 shrink-0 select-none">
               <div className="flex items-center gap-3 min-w-0">
@@ -488,7 +489,7 @@ export const DomOverlay: React.FC = () => {
                   {getComponentIcon(activeFullscreenEl.componentType)}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight truncate">
+                  <h3 className="font-display font-extrabold text-sm sm:text-base text-ink tracking-tight truncate">
                     {activeFullscreenEl.config?.title || activeFullscreenEl.componentType?.replace(/_/g, ' ') || 'KOMPONEN'}
                   </h3>
                   <p className="text-[11px] text-slate-500 font-medium">Mode Fokus Layar Penuh (Tekan ESC untuk kembali)</p>

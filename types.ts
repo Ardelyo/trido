@@ -130,9 +130,19 @@ export interface BoardSession {
 
 export interface AgentAction {
   id: string;
-  type: 'MOVE_CURSOR' | 'CLICK_ELEMENT' | 'DRAG_OBJECT' | 'DRAG_ALL_ELEMENTS' | 'CREATE_SHAPE' | 'CREATE_SVG' | 'EDIT_SVG' | 'RENDER_HTML' | 'EDIT_HTML' | 'CREATE_IMAGE' | 'WRITE_TEXT' | 'DRAW_PATH' | 'RESIZE_OBJECT' | 'MODIFY_PROPERTY' | 'DELETE_OBJECT' | 'REORDER_OBJECT' | 'SELECT_OBJECTS' | 'PAN_CAMERA' | 'RELAYOUT_MINDMAP' | 'REORGANIZE_CANVAS';
+  type: 'MOVE_CURSOR' | 'CLICK_ELEMENT' | 'DRAG_OBJECT' | 'DRAG_ALL_ELEMENTS' | 'CREATE_SHAPE' | 'CREATE_SVG' | 'EDIT_SVG' | 'RENDER_HTML' | 'EDIT_HTML' | 'CREATE_IMAGE' | 'WRITE_TEXT' | 'DRAW_PATH' | 'RESIZE_OBJECT' | 'MODIFY_PROPERTY' | 'DELETE_OBJECT' | 'REORDER_OBJECT' | 'SELECT_OBJECTS' | 'PAN_CAMERA' | 'RELAYOUT_MINDMAP' | 'REORGANIZE_CANVAS' | 'EDIT_COMPONENT';
   payload: any;
   status: 'PENDING' | 'EXECUTING' | 'COMPLETED' | 'FAILED';
+}
+
+/** One AI turn = one undoable transaction (snapshot taken before its first action ran). */
+export interface AiTransaction {
+  id: string;
+  at: number;
+  actionCount: number;
+  notes: string[];
+  failures: string[];
+  snapshot: { canvas: any; dom: Record<string, DomElementState> };
 }
 
 export interface AgentState {
@@ -156,6 +166,8 @@ export interface ChatMessage {
   costIdr?: number;
   model?: string;
   provider?: string;
+  /** Board changes this reply caused (shown as chips). */
+  edits?: string[];
 }
 
 export interface RoomState {

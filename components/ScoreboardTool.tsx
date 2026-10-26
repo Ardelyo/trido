@@ -78,7 +78,7 @@ export const ScoreboardTool: React.FC<ScoreboardProps> = ({ config }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 font-sans select-none text-slate-800 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-50 font-sans select-none text-ink overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200/90 text-xs shrink-0 shadow-xs">
         <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export const ScoreboardTool: React.FC<ScoreboardProps> = ({ config }) => {
             <Trophy size={16} />
           </div>
           <div>
-            <h4 className="font-extrabold text-slate-900 text-sm tracking-tight">{title}</h4>
+            <h4 className="font-display font-extrabold text-ink text-sm tracking-tight">{title}</h4>
             <span className="text-[10px] text-slate-400 font-bold">{teams.length} Kelompok Bertanding</span>
           </div>
         </div>
@@ -113,7 +113,7 @@ export const ScoreboardTool: React.FC<ScoreboardProps> = ({ config }) => {
             />
 
             <div className="flex items-start justify-between gap-2 pt-1">
-              <span className="font-extrabold text-sm text-slate-800 line-clamp-1">
+              <span className="font-extrabold text-sm text-ink line-clamp-1">
                 {team.name}
               </span>
               <span
@@ -135,7 +135,7 @@ export const ScoreboardTool: React.FC<ScoreboardProps> = ({ config }) => {
               </button>
               <button
                 onClick={() => updateScore(team.id, 1)}
-                className="py-1 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 text-xs font-bold transition cursor-pointer"
+                className="py-1 rounded-lg bg-slate-100 hover:bg-trido/5 text-slate-600 hover:text-trido text-xs font-bold transition cursor-pointer"
                 title="+1 Poin"
               >
                 +1

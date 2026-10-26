@@ -16,7 +16,7 @@ const ICON_MAP = {
 const COLOR_MAP = {
   success: { bg: 'bg-emerald-50/98 border-emerald-100', icon: 'text-emerald-500', bar: 'bg-emerald-400' },
   error:   { bg: 'bg-rose-50/98 border-rose-100',      icon: 'text-rose-500',    bar: 'bg-rose-400' },
-  info:    { bg: 'bg-blue-50/98 border-blue-100',       icon: 'text-blue-500',    bar: 'bg-blue-400' },
+  info:    { bg: 'bg-trido/5 border-trido/10',       icon: 'text-trido/50',    bar: 'bg-trido/70' },
   warning: { bg: 'bg-amber-50/98 border-amber-100',     icon: 'text-amber-500',   bar: 'bg-amber-400' },
 };
 
@@ -58,7 +58,7 @@ export const ToastContainer: React.FC = () => {
                 transition={{ duration: t.duration / 1000, ease: 'linear' }}
               />
               <Icon size={18} className={`${colors.icon} shrink-0 mt-0.5`} />
-              <span className="flex-1 text-[13.5px] font-semibold text-slate-800 leading-snug">{t.message}</span>
+              <span className="flex-1 text-[13.5px] font-semibold text-ink leading-snug">{t.message}</span>
               <button
                 onClick={() => remove(t.id)}
                 className="text-slate-400 hover:text-slate-600 transition-colors shrink-0 -mt-0.5 -mr-0.5 p-0.5 rounded-md hover:bg-slate-100"

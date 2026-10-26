@@ -700,7 +700,7 @@ export function exportMindmapToCanvaSVG(
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
   <!-- Canva Compatible Solid Background Plate -->
   <rect width="100%" height="100%" fill="${bgColor}" />
-  <g id="connections" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linecap="round">
+  <g id="connections" stroke="#1550aa" stroke-width="2.5" fill="none" stroke-linecap="round">
 `;
 
   nodes.forEach(n => {
@@ -724,8 +724,8 @@ export function exportMindmapToCanvaSVG(
     const isRoot = !n.parentNodeText;
     const rectW = isRoot ? 220 : (n.style === 'SUBTOPIC' ? 180 : 160);
     const rectH = isRoot ? 60 : 44;
-    const fill = isRoot ? '#2563eb' : (n.style === 'SUBTOPIC' ? '#f0fdf4' : '#ffffff');
-    const stroke = isRoot ? '#1d4ed8' : (n.style === 'SUBTOPIC' ? '#10b981' : '#cbd5e1');
+    const fill = isRoot ? '#1550aa' : (n.style === 'SUBTOPIC' ? '#f0fdf4' : '#ffffff');
+    const stroke = isRoot ? '#0d3a80' : (n.style === 'SUBTOPIC' ? '#10b981' : '#cbd5e1');
     const textColor = isRoot ? '#ffffff' : (n.style === 'SUBTOPIC' ? '#065f46' : '#1e293b');
 
     svg += `    <g id="node-${idx}" class="canva-layer" transform="translate(${nx - rectW / 2}, ${ny - rectH / 2})">

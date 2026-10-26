@@ -9,6 +9,7 @@ import {
   Layers, ExternalLink, ArrowRight, CornerDownLeft
 } from 'lucide-react';
 import { useStore } from '../store';
+import { tween } from '../design/motion';
 
 interface QuickGuideModalProps {
   isOpen: boolean;
@@ -443,8 +444,8 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
             initial={{ opacity: 0, scale: 0.97, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 12 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-5xl bg-[#f8f7f5] rounded-3xl shadow-2xl border border-slate-300 overflow-hidden flex flex-col max-h-[90vh]"
+            transition={tween.fade}
+            className="w-full max-w-5xl bg-[#f8f7f5] rounded-sheet shadow-2xl border border-slate-300 overflow-hidden flex flex-col max-h-[90vh]"
           >
             {/* Header: Pure Minimalist Structure (No Emojis) */}
             <div className="px-6 py-5 bg-white border-b border-slate-200/90 flex flex-wrap items-center justify-between gap-4 shrink-0">
@@ -454,7 +455,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-black text-ink tracking-tight">
+                    <h2 className="font-display text-lg font-black text-ink tracking-tight">
                       {isIndo ? 'Panduan Penggunaan Trido' : 'Trido User Guide'}
                     </h2>
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
@@ -478,7 +479,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={isIndo ? 'Cari panduan, tombol, rumus...' : 'Search guides, keys, tools...'}
-                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100/80 border border-slate-200 rounded-full text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:border-trido transition-all font-medium"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100/80 border border-slate-200 rounded-full text-ink placeholder:text-slate-400 focus:outline-hidden focus:bg-white focus:border-trido transition-all font-medium"
                   />
                   {searchQuery && (
                     <button
@@ -514,7 +515,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                     className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                       isActive 
                         ? 'bg-trido text-white shadow-xs' 
-                        : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200/90 hover:bg-slate-50'
+                        : 'bg-white text-slate-600 hover:text-ink border border-slate-200/90 hover:bg-slate-50'
                     }`}
                   >
                     <span>{tab.label}</span>
@@ -535,7 +536,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                   <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 mx-auto">
                     <Search size={20} />
                   </div>
-                  <h3 className="font-extrabold text-sm text-slate-800">
+                  <h3 className="font-display font-extrabold text-sm text-ink">
                     {isIndo ? 'Tidak ada panduan yang cocok' : 'No matching guides found'}
                   </h3>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -561,7 +562,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                                 <Icon size={20} strokeWidth={2} />
                               </div>
                               <div>
-                                <h3 className="font-black text-sm text-ink leading-tight">
+                                <h3 className="font-display font-black text-sm text-ink leading-tight">
                                   {item.title}
                                 </h3>
                                 <p className="text-[11px] text-slate-500 font-medium leading-normal mt-0.5">
@@ -577,7 +578,7 @@ export const QuickGuideModal: React.FC<QuickGuideModalProps> = ({
                                 </span>
                               )}
                               {item.badge && (
-                                <span className="px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200/70 text-trido font-bold text-[10px]">
+                                <span className="px-2 py-0.5 rounded-full bg-trido/5 border border-trido/14 text-trido font-bold text-[10px]">
                                   {item.badge}
                                 </span>
                               )}

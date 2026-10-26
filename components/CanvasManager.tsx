@@ -1,15 +1,17 @@
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { getStroke } from 'perfect-freehand';
 import { useStore } from '../store';
 import { useAgentProcessor } from '../hooks/useAgentProcessor';
+import { useCanvasDrop } from '../hooks/useCanvasDrop';
+import { wheelZoomFactor, clampZoom, ZOOM_STEP, canScrollInDirection, computeFitTransform } from '../utils/canvasView';
+import { getBoardContentBoundingBox } from '../utils/smartExport';
 import { AgentCursor } from './AgentCursor';
 import { DomOverlay } from './DomOverlay';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from '../utils/toast';
-import { parseDocumentFile } from '../utils/documentParser';
-import { markdownToMermaidMindmap } from './MermaidTool';
 import { UploadCloud, FileText, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { tween } from '../design/motion';
 
 interface CanvasManagerProps {
   onCanvasReady: (canvas: any) => void;
@@ -19,7 +21,6 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricRef = useRef<any>(null);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
   
   const addLog = useStore(state => state.addLog);
   const setViewport = useStore(state => state.setViewport);
@@ -232,21 +233,27 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
         canvas.requestRenderAll();
       }
 
-      // Zoom Keyboard Shortcuts
-      if (e.key === '=' || e.key === '+') {
-        const zoom = Math.min(canvas.getZoom() * 1.1, 20);
-        canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, zoom);
+      // Zoom Keyboard Shortcuts (+ / - / 0, also with Ctrl/Cmd so the browser page-zoom never fights the board)
+      const zoomBy = (factor: number) => {
+        canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, clampZoom(canvas.getZoom() * factor));
         setViewport(canvas.getZoom(), [...canvas.viewportTransform]);
-      }
-      if (e.key === '-' || e.key === '_') {
-        const zoom = Math.max(canvas.getZoom() / 1.1, 0.01);
-        canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, zoom);
-        setViewport(canvas.getZoom(), [...canvas.viewportTransform]);
-      }
+      };
+      if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomBy(ZOOM_STEP); }
+      if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomBy(1 / ZOOM_STEP); }
       if (e.key === '0') {
+        e.preventDefault();
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         canvas.setZoom(1);
         setViewport(1, [1, 0, 0, 1, 0, 0]);
+      }
+      if (e.key === '1' && !(e.ctrlKey || e.metaKey)) {
+        // "1" = fit all content to screen
+        const fit = computeFitTransform(
+          getBoardContentBoundingBox(canvas, useStore.getState().domElements),
+          canvas.width, canvas.height,
+        );
+        canvas.setViewportTransform(fit.transform);
+        setViewport(fit.zoom, [...fit.transform]);
       }
 
       // Deletion
@@ -322,22 +329,53 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       }
     });
 
-    canvas.on('mouse:wheel', function(opt: any) {
-      if (isViewerUrl) {
-         opt.e.preventDefault();
-         opt.e.stopPropagation();
-         return;
-      }
-      const delta = opt.e.deltaY;
-      let zoom = canvas.getZoom();
-      zoom *= 0.999 ** delta;
-      if (zoom > 20) zoom = 20;
-      if (zoom < 0.01) zoom = 0.01;
-      canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
-      opt.e.preventDefault();
-      opt.e.stopPropagation();
+    // Zoom / pan over BOTH the canvas and DOM widgets. Widgets sit above the canvas, so a wheel
+    // handler on the fabric canvas alone never fires over them — that made zooming "stick".
+    // Capture phase on the stage container lets us decide first:
+    //  • Ctrl/Cmd+wheel (and trackpad pinch) always zooms, page zoom is suppressed.
+    //  • Plain wheel over a widget keeps scrolling the widget's content until it hits the end,
+    //    then zooms the board instead of doing nothing.
+    const stage = containerRef.current;
+    const handleStageWheel = (e: WheelEvent) => {
+      const target = e.target as Element | null;
+      const widget = target?.closest?.('[data-widget-root]') ?? null;
+      if (isViewerUrl) { if (!widget) e.preventDefault(); return; }
+      const zoomIntent = e.ctrlKey || e.metaKey;
+      if (widget && !zoomIntent && canScrollInDirection(target, widget, e.deltaY, e.deltaX)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = stage!.getBoundingClientRect();
+      canvas.zoomToPoint(
+        { x: e.clientX - rect.left, y: e.clientY - rect.top },
+        clampZoom(canvas.getZoom() * wheelZoomFactor(e)),
+      );
       setViewport(canvas.getZoom(), [...canvas.viewportTransform]);
-    });
+    };
+    stage?.addEventListener('wheel', handleStageWheel, { passive: false, capture: true });
+
+    // Pan while the cursor is over a widget (middle button, or Space + drag) — fabric never sees those events.
+    const handleStagePanStart = (e: MouseEvent) => {
+      if (isViewerUrl) return;
+      const widget = (e.target as Element | null)?.closest?.('[data-widget-root]');
+      if (!widget || !(e.button === 1 || (e.button === 0 && isSpaceDown))) return;
+      e.preventDefault();
+      e.stopPropagation();
+      let lx = e.clientX, ly = e.clientY;
+      const move = (m: MouseEvent) => {
+        const vpt = canvas.viewportTransform;
+        vpt[4] += m.clientX - lx;
+        vpt[5] += m.clientY - ly;
+        lx = m.clientX; ly = m.clientY;
+        canvas.setViewportTransform(vpt);
+        setViewport(canvas.getZoom(), [...vpt]);
+      };
+      const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+    };
+    stage?.addEventListener('mousedown', handleStagePanStart, { capture: true });
+    // Middle-click would otherwise start browser autoscroll
+    stage?.addEventListener('auxclick', (e) => { if (e.button === 1) e.preventDefault(); });
 
     canvas.on('touch:gesture', function(opt: any) {
       if (opt.e.touches && opt.e.touches.length === 2) {
@@ -719,6 +757,8 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
       canvas.dispose();
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('orientationchange', resizeCanvas);
+      stage?.removeEventListener('wheel', handleStageWheel, { capture: true } as EventListenerOptions);
+      stage?.removeEventListener('mousedown', handleStagePanStart, { capture: true } as EventListenerOptions);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('removeCanvasObject', handleRemoteRemove);
@@ -984,210 +1024,7 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
     canvas.requestRenderAll();
   }, [brushColor, fontFamily, fontSize]);
 
-  // Handle Drag & Drop Ingestion
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isDraggingOver) setIsDraggingOver(true);
-  }, [isDraggingOver]);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingOver(false);
-  }, []);
-
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingOver(false);
-
-    if (!fabricRef.current || !containerRef.current) return;
-    const canvas = fabricRef.current;
-
-    // Convert drop coordinates from screen to canvas world coordinates
-    const rect = containerRef.current.getBoundingClientRect();
-    const screenX = e.clientX - rect.left;
-    const screenY = e.clientY - rect.top;
-    const invVpt = window.fabric.util.invertTransform(canvas.viewportTransform);
-    const worldPos = window.fabric.util.transformPoint({ x: screenX, y: screenY }, invVpt);
-
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      for (const file of files) {
-        const type = file.type.toLowerCase();
-        const ext = file.name.split('.').pop()?.toLowerCase() || '';
-
-        // 1. Images
-        if (type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext)) {
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const dataUrl = ev.target?.result as string;
-            window.fabric.Image.fromURL(dataUrl, (img: any) => {
-              const maxDim = 550;
-              let scale = 1;
-              if (img.width > maxDim || img.height > maxDim) {
-                scale = Math.min(maxDim / img.width, maxDim / img.height);
-              }
-              img.set({
-                left: worldPos.x,
-                top: worldPos.y,
-                originX: 'center',
-                originY: 'center',
-                scaleX: scale,
-                scaleY: scale,
-                id: `img_${Date.now()}`
-              });
-              canvas.add(img);
-              canvas.setActiveObject(img);
-              canvas.requestRenderAll();
-              toast.success(`Gambar "${file.name}" ditambahkan.`);
-            });
-          };
-          reader.readAsDataURL(file);
-        }
-        // 2. Markdown or Text (Mermaid Mindmap or Notes)
-        else if (type.includes('markdown') || type.includes('text') || ['md', 'txt', 'mmd'].includes(ext)) {
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const rawText = (ev.target?.result as string) || '';
-            const isMindmapOrOutline = rawText.includes('#') || rawText.includes('- ') || rawText.includes('mindmap') || rawText.includes('flowchart');
-            const code = isMindmapOrOutline
-              ? (rawText.trim().startsWith('mindmap') || rawText.trim().startsWith('flowchart')
-                  ? rawText.trim()
-                  : markdownToMermaidMindmap(rawText, file.name.replace(/\.[^/.]+$/, '')))
-              : rawText;
-
-            const id = `mermaid_${Date.now()}`;
-            const width = 720;
-            const height = 560;
-            const rect = new window.fabric.Rect({
-              left: worldPos.x, top: worldPos.y, width, height,
-              fill: 'rgba(255,255,255,0.01)',
-              stroke: '#6366f1', strokeWidth: 1,
-              originX: 'center', originY: 'center',
-              id, isDomPlaceholder: true
-            });
-            canvas.add(rect);
-            updateDomElement(id, {
-              id,
-              html: '<div>MERMAID</div>',
-              x: worldPos.x,
-              y: worldPos.y,
-              width,
-              height,
-              scaleX: 1,
-              scaleY: 1,
-              rotation: 0,
-              zIndex: 10,
-              componentType: 'MERMAID_DIAGRAM',
-              config: {
-                title: file.name.replace(/\.[^/.]+$/, '') || 'Peta Konsep',
-                code
-              }
-            });
-            canvas.setActiveObject(rect);
-            canvas.requestRenderAll();
-            toast.success(`Peta konsep Mermaid dibuat dari "${file.name}".`);
-          };
-          reader.readAsText(file);
-        }
-        // 3. Documents (PDF, DOCX)
-        else if (['pdf', 'docx'].includes(ext)) {
-          try {
-            const doc = await parseDocumentFile(file);
-            useStore.getState().setAttachedDocument(doc);
-            const id = `doc_${Date.now()}`;
-            const width = 640;
-            const height = 500;
-            const rect = new window.fabric.Rect({
-              left: worldPos.x, top: worldPos.y, width, height,
-              fill: 'rgba(255,255,255,0.01)',
-              stroke: '#3b82f6', strokeWidth: 1,
-              originX: 'center', originY: 'center',
-              id, isDomPlaceholder: true
-            });
-            canvas.add(rect);
-            updateDomElement(id, {
-              id,
-              html: '<div>DOCUMENT</div>',
-              x: worldPos.x,
-              y: worldPos.y,
-              width,
-              height,
-              scaleX: 1,
-              scaleY: 1,
-              rotation: 0,
-              zIndex: 10,
-              componentType: 'DOCUMENT_PAGE',
-              config: {
-                title: doc.name,
-                markdown: `# ${doc.name}\n\n${doc.text.slice(0, 3000)}${doc.text.length > 3000 ? '\n\n*(Teks dipersingkat)*' : ''}`
-              }
-            });
-            canvas.setActiveObject(rect);
-            canvas.requestRenderAll();
-            toast.success(`Dokumen "${doc.name}" siap di kanvas.`);
-          } catch (err) {
-            toast.error(`Gagal membaca dokumen: ${(err as any)?.message}`);
-          }
-        }
-      }
-      return;
-    }
-
-    // Text drag & drop
-    const rawText = e.dataTransfer.getData('text/plain');
-    if (rawText && rawText.trim()) {
-      const isMindmapOrOutline = rawText.includes('#') || rawText.includes('- ') || rawText.includes('mindmap');
-      if (isMindmapOrOutline) {
-        const id = `mermaid_${Date.now()}`;
-        const width = 720;
-        const height = 560;
-        const code = rawText.trim().startsWith('mindmap')
-          ? rawText.trim()
-          : markdownToMermaidMindmap(rawText, 'Catatan Peta Konsep');
-        const rect = new window.fabric.Rect({
-          left: worldPos.x, top: worldPos.y, width, height,
-          fill: 'rgba(255,255,255,0.01)',
-          stroke: '#6366f1', strokeWidth: 1,
-          originX: 'center', originY: 'center',
-          id, isDomPlaceholder: true
-        });
-        canvas.add(rect);
-        updateDomElement(id, {
-          id,
-          html: '<div>MERMAID</div>',
-          x: worldPos.x,
-          y: worldPos.y,
-          width,
-          height,
-          scaleX: 1,
-          scaleY: 1,
-          rotation: 0,
-          zIndex: 10,
-          componentType: 'MERMAID_DIAGRAM',
-          config: { title: 'Peta Konsep', code }
-        });
-        canvas.setActiveObject(rect);
-        canvas.requestRenderAll();
-        toast.success('Peta konsep Mermaid dibuat dari teks.');
-      } else {
-        const textObj = new window.fabric.IText(rawText.trim(), {
-          left: worldPos.x,
-          top: worldPos.y,
-          fontFamily,
-          fontSize,
-          fill: brushColor,
-          id: `text_${Date.now()}`
-        });
-        canvas.add(textObj);
-        canvas.setActiveObject(textObj);
-        canvas.requestRenderAll();
-        toast.success('Teks ditambahkan ke kanvas.');
-      }
-    }
-  }, [fontFamily, fontSize, brushColor, updateDomElement]);
+  const { isDraggingOver, handleDragOver, handleDragLeave, handleDrop } = useCanvasDrop(fabricRef, containerRef);
 
   return (
     <div
@@ -1209,21 +1046,21 @@ export const CanvasManager: React.FC<CanvasManagerProps> = ({ onCanvasReady }) =
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute inset-4 z-50 pointer-events-none rounded-3xl border-3 border-dashed border-indigo-500 bg-indigo-50/80 backdrop-blur-md flex flex-col items-center justify-center gap-4 text-indigo-950 shadow-2xl"
+            transition={tween.fast}
+            className="absolute inset-4 z-50 pointer-events-none rounded-sheet border-3 border-dashed border-trido/50 bg-trido/5 backdrop-blur-md flex flex-col items-center justify-center gap-4 text-ink shadow-2xl"
           >
-            <div className="w-16 h-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 animate-bounce">
+            <div className="w-16 h-16 rounded-sheet bg-trido text-white flex items-center justify-center shadow-lg shadow-trido/30 animate-bounce">
               <UploadCloud size={32} />
             </div>
             <div className="text-center space-y-1">
-              <h3 className="text-xl font-extrabold text-indigo-900 font-sans">
+              <h3 className="font-display text-xl font-extrabold text-ink font-sans">
                 Lepaskan File di Kanvas
               </h3>
-              <p className="text-xs text-indigo-700 font-medium max-w-sm">
+              <p className="text-xs text-trido-deep font-medium max-w-sm">
                 Tarik gambar (.png, .jpg), dokumen (.pdf, .docx), atau catatan (.md) untuk ditaruh langsung ke posisi kursor.
               </p>
             </div>
-            <div className="flex items-center gap-3 text-[11px] font-bold text-indigo-600 bg-white/80 px-4 py-1.5 rounded-full border border-indigo-200">
+            <div className="flex items-center gap-3 text-[11px] font-bold text-trido bg-white/80 px-4 py-1.5 rounded-full border border-trido/20">
               <span className="flex items-center gap-1"><ImageIcon size={12} /> Gambar</span>
               <span>•</span>
               <span className="flex items-center gap-1"><Sparkles size={12} /> Mermaid Mindmap</span>

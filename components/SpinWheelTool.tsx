@@ -205,12 +205,12 @@ export const SpinWheelTool: React.FC<SpinWheelProps> = ({ config }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 font-sans select-none text-slate-800 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-50 font-sans select-none text-ink overflow-hidden">
       {/* Top Header */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-slate-200/90 text-xs shrink-0 shadow-xs">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-          <span className="font-extrabold text-slate-800 text-sm tracking-tight">{title}</span>
+          <span className="font-extrabold text-ink text-sm tracking-tight">{title}</span>
           <span className="text-[10px] bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-full">
             {items.length} Opsi
           </span>
@@ -243,7 +243,7 @@ export const SpinWheelTool: React.FC<SpinWheelProps> = ({ config }) => {
               </div>
               <div>
                 <div className="text-[10px] font-black uppercase tracking-wider text-amber-600">Siswa / Opsi Terpilih</div>
-                <div className="text-base font-black text-slate-900">{winner}</div>
+                <div className="text-base font-black text-ink">{winner}</div>
               </div>
             </div>
             <button

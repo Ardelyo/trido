@@ -10,6 +10,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { toast } from '../utils/toast';
 import { BoardSession } from '../types';
 import { downloadFile } from '../utils/smartExport';
+import { tween } from '../design/motion';
 
 const formatSize = (bytes: number) => {
   if (!bytes || bytes === 0) return '0 B';
@@ -148,7 +149,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        transition={tween.fade}
         className="absolute inset-0 z-40 bg-[#f8f7f5] overflow-hidden flex flex-col font-sans"
       >
         {/* Header */}
@@ -159,7 +160,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-ink tracking-tight">
+                <h2 className="font-display text-lg font-black text-ink tracking-tight">
                   Riwayat Papan Tulis Lokal
                 </h2>
                 <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
@@ -181,7 +182,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                 placeholder="Cari riwayat papan..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-100/80 border border-slate-200 rounded-full py-1.5 pl-9 pr-3 text-xs font-semibold text-slate-800 outline-hidden focus:bg-white focus:border-trido transition-all placeholder:text-slate-400"
+                className="w-full bg-slate-100/80 border border-slate-200 rounded-full py-1.5 pl-9 pr-3 text-xs font-semibold text-ink outline-hidden focus:bg-white focus:border-trido transition-all placeholder:text-slate-400"
               />
               {searchQuery && (
                 <button
@@ -227,7 +228,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
               placeholder="Cari riwayat papan..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-slate-300 rounded-full py-2 pl-9 pr-4 text-xs font-semibold text-slate-800 outline-hidden"
+              className="w-full bg-white border border-slate-300 rounded-full py-2 pl-9 pr-4 text-xs font-semibold text-ink outline-hidden"
             />
           </div>
 
@@ -374,7 +375,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
                         }}
                         className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                           isActiveSession 
-                            ? 'bg-blue-50 text-trido border border-blue-200' 
+                            ? 'bg-trido/5 text-trido border border-trido/20' 
                             : 'bg-trido hover:bg-ink text-white shadow-2xs'
                         }`}
                       >
@@ -389,10 +390,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
           ) : (
             /* Empty State */
             <div className="flex flex-col items-center justify-center h-80 text-center space-y-3">
-              <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 mx-auto">
+              <div className="w-16 h-16 bg-slate-100 rounded-sheet flex items-center justify-center text-slate-400 mx-auto">
                 <Search size={28} />
               </div>
-              <h3 className="text-base font-extrabold text-ink">
+              <h3 className="font-display text-base font-extrabold text-ink">
                 {searchQuery ? 'Tidak ada sesi yang cocok' : 'Belum ada sesi tersimpan'}
               </h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -412,7 +413,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-full transition-colors cursor-pointer"
+            className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-ink font-bold rounded-full transition-colors cursor-pointer"
           >
             Tutup
           </button>

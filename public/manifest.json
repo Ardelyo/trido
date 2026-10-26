@@ -1,8 +1,8 @@
 {
-  "name": "Trido — AI Digital Classroom",
+  "name": "Trido — AI Smartboard Classroom",
   "short_name": "Trido",
-  "description": "AI-Powered Digital Smartboard for Inclusive Classroom Learning",
-  "start_url": "/app",
+  "description": "Voice-driven AI smartboard for inclusive classrooms — cloud or fully offline.",
+  "start_url": "/?app=true",
   "display": "standalone",
   "background_color": "#e4e3e0",
   "theme_color": "#1550aa",

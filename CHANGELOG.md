@@ -7,7 +7,35 @@
 - Brand colours, shape and elevation are now theme tokens (`bg-trido`, `text-ink`, `bg-sun`, `rounded-sheet`, `shadow-float`); added `.touch-target` utility; `h-screen` → `h-dvh`.
 - Smartboard dock uses pointer events (touch-friendly magnification).
 
+### Mobile web
+- App is usable on phones and portrait/landscape tablets: header no longer clips, undo/redo/delete/zoom and page switcher are available on small canvases, voice bar fits narrow screens, sidebar closes after navigation and includes Share, floating tools clamp to the viewport, safe-area insets and `overscroll-behavior` set.
+- Canvas overlay layout is driven by container queries (`@4xl`), so it adapts to the canvas width (also fixes narrow desktop windows with the sidebar open); the desktop layout at >= 896px canvas width is unchanged.
+
+### Branding
+- App chrome moved from generic Tailwind blue/indigo to brand tokens (`trido`, `trido-deep`, `ink`, `sun`) via opacity tints; headings use `font-display`; dark text uses `ink`.
+- One product name ("Trido — AI Smartboard Classroom") and one theme colour (`#1550aa`) across `index.html`, PWA manifest and `vite.config.ts` (removed "Trido++", `#2563eb`); PWA starts at `/?app=true`.
+- AI/export defaults (arrows, drop placeholders, mindmap root, exported SVG) use the brand blue.
+- Rules documented in `design/BRAND.md`; `tests/brandConsistency.test.ts` guards against regressions.
+
+### AI precise editing
+- New `edit_component` tool (Express adapters + Vercel `api/ai/generate.ts`): one-operation edits instead of rewriting a component — documents (insert/replace/delete/move block, append to section), diagrams (add/rename/delete/move node for mermaid mindmap, flowchart and markmap), quizzes (question/options/correct answer, per-question), todo & attendance lists.
+- Pure, unit-tested engine in `utils/boardEdit.ts` (34 tests): deterministic results across models, ambiguity detection with candidate lists, 1-based indexes, sanitizer-safe diagrams.
+- The AI now receives an addressable outline of every component (block ids, node names, numbered items) and validation recovers from wrong ids instead of failing the turn.
+- Each AI turn is one transaction: one-tap **Batalkan** undo (`AiResultBar`), failure summary in chat, edit chips on replies, contextual suggestion chips, and live progress (n/m + current step) in the dynamic island.
+- Todo widget now follows/persists its config so AI and user edits stay in sync.
+
+### Zoom & navigation (desktop)
+- Wheel zoom now works over DOM widgets as well as the canvas (Ctrl/Cmd+wheel and trackpad pinch always zoom and no longer trigger browser page-zoom; a plain wheel scrolls widget content first, then zooms the board).
+- Middle-button or Space+drag pans even when the cursor is over a widget.
+- Wheel deltas are normalised across browsers; zoom buttons/keys step 25% (was 10%); `Ctrl +/-/0` handled; `1` fits content; the "fit to screen" button now really fits all content.
+
+### Refactor
+- `ExportDialog` export/import logic extracted to `hooks/useBoardExport.ts`; `CanvasManager` drag & drop extracted to `hooks/useCanvasDrop.ts`.
+- Dialog radii/transitions use `rounded-sheet` and `tween` presets.
+
 ### Added (Desktop .exe)
+- Auto-update via `electron-updater` (GitHub Releases; release workflow now uploads `latest*.yml` + blockmaps) with in-app notice.
+- Tests for smartboard dock and native save bridge.
 - Single-instance lock, free-port fallback, navigation guard, security headers, IPC sender validation, file logging, window-state persistence, F11 fullscreen.
 - Typed `window.electronAPI` (`getAppInfo`, `toggleFullscreen`, `saveFile`, `openFile`); exports use the native Save dialog in the desktop app.
 - ESLint (lenient), Prettier and EditorConfig; `puppeteer` moved to devDependencies.

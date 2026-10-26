@@ -55,16 +55,16 @@ export const AttachedDocumentBadge: React.FC<AttachedDocumentBadgeProps> = ({ cl
         };
       case 'code':
         return {
-          bg: 'bg-indigo-50 border-indigo-200 text-indigo-700',
-          badge: 'bg-indigo-600 text-white',
-          icon: <FileCode size={compact ? 14 : 16} className="text-indigo-600 shrink-0" />,
+          bg: 'bg-trido/5 border-trido/20 text-trido-deep',
+          badge: 'bg-trido text-white',
+          icon: <FileCode size={compact ? 14 : 16} className="text-trido shrink-0" />,
           label: 'CODE'
         };
       case 'document':
         return {
-          bg: 'bg-blue-50 border-blue-200 text-blue-700',
-          badge: 'bg-blue-600 text-white',
-          icon: <FileText size={compact ? 14 : 16} className="text-blue-600 shrink-0" />,
+          bg: 'bg-trido/5 border-trido/20 text-trido-deep',
+          badge: 'bg-trido text-white',
+          icon: <FileText size={compact ? 14 : 16} className="text-trido shrink-0" />,
           label: 'DOC'
         };
       case 'image':

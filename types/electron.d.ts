@@ -10,6 +10,8 @@ export interface ElectronAPI {
   toggleFullscreen(): Promise<boolean>;
   isFullscreen(): Promise<boolean>;
   onFullscreenChange(cb: (isFullscreen: boolean) => void): () => void;
+  installUpdate(): Promise<void>;
+  onUpdateStatus(cb: (status: { state: 'available' | 'ready'; version: string }) => void): () => void;
   saveFile(data: ArrayBuffer | Uint8Array, defaultName: string, filters?: ElectronFileFilter[]): Promise<{ ok: boolean; canceled?: boolean; path?: string; error?: string }>;
   openFile(filters?: ElectronFileFilter[]): Promise<{ ok: boolean; canceled?: boolean; name?: string; data?: Uint8Array; error?: string }>;
 }

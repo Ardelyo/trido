@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal, ThumbsUp, ThumbsDown, Zap, Pin } from 'lucide-react';
+import { Copy, Check, Volume2, VolumeX, Sparkles, User, Terminal, ThumbsUp, ThumbsDown, Zap, Pin, Pencil } from 'lucide-react';
 import { ChatMessage } from '../types';
 import { toast } from '../utils/toast';
 import { submitLogFeedback } from '../services/aiService';
@@ -213,11 +213,11 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
       <div ref={containerRef} className="flex flex-col items-end group w-full will-change-transform">
         <div className="flex items-center gap-1.5 mb-1 mr-1">
           <span className="text-[11px] font-semibold text-slate-400">{t('you', 'Anda')}</span>
-          <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+          <div className="w-5 h-5 rounded-full bg-trido/10 flex items-center justify-center text-trido">
             <User size={12} />
           </div>
         </div>
-        <div className="bg-blue-600 text-white rounded-3xl rounded-tr-sm px-5 py-3.5 max-w-[88%] text-[14.5px] font-medium leading-relaxed shadow-md shadow-blue-600/10 select-text">
+        <div className="bg-trido text-white rounded-sheet rounded-tr-sm px-5 py-3.5 max-w-[88%] text-[14.5px] font-medium leading-relaxed shadow-md shadow-trido/10 select-text">
           {fullText}
         </div>
       </div>
@@ -290,7 +290,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
               handleSpeakToggle();
             }}
             title={isSpeaking ? "Hentikan Suara" : "Baca Suara (TTS)"}
-            className={`p-1 rounded-lg transition-colors ${isSpeaking ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
+            className={`p-1 rounded-lg transition-colors ${isSpeaking ? 'bg-trido/10 text-trido' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}`}
           >
             {isSpeaking ? <VolumeX size={13} /> : <Volume2 size={13} />}
           </button>
@@ -322,20 +322,20 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         </div>
       </div>
 
-      <div className="bg-white text-slate-800 border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-3xl rounded-tl-sm p-4 lg:p-5 max-w-[95%] w-full overflow-hidden transition-all select-text">
+      <div className="bg-white text-ink border border-slate-200/80 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-sheet rounded-tl-sm p-4 lg:p-5 max-w-[95%] w-full overflow-hidden transition-all select-text">
         <div className="chat-markdown prose prose-slate max-w-none text-[14.5px] leading-relaxed">
           <ReactMarkdown
             remarkPlugins={[remarkMath, remarkGfm]}
             rehypePlugins={[rehypeKatex]}
             components={{
               h1: ({ node, ...props }) => (
-                <h1 className="text-lg font-black text-slate-900 mt-2 mb-2 pb-1 border-b border-slate-100" {...props} />
+                <h1 className="text-lg font-black text-ink mt-2 mb-2 pb-1 border-b border-slate-100" {...props} />
               ),
               h2: ({ node, ...props }) => (
-                <h2 className="text-base font-bold text-slate-800 mt-2 mb-1.5" {...props} />
+                <h2 className="text-base font-bold text-ink mt-2 mb-1.5" {...props} />
               ),
               h3: ({ node, ...props }) => (
-                <h3 className="text-[15px] font-bold text-slate-800 mt-1.5 mb-1" {...props} />
+                <h3 className="text-[15px] font-bold text-ink mt-1.5 mb-1" {...props} />
               ),
               p: ({ node, ...props }) => (
                 <p className="mb-2 last:mb-0 leading-relaxed text-slate-700" {...props} />
@@ -350,7 +350,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                 <li className="leading-relaxed" {...props} />
               ),
               blockquote: ({ node, ...props }) => (
-                <blockquote className="border-l-4 border-blue-500 bg-blue-50/40 pl-3 py-1 my-2 italic text-slate-600 rounded-r-lg" {...props} />
+                <blockquote className="border-l-4 border-trido/50 bg-trido/2 pl-3 py-1 my-2 italic text-slate-600 rounded-r-lg" {...props} />
               ),
               table: ({ node, ...props }) => (
                 <div className="my-3 overflow-x-auto rounded-xl border border-slate-200 shadow-xs">
@@ -370,7 +370,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                 const isInline = inline || (!className && !String(children).includes('\n'));
                 if (isInline) {
                   return (
-                    <code className="bg-slate-100 text-blue-700 px-1.5 py-0.5 rounded-md font-mono text-[13px] font-semibold border border-slate-200/60" {...props}>
+                    <code className="bg-slate-100 text-trido-deep px-1.5 py-0.5 rounded-md font-mono text-[13px] font-semibold border border-slate-200/60" {...props}>
                       {children}
                     </code>
                   );
@@ -381,7 +381,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                   <div className="my-3 rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md">
                     <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-800/80 border-b border-slate-700/60 text-slate-400 text-[11px] font-mono">
                       <div className="flex items-center gap-1.5">
-                        <Terminal size={12} className="text-blue-400" />
+                        <Terminal size={12} className="text-trido/70" />
                         <span>{lang || 'code'}</span>
                       </div>
                       <button
@@ -396,7 +396,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                         <Copy size={11} /> Salin
                       </button>
                     </div>
-                    <pre className="p-3.5 overflow-x-auto text-xs font-mono text-indigo-200 leading-relaxed">
+                    <pre className="p-3.5 overflow-x-auto text-xs font-mono text-trido/20 leading-relaxed">
                       <code className={className} {...props}>
                         {children}
                       </code>
@@ -405,20 +405,30 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                 );
               },
               a: ({ node, ...props }) => (
-                <a className="text-blue-600 hover:text-blue-800 underline font-semibold" target="_blank" rel="noopener noreferrer" {...props} />
+                <a className="text-trido hover:text-trido-deep underline font-semibold" target="_blank" rel="noopener noreferrer" {...props} />
               ),
               strong: ({ node, ...props }) => (
-                <strong className="font-bold text-slate-900" {...props} />
+                <strong className="font-bold text-ink" {...props} />
               )
             }}
           >
             {displayedText || (isStreaming ? '▋' : '*Pesan kosong*')}
           </ReactMarkdown>
           {isStreaming && (
-            <span className="inline-block w-2 h-4 ml-0.5 bg-blue-600 rounded-xs animate-pulse align-middle" />
+            <span className="inline-block w-2 h-4 ml-0.5 bg-trido rounded-xs animate-pulse align-middle" />
           )}
         </div>
       </div>
+
+      {message.edits && message.edits.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2 max-w-[95%]" aria-label="Perubahan pada papan">
+          {message.edits.map((e, i) => (
+            <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-[11.5px] font-semibold">
+              <Pencil size={10} /> {e}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

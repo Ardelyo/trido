@@ -99,7 +99,7 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.98 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className={`w-full max-w-md bg-white rounded-3xl border-2 border-trido/15 shadow-md p-4 flex flex-col gap-3 font-sans select-none pointer-events-auto ${className}`}
+      className={`w-full max-w-md bg-white rounded-sheet border-2 border-trido/15 shadow-md p-4 flex flex-col gap-3 font-sans select-none pointer-events-auto ${className}`}
     >
       {/* Top Header: Model, Status & Cancel Button */}
       <div className="flex items-center justify-between gap-2">
@@ -113,7 +113,7 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
               <span className="font-extrabold text-[13px] text-ink tracking-tight truncate">
                 {language === 'en' ? 'Trido AI Processing' : 'Trido Sedang Berpikir'}
               </span>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-blue-50 text-trido border border-blue-200/60 truncate">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-trido/5 text-trido border border-trido/12 truncate">
                 {activeModel}
               </span>
             </div>
@@ -141,7 +141,7 @@ export const ProcessingStatusHud: React.FC<ProcessingStatusHudProps> = ({ onCanc
       {/* Middle: Active Phase & Document Indicator */}
       <div className="space-y-1.5">
         {attachedDocument && (
-          <div className="flex items-center gap-2 px-2.5 py-1 bg-blue-50/70 rounded-xl border border-blue-100 text-xs text-trido font-semibold truncate">
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-trido/4 rounded-xl border border-trido/10 text-xs text-trido font-semibold truncate">
             <FileText size={13} className="shrink-0" />
             <span className="truncate">{attachedDocument.name}</span>
           </div>

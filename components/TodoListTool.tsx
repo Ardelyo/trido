@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from '../utils/translations';
 
@@ -8,28 +8,42 @@ interface Todo {
   completed: boolean;
 }
 
-export const TodoListTool: React.FC = () => {
+export const TodoListTool: React.FC<{ config?: any; onChange?: (tasks: Todo[]) => void }> = ({ config, onChange }) => {
   const { t, language } = useTranslation();
-  const [todos, setTodos] = useState<Todo[]>(() => [
+  const fromConfig = (cfg: any): Todo[] | null =>
+    Array.isArray(cfg?.tasks) && cfg.tasks.length >= 0 && cfg.tasks.every((t: any) => typeof t?.text === 'string')
+      ? cfg.tasks.map((t: any, i: number) => ({ id: String(t.id ?? `c${i}`), text: t.text, completed: !!t.completed }))
+      : null;
+  const [todos, setTodos] = useState<Todo[]>(() => fromConfig(config) ?? [
     { id: '1', text: language === 'en' ? 'Discuss Chapter 4' : 'Bahas Bab 4', completed: true },
     { id: '2', text: language === 'en' ? 'Math Exercises' : 'Latihan Soal Matematika', completed: false },
     { id: '3', text: language === 'en' ? 'Group Assignment' : 'Tugas Kelompok', completed: false },
   ]);
   const [input, setInput] = useState('');
 
+  // Stay in sync when the AI edits the list (edit_component)
+  useEffect(() => {
+    const next = fromConfig(config);
+    if (next) setTodos(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config?.tasks]);
+
+  // Persist user edits into the component config so the AI always edits the real, current list
+  const commit = (next: Todo[]) => { setTodos(next); onChange?.(next); };
+
   const addTodo = () => {
     if (input.trim()) {
-      setTodos([...todos, { id: Date.now().toString(), text: input.trim(), completed: false }]);
+      commit([...todos, { id: Date.now().toString(), text: input.trim(), completed: false }]);
       setInput('');
     }
   };
 
   const toggleTodo = (id: string) => {
-    setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    commit(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
   const deleteTodo = (id: string) => {
-    setTodos(todos.filter(t => t.id !== id));
+    commit(todos.filter(t => t.id !== id));
   };
 
   return (
@@ -41,9 +55,9 @@ export const TodoListTool: React.FC = () => {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && addTodo()}
           placeholder={t('todoPlaceholder', 'Tambah tugas baru...')}
-          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium outline-none focus:border-blue-500"
+          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm font-medium outline-none focus:border-trido/50"
         />
-        <button onClick={addTodo} className="w-10 h-10 bg-blue-600 text-white flex items-center justify-center rounded-xl shadow-md hover:bg-blue-700 active:scale-95 transition-all">
+        <button onClick={addTodo} className="w-10 h-10 bg-trido text-white flex items-center justify-center rounded-xl shadow-md hover:bg-trido-deep active:scale-95 transition-all">
           <Plus size={18} />
         </button>
       </div>
@@ -52,7 +66,7 @@ export const TodoListTool: React.FC = () => {
           <div key={todo.id} className={`flex items-center gap-3 p-3 rounded-xl border bg-white shadow-sm transition-all group ${todo.completed ? 'border-slate-100 opacity-60' : 'border-slate-200'}`}>
             <button 
               onClick={() => toggleTodo(todo.id)}
-              className={`w-6 h-6 rounded-md flex items-center justify-center border transition-colors shrink-0 ${todo.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-blue-500'}`}
+              className={`w-6 h-6 rounded-md flex items-center justify-center border transition-colors shrink-0 ${todo.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-trido/50'}`}
             >
               {todo.completed && <Check size={14} strokeWidth={3} />}
             </button>

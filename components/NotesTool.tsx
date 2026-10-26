@@ -50,11 +50,11 @@ export const NotesTool: React.FC = () => {
     <div className="flex flex-col h-full bg-white font-sans">
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 bg-slate-50 border-b border-slate-100 flex-wrap">
-        <button type="button" onClick={() => appendFormat(' **teks tebal**')} title="Tebal" className="p-2 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg transition-colors cursor-pointer"><Bold size={16} /></button>
-        <button type="button" onClick={() => appendFormat(' *teks miring*')} title="Miring" className="p-2 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg transition-colors cursor-pointer"><Italic size={16} /></button>
-        <button type="button" onClick={() => appendFormat('\n- Poin catatan')} title="Daftar" className="p-2 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg transition-colors cursor-pointer"><List size={16} /></button>
+        <button type="button" onClick={() => appendFormat(' **teks tebal**')} title="Tebal" className="p-2 text-slate-500 hover:text-ink hover:bg-white rounded-lg transition-colors cursor-pointer"><Bold size={16} /></button>
+        <button type="button" onClick={() => appendFormat(' *teks miring*')} title="Miring" className="p-2 text-slate-500 hover:text-ink hover:bg-white rounded-lg transition-colors cursor-pointer"><Italic size={16} /></button>
+        <button type="button" onClick={() => appendFormat('\n- Poin catatan')} title="Daftar" className="p-2 text-slate-500 hover:text-ink hover:bg-white rounded-lg transition-colors cursor-pointer"><List size={16} /></button>
         <div className="w-px h-4 bg-slate-200 mx-1" />
-        <button type="button" onClick={handlePinToBoard} title="Tempel ke Papan Tulis" className="p-2 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg transition-colors ml-auto cursor-pointer"><Save size={16} /></button>
+        <button type="button" onClick={handlePinToBoard} title="Tempel ke Papan Tulis" className="p-2 text-slate-500 hover:text-ink hover:bg-white rounded-lg transition-colors ml-auto cursor-pointer"><Save size={16} /></button>
         <button type="button" onClick={() => setNote('')} title="Bersihkan Catatan" className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"><Trash2 size={16} /></button>
       </div>
 

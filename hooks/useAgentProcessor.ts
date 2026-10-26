@@ -3,6 +3,9 @@ import React, { useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { Point } from '../types';
 import { sounds } from '../utils/sounds';
+import { applyComponentEdit, resolveComponent, componentFamily } from '../utils/boardEdit';
+import { sanitizeMermaidCode } from '../utils/mermaidSanitizer';
+import { toast } from '../utils/toast';
 
 // CONFIG: High-Speed Agent Action Emulation
 const MIN_REACTION_TIME = 30; 
@@ -22,6 +25,30 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
   const removeDomElement = useStore(state => state.removeDomElement);
 
   const processingRef = useRef(false);
+  // One AI turn = one transaction: snapshot before the first action, summary + undo after the last.
+  const txRef = useRef<{ snapshot: { canvas: any; dom: Record<string, any> } | null; notes: string[]; failures: string[]; count: number } | null>(null);
+
+  const takeSnapshot = () => {
+    try {
+      return {
+        canvas: JSON.parse(JSON.stringify(canvasRef.current.toJSON(['id', 'zIndex', 'isDomPlaceholder']))),
+        dom: JSON.parse(JSON.stringify(useStore.getState().domElements)),
+      };
+    } catch { return null; }
+  };
+
+  // Let the UI revert the last AI turn in one step.
+  useEffect(() => {
+    useStore.getState().setRevertAiTransaction(() => {
+      const tx = useStore.getState().aiTransaction;
+      const canvas = canvasRef.current;
+      if (!tx || !canvas) return;
+      canvas.loadFromJSON(tx.snapshot.canvas, () => canvas.renderAll());
+      useStore.getState().setDomElements(tx.snapshot.dom);
+      useStore.getState().setAiTransaction(null);
+      toast.success('Perubahan AI dibatalkan.');
+    });
+  }, [canvasRef]);
 
   // --- PHYSICS ENGINE: Cubic Bezier ---
   const getBezierPoint = (t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point => {
@@ -119,10 +146,12 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     
     processingRef.current = true;
     setActing(true);
+    txRef.current = { snapshot: takeSnapshot(), notes: [], failures: [], count: 0 };
 
     while (useStore.getState().actionQueue.length > 0 && canvasRef.current) {
       const action = popAction();
       if (!action) break;
+      if (txRef.current && !['MOVE_CURSOR', 'CLICK_ELEMENT', 'PAN_CAMERA'].includes(action.type)) txRef.current.count++;
     
     const canvas = canvasRef.current;
 
@@ -521,7 +550,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
 
           if (typeof sx === 'number' && typeof sy === 'number' && typeof tx === 'number' && typeof ty === 'number') {
             await execute((sx + tx) / 2, (sy + ty) / 2, isArrow ? 'Drawing Arrow...' : 'Drawing Line...', () => {
-              const effectiveColor = strokeColor || '#3B82F6';
+              const effectiveColor = strokeColor || '#1550aa';
               const effectiveWidth = strokeWidth || 3;
               const hasArrow = isArrow !== false && (!lineStyle || lineStyle === 'ARROW_STRAIGHT' || lineStyle === 'ARROW_CURVED');
               let pathStr = lineStyle === 'ARROW_CURVED'
@@ -687,6 +716,30 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
           break;
         }
 
+        case 'EDIT_COMPONENT': {
+          const p = action.payload || {};
+          const fail = (msg: string) => { txRef.current?.failures.push(msg); setCurrentAction('Gagal mengedit'); };
+          const doms = useStore.getState().domElements;
+          const res = resolveComponent(doms, { objectId: p.objectId, componentTitle: p.componentTitle, operation: p.operation });
+          if ('error' in res) { fail(`${res.error} Kandidat: ${res.candidates.join('; ') || '(tidak ada komponen)'}`); break; }
+          const el = doms[res.id];
+          const result = applyComponentEdit(el, p);
+          if (result.ok === false) { fail(`${result.error}${result.hint ? ` — ${result.hint}` : ''}`); break; }
+
+          const nextConfig: Record<string, any> = { ...result.config };
+          const fam = componentFamily(el);
+          if (typeof nextConfig.code === 'string' && (fam === 'mindmap' || fam === 'flowchart')) {
+            nextConfig.code = sanitizeMermaidCode(nextConfig.code, el.config?.title || 'Peta Konsep');
+          }
+          const anchor = canvas.getObjects().find((o: any) => o.id === res.id);
+          const title = el.config?.title || el.componentType || 'komponen';
+          await execute(anchor?.left ?? el.x, anchor?.top ?? el.y, `Mengedit ${title}...`, () => {
+            useStore.getState().updateDomElement(res.id, { config: { ...(el.config || {}), ...nextConfig } });
+          });
+          txRef.current?.notes.push(`${title}: ${result.message}`);
+          break;
+        }
+
         case 'DRAG_OBJECT': {
           const { objectId, elementText, toX, toY } = action.payload;
           const target = findTargetObject(objectId, elementText);
@@ -746,7 +799,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                       const pathStr = `M ${parent.x} ${parent.y} L ${node.x} ${node.y}`;
                       const path = new window.fabric.Path(pathStr, {
                         fill: 'transparent',
-                        stroke: '#3B82F6',
+                        stroke: '#1550aa',
                         strokeWidth: 2.5,
                         strokeLineCap: 'round',
                         id: `path_${Date.now()}_${Math.random()}`
@@ -920,7 +973,7 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
                     const pathStr = `M ${parent.x} ${parent.y} L ${node.x} ${node.y}`;
                     const path = new window.fabric.Path(pathStr, {
                       fill: 'transparent',
-                      stroke: '#3B82F6',
+                      stroke: '#1550aa',
                       strokeWidth: 2.5,
                       strokeLineCap: 'round',
                       id: `path_${Date.now()}_${Math.random()}`
@@ -983,6 +1036,31 @@ export const useAgentProcessor = (canvasRef: React.MutableRefObject<any>) => {
     processingRef.current = false;
     setActing(false);
     setCurrentAction(null);
+
+    // Close the transaction: keep a one-step undo and tell the user about anything that could not be applied.
+    const tx = txRef.current;
+    txRef.current = null;
+    if (tx && tx.count > 0 && tx.snapshot) {
+      useStore.getState().setAiTransaction({
+        id: `tx_${Date.now()}`, at: Date.now(), actionCount: tx.count,
+        notes: tx.notes, failures: tx.failures, snapshot: tx.snapshot,
+      });
+    }
+    if (tx && tx.notes.length > 0) {
+      useStore.setState(state => {
+        const msgs = [...state.messages];
+        for (let i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i].role === 'model') { msgs[i] = { ...msgs[i], edits: tx.notes }; break; }
+        }
+        return { messages: msgs };
+      });
+    }
+    if (tx && tx.failures.length > 0) {
+      useStore.getState().addMessage({
+        role: 'model',
+        text: `⚠️ Sebagian perubahan tidak bisa diterapkan:\n${tx.failures.map(f => `- ${f}`).join('\n')}\n\nSebutkan nama/ID yang tepat dan saya coba lagi.`,
+      });
+    }
 
     // Play success sound when queue is finished
     if (useStore.getState().actionQueue.length === 0 && canvas) {

@@ -51,7 +51,7 @@ export const CalculatorTool: React.FC = () => {
 
   const btnClass = "flex items-center justify-center py-2.5 sm:py-3 text-base sm:text-lg font-bold rounded-xl transition-all active:scale-95 shadow-sm select-none cursor-pointer";
   const numClass = `${btnClass} bg-white text-slate-700 hover:bg-slate-100 border border-slate-200/80`;
-  const opClass = `${btnClass} bg-blue-600 text-white hover:bg-blue-700`;
+  const opClass = `${btnClass} bg-trido text-white hover:bg-trido-deep`;
   const actionClass = `${btnClass} bg-slate-100 text-slate-600 hover:bg-slate-200`;
 
   return (
@@ -61,7 +61,7 @@ export const CalculatorTool: React.FC = () => {
         <div className="text-right text-slate-400 text-xs h-4 mb-0.5 font-mono truncate">
           {equation}
         </div>
-        <div className="text-right text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight font-mono truncate">
+        <div className="text-right text-2xl sm:text-3xl font-extrabold text-ink tracking-tight font-mono truncate">
           {display}
         </div>
       </div>

@@ -1,3 +1,7 @@
+import { AiResultBar } from './AiResultBar';
+import { useActionProgress } from '../hooks/useActionProgress';
+import { computeFitTransform, clampZoom, ZOOM_STEP } from '../utils/canvasView';
+import { getBoardContentBoundingBox } from '../utils/smartExport';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useStore } from '../store';
 import { useGeminiBrain } from '../hooks/useGeminiBrain';
@@ -80,6 +84,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   } = useStore();
 
   const liveAiStatus = useAiStatus();
+  const progress = useActionProgress();
+  const currentActionLabel = useStore(s => s.currentAction);
   const isOfflineMode = aiPreference === 'ollama' || liveAiStatus.mode === 'ollama';
   const activeModelDisplay = isOfflineMode
     ? (selectedOllamaModel || (liveAiStatus.mode === 'ollama' ? liveAiStatus.model : 'trido-model:latest') || 'trido-model:latest')
@@ -145,18 +151,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
   const handleZoom = (direction: 'in' | 'out' | 'reset') => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
-    let newZoom = canvas.getZoom();
-    if (direction === 'in') newZoom = Math.min(newZoom * 1.1, 20);
-    else if (direction === 'out') newZoom = Math.max(newZoom / 1.1, 0.01);
-    else newZoom = 1;
 
     if (direction === 'reset') {
-      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-      canvas.setZoom(1);
-    } else {
-      canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, newZoom);
+      // "Paskan ke Layar": fit all content (falls back to 100% on an empty board)
+      const fit = computeFitTransform(
+        getBoardContentBoundingBox(canvas, useStore.getState().domElements),
+        canvas.width, canvas.height,
+      );
+      canvas.setViewportTransform(fit.transform);
+      setViewport(fit.zoom, [...fit.transform]);
+      return;
     }
-    setViewport(newZoom, [...canvas.viewportTransform]);
+
+    const newZoom = clampZoom(direction === 'in' ? canvas.getZoom() * ZOOM_STEP : canvas.getZoom() / ZOOM_STEP);
+    canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, newZoom);
+    setViewport(canvas.getZoom(), [...canvas.viewportTransform]);
   };
   const { processUserPrompt } = useGeminiBrain();
 
@@ -706,8 +715,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         }}
         className={`flex items-center justify-center w-9.5 h-9.5 lg:w-10.5 lg:h-10.5 rounded-xl lg:rounded-[1.1rem] transition-colors ${
           isActive
-            ? 'text-white bg-blue-600 shadow-[0_8px_16px_rgba(37,99,235,0.25)] ring-4 ring-blue-600/10'
-            : 'text-slate-500 hover:text-blue-600'
+            ? 'text-white bg-trido shadow-[0_8px_16px_rgba(37,99,235,0.25)] ring-4 ring-trido/10'
+            : 'text-slate-500 hover:text-trido'
         } ${className}`}
       >
         <Icon size={isActive ? 20 : 18} strokeWidth={isActive ? 2.5 : 2} />
@@ -740,11 +749,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
       />
       <input id="canvas-upload" type="file" className="hidden" accept="image/*" onChange={handleCanvasImageUpload} />
 
+      {/* Mobile canvas controls (undo/redo/delete/zoom) — desktop uses the bottom-right cards */}
+      <div className="@4xl:hidden pointer-events-auto absolute top-3 right-3 z-40 flex items-center gap-0.5 p-1 bg-white/95 backdrop-blur-xl rounded-full border-2 border-trido/15 shadow-lg">
+        <button onClick={() => undoCanvas()} aria-label="Undo" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Undo2 size={18} /></button>
+        <button onClick={() => redoCanvas()} aria-label="Redo" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Redo2 size={18} /></button>
+        <button onClick={handleDeleteSelection} aria-label="Delete" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-rose-50 active:text-rose-600"><Trash2 size={18} /></button>
+        <div className="w-px h-5 bg-slate-200 mx-0.5" />
+        <button onClick={() => handleZoom('out')} aria-label="Zoom out" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Minus size={18} /></button>
+        <button onClick={() => handleZoom('in')} aria-label="Zoom in" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Plus size={18} /></button>
+        <button onClick={() => handleZoom('reset')} aria-label="Fit to screen" className="touch-target w-11 h-11 flex items-center justify-center text-slate-600 rounded-full active:bg-slate-100"><Maximize size={18} /></button>
+      </div>
+
       {/* ====== BOTTOM CONTROLS ====== */}
-      <div className="absolute bottom-4 lg:bottom-6 left-3 lg:left-6 right-3 lg:right-6 pointer-events-none flex flex-col md:flex-row items-center md:items-end md:justify-between z-40 gap-4">
+      <div className="absolute bottom-[max(1rem,env(safe-area-inset-bottom))] lg:bottom-6 left-3 lg:left-6 right-3 lg:right-6 pointer-events-none flex flex-col @4xl:flex-row items-center @4xl:items-end @4xl:justify-between z-40 gap-4">
 
         {/* Left: Empty for flex space */}
-        <div className="flex-1 hidden md:block"></div>
+        <div className="flex-1 hidden @4xl:block"></div>
 
         {/* Center: AI Status & Voice Control */}
         <div className="relative flex flex-col items-center gap-2">
@@ -781,11 +801,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95, pointerEvents: 'none' }}
                 transition={spring.snappy}
-                className="pointer-events-auto w-[min(88vw,520px)] bg-white/97 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-blue-100 p-4"
+                className="pointer-events-auto w-[min(88vw,520px)] bg-white/97 backdrop-blur-xl rounded-sheet shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-trido/10 p-4"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-semibold text-blue-500 uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
+                  <span className="text-[11px] font-semibold text-trido/50 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 bg-trido/50 rounded-full animate-pulse" />
                     Transkripsi
                   </span>
                   <button
@@ -797,7 +817,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                   </button>
                 </div>
                 <div className="max-h-36 overflow-y-auto">
-                  <p className="text-[13.5px] leading-relaxed text-slate-800">
+                  <p className="text-[13.5px] leading-relaxed text-ink">
                     {input}
                     {interimInput && <span className="text-slate-400 italic"> {interimInput}</span>}
                     {voiceNotice && !input && !interimInput && <span className="text-amber-600">{voiceNotice}</span>}
@@ -815,12 +835,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 onClick={() => setShowTranscript(true)}
-                className="pointer-events-auto text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
+                className="pointer-events-auto text-[11px] font-semibold text-trido bg-trido/5 hover:bg-trido/10 border border-trido/20 px-3 py-1 rounded-full transition-colors flex items-center gap-1"
               >
                 <ChevronUp size={12} /> Tampilkan transkripsi
               </motion.button>
             )}
           </AnimatePresence>
+
+          {/* What the AI just changed (+ undo) — sits right above the island */}
+          {!isAiDrawerOpen && <AiResultBar />}
 
           {/* Voice island bar — stays compact, never stretches sideways */}
           <AnimatePresence>
@@ -830,43 +853,56 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                  animate={{ opacity: 1, y: 0, scale: 1 }}
                  exit={{ opacity: 0, y: 20, scale: 0.95, pointerEvents: 'none' }}
                  transition={spring.snappy}
-                 className="pointer-events-auto flex items-center gap-3 px-3 py-3 bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
+                 className="pointer-events-auto relative overflow-hidden flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3 py-2.5 sm:py-3 max-w-[calc(100vw-1.5rem)] bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80 origin-bottom"
               >
-                 <div className="flex items-center gap-3">
-                    <div className={`flex items-center justify-center text-blue-600 transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-blue-50/80 border border-blue-100 shadow-sm'}`}>
+                 {progress.active && progress.total > 0 && (
+                   <motion.div
+                     aria-hidden
+                     className="absolute left-0 bottom-0 h-[3px] bg-trido rounded-full"
+                     initial={false}
+                     animate={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
+                     transition={spring.smooth}
+                   />
+                 )}
+                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <div className={`flex items-center justify-center text-trido transition-all ${isListening ? '' : 'w-11 h-11 rounded-[1.2rem] bg-trido/4 border border-trido/10 shadow-sm'}`}>
                        {isListening ? <AudioVisualizer isListening={isListening} audioData={audioData} /> :
                         isThinking ? <Loader2 size={20} className="animate-spin" /> :
+                        progress.active ? <Sparkles size={20} className="animate-pulse text-trido" /> :
                         isTranscribing ? <Activity size={20} className="animate-pulse" /> :
                         <Sparkles size={20} />}
                     </div>
-                    <div className="flex flex-col">
-                       <span className="text-[13.5px] font-bold text-slate-800 leading-tight whitespace-nowrap">
-                         {isThinking ? `${t('processingWithModel', 'Memproses dengan AI...')} (${activeModelDisplay})` :
+                    <div className="flex flex-col min-w-0">
+                       <span className="text-[13.5px] font-bold text-ink leading-tight whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-none">
+                         {progress.active && !isThinking ? `${t('applyingChanges', 'Menerapkan perubahan')}${progress.total > 1 ? ` ${progress.done + 1}/${progress.total}` : ''}` :
+                          isThinking ? `${t('processingWithModel', 'Memproses dengan AI...')} (${activeModelDisplay})` :
                           isTranscribing ? t('transcribingVoice', 'Menerjemahkan...') :
                           isListening ? (speechSupported ? t('listening', 'Mendengarkan...') : t('recordingVoice', 'Merekam...')) :
                           voiceNotice ? '⚠️ Perhatian' :
                           t('allSystemsReady', 'Semua Sistem Siap')}
                        </span>
-                       <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 whitespace-nowrap">
-                         {isListening || isThinking ? (
+                       <span className="text-[11.5px] font-medium text-slate-500 flex items-center gap-1.5 mt-0.5 whitespace-nowrap truncate max-w-[8.5rem] sm:max-w-none">
+                         {progress.active && !isThinking ? (
+                            <span className="text-trido font-semibold">{currentActionLabel || 'Menyusun papan…'}</span>
+                         ) : isListening || isThinking ? (
                             <span className="flex gap-1.5 items-center">
-                              <span className={isOfflineMode ? "text-emerald-600 font-bold" : "text-blue-600 font-bold"}>
+                              <span className={isOfflineMode ? "text-emerald-600 font-bold" : "text-trido font-bold"}>
                                 {activeModelDisplay} • {isOfflineMode ? 'Mode Offline (Ollama)' : 'Cloud Realtime'}
                               </span>
                               <div className="flex gap-1">
-                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} />
-                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} style={{animationDelay: '0.1s'}} />
-                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'} rounded-full animate-bounce`} style={{animationDelay: '0.2s'}} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-trido/50'} rounded-full animate-bounce`} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-trido/50'} rounded-full animate-bounce`} style={{animationDelay: '0.1s'}} />
+                                <div className={`w-1.5 h-1.5 ${isOfflineMode ? 'bg-emerald-500' : 'bg-trido/50'} rounded-full animate-bounce`} style={{animationDelay: '0.2s'}} />
                               </div>
                             </span>
                          ) : voiceNotice ? (
                             <span className="text-amber-500">{voiceNotice.slice(0, 40)}{voiceNotice.length > 40 ? '…' : ''}</span>
                          ) : speechSupported ? (
                             <span className="flex items-center gap-1.5 font-medium">
-                              <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                              <span className={`w-2 h-2 rounded-full ${isOfflineMode ? 'bg-emerald-500' : 'bg-trido/50'}`} />
                               <span>{activeModelDisplay}</span>
-                              <span className="text-slate-400">•</span>
-                              <span className={isOfflineMode ? 'text-emerald-600 font-semibold' : 'text-slate-500'}>
+                              <span className="text-slate-400 hidden sm:inline">•</span>
+                              <span className={`hidden sm:inline ${isOfflineMode ? 'text-emerald-600 font-semibold' : 'text-slate-500'}`}>
                                 {isOfflineMode ? '100% Offline' : t('standbyMode', 'Mode Siaga')}
                               </span>
                             </span>
@@ -875,10 +911,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                     </div>
                  </div>
 
-                 <div className="flex items-center gap-1.5 border-l-2 border-slate-200/60 pl-4">
+                 <div className="flex items-center gap-1 sm:gap-1.5 border-l-2 border-slate-200/60 pl-2 sm:pl-4 shrink-0">
                     <AttachedDocumentBadge compact className="mr-2" />
                     <FileUploadButton
-                      className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-[1.2rem] transition-colors active:scale-95"
+                      className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-trido hover:bg-trido/5 rounded-[1.2rem] transition-colors active:scale-95"
                       icon={<Plus size={22} />}
                       title={t('uploadFileOrImage', 'Unggah file / dokumen / gambar')}
                     />
@@ -887,7 +923,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
                       onClick={() => { setShowTranscript(true); toggleListening(); }}
                       disabled={isTranscribing || isThinking}
                       title={speechSupported ? t('startVoiceInput', 'Mulai input suara') : t('recordVoiceForTranscription', 'Rekam suara')}
-                      className={`w-12 h-12 flex items-center justify-center rounded-[1.3rem] text-white shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 shadow-red-500/25 animate-pulse scale-105 ring-4 ring-red-500/10' : 'bg-blue-600 shadow-blue-600/30 hover:scale-105 hover:bg-blue-500'} disabled:opacity-50 disabled:pointer-events-none active:scale-95 shrink-0`}
+                      className={`w-12 h-12 flex items-center justify-center rounded-[1.3rem] text-white shadow-lg transition-all duration-300 ${isListening ? 'bg-red-500 shadow-red-500/25 animate-pulse scale-105 ring-4 ring-red-500/10' : 'bg-trido shadow-trido/30 hover:scale-105 hover:bg-trido/50'} disabled:opacity-50 disabled:pointer-events-none active:scale-95 shrink-0`}
                     >
                       <Mic size={20} />
                     </button>
@@ -908,7 +944,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
         </div>
 
         {/* Right: Zoom Controls & History Controls */}
-        <div className="pointer-events-auto flex-1 hidden md:flex justify-end gap-3">
+        <div className="pointer-events-auto flex-1 hidden @4xl:flex justify-end gap-3">
            {/* Sleek History & Action Card */}
            <motion.div
              initial={{ opacity: 0, y: 20 }}
@@ -919,14 +955,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
              <button
                onClick={() => undoCanvas()}
                title={language === 'en' ? 'Undo' : 'Batal (Undo)'}
-               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
+               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-trido hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
              >
                <Undo2 size={16} />
              </button>
              <button
                onClick={() => redoCanvas()}
                title={language === 'en' ? 'Redo' : 'Ulangi (Redo)'}
-               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
+               className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-trido hover:bg-slate-50 rounded-xl transition-colors active:scale-90"
              >
                <Redo2 size={16} />
              </button>
@@ -947,17 +983,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ canvasRef }) => {
              transition={{ duration: 0.5, delay: 0.1 }}
              className="flex items-center gap-1.5 px-3 py-2 bg-white/95 backdrop-blur-xl rounded-sheet shadow-[0_20px_40px_rgb(0,0,0,0.08)] border border-white/80"
            >
-             <button onClick={() => handleZoom('out')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
+             <button onClick={() => handleZoom('out')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-ink hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
                <Minus size={18} />
              </button>
              <span className="text-[13.5px] font-extrabold text-slate-700 min-w-14 text-center tracking-tight">
                 {Math.round(zoom * 100)}%
              </span>
-             <button onClick={() => handleZoom('in')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
+             <button onClick={() => handleZoom('in')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-ink hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95">
                <Plus size={18} />
              </button>
              <div className="w-0.5 h-5 bg-slate-200/80 mx-1.5 rounded-full" />
-             <button onClick={() => handleZoom('reset')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95" title={t('fitToScreen', 'Paskan ke Layar')}>
+             <button onClick={() => handleZoom('reset')} className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-ink hover:bg-slate-100 rounded-[1.1rem] transition-colors active:scale-95" title={t('fitToScreen', 'Paskan ke Layar')}>
                <Maximize size={18} />
              </button>
            </motion.div>

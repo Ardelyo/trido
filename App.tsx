@@ -1,4 +1,6 @@
-import { isElectronEnv } from './utils/electron';
+import { AiResultBar } from './components/AiResultBar';
+import { AiSuggestionChips } from './components/AiSuggestionChips';
+import { isElectronEnv, getElectron } from './utils/electron';
 import React, { useRef, useState, useEffect } from 'react';
 import { CanvasManager } from './components/CanvasManager';
 import { ChatInterface } from './components/ChatInterface';
@@ -63,6 +65,15 @@ const App: React.FC = () => {
     pages, currentPageIndex, switchPage, addPage, isThinking, isActing,
     abortTask, isVoiceListening, interimInputText
   } = useStore();
+
+  // Desktop (.exe): announce auto-updates downloaded in the background
+  useEffect(() => {
+    return getElectron()?.onUpdateStatus?.(({ state, version }) => {
+      toast.info(state === 'ready'
+        ? `Pembaruan Trido v${version} siap dan akan terpasang saat aplikasi ditutup.`
+        : `Pembaruan Trido v${version} sedang diunduh…`);
+    });
+  }, []);
 
   useEffect(() => {
     loadSessions();
@@ -172,9 +183,9 @@ const App: React.FC = () => {
         mode: 'gemini' as const,
         text: t('modeCloud', 'Mode Cloud'),
         detail: `Gemini: ${activeModel}`,
-        color: 'text-blue-700 bg-blue-100/80 border-blue-200/50',
-        dot: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]',
-        statusColor: 'text-blue-600',
+        color: 'text-trido-deep bg-trido/8 border-trido/10',
+        dot: 'bg-trido/50 shadow-[0_0_10px_rgba(59,130,246,0.5)]',
+        statusColor: 'text-trido',
         action: null
       };
     }
@@ -253,9 +264,9 @@ const App: React.FC = () => {
           <div className="absolute top-6 left-6 z-50 flex items-center gap-3">
               <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl shadow-slate-200/50 border border-white">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <span className="text-[12px] font-black text-slate-800 tracking-tight">{t('liveSession', 'Sesi Live')} {userName}</span>
+                <span className="text-[12px] font-black text-ink tracking-tight">{t('liveSession', 'Sesi Live')} {userName}</span>
               </div>
-             <div className="flex items-center gap-1 bg-blue-600 px-3 py-2 rounded-2xl shadow-lg shadow-blue-600/20 text-white border border-blue-500">
+             <div className="flex items-center gap-1 bg-trido px-3 py-2 rounded-2xl shadow-lg shadow-trido/20 text-white border border-trido/50">
                 <Users size={14} />
                 <span className="text-[11px] font-bold tracking-tight">{t('checkSession', 'Cek Sesi')}: {roomId}</span>
              </div>
@@ -341,13 +352,13 @@ const App: React.FC = () => {
             </div>
 
             {/* Right Section: Actions */}
-            <div className="flex items-center justify-end gap-2 shrink-0 z-10">
+            <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0 z-10">
               {/* Asisten Button */}
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={toggleAiDrawer}
-                className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-full transition-all shadow-xs cursor-pointer ${
+                className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 text-sm font-bold rounded-full transition-all shadow-xs cursor-pointer ${
                   isAiDrawerOpen 
                     ? 'bg-trido text-white shadow-trido/30 ring-4 ring-trido/15' 
                     : 'text-trido bg-white hover:bg-slate-50 border border-trido/25'
@@ -372,7 +383,7 @@ const App: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsGuideOpen(true)}
-                className="w-11 h-11 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 flex items-center justify-center text-slate-600 hover:text-trido shadow-xs transition-all cursor-pointer"
+                className="hidden sm:flex w-11 h-11 rounded-full bg-white/80 hover:bg-white border border-slate-200/80 items-center justify-center text-slate-600 hover:text-trido shadow-xs transition-all cursor-pointer"
                 title="Panduan Cara Penggunaan Trido (Bantuan)"
               >
                 <HelpCircle size={18} />
@@ -435,7 +446,10 @@ const App: React.FC = () => {
                   className="absolute lg:relative left-2 top-0 bottom-2 lg:left-0 lg:bottom-0 max-h-full bg-white/95 backdrop-blur-xl rounded-4xl flex flex-col z-40 lg:z-10 shrink-0 border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden"
                 >
                   <div className="w-65 h-full flex flex-col">
-                    <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 custom-scrollbar">
+                    <nav
+                      onClick={() => { if (isMobileLayout) setIsSidebarOpen(false); }}
+                      className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 custom-scrollbar"
+                    >
                       {/* 1. Whiteboard Core */}
                       <SidebarItem
                         icon={Square}
@@ -498,6 +512,16 @@ const App: React.FC = () => {
                         }}
                       />
 
+                      {/* Mobile-only shortcuts for header actions hidden on small screens */}
+                      <div className="sm:hidden">
+                        <SidebarItem
+                          icon={Share2}
+                          label={t('share', 'Bagikan')}
+                          active={false}
+                          onClick={() => setIsShareOpen(true)}
+                        />
+                      </div>
+
                       {/* 6. Landing / About (Web Only) */}
                       {isWeb && (
                         <SidebarItem
@@ -511,7 +535,7 @@ const App: React.FC = () => {
 
                     <div className="p-5 border-t border-slate-100/80 space-y-4 bg-slate-50/50">
                       <div className="flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-white hover:shadow-sm transition-all cursor-pointer group">
-                        <div className="w-11 h-11 rounded-[1.1rem] shadow-sm bg-blue-600 flex items-center justify-center text-white font-black text-lg shrink-0">
+                        <div className="w-11 h-11 rounded-[1.1rem] shadow-sm bg-trido flex items-center justify-center text-white font-black text-lg shrink-0">
                           {userName.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -528,14 +552,14 @@ const App: React.FC = () => {
                                 autoFocus
                                 value={editNameValue}
                                 onChange={(e) => setEditNameValue(e.target.value)}
-                                className="text-[14px] font-bold text-slate-900 border-b border-blue-400 outline-none bg-transparent w-full"
+                                className="text-[14px] font-bold text-ink border-b border-trido/70 outline-none bg-transparent w-full"
                                 onBlur={() => { if (editNameValue.trim()) setUserName(editNameValue); setIsEditingName(false); }}
                               />
-                              <button type="submit" className="text-blue-600"><Check size={14} /></button>
+                              <button type="submit" className="text-trido"><Check size={14} /></button>
                             </form>
                           ) : (
                             <div className="flex items-center gap-1.5" onClick={() => { setEditNameValue(userName); setIsEditingName(true); }}>
-                              <div className="text-[14px] font-bold text-slate-900 truncate">{userName}</div>
+                              <div className="text-[14px] font-bold text-ink truncate">{userName}</div>
                               <Pencil size={12} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                           )}
@@ -549,7 +573,7 @@ const App: React.FC = () => {
             </AnimatePresence>
 
             {/* 3 & 4. CANVAS AREA & VERTICAL TOOLBAR */}
-            <main className="flex-1 min-w-0 relative h-full bg-white rounded-3xl lg:rounded-[2.5rem] border-2 border-trido/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
+            <main className="@container flex-1 min-w-0 relative h-full bg-white rounded-sheet lg:rounded-[2.5rem] border-2 border-trido/15 shadow-[0_16px_48px_rgba(10,26,58,0.08)] overflow-hidden flex flex-col">
 
                {/* Dot Grid Background */}
                <div
@@ -566,7 +590,7 @@ const App: React.FC = () => {
                </div>
 
                {/* Page Navigation Indicator */}
-               <div className="absolute bottom-6 left-6 z-10 flex items-center gap-1.5 p-1.5 bg-white/95 backdrop-blur-xl rounded-full shadow-lg border-2 border-trido/15">
+               <div className="absolute top-[4.75rem] right-3 @4xl:top-auto @4xl:right-auto @4xl:bottom-6 @4xl:left-6 z-10 flex items-center gap-1.5 p-1.5 max-w-[70%] overflow-x-auto @4xl:max-w-none @4xl:overflow-visible bg-white/95 backdrop-blur-xl rounded-full shadow-lg border-2 border-trido/15">
                 {pages.map((_, idx) => (
                   <button
                     key={idx}
@@ -623,8 +647,8 @@ const App: React.FC = () => {
                      className="absolute inset-0 flex flex-col items-center justify-center gap-5 bg-[#f8fafc]/80 backdrop-blur-sm z-10"
                    >
                      <div className="relative w-16 h-16">
-                       <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
-                       <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                       <div className="absolute inset-0 border-4 border-trido/20 rounded-full"></div>
+                       <div className="absolute inset-0 border-4 border-trido rounded-full border-t-transparent animate-spin"></div>
                      </div>
                      <div className="text-[13px] font-bold tracking-[0.2em] text-slate-600 uppercase">{t('loadingCanvas', 'Memuat Kanvas...')}</div>
                    </motion.div>
@@ -711,7 +735,7 @@ const App: React.FC = () => {
                     </div>
                     {messages.length === 0 && (
                       <div className="h-full flex flex-col items-center justify-center text-center opacity-50 px-4">
-                        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                        <div className="w-16 h-16 rounded-sheet bg-slate-100 flex items-center justify-center mb-4">
                            <Sparkles size={28} className="text-slate-400" />
                         </div>
                         <p className="text-[15px] font-medium text-slate-500">{t('emptyChatPrompt', 'Tanyakan apapun atau unggah gambar untuk memulai percakapan dengan AI.')}</p>
@@ -764,6 +788,22 @@ const App: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Result of the last AI turn: what changed + one-tap undo */}
+                    <AiResultBar className="mb-2.5" />
+
+                    {/* Contextual next-step suggestions */}
+                    {!attachedDocument && !isThinking && (
+                      <AiSuggestionChips
+                        language={language}
+                        className="mb-2.5"
+                        onFill={(prompt) => setChatInputText(prompt)}
+                        onSend={async (prompt) => {
+                          useStore.getState().addMessage({ role: 'user', text: prompt });
+                          await processUserPrompt(prompt, canvasRef);
+                        }}
+                      />
+                    )}
+
                     {/* Quick Document Action Pills (Only when document is attached) */}
                     {attachedDocument && !isThinking && (
                       <div className="flex flex-wrap gap-1.5 mb-2.5">
@@ -776,7 +816,7 @@ const App: React.FC = () => {
                             useStore.getState().addMessage({ role: 'user', text: prompt });
                             await processUserPrompt(prompt, canvasRef);
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-trido border border-blue-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-trido/5 hover:bg-trido/10 text-trido border border-trido/16 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
                         >
                           <Network size={12} />
                           <span>{t('createMindmapBtn', '🌳 Buat Peta Konsep')}</span>
@@ -790,7 +830,7 @@ const App: React.FC = () => {
                             useStore.getState().addMessage({ role: 'user', text: prompt });
                             await processUserPrompt(prompt, canvasRef);
                           }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-trido/5 hover:bg-trido/10 text-trido-deep border border-trido/16 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-2xs"
                         >
                           <FileText size={12} />
                           <span>{t('summarizeDocBtn', '📝 Ringkas Materi')}</span>
@@ -827,11 +867,11 @@ const App: React.FC = () => {
                         useStore.getState().addMessage({ role: 'user', text });
                         await processUserPrompt(text, canvasRef);
                       }}
-                      className="flex items-end gap-2 w-full border-[1.5px] border-slate-200 rounded-3xl p-1.5 bg-slate-50/50 focus-within:bg-white focus-within:ring-4 focus-within:ring-blue-500/10 focus-within:border-blue-400 transition-all shadow-inner"
+                      className="flex items-end gap-2 w-full border-[1.5px] border-slate-200 rounded-sheet p-1.5 bg-slate-50/50 focus-within:bg-white focus-within:ring-4 focus-within:ring-trido/50/10 focus-within:border-trido/70 transition-all shadow-inner"
                     >
                         <div className="flex items-center pb-0.5">
                           <FileUploadButton
-                            className="text-slate-400 hover:text-blue-600 transition-colors p-2.5 rounded-[1.1rem] hover:bg-blue-50 ml-0.5 active:scale-95"
+                            className="text-slate-400 hover:text-trido transition-colors p-2.5 rounded-[1.1rem] hover:bg-trido/5 ml-0.5 active:scale-95"
                             icon={<Plus size={20} />}
                             title={t('uploadFileOrImage', 'Unggah file / dokumen / gambar')}
                             disabled={isThinking}
@@ -845,7 +885,7 @@ const App: React.FC = () => {
                             className={`transition-all p-2.5 rounded-full active:scale-95 cursor-pointer ${
                               useStore.getState().isVoiceListening
                                 ? 'bg-red-500 text-white animate-pulse shadow-sm'
-                                : 'text-slate-400 hover:text-trido hover:bg-blue-50'
+                                : 'text-slate-400 hover:text-trido hover:bg-trido/5'
                             } ${isThinking ? 'opacity-40 pointer-events-none' : ''}`}
                             title={useStore.getState().isVoiceListening ? 'Hentikan & Kirim Suara' : t('switchToVoice', 'Bicara dengan Suara (Sinkron dengan Smartboard)')}
                           >
@@ -874,13 +914,13 @@ const App: React.FC = () => {
                                     ? 'Tanya tentang PDF ini...' 
                                     : 'Tanya tentang dokumen ini...') 
                                 : t('askSomething', 'Tanya sesuatu atau masukkan instruksi lengkap...'))}
-                          className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-slate-800 placeholder-slate-400 px-2 py-2 resize-none max-h-40 min-h-[38px] leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed overflow-y-auto"
+                          className="flex-1 w-full bg-transparent border-none outline-none text-[14.5px] font-semibold text-ink placeholder-slate-400 px-2 py-2 resize-none max-h-40 min-h-[38px] leading-relaxed disabled:opacity-50 disabled:cursor-not-allowed overflow-y-auto"
                         />
                          <div className="pb-0.5">
                            <button
                              type="submit"
                              disabled={isThinking || (!chatInputText.trim() && !attachedDocument && !lastUploadedImage)}
-                             className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${isThinking ? 'bg-slate-100 text-slate-400 scale-95 pointer-events-none opacity-50' : (chatInputText.trim() || attachedDocument || lastUploadedImage ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none')}`}
+                             className={`p-3 rounded-[1.2rem] transition-all duration-200 mr-0.5 ${isThinking ? 'bg-slate-100 text-slate-400 scale-95 pointer-events-none opacity-50' : (chatInputText.trim() || attachedDocument || lastUploadedImage ? 'bg-trido text-white shadow-lg shadow-trido/30 active:scale-90 scale-100' : 'bg-slate-100 text-slate-400 scale-95 pointer-events-none')}`}
                            >
                              <Send size={18} />
                            </button>
