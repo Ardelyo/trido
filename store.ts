@@ -1,7 +1,8 @@
 
 import { create } from 'zustand';
 import { CONFIG } from './constants';
-import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig } from './types';
+import { AgentState, AgentAction, Point, ChatMessage, DomElementState, CreatorTool, FontFamily, BoardSession, PageState, AiPreference, LessonPlan, MindmapNodeRecord, LessonPhase, LessonStep, TranscribeMode, VoiceConfig, AttachedDocument, ExperimentalConfig, ClmConfig } from './types';
+import { getLanguageInfo } from './utils/languages';
 import { saveSessionToDb, getSessionFromDb, deleteSessionFromDb, getAllSessionsFromDb } from './services/db';
 import { findMatchingMindmapNode } from './utils/mindmapLayout';
 
@@ -66,8 +67,8 @@ interface AppStore extends AgentState {
   userName: string;
   setUserName: (name: string) => void;
 
-  language: 'id' | 'en';
-  setLanguage: (lang: 'id' | 'en') => void;
+  language: string;
+  setLanguage: (lang: string) => void;
 
   aiPreference: AiPreference;
   setAiPreference: (pref: AiPreference) => void;
@@ -98,6 +99,8 @@ interface AppStore extends AgentState {
   setVoiceConfig: (config: Partial<VoiceConfig>) => void;
   experimentalConfig: ExperimentalConfig;
   setExperimentalConfig: (config: Partial<ExperimentalConfig>) => void;
+  clmConfig: ClmConfig;
+  setClmConfig: (config: Partial<ClmConfig>) => void;
   chatInputText: string;
   setChatInputText: (txt: string) => void;
   interimInputText: string;
@@ -205,8 +208,7 @@ const getInitialOllamaBaseUrl = (): string => {
 
 const getInitialSelectedGeminiModel = (): string => {
   const saved = localStorage.getItem('selected_gemini_model');
-  if (!saved || saved === 'gemini-3.7-flash') return 'gemini-3.8-flash';
-  return saved;
+  return saved || 'gemini-3.8-flash';
 };
 
 const getInitialSelectedOllamaModel = (): string => {
@@ -215,17 +217,16 @@ const getInitialSelectedOllamaModel = (): string => {
 
 const getInitialSelectedVertexModel = (): string => {
   const saved = localStorage.getItem('selected_vertex_model');
-  if (!saved || saved === 'gemini-3.7-flash') return 'gemini-3.8-flash';
-  return saved;
+  return saved || 'gemini-3.8-flash';
 };
 
-const getInitialLanguage = (): 'id' | 'en' => {
+const getInitialLanguage = (): string => {
   const saved = localStorage.getItem('trido_language');
-  return (saved === 'id' || saved === 'en') ? saved : 'id';
+  return saved || 'en';
 };
 
 const getInitialUserName = (): string => {
-  return localStorage.getItem('trido_user_name') || 'Guru';
+  return localStorage.getItem('trido_user_name') || 'Teacher';
 };
 
 const getInitialTranscribeMode = (): TranscribeMode => {
@@ -241,7 +242,7 @@ const defaultVoiceConfig: VoiceConfig = {
   echoCancellation: true,
   autoGainControl: true,
   audioQuality: 'high',
-  language: 'id-ID',
+  language: 'en-US',
   silenceDetectionTimeout: 2.5
 };
 
@@ -253,8 +254,22 @@ const getInitialVoiceConfig = (): VoiceConfig => {
   return defaultVoiceConfig;
 };
 
+export const defaultClmConfig: ClmConfig = {
+  enabled: true,
+  endpoint: 'http://127.0.0.1:8700',
+  fastPathActive: true
+};
+
+const getInitialClmConfig = (): ClmConfig => {
+  try {
+    const saved = localStorage.getItem('trido_clm_config');
+    if (saved) return { ...defaultClmConfig, ...JSON.parse(saved) };
+  } catch {}
+  return defaultClmConfig;
+};
+
 export const defaultExperimentalConfig: ExperimentalConfig = {
-  enabled: false,
+  enabled: true,
   markmapEnabled: true,
   mermaidEnabled: true,
   smoothInkingEnabled: true,
@@ -552,6 +567,12 @@ export const useStore = create<AppStore>((set, get) => ({
     localStorage.setItem('trido_experimental_config', JSON.stringify(updated));
     set({ experimentalConfig: updated });
   },
+  clmConfig: getInitialClmConfig(),
+  setClmConfig: (partial) => {
+    const updated = { ...get().clmConfig, ...partial };
+    localStorage.setItem('trido_clm_config', JSON.stringify(updated));
+    set({ clmConfig: updated });
+  },
   zoom: 1,
   viewportTransform: [1, 0, 0, 1, 0, 0],
   domElements: {},
@@ -673,7 +694,11 @@ export const useStore = create<AppStore>((set, get) => ({
   language: getInitialLanguage(),
   setLanguage: (lang) => {
     localStorage.setItem('trido_language', lang);
-    set({ language: lang });
+    const langInfo = getLanguageInfo(lang);
+    const currentVoice = get().voiceConfig;
+    const updatedVoice = { ...currentVoice, language: langInfo.speechLocale };
+    localStorage.setItem('trido_voice_config', JSON.stringify(updatedVoice));
+    set({ language: lang, voiceConfig: updatedVoice });
   },
 
   aiPreference: getInitialAiPreference(),

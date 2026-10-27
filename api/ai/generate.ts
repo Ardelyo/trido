@@ -94,7 +94,7 @@ FULL AUTONOMOUS COMPUTER USE CAPABILITIES:
 5. KLIK ELEMEN (Click):
    - Call \`click_element\` with \`elementText\` or coordinates to click buttons, interactive quiz options, or select objects.
 6. MIND MAP:
-   - Call \`add_mindmap_node\` with \`text\`, \`style\` ("MAIN_TOPIC", "SUBTOPIC", "DETAIL"), and \`parentNodeText\`.
+   - For mind maps, ALWAYS call \`render_mermaid\` with Mermaid \`mindmap\` diagram syntax. NEVER use separate rectangle boxes or manual shapes.
 7. WIDGET & KUIS:
    - Call \`add_component\` for quizzes, markdown notes, timer, calculator.
 8. APP MINI INTERAKTIF:
@@ -103,7 +103,7 @@ FULL AUTONOMOUS COMPUTER USE CAPABILITIES:
 CRITICAL EXECUTION RULES:
 - ALWAYS call the appropriate tool immediately! NEVER say "I will move it" without calling the tool.
 - Batch multiple actions together in a single turn when appropriate.
-- Respond in natural Indonesian (Bahasa Indonesia).`;
+- Respond in the user's selected language (supporting 150+ world languages).`;
 
     const toolsDeclarations = [
       {

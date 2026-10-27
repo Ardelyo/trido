@@ -42,8 +42,14 @@ export interface VoiceConfig {
   echoCancellation: boolean;
   autoGainControl: boolean;
   audioQuality: 'standard' | 'high'; // standard: 16kHz, high: 48kHz Opus
-  language: 'id-ID' | 'en-US' | 'auto';
+  language: string;
   silenceDetectionTimeout: number; // 0 = off, 1.5, 2, 3, 5 seconds
+}
+
+export interface ClmConfig {
+  enabled: boolean;
+  endpoint: string;
+  fastPathActive: boolean;
 }
 
 export interface ExperimentalConfig {

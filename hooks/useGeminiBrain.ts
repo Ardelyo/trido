@@ -150,7 +150,7 @@ const validateAndFixToolCall = (call: any): { valid: boolean; fixed?: any; error
   }
 };
 
-const classifyIntent = (prompt: string): 'question' | 'creation' | 'modification' | 'navigation' => {
+const classifyIntentFallback = (prompt: string): 'question' | 'creation' | 'modification' | 'navigation' => {
   const modificationWords = /ubah|edit|hapus|delete|pindah|move|update|ganti|change|geser|drag|geserkan|pindahkan|reposition|align/i;
   const creationWords = /buat|create|gambar|draw|tambah|add|tulis|write|bikin|generate|tarik|garis|panah|arrow|line|hubungkan|connect|shape|kotak|lingkaran|segitiga|mindmap|diagram|peta konsep|tabel|rangkum|susun|visual/i;
   const navigationWords = /pergi|go|zoom|pan|navigasi|navigate|ke halaman|page/i;
@@ -162,6 +162,72 @@ const classifyIntent = (prompt: string): 'question' | 'creation' | 'modification
   if (navigationWords.test(prompt)) return 'navigation';
   if (questionWords.test(prompt.trim())) return 'question';
   return 'creation'; // default
+};
+
+export const buildMermaidMindmapCode = (
+  nodes: { text: string; parentNodeText?: string | null; style?: string }[]
+): string => {
+  if (!nodes || nodes.length === 0) {
+    return 'mindmap\n  root((Mindmap))';
+  }
+
+  const rootNode = nodes.find(n => n.style === 'MAIN_TOPIC' || !n.parentNodeText) || nodes[0];
+  const clean = (str: string) => (str || '').replace(/[()[\]{}"`]/g, '').trim();
+
+  const childrenMap = new Map<string, Array<{ text: string; parentNodeText?: string | null; style?: string }>>();
+  for (const n of nodes) {
+    if (n === rootNode) continue;
+    const parent = n.parentNodeText || rootNode.text;
+    if (!childrenMap.has(parent)) {
+      childrenMap.set(parent, []);
+    }
+    childrenMap.get(parent)!.push(n);
+  }
+
+  const lines: string[] = ['mindmap', `  root((${clean(rootNode.text)}))`];
+
+  const traverse = (parentText: string, indent: string) => {
+    const children = childrenMap.get(parentText) || [];
+    for (const child of children) {
+      lines.push(`${indent}${clean(child.text)}`);
+      traverse(child.text, indent + '  ');
+    }
+  };
+
+  traverse(rootNode.text, '    ');
+  return lines.join('\n');
+};
+
+const querySystemOneIntent = async (
+  prompt: string,
+  context?: { language?: string; activeCanvasCount?: number; existingMindmapCount?: number; hasMermaid?: boolean },
+  endpoint?: string
+): Promise<'question' | 'creation' | 'modification' | 'navigation'> => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 700);
+    const res = await fetch('/api/ai/systemone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        context: {
+          prompt,
+          language: context?.language || 'en',
+          activeCanvasObjectsCount: context?.activeCanvasCount || 0,
+          existingMindmapNodesCount: context?.existingMindmapCount || 0,
+          hasMermaidOnCanvas: context?.hasMermaid || false
+        },
+        endpoint: endpoint || 'http://127.0.0.1:8700'
+      }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.intent) return data.intent;
+    }
+  } catch {}
+  return classifyIntentFallback(prompt);
 };
 
 interface ParsedLesson {
@@ -338,8 +404,19 @@ export const useGeminiBrain = () => {
         .filter(Boolean);
 
       // --- 3. AI REQUEST ---
-      const intent = classifyIntent(prompt);
       const currentStoreState = useStore.getState();
+      const clmCfg = currentStoreState.clmConfig;
+      let intent: 'question' | 'creation' | 'modification' | 'navigation' = classifyIntentFallback(prompt);
+      if (clmCfg?.enabled && clmCfg?.fastPathActive) {
+        try {
+          intent = await querySystemOneIntent(prompt, {
+            language: currentStoreState.language,
+            activeCanvasCount: objectsJson.length,
+            existingMindmapCount: currentStoreState.activeMindmapNodes.length,
+            hasMermaid: Object.values(currentStoreState.domElements).some(el => el.componentType === 'MERMAID_DIAGRAM')
+          }, clmCfg.endpoint);
+        } catch {}
+      }
       const { lessonPlan, activeMindmapNodes, attachedDocument } = currentStoreState;
 
       // Build document context if user attached a document/PDF/file
@@ -545,131 +622,84 @@ ${mindmapContextStr}
       const pathActions: AgentAction[] = [];
       const otherActions: AgentAction[] = [];
 
-      // ── Mind map via layout engine ──────────────────────────────────────────
+      // ── Mind map via STRICT Mermaid.js engine ──────────────────────────────
       if (mindmapCalls.length > 0) {
         const storeState = useStore.getState();
-        
-        // ── Get existing mindmap nodes dari registry ───────────────────────
         const existingNodes = storeState.activeMindmapNodes;
-        const isExpanding = existingNodes.length > 0;
         
-        // ── Build input nodes, merge dengan existing ───────────────────────
         const inputNodes: MindmapInputNode[] = mindmapCalls.map(c => ({
           text: c.args.text,
           style: (c.args.style || 'SUBTOPIC') as MindmapInputNode['style'],
           parentNodeText: c.args.parentNodeText || null,
         }));
 
-        if (isExpanding) {
-          // EXPAND MODE: Smart dynamic expansion maintaining parent cluster & block area
-          logger.info(`[MindMap] Smart dynamic expansion: ${existingNodes.length} existing + ${inputNodes.length} new`);
-          
-          const existingLayoutNodes: MindmapLayoutNode[] = existingNodes.map(n => ({
+        // Merge existing nodes and new input nodes
+        const allNodesMap = new Map<string, MindmapInputNode>();
+        existingNodes.forEach(n => {
+          allNodesMap.set(n.text.toLowerCase().trim(), {
+            text: n.text,
+            style: n.style as any,
+            parentNodeText: n.parentNodeText || null
+          });
+        });
+
+        inputNodes.forEach((n, idx) => {
+          allNodesMap.set(n.text.toLowerCase().trim(), n);
+          storeState.registerMindmapNode({
             text: n.text,
             style: n.style as any,
             parentNodeText: n.parentNodeText,
-            x: n.x,
-            y: n.y
-          }));
-
-          const laid = expandMindmapNodes(existingLayoutNodes, inputNodes, { x: centerX, y: centerY });
-          
-          laid.forEach((node, idx) => {
-            const s = NODE_STYLE_CONFIG[node.style] || NODE_STYLE_CONFIG.SUBTOPIC;
-            const nodeId = `mm_${Date.now()}_${idx}`;
-            
-            shapeActions.push({
-              id: `action_mm_expand_${Date.now()}_${idx}`,
-              type: 'CREATE_SHAPE',
-              payload: {
-                shapeType: 'RECTANGLE',
-                x: node.x,
-                y: node.y,
-                text: node.text,
-                fill: s.fill,
-                width: s.width,
-                height: s.height,
-                textColor: '#FFFFFF',
-                nodeId, // Pass ID for registration
-              },
-              status: 'PENDING'
-            });
-            
-            // Register new node in store
-            storeState.registerMindmapNode({
-              text: node.text,
-              style: node.style as any,
-              parentNodeText: node.parentNodeText,
-              canvasObjectId: nodeId,
-              x: node.x,
-              y: node.y
-            });
-            
-            // Connection to parent
-            if (node.parentNodeText) {
-              pathActions.push({
-                id: `action_conn_expand_${Date.now()}_${idx}`,
-                type: 'DRAW_PATH',
-                payload: { 
-                  fromNodeText: node.parentNodeText, 
-                  toNodeText: node.text, 
-                  lineStyle: 'ARROW_STRAIGHT' 
-                },
-                status: 'PENDING'
-              });
-            }
+            canvasObjectId: `mermaid_mm_${Date.now()}_${idx}`,
+            x: centerX,
+            y: centerY
           });
-          
+        });
+
+        const mergedNodes = Array.from(allNodesMap.values());
+        const mermaidCode = buildMermaidMindmapCode(mergedNodes);
+        const rootTitle = mergedNodes.find(n => n.style === 'MAIN_TOPIC' || !n.parentNodeText)?.text || 'Peta Konsep';
+
+        // Check if an existing Mermaid diagram exists on canvas for in-place mutation
+        const doms = storeState.domElements;
+        const existingMermaid = Object.entries(doms).find(([_, el]) => 
+          el.componentType === 'MERMAID_DIAGRAM' || el.componentType === 'MARKMAP_MINDMAP'
+        );
+
+        if (existingMermaid) {
+          const [id, el] = existingMermaid;
+          logger.info(`[MindMap] Mutating existing Mermaid diagram in-place: ${id}`);
+          otherActions.push({
+            id: `action_mermaid_update_${Date.now()}`,
+            type: 'EDIT_HTML',
+            payload: {
+              objectId: id,
+              config: {
+                ...el.config,
+                title: el.config?.title || rootTitle,
+                code: mermaidCode
+              }
+            },
+            status: 'PENDING'
+          });
         } else {
-          // FRESH MODE: Layout engine untuk mindmap baru
-          const laid = layoutMindmap(inputNodes, centerX, centerY);
-          
-          laid.forEach((node, idx) => {
-            const s = NODE_STYLE_CONFIG[node.style] || NODE_STYLE_CONFIG.SUBTOPIC;
-            const nodeId = `mm_${Date.now()}_${idx}`;
-            
-            shapeActions.push({
-              id: `action_mm_${Date.now()}_${idx}`,
-              type: 'CREATE_SHAPE',
-              payload: {
-                shapeType: 'RECTANGLE',
-                x: node.x, y: node.y,
-                text: node.text,
-                fill: s.fill,
-                width: s.width,
-                height: s.height,
-                textColor: '#FFFFFF',
-                nodeId,
-              },
-              status: 'PENDING'
-            });
-            
-            // Register semua nodes ke store untuk expand nanti
-            storeState.registerMindmapNode({
-              text: node.text,
-              style: node.style as any,
-              parentNodeText: node.parentNodeText,
-              canvasObjectId: nodeId,
-              x: node.x,
-              y: node.y
-            });
-            
-            // Auto-generate connection
-            if (node.parentNodeText) {
-              pathActions.push({
-                id: `action_conn_${Date.now()}_${idx}`,
-                type: 'DRAW_PATH',
-                payload: { 
-                  fromNodeText: node.parentNodeText, 
-                  toNodeText: node.text, 
-                  lineStyle: 'ARROW_STRAIGHT' 
-                },
-                status: 'PENDING'
-              });
-            }
+          logger.info(`[MindMap] Creating fresh Mermaid diagram for mindmap`);
+          otherActions.push({
+            id: `action_mermaid_create_${Date.now()}`,
+            type: 'RENDER_HTML',
+            payload: {
+              html: '<div>MERMAID</div>',
+              x: centerX,
+              y: centerY,
+              width: 820,
+              height: 580,
+              componentType: 'MERMAID_DIAGRAM',
+              config: {
+                title: rootTitle,
+                code: mermaidCode
+              }
+            },
+            status: 'PENDING'
           });
-
-          logger.info(`[MindMap] Fresh layout: ${laid.length} nodes, ${pathActions.length} connections`);
         }
       }
 

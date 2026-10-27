@@ -20,6 +20,7 @@ import { CONFIG } from "../constants";
 import { AiPreference } from "../types";
 import { createLogger } from "../utils/logger";
 import { telemetryService } from "./telemetryService";
+import { queryClmSystemOne, routeTridoInteractionWithClm } from "./clmService";
 
 export const aiRouter = Router();
 const logger = createLogger('ai-router');
@@ -295,6 +296,37 @@ aiRouter.post("/status", async (req, res) => {
     status.model = selectedGeminiModel;
   }
   res.json(status);
+});
+
+aiRouter.post("/systemone", async (req, res) => {
+  try {
+    const { state, questions, endpoint, context } = req.body;
+    if (context) {
+      const decision = await routeTridoInteractionWithClm(context, endpoint);
+      return res.json(decision);
+    }
+    const result = await queryClmSystemOne(state || "", questions || {}, endpoint);
+    return res.json(result);
+  } catch (err: any) {
+    logger.error(`[CLM System 1] Failed to process decision: ${err?.message || err}`);
+    return res.status(500).json({ error: err?.message || 'Failed to process System 1 decision' });
+  }
+});
+
+aiRouter.get("/clm-status", async (req, res) => {
+  const endpoint = (req.query.endpoint as string) || 'http://127.0.0.1:8700';
+  const cleanUrl = endpoint.replace(/\/+$/, '');
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 1200);
+    const r = await fetch(`${cleanUrl}/v1/models`, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (r.ok) {
+      const data = await r.json();
+      return res.json({ online: true, models: data.data || ['clm-latest'], endpoint: cleanUrl });
+    }
+  } catch {}
+  return res.json({ online: false, endpoint: cleanUrl });
 });
 
 aiRouter.post("/generate", async (req, res) => {

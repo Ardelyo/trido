@@ -1,6 +1,6 @@
 import { useStore } from '../store';
 
-export const translations: Record<'id' | 'en', Record<string, string>> = {
+export const translations: Record<string, Record<string, string>> = {
   id: {
     // App & Sidebar
     appName: 'Trido',
@@ -469,7 +469,7 @@ export const useTranslation = () => {
   const language = useStore(state => state.language);
   
   const t = (key: string, fallback?: string): string => {
-    const dict = translations[language] || translations['id'];
+    const dict = translations[language] || translations['en'] || translations['id'] || {};
     return dict[key] || fallback || key;
   };
   

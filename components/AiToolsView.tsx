@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store';
 import { AiServiceError, generateToolContent } from '../services/aiService';
-import { layoutMindmap, NODE_STYLE_CONFIG, MindmapInputNode } from '../utils/mindmapLayout';
+import { MindmapInputNode } from '../utils/mindmapLayout';
+import { buildMermaidMindmapCode } from '../hooks/useGeminiBrain';
 
 interface AiToolDef {
   id: string;
@@ -83,43 +84,36 @@ export const AiToolsView: React.FC<AiToolsViewProps> = ({ onClose }) => {
 
 
       if (activeTool.id === 'mindmap') {
-        // Support both new { nodes[] with parentNodeText } format
-        // and legacy { nodes[], connections[] with relativePosition } format
         const rawNodes: any[] = Array.isArray(result) ? result : (result?.nodes || []);
         const legacyConnections: any[] = Array.isArray(result) ? [] : (result?.connections || []);
 
-        // Normalise to MindmapInputNode format
         const inputNodes: MindmapInputNode[] = rawNodes.map((n: any) => ({
           text: n.text,
           style: (n.style || 'SUBTOPIC') as MindmapInputNode['style'],
-          // Accept parentNodeText (new) or derive from legacy connections
           parentNodeText: n.parentNodeText ||
             legacyConnections.find((c: any) => c.to === n.text)?.from ||
             null,
         }));
 
-        // Run radial layout engine
-        const laid = layoutMindmap(inputNodes, centerX, centerY);
+        const mermaidCode = buildMermaidMindmapCode(inputNodes);
+        const rootTitle = inputNodes.find(n => n.style === 'MAIN_TOPIC' || !n.parentNodeText)?.text || toolInput || 'Peta Konsep';
 
-        // Enqueue shape creations first
-        laid.forEach((node, idx) => {
-          const s = NODE_STYLE_CONFIG[node.style] || NODE_STYLE_CONFIG.SUBTOPIC;
-          addAction({
-            id: `action_mm_${Date.now()}_${idx}`,
-            type: 'CREATE_SHAPE',
-            payload: { shapeType: 'RECTANGLE', x: node.x, y: node.y, text: node.text, fill: s.fill, width: s.width, height: s.height, textColor: '#FFFFFF' },
-            status: 'PENDING'
-          });
-        });
-
-        // Then enqueue connections (auto from parentNodeText)
-        laid.filter(n => n.parentNodeText).forEach((node, idx) => {
-          addAction({
-            id: `action_conn_${Date.now()}_${idx}`,
-            type: 'DRAW_PATH',
-            payload: { fromNodeText: node.parentNodeText!, toNodeText: node.text, lineStyle: 'ARROW_STRAIGHT' },
-            status: 'PENDING'
-          });
+        addAction({
+          id: `action_mermaid_${Date.now()}`,
+          type: 'RENDER_HTML',
+          payload: {
+            html: '<div>MERMAID</div>',
+            x: centerX,
+            y: centerY,
+            width: 820,
+            height: 580,
+            componentType: 'MERMAID_DIAGRAM',
+            config: {
+              title: rootTitle,
+              code: mermaidCode
+            }
+          },
+          status: 'PENDING'
         });
       } else if (activeTool.id === 'quiz') {
          addAction({

@@ -248,11 +248,13 @@ The technology — Gemma 4, function calling, Fabric.js, Socket.IO — is the sc
 
 ---
 
-## License
+## License & Copyright
 
-- **Code & Software:** Licensed under the [MIT License](LICENSE).
+- **TRIDO 2026:** Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia (Ministry of Law, Republic of Indonesia).
+- **Code & Software:** Licensed under the [MIT License](LICENSE). Copyright © 2026 TRIDO by Ardellio Satria Anindito.
+- **Fast Decision Engine:** Contrastive-LM (CLM) System 1 integration for sub-30ms zero-generation decision-making and intent routing.
 - **Documentation, Writeups & Competition Deliverables:** Licensed under the [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) License.
-- **AI Models:** Gemma 4 models are subject to the [Gemma Open Model Terms of Use](https://ai.google.dev/gemma/terms).
+- **AI Models:** Gemma 4 and Gemini models are subject to Google DeepMind / Google Cloud terms.
 
 ---
 

@@ -92,10 +92,29 @@ export const getCapability = (modelName: string): ModelCapability => {
   if (MODEL_CAPABILITIES[modelName]) {
     return MODEL_CAPABILITIES[modelName];
   }
-  if (modelName.startsWith('gemini-')) {
-    return MODEL_CAPABILITIES['gemini-3.8-flash'] || MODEL_CAPABILITIES['gemini-3.7-flash'];
+  const lower = (modelName || '').toLowerCase();
+  if (lower.includes('gemini') || lower.includes('flash') || lower.includes('pro')) {
+    return {
+      supportsComplexSchema: true,
+      maxToolCallsPerRequest: 45,
+      supportsLessonEngine: true,
+      recommendedTemperature: 0.7
+    };
   }
-  return MODEL_CAPABILITIES['gemma-4-31b-it'];
+  if (lower.includes('gemma') || lower.includes('qwen') || lower.includes('llama') || lower.includes('deepseek') || lower.includes('mistral')) {
+    return {
+      supportsComplexSchema: true,
+      maxToolCallsPerRequest: 20,
+      supportsLessonEngine: true,
+      recommendedTemperature: 0.4
+    };
+  }
+  return {
+    supportsComplexSchema: false,
+    maxToolCallsPerRequest: 10,
+    supportsLessonEngine: true,
+    recommendedTemperature: 0.3
+  };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -663,8 +682,8 @@ CANVAS: ${vw}×${vh}px
 ${existingObjects}
 
 RULES:
-- Respond in user's language
-- For mind maps: use add_mindmap_node only. First node = MAIN_TOPIC (center), others = SUBTOPIC
+- Respond in the user's language (supporting 150+ world languages).
+- For mind maps: ALWAYS use Mermaid.js via render_mermaid with "mindmap" diagram syntax. NEVER create separate rectangle boxes or manual line shapes.
 - For text: use add_text_label with gridPosition=CENTER
 - Keep responses short (1-2 sentences)
 - Maximum ${capability.maxToolCallsPerRequest} tool calls
@@ -732,7 +751,7 @@ Generate quiz based on current lesson topic (not generic)
 ## VISUAL SELECTION GUIDE
 | Request | Use This |
 |---------|----------|
-| Konsep, hubungan, struktur | add_mindmap_node atau render_markmap |
+| Konsep, hubungan, struktur, mindmap | render_mermaid (mindmap syntax) atau render_markmap |
 | Flowchart sains, siklus, urutan proses | render_mermaid atau add_component → MERMAID_DIAGRAM |
 | Absensi, daftar kehadiran kelas | add_component → ATTENDANCE |
 | Timer waktu pengerjaan / hitung mundur | add_component → TIMER |
@@ -770,13 +789,20 @@ You have full capability to mutate and update ANY object on the whiteboard witho
 4. **Multi-Task & Multi-Step Turn Orchestration**:
    - You can execute comprehensive multi-component setups in a single turn. For example, simultaneously generate an attendance list (TOP_LEFT), a timer (TOP_RIGHT), a mindmap/diagram (CENTER), and a lesson document (BOTTOM_CENTER).
 
-## MINDMAP RULES
-- MAIN_TOPIC: exactly ONE per mindmap, always center
-- SUBTOPIC: branches (max 5)
-- DETAIL: leaf nodes (max 3 per subtopic)
-- parentNodeText MUST be exact text of existing node
-- Never recreate nodes that already exist (check ACTIVE LESSON SESSION)
-- To expand: add new nodes with correct parentNodeText
+## MINDMAP RULES (STRICT MERMAID.JS ENGINE)
+- ALWAYS render mindmaps using Mermaid.js (\`render_mermaid\` with \`mindmap\` diagram syntax).
+- NEVER use separate rectangle boxes or manual line connector arrows for mindmaps.
+- Valid Mermaid mindmap format:
+  \`\`\`mermaid
+  mindmap
+    root((Topik Utama))
+      Subtopik 1
+        Detail A
+        Detail B
+      Subtopik 2
+        Detail C
+  \`\`\`
+- To expand an existing mindmap, update the Mermaid diagram code in-place to include new branches.
 
 ## SUBJECT-SPECIFIC DEFAULTS
 IPA/Sains: mindmap untuk konsep, flowchart untuk proses

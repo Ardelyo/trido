@@ -11,6 +11,7 @@ import { useStore } from '../store';
 import { toast } from '../utils/toast';
 import { useTranslation } from '../utils/translations';
 import { getTelemetryDownloadUrl } from '../services/aiService';
+import { SUPPORTED_LANGUAGES } from '../utils/languages';
 
 interface SettingsViewProps {
   onClose: () => void;
@@ -51,6 +52,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     transcribeMode, setTranscribeMode,
     voiceConfig, setVoiceConfig,
     experimentalConfig, setExperimentalConfig,
+    clmConfig, setClmConfig,
     isAssistiveMode, toggleAssistiveMode,
   } = useStore();
 
@@ -67,6 +69,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
   const [localTranscribeMode, setLocalTranscribeMode] = useState(transcribeMode);
   const [localVoiceConfig, setLocalVoiceConfig] = useState(voiceConfig);
   const [localExpConfig, setLocalExpConfig] = useState(experimentalConfig);
+  const [localClmConfig, setLocalClmConfig] = useState(clmConfig);
   const [localName, setLocalName] = useState(userName);
   const [localAiPref, setLocalAiPref] = useState(aiPreference);
   const [localLang, setLocalLang] = useState(language);
@@ -76,7 +79,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
 
   // AI status probe
   const [aiStatus, setAiStatus] = useState<'checking' | 'online' | 'offline' | null>(null);
+  const [clmStatus, setClmStatus] = useState<'checking' | 'online' | 'offline' | null>(null);
   const [serverEnvGeminiModel, setServerEnvGeminiModel] = useState<string | null>(null);
+
+  const handleClmProbe = async () => {
+    setClmStatus('checking');
+    try {
+      const res = await fetch(`/api/ai/clm-status?endpoint=${encodeURIComponent(localClmConfig?.endpoint || 'http://127.0.0.1:8700')}`);
+      const data = await res.json();
+      setClmStatus(data.online ? 'online' : 'offline');
+    } catch {
+      setClmStatus('offline');
+    }
+  };
 
   const handleProbe = async () => {
     setAiStatus('checking');
@@ -117,6 +132,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     setTranscribeMode(localTranscribeMode);
     setVoiceConfig(localVoiceConfig);
     setExperimentalConfig(localExpConfig);
+    setClmConfig(localClmConfig);
     setUserName(localName);
     setAiPreference(localAiPref);
     setLanguage(localLang);
@@ -128,6 +144,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
     localStorage.setItem('trido_transcribe_mode', localTranscribeMode);
     localStorage.setItem('trido_voice_config', JSON.stringify(localVoiceConfig));
     localStorage.setItem('trido_experimental_config', JSON.stringify(localExpConfig));
+    localStorage.setItem('trido_clm_config', JSON.stringify(localClmConfig));
     localStorage.setItem('trido_user_name', localName);
     localStorage.setItem('ai_preference', localAiPref);
     localStorage.setItem('trido_sound', soundEnabled ? 'on' : 'off');
@@ -206,14 +223,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 />
               </div>
             </Field>
-            <Field label={t('interfaceLanguage', 'Bahasa Antarmuka')}>
+            <Field 
+              label={t('interfaceLanguage', 'Bahasa Antarmuka & Kelas')}
+              hint={t('interfaceLanguageHint', 'Mendukung 150+ bahasa dunia. Respon AI dan pengenalan suara otomatis menyesuaikan dengan bahasa terpilih.')}
+            >
               <select
                 value={localLang}
-                onChange={e => setLocalLang(e.target.value as 'id' | 'en')}
+                onChange={e => setLocalLang(e.target.value)}
                 className={inputCls}
               >
-                <option value="id">🇮🇩 Bahasa Indonesia</option>
-                <option value="en">🇺🇸 English</option>
+                {SUPPORTED_LANGUAGES.map(lang => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag ? `${lang.flag} ` : ''}{lang.name} — {lang.nativeName} ({lang.code})
+                  </option>
+                ))}
               </select>
             </Field>
           </Section>
@@ -310,6 +333,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                       <option value={serverEnvGeminiModel}>{serverEnvGeminiModel} (Environment Override)</option>
                     )}
                   </select>
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={localGeminiModel}
+                      onChange={e => setLocalGeminiModel(e.target.value)}
+                      placeholder={t('customModelPlaceholder', 'Ketik nama model kustom (misal: gemini-3.8-flash, gemma-4-31b-it)...')}
+                      className={`${inputCls} text-xs font-mono`}
+                    />
+                  </div>
                 </Field>
               </>
             )}
@@ -332,6 +364,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   <option value="gemma-4-31b-it">gemma-4-31b-it (Next-gen Gemma 4 31B)</option>
                   <option value="gemma-2-27b-it">gemma-2-27b-it (Gemma 2 27B)</option>
                 </select>
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    value={localVertexModel}
+                    onChange={e => setLocalVertexModel(e.target.value)}
+                    placeholder={t('customVertexPlaceholder', 'Ketik nama model Vertex kustom (misal: gemini-3.8-flash, gemini-2.5-pro)...')}
+                    className={`${inputCls} text-xs font-mono`}
+                  />
+                </div>
               </Field>
             )}
 
@@ -356,7 +397,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
 
                 <Field
                   label={t('ollamaModel', 'Model Ollama Lokal')}
-                  hint={t('ollamaModelHint', 'Pilih model Ollama lokal Anda. Pastikan model yang dipilih telah diunduh menggunakan perintah: ollama pull [nama-model]')}
+                  hint={t('ollamaModelHint', 'Pilih model Ollama lokal Anda atau ketik nama model apa pun.')}
                 >
                   <select
                     value={localOllamaModel}
@@ -369,6 +410,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                     <option value="gemma:7b">gemma:7b (Gemma 1.1 7B)</option>
                     <option value="gemma:2b">gemma:2b (Gemma 1.1 2B)</option>
                   </select>
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={localOllamaModel}
+                      onChange={e => setLocalOllamaModel(e.target.value)}
+                      placeholder={t('customOllamaPlaceholder', 'Ketik nama model Ollama (misal: gemma4:31b, qwen2.5:32b, llama3.3:70b)...')}
+                      className={`${inputCls} text-xs font-mono`}
+                    />
+                  </div>
                 </Field>
               </>
             )}
@@ -398,6 +448,82 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                   ? t('notConnectedStatus', 'Tidak terhubung')
                   : t('testConnection', 'Test Koneksi AI')}
               </button>
+            </div>
+          </Section>
+
+          {/* Contrastive-LM (CLM) - System 1 Fast Decision Engine */}
+          <Section
+            title="⚡ Contrastive-LM (CLM) — System 1 Decision Engine"
+            subtitle="Keputusan instan sub-30ms, klasifikasi intensi, dan router alat tanpa latensi autoregresif"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Zap size={14} className="text-amber-500 fill-amber-500" />
+                    <span>Aktifkan Fast-Path CLM System 1</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Memutuskan intent, pemilihan tool, dan aksi kanvas secara instan (zero-decoding InfoNCE)
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLocalClmConfig({ ...localClmConfig, fastPathActive: !localClmConfig?.fastPathActive })}
+                  className={`py-1.5 px-3 rounded-xl text-xs font-bold border transition ${
+                    localClmConfig?.fastPathActive
+                      ? 'bg-amber-50 border-amber-300 text-amber-700'
+                      : 'bg-white border-slate-200 text-slate-400'
+                  }`}
+                >
+                  {localClmConfig?.fastPathActive ? 'AKTIF ✓' : 'NONAKTIF ✕'}
+                </button>
+              </div>
+
+              <Field
+                label="CLM Endpoint Daemon URL"
+                hint="URL instance Contrastive-LM daemon (default: http://127.0.0.1:8700). Jika offline, Trido otomatis memakai fallback heuristik deterministik."
+              >
+                <div className="relative">
+                  <Globe size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={localClmConfig?.endpoint || 'http://127.0.0.1:8700'}
+                    onChange={e => setLocalClmConfig({ ...localClmConfig, endpoint: e.target.value })}
+                    placeholder="http://127.0.0.1:8700"
+                    className={`${inputCls} pl-10 text-xs font-mono`}
+                  />
+                </div>
+              </Field>
+
+              <div className="pt-1 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={handleClmProbe}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
+                >
+                  {clmStatus === 'checking' ? (
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                      <Zap size={14} />
+                    </motion.div>
+                  ) : clmStatus === 'online' ? (
+                    <Wifi size={14} className="text-emerald-500" />
+                  ) : (
+                    <WifiOff size={14} className="text-slate-400" />
+                  )}
+                  {clmStatus === 'checking'
+                    ? 'Mengecek CLM...'
+                    : clmStatus === 'online'
+                    ? 'CLM Server Terhubung ✓'
+                    : clmStatus === 'offline'
+                    ? 'CLM Offline (Fallback Heuristik Aktif)'
+                    : 'Test Koneksi CLM'}
+                </button>
+
+                <span className="text-[10px] text-slate-400 font-medium">
+                  Repo: Contrastive-LM/CLM
+                </span>
+              </div>
             </div>
           </Section>
 
@@ -987,9 +1113,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onClose }) => {
                 <div>{t('appVersion', 'Versi Aplikasi')}</div>
               </div>
               <div className="bg-slate-50 rounded-xl p-3">
-                <div className="text-slate-800 font-black text-base">gemma-4-31b-it</div>
-                <div>{t('aiModel', 'Model AI')}</div>
+                <div className="text-slate-800 font-black text-base">Multi-Model</div>
+                <div>{t('aiModel', 'Model AI Dinamis')}</div>
               </div>
+            </div>
+
+            <div className="p-4 bg-emerald-50/60 border border-emerald-200/80 rounded-2xl flex flex-col items-center justify-center text-center space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-black text-emerald-900">
+                <Shield size={14} className="text-emerald-600" />
+                <span>TRIDO 2026</span>
+                <span>•</span>
+                <span>Hak Cipta Terdaftar Kementerian Hukum RI</span>
+              </div>
+              <p className="text-[11px] text-emerald-700/90 font-medium">
+                Karya Cipta Dilindungi Undang-Undang Republik Indonesia No. 28 Tahun 2014 tentang Hak Cipta.
+              </p>
+              <p className="text-[10px] text-slate-400 font-medium pt-0.5">
+                Copyright © 2026 TRIDO by Ardellio Satria Anindito. All rights reserved.
+              </p>
             </div>
           </Section>
 

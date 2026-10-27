@@ -4,6 +4,7 @@ import { defaultExperimentalConfig } from '../store';
 
 describe('Experimental Mode & Break-The-Limit Capabilities', () => {
   it('has experimental flags in defaultExperimentalConfig', () => {
+    expect(defaultExperimentalConfig.enabled).toBe(true);
     expect(defaultExperimentalConfig).toHaveProperty('smartShapesEnabled', true);
     expect(defaultExperimentalConfig).toHaveProperty('attendanceEnabled', true);
     expect(defaultExperimentalConfig).toHaveProperty('breakTheLimitAi', true);
