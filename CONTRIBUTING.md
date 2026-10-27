@@ -1,16 +1,15 @@
-# Contributing to Trido
+# Panduan Kontribusi (Contributing)
 
-Thank you for contributing to **Trido — AI Smartboard for Inclusive Classroom Education**. Trido was created with **Pak Damar** (an Indonesian language teacher in Bandung living with physical disabilities) to ensure educators can run an entire interactive classroom using voice and continuous spatial AI.
+Terima kasih sudah mampir dan ikut bantu ngembangin **Trido**. Proyek ini awalnya dibangun bareng **Pak Damar** (guru Bahasa Indonesia di Bandung) supaya pengajar penyandang disabilitas fisik bisa mengelola papan tulis kelas cukup lewat suara dan interaksi ringan.
 
 ---
 
-## 1. Development Workflow & Prerequisites
+## 1. Persiapan Lokal
 
-- **Node.js:** v18+ (Node.js 22 LTS recommended)
-- **Optional (Offline STT):** Python 3.10+ with `faster-whisper`
-- **Optional (Offline LLM):** [Ollama](https://ollama.com) with `trido-model:latest` or `gemma4:e2b`
+- **Node.js:** v18 ke atas (disarankan Node 22 LTS)
+- **Opsional (Transkripsi Suara Offline):** Python 3.10+ dengan paket `faster-whisper`
+- **Opsional (AI Offline Lokal):** [Ollama](https://ollama.com) dengan `trido-gemma:2b` (laptop RAM 4–8GB) atau `trido-model:latest` (GPU 8GB VRAM)
 
-### Local Setup
 ```bash
 git clone https://github.com/Ardelyo/trido.git
 cd trido
@@ -18,61 +17,45 @@ npm install
 cp .env.example .env
 npm run dev
 ```
-The unified Express + Socket.IO + Vite server starts at `http://localhost:3000` (`http://localhost:3000/?app=true` opens the Smartboard directly).
+Server Express + Socket.IO + Vite bakal jalan di `http://localhost:3000` (buka `http://localhost:3000/?app=true` buat langsung masuk ke kanvas Smartboard).
 
 ---
 
-## 2. Mandatory Quality Gates (Before Opening a PR)
+## 2. Cek Wajib Sebelum Buka Pull Request
 
-Every pull request is automatically checked by [`.github/workflows/ci.yml`](./.github/workflows/ci.yml). Run all three commands locally before pushing:
+Semua PR otomatis dites lewat workflow [`.github/workflows/ci.yml`](./.github/workflows/ci.yml). Pastikan 3 perintah ini lulus di lokal sebelum push:
 
 ```bash
-# 1. Strict TypeScript check (must exit 0 with 0 errors)
+# 1. Cek kompilasi TypeScript (harus 0 error)
 npm run check
 
-# 2. Automated Unit & Integration Test Suite (17 suites / 126 tests via Vitest)
+# 2. Jalankan suite unit & integration test (17 file / 126 test)
 npx vitest run
 
-# 3. Production Vite + PWA bundle verification
+# 3. Pastikan build produksi nggak pecah
 npm run build
 ```
 
 ---
 
-## 3. Architectural & UI/UX Standards (Code Reviewer Checklist)
+## 3. Aturan Kode & Desain yang Perlu Dijaga
 
-When writing or reviewing code in Trido, enforce these core standards:
+1. **Desain Minimalis & Warna Solid (Tanpa Gradient):**
+   - Palet warna utama: kertas hangat (`#e4e3e0`), biru Trido (`#1550aa`), tinta gelap (`#0a1a3a`), kuning (`#ffcc00`), dan putih/abu-abu netral.
+   - Jangan pakai `bg-gradient-*` atau `radial-gradient` di logo maupun komponen UI.
+   - Panel kanan AI dan tombol pemicunya dinamai **`Asisten`** (`t('assistant', 'Asisten')`).
 
-1. **Tactile IKEA Minimalism & Brand Palette:**
-   - Warm paper shell (`#e4e3e0`), Trido Blue (`#1550aa`), Dark Ink (`#0a1a3a`), Sun Yellow (`#ffcc00`), and crisp white (`#ffffff`).
-   - **Strictly zero gradients** on logos, buttons, or widget headers.
-   - Circular pill geometry (`rounded-full`) for triggers and uncluttered single-header widgets.
-   - The right-hand AI drawer and its main trigger button are labeled **`Asisten`** (`t('assistant', 'Asisten')`).
+2. **Kelancaran Drag/Resize 120 FPS:**
+   - Jangan pasang class `transition-all` di elemen kanvas atau widget DOM yang bisa digeser.
+   - Waktu `isDragging` atau `isResizing` aktif, paksa `transition: 'none'` dan pakai `translate3d(-50%, -50%, 0)` lewat `requestAnimationFrame`.
 
-2. **120 FPS Zero-Lag Canvas & DOM Interaction:**
-   - Never apply `transition-all` to draggable or resizable canvas/DOM elements.
-   - During `isDragging` or `isResizing`, force `transition: 'none'` and update coordinates via `requestAnimationFrame` with GPU-composited `translate3d(-50%, -50%, 0)`.
+3. **Edit di Tempat (*In-Place Mutation*):**
+   - Kalau pengguna minta nambah cabang mindmap atau ubah isi widget yang sudah ada di kanvas, gunakan `update_component` atau `modify_object` — jangan bikin widget duplikat baru.
+   - Semua kode Mermaid wajib lewat `sanitizeMermaidCode()` (`utils/mermaidSanitizer.ts`).
 
-3. **Continuous State & In-Place Mutation (No Widget Dumping):**
-   - Modifying an existing mindmap, diagram, timer, or attendance list must use `update_component` or `modify_object` in-place rather than recreating duplicate widgets.
-   - All Mermaid code must pass through `sanitizeMermaidCode()` (`utils/mermaidSanitizer.ts`).
+4. **Keamanan & Kompatibilitas Offline:**
+   - Alat kelas inti harus tetap bisa dipakai manual meskipun internet/AI mati.
+   - Sanitasi HTML mentah pakai `DOMPurify`, pastikan `<iframe srcDoc>` tidak memakai `allow-same-origin`, dan validasi URL Ollama lewat `sanitizeOllamaUrl`.
 
-4. **Offline-First & Security:**
-   - Core classroom tools must function 100% offline without requiring cloud AI.
-   - Sanitize any raw HTML with `DOMPurify`, keep `<iframe srcDoc>` sandboxed without `allow-same-origin`, and validate custom Ollama URLs via `sanitizeOllamaUrl`.
-
-5. **Multilingual Coverage (`utils/translations.ts`):**
-   - Wrap user-facing UI strings in `t('key', 'Fallback')` and add entries to both `id` and `en` dictionaries in `utils/translations.ts`.
-
----
-
-## 4. Branch Naming & Commit Conventions
-
-- **Branches:**
-  - `feat/<short-description>` (new features or classroom tools)
-  - `fix/<short-description>` (bug or security fixes)
-  - `docs/<short-description>` (documentation updates)
-- **Commits:** Follow [Conventional Commits](https://www.conventionalcommits.org/):
-  - `feat(quiz): add Moodle GIFT export for true/false questions`
-  - `fix(mermaid): sanitize unescaped parentheses in mindmap child nodes`
-  - `docs(readme): update architecture diagram and Windows .exe instructions`
+5. **Terjemahan Multi-Bahasa (`utils/translations.ts`):**
+   - Bungkus teks UI baru dengan `t('namaKey', 'Teks Default')` dan tambahkan minimal ke kamus `id` serta `en` di `utils/translations.ts`.

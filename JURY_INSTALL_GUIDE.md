@@ -1,69 +1,62 @@
-# 🏆 Trido — Judge & Evaluator Installation Guide
+# Panduan Instalasi & Evaluasi Juri — Trido
 
-Welcome to the **Trido** evaluation guide. Trido is a voice-first, AI-powered smartboard designed with **Pak Damar** for inclusive, offline-capable classroom instruction.
-
----
-
-## 🚀 Option 1: Standalone Windows Desktop App (`.exe`) *(Fastest — Zero Setup)*
-
-No Node.js, Python, or terminal knowledge is required:
-
-1. **Download Installer:** [**Trido-Setup-1.0.0.exe (168 MB)**](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe) *(or use `dist-release/Trido Setup 1.0.0.exe` if building locally)*.
-2. **Install & Launch:** Double-click `Trido-Setup-1.0.0.exe` and open **Trido** from your Desktop shortcut.
-3. **Start Teaching:** The tactile intro screen boots the embedded local server on port `3030` and opens the Smartboard workspace automatically.
+Panduan singkat untuk mencoba dan mengevaluasi **Trido** di Windows, macOS, atau Linux.
 
 ---
 
-## ⚡ Option 2: 1-Click Localhost Launcher (`start.bat` on Windows)
+## Opsi 1: Aplikasi Desktop Windows Mandiri (`.exe`) *(Paling Cepat)*
 
-If you cloned or unzipped the source repository on Windows:
+Tidak perlu install Node.js, Python, atau membuka terminal:
 
-1. Double-click **`start.bat`** in the project root directory.
-2. `start.bat` automatically verifies Node.js, installs dependencies on first run (skipping redundant installs on subsequent launches), starts the server at `http://localhost:3000`, and opens Chrome/Edge directly to `http://localhost:3000/?app=true`.
+1. **Unduh Installer:** [**Trido-Setup-1.0.0.exe (168 MB)**](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe) *(atau ambil dari `dist-release/Trido Setup 1.0.0.exe` jika sudah build di lokal)*.
+2. **Install & Buka:** Klik 2x `Trido-Setup-1.0.0.exe`, lalu jalankan shortcut **Trido** di Desktop.
+3. **Siap Dipakai:** Layar pembuka akan menyalakan server lokal di port `3030` dan langsung membuka kanvas Smartboard.
 
 ---
 
-## 🛠️ Option 3: Cross-Platform Terminal Launch (Windows / macOS / Linux)
+## Opsi 2: Launcher 1-Klik (`start.bat` di Windows)
+
+Kalau membuka dari folder source code di Windows:
+
+1. Klik 2x file **`start.bat`** di folder utama proyek.
+2. Script otomatis mengecek Node.js, menginstal `node_modules` kalau belum ada, menyalakan server di `http://localhost:3000`, dan membuka browser ke `http://localhost:3000/?app=true`.
+
+---
+
+## Opsi 3: Jalankan Lewat Terminal (Windows / macOS / Linux)
 
 ```bash
 npm install
 npm run dev
 ```
-Open **`http://localhost:3000/?app=true`** in Chrome or Edge.
+Buka **`http://localhost:3000/?app=true`** di Chrome atau Edge.
 
 ---
 
-## 🧠 AI Model & API Key Configuration (Important Notice)
+## Pengaturan Model AI & API Key
 
-Click the **Settings (⚙️)** icon in the left sidebar to choose your AI mode:
+Klik ikon **Pengaturan (⚙️)** di bilah navigasi kiri untuk memilih mode AI:
 
-> ⚠️ **Evaluation Notice:** The built-in Cloud Demo (`gemma4good`) is currently enabled so judges can test Trido immediately out of the box, **but it will not be free forever**. For permanent, independent classroom use, we strongly recommend Option A or Option B below:
+> **Catatan Evaluasi:** Saat ini mode Cloud Demo (`gemma4good`) masih diaktifkan supaya juri bisa langsung menguji fitur AI begitu aplikasi dibuka, **tetapi kuota demo ini tidak akan gratis selamanya**. Untuk pemakaian jangka panjang di kelas, gunakan salah satu dari dua opsi di bawah ini:
 
-### Option A — Download Trido Local Models via Ollama (100% Free & Offline Forever)
+### Opsi A — Unduh Model Lokal Trido via Ollama (100% Gratis & Offline)
 1. Install [Ollama](https://ollama.com).
-2. In Trido, open **Settings (⚙️) → Kecerdasan AI (AI Configuration)** and select **🏠 Ollama Lokal**.
-3. Choose **`trido-model:latest`** (9B Flagship) or **`trido-gemma:2b`** (Lightweight Edge) and click **"Unduh & Kalibrasi Model Lokal Otomatis (1-Klik)"** — or run in terminal:
-   ```bash
-   ollama pull trido-model:latest
-   ollama pull trido-gemma:2b
-   ```
+2. Di Trido, buka **Pengaturan (⚙️) → Kecerdasan AI**, lalu pilih **Ollama Lokal**.
+3. Pilih **`trido-gemma:2b`** (1.6 GB — kencang & ringan buat laptop RAM 4GB–8GB) atau **`trido-model:latest`** (6.6 GB — buat laptop dengan GPU 8GB VRAM), lalu klik tombol **"Unduh & Kalibrasi Model Lokal Otomatis (1-Klik)"**.
 
-### Option B — Use Your Personal Google AI Studio API Key
-1. Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
-2. In Trido, open **Settings (⚙️) → Kecerdasan AI**, select **✨ Gemini Cloud**, paste your `AIzaSy...` key, and click **Simpan (Save)**.
+### Opsi B — Gunakan Google AI Studio API Key Pribadi
+1. Buat API key gratis di [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+2. Di Trido, buka **Pengaturan (⚙️) → Kecerdasan AI**, pilih **Gemini Cloud**, tempelkan key `AIzaSy...` Anda, lalu klik **Simpan**.
 
 ---
 
-## 🧪 Quick Evaluation Checklist
+## Skenario Uji Cepat
 
-1. **Instant Voice / Chat Reflex (<15ms Jev-1 Engine):**
-   - Open the **`Asisten`** sidebar (top-right button) or click the **Voice Island Mic** at the bottom.
-   - Type or say: `"Halo Trido, tolong pasang timer sepuluh menit"` -> Watch a 10:00 countdown timer appear immediately on the board.
-2. **Self-Healing Mermaid Mindmap Generation & In-Place Expansion:**
-   - Say or type: `"Buatkan peta konsep tentang sistem peredaran darah manusia"`.
-   - Follow up with: `"Tambahkan cabang gangguan peredaran darah pada peta konsep tadi"` -> Watch Trido update the existing mindmap **in-place** without creating a duplicate widget.
-3. **120 FPS Dragging & Multi-Page Synchronization:**
-   - Drag any widget across the board (zero-lag `translate3d` GPU compositing).
-   - Click **`+`** (bottom-left) to add Page 2, then switch back to Page 1 — all widgets and diagrams on Page 1 are preserved intact.
-4. **Multilingual Switching:**
-   - Open **Settings (⚙️) → Bahasa & Tema** and switch between **Bahasa Indonesia**, **English**, **Arabic**, **Chinese**, **Japanese**, and 6 other languages.
+1. **Respon Instan Jev-1 Reflex (<15ms):**
+   - Buka panel **`Asisten`** (tombol kanan atas) atau klik mikrofon di bawah kanvas.
+   - Ketik atau ucapkan: `"Halo Trido, tolong pasang timer sepuluh menit"` -> Widget timer 10:00 langsung muncul di papan.
+2. **Pembuatan Mindmap Mermaid & Edit di Tempat (*In-Place Mutation*):**
+   - Ketik atau ucapkan: `"Buatkan peta konsep tentang sistem peredaran darah manusia"`.
+   - Lanjutkan dengan: `"Tambahkan cabang gangguan peredaran darah pada peta konsep tadi"` -> Perhatikan diagram yang sudah ada langsung diperbarui di tempat tanpa membuat widget ganda.
+3. **Multi-Halaman & Pergeseran 120 FPS:**
+   - Geser widget di kanvas, lalu klik tombol **`+`** di kiri bawah untuk menambah Halaman 2. Saat kembali ke Halaman 1, semua widget di Halaman 1 tetap utuh.

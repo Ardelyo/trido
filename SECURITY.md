@@ -1,40 +1,38 @@
-# Security Policy
+# Kebijakan Keamanan (Security Policy)
 
-## Supported Versions
+## Versi yang Didukung
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.1.x   | :white_check_mark: |
-| 1.0.x   | :white_check_mark: |
+| Versi | Status |
+| ----- | ------ |
+| 1.1.x | Didukung penuh |
+| 1.0.x | Didukung (perbaikan keamanan kritis) |
 
-## Security Architecture & Built-In Safeguards
+## Batas Keamanan di Dalam Arsitektur Trido
 
-Trido is designed for classroom and school environments with strict client-side and server-side security boundaries:
+Karena Trido dipakai di lingkungan sekolah dan kelas, beberapa pengaman utama dipasang langsung di sisi server maupun browser:
 
-1. **SSRF Protection on Local AI Endpoints (`server/aiRouter.ts`, `server/ollamaAdapter.ts`, `api/ai/*.ts`)**
-   - All user-supplied Ollama URLs (`ollamaBaseUrl`) are parsed via `new URL()` and restricted strictly to `http:`/`https:` on loopback hosts (`localhost`, `127.0.0.1`, `[::1]`) or the server's pre-configured `OLLAMA_BASE_URL` host.
-   - Model pull requests (`/api/ai/pull-model`) validate model names against a strict allowlist regex (`/^[a-zA-Z0-9._:/-]+$/`) and Faster-Whisper (`server/whisperService.py`) enforces a strict model size allowlist.
+1. **Proteksi SSRF pada Endpoint Ollama Lokal (`server/aiRouter.ts`, `server/ollamaAdapter.ts`, `api/ai/*.ts`)**
+   - Parameter `ollamaBaseUrl` dari client divalidasi dengan `new URL()` dan hanya diizinkan mengakses protokol `http:`/`https:` pada alamat *loopback* (`localhost`, `127.0.0.1`, `[::1]`) atau host yang sudah disetel di environment `OLLAMA_BASE_URL`.
+   - Endpoint `/api/ai/pull-model` memfilter nama model menggunakan regex ketat (`/^[a-zA-Z0-9._:/-]+$/`), dan `server/whisperService.py` membatasi ukuran model sesuai daftar *allowlist*.
 
-2. **Sandboxed Interactive Apps (`components/AppBuilderTool.tsx`)**
-   - AI-generated HTML/CSS/JS mini-apps run inside `<iframe srcDoc sandbox="allow-scripts allow-forms">` **without** `allow-same-origin`.
-   - Embedded scripts cannot read `window.parent.localStorage`, cannot access API keys, and cannot strip their own `sandbox` attribute.
-   - Closing `</script>` and `</style>` sequences are escaped before `srcDoc` interpolation, and runtime error handlers use `textContent` instead of `innerHTML`.
+2. **Isolasi Sandbox pada Simulasi Interaktif (`components/AppBuilderTool.tsx`)**
+   - Aplikasi mini HTML/CSS/JS yang dibuat AI dijalankan di dalam `<iframe srcDoc sandbox="allow-scripts allow-forms">` **tanpa** atribut `allow-same-origin`.
+   - Skrip di dalam iframe tidak punya akses ke `window.parent.localStorage`, tidak bisa membaca API key pengguna, dan tidak bisa melepas atribut sandbox-nya sendiri.
 
-3. **XSS Sanitization Across DOM Overlays & Document Exports (`components/DomOverlay.tsx`, `components/MermaidTool.tsx`, `utils/smartExport.ts`)**
-   - Raw widget HTML rendered via `dangerouslySetInnerHTML` is sanitized with `DOMPurify.sanitize()`.
-   - Mermaid diagrams initialize with `securityLevel: 'antiscript'` and pass through the deterministic AST sanitizer (`utils/mermaidSanitizer.ts`).
-   - Printable worksheets, HTML document exports, and interactive app exports escape all interpolated titles, questions, options, and markdown fields via `escapeHtml()` and `DOMPurify`.
+3. **Sanitasi XSS pada Widget DOM & Ekspor Dokumen (`components/DomOverlay.tsx`, `components/MermaidTool.tsx`, `utils/smartExport.ts`)**
+   - HTML widget yang dirender memakai `dangerouslySetInnerHTML` dibersihkan lebih dulu lewat `DOMPurify.sanitize()`.
+   - Diagram Mermaid diinisialisasi dengan `securityLevel: 'antiscript'` dan melewati sanitizer AST (`utils/mermaidSanitizer.ts`).
+   - Ekspor lembar kerja cetak (PDF/HTML) melakukan *escaping* (`escapeHtml()`) pada judul, soal, dan opsi jawaban.
 
-4. **Socket.IO Room & Payload Validation (`server.ts`)**
-   - Room IDs are validated as non-empty strings (`<= 128` characters), and Socket.IO state events (`canvas-update`, `canvas-delta`, `dom-elements-update`, `viewport-update`) validate payload structure before broadcasting.
-   - Serverless API routes (`api/ai/*.ts`) never expose internal stack traces (`err.stack`) in HTTP 500 responses.
+4. **Validasi Room & Payload Socket.IO (`server.ts`)**
+   - `roomId` divalidasi sebagai string non-kosong (`<= 128` karakter) dan struktur payload (`canvas-update`, `canvas-delta`, `dom-elements-update`, `viewport-update`) diperiksa sebelum di-broadcast ke peserta kelas.
 
-5. **Local-First Credential Privacy**
-   - Personal Google AI Studio API keys (`GEMINI_API_KEY`) are stored locally in the user's browser (`localStorage`) or desktop `%APPDATA%\Trido\.env` (in the Electron `.exe` build) and are never logged or persisted on shared servers.
+5. **Penyimpanan API Key Lokal**
+   - `GEMINI_API_KEY` pribadi pengguna disimpan di `localStorage` browser masing-masing atau di `%APPDATA%\Trido\.env` pada versi desktop `.exe`, tidak pernah disimpan di database server bersama.
 
-## Reporting a Vulnerability
+## Cara Melaporkan Celah Keamanan
 
-If you discover a security vulnerability in Trido:
-1. **Do not** open a public GitHub issue containing exploit details.
-2. Report the finding directly via GitHub Security Advisories on [github.com/Ardelyo/trido/security/advisories](https://github.com/Ardelyo/trido/security/advisories) or contact the maintainer (**Ardellio Satria Anindito** — `@Ardelyo`).
-3. Include steps to reproduce, affected file(s) and line numbers, and potential impact. We aim to acknowledge reports within 48 hours and issue a patched release within 7 days.
+Jika menemukan celah keamanan di repositori ini:
+1. Mohon **jangan** membuka *issue* publik yang memuat langkah eksploitasi mentah.
+2. Kirim laporan melalui fitur GitHub Security Advisories di [github.com/Ardelyo/trido/security/advisories](https://github.com/Ardelyo/trido/security/advisories) atau hubungi langsung pengelola proyek (**Ardellio Satria Anindito** — `@Ardelyo`).
+3. Sertakan langkah reproduksi beserta nama file dan baris kode terkait supaya bisa segera kami tambal.

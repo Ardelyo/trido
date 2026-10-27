@@ -1,48 +1,48 @@
-# Trido — AI-Powered Smartboard for Inclusive Classroom Education
+# Trido — Smartboard AI untuk Ruang Kelas Inklusif
 
 [![CI — Typecheck, Test & Build](https://github.com/Ardelyo/trido/actions/workflows/ci.yml/badge.svg)](https://github.com/Ardelyo/trido/actions/workflows/ci.yml)
 [![Release v1.1.0](https://img.shields.io/badge/release-v1.1.0-1550aa?style=flat-square)](https://github.com/Ardelyo/trido/releases/latest)
 [![Windows Desktop .exe](https://img.shields.io/badge/Windows_Desktop-.exe_Installer-ffcc00?style=flat-square&logo=windows&logoColor=0a1a3a)](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe)
-[![Tests](https://img.shields.io/badge/tests-126%20passing%20(17%20suites)-10b981?style=flat-square)](#testing--quality-gates)
+[![Tests](https://img.shields.io/badge/tests-126%20passing-10b981?style=flat-square)](#pengujian--verifikasi)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0a1a3a?style=flat-square)](./LICENSE)
 
-> *"Technology is abundant. But the people who actually care about inclusion — those are rare."*
+> *"Teknologi itu banyak. Tapi orang yang beneran peduli sama inklusi — itu yang jarang."*
 
-**Trido** (**Tri**: *Teacher, Student, Technology* + **Do**: *Make it work, make it matter*) is a voice-first, AI-powered spatial smartboard built for educators — especially teachers with physical disabilities whom standard mouse-and-keyboard software leaves behind.
+**Trido** (**Tri**: *Guru, Murid, Teknologi* + **Do**: *Bikin jalan, bikin bermanfaat*) adalah papan tulis digital (*smartboard*) berbasis suara dan AI spasial yang dirancang khusus buat pengajar — terutama guru penyandang disabilitas fisik yang selama ini kesulitan memakai software papan tulis yang mengandalkan klik-tahan-geser (*drag-and-drop*) mouse.
 
-- **🌐 Live Web App:** [trido.vercel.app](https://trido.vercel.app)
-- **🪟 Download Windows Desktop App (`.exe`, 168 MB):** [Trido-Setup-1.0.0.exe](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe) *(Standalone — no Node.js or terminal required)*
-- **📚 Documentation Hub:** [`docs/README.md`](./docs/README.md)
-- **🏆 Recognition:** **2nd Place Worldwide** — *Gemma 4 Good Hackathon by Google*
-
----
-
-## 1. The Story Behind Trido
-
-This project did not start from a pitch deck. It started from watching a real teacher in a real classroom.
-
-**Pak Damar** (*Dadan Mochammad Ramdhan*) is a Bahasa Indonesia teacher in Bandung, Indonesia. He teaches with passion, patience, and depth while living with physical disabilities affecting both his hands and legs. Most digital whiteboards assume a user who can simultaneously click, drag, hold, resize, and type across tiny UI controls. Pak Damar shouldn't have to work around inaccessible software — he should just be able to teach.
-
-We co-designed Trido with Pak Damar for real classroom instruction:
-- **Zero-Touch Hands-Free Voice Control:** Speak naturally (`"Trido, buat peta konsep tentang fotosintesis"`, `"Pasang timer sepuluh menit"`).
-- **Continuous In-Place Board Mutation:** Say `"Tambahkan cabang baru pada peta konsep tadi"` and Trido updates the existing diagram in-place instead of dumping duplicate widgets.
-- **100% Offline Local AI Capability:** Works without internet in Indonesian schools using local Ollama (`trido-model:latest`, `trido-gemma:2b`, `gemma4:e2b`, `ornith-1.5:9b`) and offline Faster-Whisper speech-to-text.
+- **Web App Live:** [trido.vercel.app](https://trido.vercel.app)
+- **Installer Windows Desktop (`.exe`, 168 MB):** [Trido-Setup-1.0.0.exe](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe) *(Mandiri — tidak perlu install Node.js atau buka terminal)*
+- **Indeks Dokumentasi:** [`docs/README.md`](./docs/README.md)
+- **Pencapaian:** **Juara 2 Dunia (2nd Place Worldwide)** — *Gemma 4 Good Hackathon by Google*
 
 ---
 
-## 2. Quick Start (3 Ways to Run)
+## 1. Latar Belakang: Dibuat Bareng Pak Damar
 
-### Option A — Windows Desktop Installer (`.exe`) *(Recommended for Teachers & Judges)*
-1. Download **[Trido-Setup-1.0.0.exe](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe)**.
-2. Run the installer and open **Trido** from your Desktop.
-3. No Node.js, Python, or terminal required — the embedded server and canvas launch automatically.
+Proyek ini nggak lahir dari *pitch deck*, tapi dari ngelihat langsung cara seorang guru mengajar di kelas.
 
-### Option B — 1-Click Localhost Launcher (`start.bat` on Windows)
-1. Clone or unzip this repository.
-2. Double-click **`start.bat`**.
-3. It checks Node.js, installs dependencies on first run, starts the server on `http://localhost:3000`, and opens the Smartboard in Chrome/Edge.
+**Pak Damar** (*Dadan Mochammad Ramdhan*) adalah guru Bahasa Indonesia di Bandung yang mengajar dengan keterbatasan fisik pada kedua tangan dan kakinya. Kebanyakan papan tulis digital mengasumsikan penggunanya bisa bebas klik, tahan, geser, dan mengetik cepat di tombol-tombol kecil. Pak Damar seharusnya nggak perlu menyesuaikan diri dengan software yang menyulitkan — software-nya yang harus menyesuaikan diri dengan cara beliau mengajar.
 
-### Option C — Developer CLI (Windows / macOS / Linux)
+Beberapa prinsip utama yang kami pegang waktu merancang Trido bareng beliau:
+- **Kontrol Suara Tanpa Sentuh (*Hands-Free*):** Cukup bicara natural (`"Trido, buat peta konsep tentang fotosintesis"`, `"Pasang timer sepuluh menit"`).
+- **Edit Langsung di Tempat (*In-Place Mutation*):** Kalau minta `"Tambahkan cabang baru di peta konsep tadi"`, Trido memperbarui diagram yang sudah ada di kanvas, bukan menumpuk widget baru yang bikin papan berantakan.
+- **Bisa Jalan 100% Offline:** Tetap jalan tanpa internet di sekolah menggunakan Ollama lokal (`trido-model:latest`, `trido-gemma:2b`, `gemma4:e2b`, `ornith-1.5:9b`) dan transkripsi suara offline Faster-Whisper.
+
+---
+
+## 2. Cara Menjalankan (3 Opsi)
+
+### Opsi A — Installer Desktop Windows (`.exe`) *(Paling Praktis)*
+1. Unduh **[Trido-Setup-1.0.0.exe](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe)**.
+2. Jalankan installer, lalu buka **Trido** dari shortcut Desktop.
+3. Server lokal dan kanvas langsung berjalan otomatis tanpa perlu setting terminal.
+
+### Opsi B — Launcher 1-Klik (`start.bat` di Windows)
+1. Clone atau ekstrak repositori ini.
+2. Klik 2x file **`start.bat`**.
+3. Script akan mengecek Node.js, menginstal dependensi kalau belum ada, menyalakan server di `http://localhost:3000`, dan membuka Smartboard di browser.
+
+### Opsi C — Terminal Developer (Windows / macOS / Linux)
 ```bash
 git clone https://github.com/Ardelyo/trido.git
 cd trido
@@ -50,141 +50,102 @@ npm install
 cp .env.example .env
 npm run dev
 ```
-Open **`http://localhost:3000/?app=true`** for the Smartboard (or **`http://localhost:3000`** for the Landing Page).
+Buka **`http://localhost:3000/?app=true`** untuk langsung masuk ke Smartboard (atau **`http://localhost:3000`** untuk halaman depan).
 
 ---
 
-## 3. AI Model & API Key Configuration
+## 3. Konfigurasi Model AI & RAM (Laptop 4GB–8GB vs GPU 8GB)
 
-Trido supports a **Hybrid Cloud + 100% Offline Local AI** architecture configurable directly from **Settings (⚙️) → AI Configuration**:
+Pengaturan mode AI bisa diakses langsung dari tombol **Pengaturan (⚙️) → Kecerdasan AI**:
 
-| Mode | Model(s) | Requirements | Cost & Privacy |
-|------|----------|--------------|----------------|
-| **🏠 Ollama Local (Offline)** | `trido-model:latest` (9B Flagship)<br>`trido-gemma:2b` / `gemma4:e2b` (Edge) | [Ollama](https://ollama.com) installed locally (1-click download inside Settings) | **100% Free Forever & 100% Offline** |
-| **✨ Google Gemini Cloud** | `gemini-3.8-flash` (Default)<br>`gemini-2.5-flash` / `gemini-2.5-pro` | Personal [Google AI Studio API Key](https://aistudio.google.com/apikey) (`GEMINI_API_KEY`) | Free tier available; key stored locally in browser |
-| **🌐 Vertex AI (Demo / Enterprise)** | `gemini-3.8-flash`<br>`gemma-4-31b-it` | `GOOGLE_CLOUD_PROJECT` (Built-in `gemma4good` demo project enabled for evaluation) | Evaluation demo *(Note: built-in demo cloud will not be free forever; use Ollama Local or a personal API key for long-term use)* |
+| Mode | Model | Kebutuhan RAM / VRAM | Catatan |
+|------|-------|----------------------|---------|
+| **Ollama Edge (Laptop 4GB–8GB RAM)** | `trido-gemma:2b` / `gemma4:e2b` | Bobot **1.6 GB** (~2.0 GB RAM total dgn `num_ctx=4096`) | **100% Gratis & Offline.** Paling pas buat laptop guru standar tanpa GPU diskrit. |
+| **Ollama Flagship (GPU 8GB VRAM)** | `trido-model:latest` (`ornith-1.5:9b`) | Bobot **6.6 GB** (~7.0 GB VRAM total dgn `num_ctx=4096`) | **100% Gratis & Offline.** Akurasi tinggi untuk penurunan rumus STEM & multi-widget. |
+| **Google Gemini Cloud** | `gemini-3.8-flash` | Cloud (via internet) | Menggunakan [Google AI Studio API Key](https://aistudio.google.com/apikey) pribadi (`GEMINI_API_KEY`). |
+| **Vertex AI (Demo Evaluasi)** | `gemini-3.8-flash` | Cloud (`gemma4good`) | Disediakan untuk evaluasi juri. *Catatan: kuota demo ini tidak gratis selamanya; gunakan Ollama lokal atau API key pribadi untuk pemakaian rutin.* |
 
-### Pulling Local Trido Models via Ollama
+Untuk mengunduh model lokal lewat terminal (atau gunakan tombol unduh 1-klik di menu Pengaturan):
 ```bash
-ollama pull trido-model:latest
-# or lightweight edge model (2.5 GB):
+# Untuk laptop RAM 4GB-8GB (1.6 GB):
 ollama pull gemma4:e2b
+ollama create trido-gemma:2b -f scripts/Modelfile.trido-gemma
+
+# Untuk laptop dengan GPU 8GB VRAM (6.6 GB):
+ollama pull ornith-1.5:9b
+ollama create trido-model:latest -f scripts/Modelfile.trido-model
 ```
-*(You can also download and calibrate these models in **1 click** directly inside Trido's Settings menu.)*
 
 ---
 
-## 4. System Architecture
+## 4. Ringkasan Arsitektur
 
 ```text
-Teacher Input (Voice / Hands-Free / Chat / Document Upload)
+Input Guru (Suara / Hands-Free / Chat / Upload Dokumen)
    │
-   ├─► Spoken Number & Prefix Normalizer ("lima belas menit" → "15 menit")
+   ├─► Normalisasi Angka Lisan ("lima belas menit" → "15 menit")
    │
-   ├─► Jev-1 Reflex Engine (<15ms, Zero LLM Roundtrip)
-   │     ├── Instant Classroom Tools (Timer + custom duration, Calculator, Attendance, Spin Wheel, Scoreboard)
-   │     ├── Canvas & Page Controls (Zoom, Reset View, Add Page, Undo / Redo)
-   │     └── In-Place Diagram Target Locking (locks onto active Mermaid/Markmap ID for modifications)
+   ├─► Jev-1 Reflex Engine (<15ms, Tanpa Panggil LLM)
+   │     ├── Alat Kelas Instan (Timer + durasi, Kalkulator, Presensi, Spin Wheel, Papan Skor)
+   │     ├── Kontrol Kanvas & Halaman (Zoom, Reset View, Tambah Halaman, Undo / Redo)
+   │     └── Pengunci Target In-Place (mengunci ID diagram aktif saat guru minta revisi/tambah cabang)
    │
-   └─► System 2 Agentic Brain (Ollama Local / Gemini Cloud / Vertex AI)
-         ├── Intent Classifier ('navigation' | 'modification' | 'question' | 'creation')
-         ├── Tool Call Validator & Auto-Fixer (server/aiTools.ts + hooks/useGeminiBrain.ts)
-         ├── 5-Layer Deterministic Mermaid AST Sanitizer & Self-Healing Renderer (utils/mermaidSanitizer.ts)
-         ├── Spatial Occupancy Grid & Bezier Agent Cursor (services/spatialOccupancyGrid.ts)
-         └── Real-Time Socket.IO Delta Broadcast (hooks/useSocketSync.ts → Student Viewers)
+   └─► System 2 Agentic Brain (Ollama Lokal / Gemini Cloud / Vertex AI)
+         ├── Klasifikasi Intent ('navigation' | 'modification' | 'question' | 'creation')
+         ├── Validator & Auto-Fixer Tool Call (server/aiTools.ts + hooks/useGeminiBrain.ts)
+         ├── Sanitizer AST Mermaid 5-Lapis & Self-Healing Renderer (utils/mermaidSanitizer.ts)
+         ├── Spatial Occupancy Grid & Kursor Agen Bezier (services/spatialOccupancyGrid.ts)
+         └── Broadcast Delta Socket.IO Real-Time (hooks/useSocketSync.ts → Layar Murid)
 ```
-
-### Key Architectural Highlights
-- **120 FPS Tactile Minimalism:** GPU-composited `translate3d(-50%, -50%, 0)` DOM widget overlay (`components/DomOverlay.tsx`) with `transition: none` during `requestAnimationFrame` drag/resize.
-- **5-Layer Zero-Syntax-Error Mermaid Engine (`utils/mermaidSanitizer.ts`):** Deterministically strips unescaped parentheses, brackets, colons, and Markdown bullets in mindmap child nodes, enforces a single `root((Title))` node, quotes special flowchart labels, and self-heals corrupted diagrams automatically.
-- **Multilingual & UN Language Support (`utils/translations.ts`):** Full interface and voice (STT/TTS) localization across **11 languages** (`id`, `en`, `ar`, `zh`, `fr`, `ru`, `es`, `ja`, `ko`, `de`, `pt`) + offline Faster-Whisper (`server/whisperService.py`) for 99+ languages.
 
 ---
 
-## 5. Project Structure
+## 5. Struktur Folder Utama
 
 ```text
 trido/
-├── App.tsx                         # Main Smartboard shell, header, left navigation & Asisten drawer
-├── store.ts                        # Zustand global state (multi-page sync, DOM widgets, AI & voice state)
-├── types.ts                        # Shared TypeScript interfaces & Socket.IO event contracts
-├── constants.ts                    # Central model, timeout & server configuration
-├── server.ts                       # Express + Socket.IO real-time server & Vite middleware
-├── start.bat                       # 1-click Windows localhost launcher
-│
-├── components/
-│   ├── CanvasManager.tsx           # Fabric.js infinite canvas, multi-page state & undo/redo stack
-│   ├── DomOverlay.tsx              # 120 FPS GPU-composited widget overlay & Fullscreen Focus Portal
-│   ├── ChatInterface.tsx           # Voice Island, Web Speech + Faster-Whisper STT & toolbar bridge
-│   ├── MermaidTool.tsx             # Interactive SVG Mermaid Mindmap & Flowchart renderer + live editor
-│   ├── ProcessingStatusHud.tsx     # IKEA-style 3-step horizontal progress HUD & pedagogical tips
-│   ├── SettingsView.tsx            # AI provider config, 1-click Ollama model downloader & i18n settings
-│   ├── ExportDialog.tsx            # Multi-format export (PNG, SVG, PDF, Markdown, HTML, Moodle GIFT)
-│   ├── landing/                    # Bilingual (ID/EN) interactive product landing page
-│   ├── smartboard/                 # Dock, Radial & Classic toolbar layout modes
-│   └── *Tool.tsx                   # 11 built-in classroom tools (Timer, Quiz, Notes, Periodic Table, etc.)
-│
-├── hooks/
-│   ├── useGeminiBrain.ts           # Jev-1 Reflex Engine, Intent Classifier & System 2 tool orchestration
-│   ├── useAgentProcessor.ts        # Sequential async action queue executor & Bezier cursor animation
-│   ├── useAmbientListener.ts       # Hands-free classroom voice listener ("Trido, ...")
-│   ├── useSocketSync.ts            # Host ↔ Viewer real-time canvas, viewport & DOM delta sync
-│   └── useAiStatus.ts              # Live AI provider & Ollama model status polling
-│
-├── server/
-│   ├── aiRouter.ts                 # /api/ai/* Express router with SSRF protection & status caching
-│   ├── aiTools.ts                  # Function declarations, system prompt builder & tool call validator
-│   ├── ollamaAdapter.ts            # Local Ollama REST adapter & streaming model pull
-│   ├── geminiAdapter.ts            # Google AI Studio (@google/genai) adapter
-│   ├── vertexAdapter.ts            # Google Cloud Vertex AI adapter
-│   ├── whisperAdapter.ts           # Node ↔ Python Faster-Whisper bridge
-│   └── whisperService.py           # Offline Faster-Whisper (CTranslate2) speech-to-text service
-│
-├── utils/
-│   ├── mermaidSanitizer.ts         # 5-layer deterministic Mermaid AST sanitizer & self-healing fallback
-│   ├── mindmapLayout.ts            # Hierarchical mindmap node layout engine
-│   ├── smartExport.ts              # XSS-safe HTML, Markdown, Printable Worksheet & GIFT exporters
-│   ├── documentParser.ts           # Client/server PDF, DOCX, PPTX, XLSX & text parser
-│   ├── translations.ts             # 11-language i18n dictionary & fallback resolver
-│   └── sounds.ts                   # Web Audio API synthesized UI & voice feedback
-│
-├── electron/                       # Standalone desktop app (main.ts, preload.ts, splash.html, setup.html)
-├── api/                            # Vercel serverless API functions (/api/ai/*, /api/health)
-├── tests/                          # 17 Vitest unit & integration test suites (126 tests)
-└── docs/                           # Comprehensive technical, pedagogical & research documentation
+├── App.tsx                         # Shell utama Smartboard, navigasi kiri & drawer Asisten
+├── store.ts                        # State global Zustand (sinkronisasi multi-halaman, widget DOM, status suara)
+├── server.ts                       # Server Express + Socket.IO & middleware Vite
+├── start.bat                       # Launcher 1-klik untuk Windows
+├── components/                     # Kanvas Fabric.js, DomOverlay 120fps, MermaidTool, dan 11 alat kelas
+├── hooks/                          # Otak AI (useGeminiBrain), ambient voice listener, socket sync
+├── server/                         # Router AI, adapter Ollama/Gemini/Vertex, dan jembatan Faster-Whisper
+├── utils/                          # mermaidSanitizer, mindmapLayout, smartExport, kamus 11 bahasa
+├── electron/                       # Aplikasi desktop mandiri (main.ts, preload.ts, splash.html)
+├── tests/                          # 17 file pengujian Vitest (126 test)
+└── docs/                           # Dokumentasi teknis, panduan guru, dan laporan riset model
 ```
 
 ---
 
-## 6. Testing & Quality Gates
+## 6. Pengujian & Verifikasi
 
-All pull requests and commits to `main` are validated by [`.github/workflows/ci.yml`](./.github/workflows/ci.yml):
+Setiap commit dan pull request ke `main` dicek otomatis lewat [`.github/workflows/ci.yml`](./.github/workflows/ci.yml):
 
 ```bash
-npm run check          # Strict TypeScript compilation check (tsc --noEmit)
-npx vitest run         # Run all 17 Vitest test suites (126 tests)
-npm run build          # Build production frontend & PWA bundle (dist/)
-npm run build:electron:win  # Package Windows installer (dist-release/Trido Setup 1.0.0.exe)
+npm run check               # Cek tipe TypeScript (tsc --noEmit)
+npx vitest run              # Jalankan seluruh 17 file test Vitest (126 test)
+npm run build               # Build bundle produksi ke folder dist/
+npm run build:electron:win  # Paketkan installer Windows (dist-release/Trido Setup 1.0.0.exe)
 ```
 
 ---
 
-## 7. Documentation Hub
+## 7. Indeks Dokumentasi
 
-See **[`docs/README.md`](./docs/README.md)** for the full index. Key documents:
+Daftar lengkap dokumentasi ada di **[`docs/README.md`](./docs/README.md)**:
 
-| Category | Document | Description |
-|----------|----------|-------------|
-| **Quick Start & Judging** | [`JURY_INSTALL_GUIDE.md`](./JURY_INSTALL_GUIDE.md) | Step-by-step installation, `.exe` setup & evaluation checklist |
-| **Educator Guides** | [`docs/TEACHER_GUIDE.md`](./docs/TEACHER_GUIDE.md) · [`docs/USAGE.md`](./docs/USAGE.md) | Classroom workflows, voice commands & widget guide for teachers |
-| **Comprehensive Manual** | [`docs/TRIDO_COMPREHENSIVE_GUIDE_ID.md`](./docs/TRIDO_COMPREHENSIVE_GUIDE_ID.md) · [`EN`](./docs/TRIDO_COMPREHENSIVE_GUIDE_EN.md) | Full end-to-end documentation in Bahasa Indonesia & English |
-| **Architecture & API** | [`docs/API_DOCUMENTATION.md`](./docs/API_DOCUMENTATION.md) · [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) | REST endpoints (`/api/ai/*`), Socket.IO events, Docker & Electron packaging |
-| **AI Research & Models** | [`docs/TRIDO_MODEL_FINE_TUNING_RESEARCH_REPORT.md`](./docs/TRIDO_MODEL_FINE_TUNING_RESEARCH_REPORT.md) | Teacher-Student distillation (`trido-model:latest` & `trido-gemma:2b`) & benchmarks |
-| **Governance & Security** | [`CONTRIBUTING.md`](./CONTRIBUTING.md) · [`SECURITY.md`](./SECURITY.md) · [`CHANGELOG.md`](./CHANGELOG.md) | Contribution rules, security architecture & release changelog |
+- **Panduan Juri & Instalasi Cepat:** [`JURY_INSTALL_GUIDE.md`](./JURY_INSTALL_GUIDE.md)
+- **Panduan Guru di Kelas:** [`docs/TEACHER_GUIDE.md`](./docs/TEACHER_GUIDE.md) · [`docs/USAGE.md`](./docs/USAGE.md)
+- **Manual Lengkap (ID & EN):** [`docs/TRIDO_COMPREHENSIVE_GUIDE_ID.md`](./docs/TRIDO_COMPREHENSIVE_GUIDE_ID.md) · [`EN`](./docs/TRIDO_COMPREHENSIVE_GUIDE_EN.md)
+- **API & Deployment:** [`docs/API_DOCUMENTATION.md`](./docs/API_DOCUMENTATION.md) · [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)
+- **Riset Fine-Tuning & Benchmark Model Lokal:** [`docs/TRIDO_MODEL_FINE_TUNING_RESEARCH_REPORT.md`](./docs/TRIDO_MODEL_FINE_TUNING_RESEARCH_REPORT.md) · [`docs/RESEARCH_BENCHMARK_REPORT.md`](./docs/RESEARCH_BENCHMARK_REPORT.md)
+- **Kontribusi, Keamanan & Riwayat Rilis:** [`CONTRIBUTING.md`](./CONTRIBUTING.md) · [`SECURITY.md`](./SECURITY.md) · [`CHANGELOG.md`](./CHANGELOG.md)
 
 ---
 
-## 8. License & Official Copyright
+## 8. Lisensi & Hak Cipta
 
 ```text
 TRIDO 2026
@@ -193,6 +154,6 @@ Hak Cipta Terdaftar Kementerian Hukum Republik Indonesia
 Copyright (c) 2026 TRIDO by Ardellio Satria Anindito
 ```
 
-- **Source Code & Software:** Licensed under the [MIT License](./LICENSE).
-- **Documentation & Research Deliverables:** Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-- **AI Models:** Gemma models are subject to the [Gemma Terms of Use](https://ai.google.dev/gemma/terms).
+- **Kode Sumber:** Lisensi [MIT](./LICENSE).
+- **Dokumentasi & Riset:** Lisensi [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- **Model Gemma:** Mengikuti ketentuan [Gemma Terms of Use](https://ai.google.dev/gemma/terms).

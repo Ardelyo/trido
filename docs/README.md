@@ -1,61 +1,61 @@
-# 📚 Trido Documentation Hub
+# Indeks Dokumentasi Trido
 
-Welcome to the official documentation index for **Trido — AI Smartboard for Inclusive Classroom Education**. All project documentation is organized below by audience and role.
-
----
-
-## 1. Quick Start, Judging & Release Guides (Root)
-
-| Document | Audience | Description |
-|----------|----------|-------------|
-| [**`../README.md`**](../README.md) | All | Project overview, Pak Damar's story, architecture diagram, quick start & `.exe` download |
-| [**`../JURY_INSTALL_GUIDE.md`**](../JURY_INSTALL_GUIDE.md) | Judges & Evaluators | Step-by-step evaluation guide (`Trido-Setup-1.0.0.exe`, `start.bat`, Ollama & API Key setup) |
-| [**`../RELEASE_NOTES.md`**](../RELEASE_NOTES.md) | Users & Judges | Release highlights, distribution formats & desktop app overview |
-| [**`../CHANGELOG.md`**](../CHANGELOG.md) | Developers & Reviewers | Chronological release history (`v1.1.0`, `v1.0.0`), security fixes & feature additions |
+Halaman ini merangkum seluruh dokumen yang ada di repositori **Trido** supaya lebih gampang dicari sesuai kebutuhan (guru, pengembang, peneliti AI, maupun juri).
 
 ---
 
-## 2. Educator & Classroom User Guides
+## 1. Panduan Cepat & Rilis (Folder Utama)
 
-| Document | Language | Description |
-|----------|----------|-------------|
-| [**`TEACHER_GUIDE.md`**](./TEACHER_GUIDE.md) | 🇮🇩 Bahasa Indonesia | Practical classroom guide for teachers (voice commands, lesson flow, interactive tools) |
-| [**`USAGE.md`**](./USAGE.md) | 🇬🇧 English | Hands-on guide to voice control, mind maps, 4 quiz types, timers, and student viewer mode |
-| [**`TRIDO_COMPREHENSIVE_GUIDE_ID.md`**](./TRIDO_COMPREHENSIVE_GUIDE_ID.md) | 🇮🇩 Bahasa Indonesia | Complete end-to-end manual covering every feature, shortcut, and offline setup |
-| [**`TRIDO_COMPREHENSIVE_GUIDE_EN.md`**](./TRIDO_COMPREHENSIVE_GUIDE_EN.md) | 🇬🇧 English | Complete end-to-end manual in English |
-
----
-
-## 3. Engineering, Architecture, API & Deployment
-
-| Document | Audience | Description |
-|----------|----------|-------------|
-| [**`API_DOCUMENTATION.md`**](./API_DOCUMENTATION.md) | Engineers & Reviewers | REST API endpoints (`/api/ai/*`), Socket.IO real-time events (`canvas-delta`, `dom-elements-update`), and data schemas |
-| [**`DEPLOYMENT.md`**](./DEPLOYMENT.md) | DevOps & Engineers | Local production build, Windows Electron `.exe` packaging, Docker & Vercel deployment |
-| [**`../CONTRIBUTING.md`**](../CONTRIBUTING.md) | Contributors & Reviewers | Quality gates (`npm run check`, `npx vitest run`), UI/UX standards, and PR conventions |
-| [**`../SECURITY.md`**](../SECURITY.md) | Security Reviewers | SSRF protection, iframe sandboxing, DOMPurify XSS defenses & vulnerability reporting |
-| [**`../AGENTS.md`**](../AGENTS.md) | AI Coding Agents | Definitive codebase map and zero-thrashing protocol for autonomous coding agents |
+| Dokumen | Target Pembaca | Isi Singkat |
+|---------|----------------|-------------|
+| [**`../README.md`**](../README.md) | Semua | Gambaran umum proyek, cerita Pak Damar, cara jalanin aplikasi, dan link unduh `.exe` |
+| [**`../JURY_INSTALL_GUIDE.md`**](../JURY_INSTALL_GUIDE.md) | Juri & Penguji | Panduan instalasi `.exe` / `start.bat`, setting model lokal Ollama, dan daftar uji cepat |
+| [**`../RELEASE_NOTES.md`**](../RELEASE_NOTES.md) | Pengguna & Juri | Ringkasan fitur baru di rilis `v1.1.0` |
+| [**`../CHANGELOG.md`**](../CHANGELOG.md) | Developer | Catatan perubahan dari versi `1.0.0` sampai `1.1.0` |
 
 ---
 
-## 4. Local AI Research, Fine-Tuning & Benchmarks
+## 2. Panduan Guru & Pemakaian di Kelas
 
-| Document | Topic | Description |
-|----------|-------|-------------|
-| [**`TRIDO_MODEL_FINE_TUNING_RESEARCH_REPORT.md`**](./TRIDO_MODEL_FINE_TUNING_RESEARCH_REPORT.md) | Knowledge Distillation | Teacher-Student SFT/DPO distillation pipeline for `trido-model:latest` & `trido-gemma:2b` |
-| [**`RESEARCH_BENCHMARK_REPORT.md`**](./RESEARCH_BENCHMARK_REPORT.md) | Empirical Benchmarks | Latency, tool-call accuracy, and pedagogical comparison benchmarks |
-| [**`GEMMA4_INDEX.md`**](./GEMMA4_INDEX.md) | Gemma 4 E2B | Master index for Gemma 4 4-bit quantization and local inference optimization |
-| [**`GEMMA4_QUICK_START.md`**](./GEMMA4_QUICK_START.md) | Ollama Setup | Quick-start guide for configuring local Gemma 4 models in Ollama |
-| [**`small-model-guide.md`**](./small-model-guide.md) | Prompt Engineering | Capability tiers and prompt optimization for small edge models (2B–9B) |
+| Dokumen | Bahasa | Isi Singkat |
+|---------|--------|-------------|
+| [**`TEACHER_GUIDE.md`**](./TEACHER_GUIDE.md) | Bahasa Indonesia | Panduan praktis mengajar pakai perintah suara & alat kelas |
+| [**`USAGE.md`**](./USAGE.md) | English | Panduan fitur suara, mindmap, 4 tipe kuis, timer, dan mode layar murid |
+| [**`TRIDO_COMPREHENSIVE_GUIDE_ID.md`**](./TRIDO_COMPREHENSIVE_GUIDE_ID.md) | Bahasa Indonesia | Manual lengkap seluruh fitur, shortcut, dan setup offline |
+| [**`TRIDO_COMPREHENSIVE_GUIDE_EN.md`**](./TRIDO_COMPREHENSIVE_GUIDE_EN.md) | English | Manual lengkap dalam Bahasa Inggris |
 
 ---
 
-## 5. Competition, WIPO & Business Deliverables
+## 3. Dokumentasi Teknis, API & Deployment
 
-| Document | Event / Purpose | Description |
-|----------|-----------------|-------------|
-| [**`KAGGLE_WRITEUP.md`**](./KAGGLE_WRITEUP.md) | Google Gemma 4 Good | Official competition writeup (**2nd Place Worldwide**) |
-| [**`BUSINESS_MODEL_CANVAS_AND_BENCHMARK.md`**](./BUSINESS_MODEL_CANVAS_AND_BENCHMARK.md) | Sustainability & Impact | Business Model Canvas, cost efficiency, and inclusive education impact |
-| [**`NASKAH_PRESENTASI_WIPO_BALI_2026.md`**](./NASKAH_PRESENTASI_WIPO_BALI_2026.md) | WIPO Bali 2026 | Official presentation script for WIPO National Roving Seminar |
-| [**`REVIEW_PRESENTASI_WIPO_BALI_2026.md`**](./REVIEW_PRESENTASI_WIPO_BALI_2026.md) | WIPO Bali 2026 | Technical & IP review notes for the WIPO presentation |
-| [**`ARCHIVED_ROADMAP_PLAN.md`**](./ARCHIVED_ROADMAP_PLAN.md) | Historical Archive | Early engineering stabilization & lesson engine planning document |
+| Dokumen | Target Pembaca | Isi Singkat |
+|---------|----------------|-------------|
+| [**`API_DOCUMENTATION.md`**](./API_DOCUMENTATION.md) | Engineer | Referensi endpoint `/api/ai/*`, event Socket.IO (`canvas-delta`, `dom-elements-update`), dan skema tool AI |
+| [**`DEPLOYMENT.md`**](./DEPLOYMENT.md) | Engineer / DevOps | Cara build installer `.exe` Windows, server lokal, Vercel, dan Docker Compose |
+| [**`../CONTRIBUTING.md`**](../CONTRIBUTING.md) | Kontributor | Aturan kode, pengecekan `npm run check` & `npx vitest run`, serta standar UI tanpa gradien |
+| [**`../SECURITY.md`**](../SECURITY.md) | Reviewer Keamanan | Proteksi SSRF, sandbox iframe, sanitasi DOMPurify, dan pelaporan celah keamanan |
+| [**`../AGENTS.md`**](../AGENTS.md) | AI Coding Agent | Peta arsitektur repo untuk asisten koding |
+
+---
+
+## 4. Riset Model Lokal, Fine-Tuning & Benchmark
+
+| Dokumen | Topik | Isi Singkat |
+|---------|-------|-------------|
+| [**`TRIDO_MODEL_FINE_TUNING_RESEARCH_REPORT.md`**](./TRIDO_MODEL_FINE_TUNING_RESEARCH_REPORT.md) | Distilasi & SFT | Pipeline distilasi `trido-model:latest` (9B) & `trido-gemma:2b` (2.3B) beserta kalibrasi RAM 4GB–8GB |
+| [**`RESEARCH_BENCHMARK_REPORT.md`**](./RESEARCH_BENCHMARK_REPORT.md) | Benchmark Empiris | Perbandingan latensi, akurasi tool call, dan penggunaan memori model cloud vs lokal |
+| [**`GEMMA4_INDEX.md`**](./GEMMA4_INDEX.md) | Gemma 4 E2B | Catatan teknis kuantisasi 4-bit dan optimasi inferensi lokal |
+| [**`GEMMA4_QUICK_START.md`**](./GEMMA4_QUICK_START.md) | Setup Ollama | Langkah singkat menjalankan Gemma 4 di Ollama |
+| [**`small-model-guide.md`**](./small-model-guide.md) | Optimasi SLM | Penyesuaian prompt dan skema untuk model ukuran kecil (1.5B–3B) |
+
+---
+
+## 5. Dokumen Kompetisi, WIPO & Bisnis
+
+| Dokumen | Keperluan | Isi Singkat |
+|---------|-----------|-------------|
+| [**`KAGGLE_WRITEUP.md`**](./KAGGLE_WRITEUP.md) | Google Gemma 4 Good | Dokumen writeup kompetisi (**2nd Place Worldwide**) |
+| [**`BUSINESS_MODEL_CANVAS_AND_BENCHMARK.md`**](./BUSINESS_MODEL_CANVAS_AND_BENCHMARK.md) | Dampak & Keberlanjutan | Business Model Canvas dan efisiensi biaya operasional sekolah |
+| [**`NASKAH_PRESENTASI_WIPO_BALI_2026.md`**](./NASKAH_PRESENTASI_WIPO_BALI_2026.md) | WIPO Bali 2026 | Naskah presentasi seminar WIPO |
+| [**`REVIEW_PRESENTASI_WIPO_BALI_2026.md`**](./REVIEW_PRESENTASI_WIPO_BALI_2026.md) | WIPO Bali 2026 | Catatan review teknis & HKI untuk presentasi WIPO |
+| [**`ARCHIVED_ROADMAP_PLAN.md`**](./ARCHIVED_ROADMAP_PLAN.md) | Arsip Lama | Catatan rencana pengembangan awal (arsip historis) |

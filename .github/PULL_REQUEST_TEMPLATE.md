@@ -1,20 +1,20 @@
-## Summary
-<!-- Describe what this PR changes and why. -->
+## Ringkasan Perubahan
+<!-- Jelasin singkat apa yg diubah dan kenapa. -->
 
-## Type of Change
-- [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] Security fix (XSS, SSRF, sandbox, input validation)
-- [ ] New feature / classroom tool (non-breaking change that adds functionality)
-- [ ] Accessibility / Hands-Free Voice improvement (Pak Damar standard)
-- [ ] Documentation / CI workflow update
+## Jenis Perubahan
+- [ ] Perbaikan bug (fix)
+- [ ] Perbaikan keamanan (XSS, SSRF, sandbox, validasi input)
+- [ ] Fitur / alat kelas baru
+- [ ] Aksesibilitas / kontrol suara (standar Pak Damar)
+- [ ] Dokumentasi / workflow CI
 
-## Quality & Verification Checklist
-- [ ] `npm run check` (`tsc --noEmit`) passes with **0 errors**
-- [ ] `npx vitest run` passes **100% of unit & integration tests**
-- [ ] `npm run build` succeeds cleanly
-- [ ] Offline-first compatibility verified (works with local Ollama / manual fallback)
-- [ ] UI adheres to Trido tactile minimalism standards (warm paper `#e4e3e0`, Trido Blue `#1550aa`, Dark Ink `#0a1a3a`, Sun Yellow `#ffcc00`, zero gradients, 120 FPS drag/resize with `transition: none`)
-- [ ] Multilingual support verified (`utils/translations.ts` keys added for `id` and `en`)
+## Cek Kualitas Sebelum Merge
+- [ ] `npm run check` (`tsc --noEmit`) lulus tanpa error
+- [ ] `npx vitest run` lulus semua test
+- [ ] `npm run build` berhasil
+- [ ] Tetap jalan di mode offline (Ollama lokal / fallback manual)
+- [ ] Desain mengikuti palet solid Trido (`#e4e3e0`, `#1550aa`, `#0a1a3a`, `#ffcc00`, tanpa gradient, drag/resize 120 FPS dengan `transition: none`)
+- [ ] Key terjemahan baru sudah ditambah ke `id` dan `en` di `utils/translations.ts`
 
-## Screenshots / Test Output
-<!-- Paste terminal test output or UI screenshots if applicable. -->
+## Tangkapan Layar / Log Test
+<!-- Tempel output test atau screenshot kalau ada perubahan UI. -->

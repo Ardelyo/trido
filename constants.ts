@@ -25,7 +25,7 @@ export const CONFIG = {
       thinkingMode: OLLAMA_THINKING_MODE,
       defaultBaseUrl: 'http://localhost:11434',
       probeTimeoutMs: 1500,
-      numCtx: 16384,
+      numCtx: 4096,
       generateTimeoutMs: 300000,
     },
     vertex: {

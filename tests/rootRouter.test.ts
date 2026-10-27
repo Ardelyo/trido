@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { determineRoute } from '../components/RootRouter';
 
-describe('RootRouter Route Determination Logic', () => {
+describe('RootRouter routing logic', () => {
   const originalLocation = window.location;
 
   const setLocation = (urlStr: string) => {
@@ -27,38 +27,38 @@ describe('RootRouter Route Determination Logic', () => {
     delete (window as any).electronAPI;
   });
 
-  it('routes to landing page on trido.vercel.app root /', () => {
+  it('buka landing page kalo akses root trido.vercel.app/', () => {
     setLocation('https://trido.vercel.app/');
     expect(determineRoute()).toBe('landing');
   });
 
-  it('routes directly to smartboard canvas on localhost:3000', () => {
+  it('langsung masuk kanvas smartboard kalo jalan di localhost:3000', () => {
     setLocation('http://localhost:3000/');
     expect(determineRoute()).toBe('app');
   });
 
-  it('routes directly to smartboard canvas on 127.0.0.1:3030 (Electron default port)', () => {
+  it('langsung masuk kanvas kalo jalan di 127.0.0.1:3030 (port default Electron)', () => {
     setLocation('http://127.0.0.1:3030/');
     expect(determineRoute()).toBe('app');
   });
 
-  it('routes directly to smartboard canvas when in Electron environment regardless of domain', () => {
+  it('paksa masuk kanvas kalo ada window.electronAPI biarpun domainnya beda', () => {
     setLocation('https://trido.vercel.app/');
     (window as any).electronAPI = { isElectron: true };
     expect(determineRoute()).toBe('app');
   });
 
-  it('routes to smartboard canvas on trido.vercel.app/app', () => {
+  it('masuk kanvas di path trido.vercel.app/app', () => {
     setLocation('https://trido.vercel.app/app');
     expect(determineRoute()).toBe('app');
   });
 
-  it('routes to smartboard canvas on shared room URL trido.vercel.app/?room=class123', () => {
+  it('masuk kanvas kalo buka link room kelas trido.vercel.app/?room=class123', () => {
     setLocation('https://trido.vercel.app/?room=class123');
     expect(determineRoute()).toBe('app');
   });
 
-  it('allows previewing landing page on localhost with ?landing=true', () => {
+  it('tetep bisa preview landing page di localhost lewat query ?landing=true', () => {
     setLocation('http://localhost:3000/?landing=true');
     expect(determineRoute()).toBe('landing');
   });

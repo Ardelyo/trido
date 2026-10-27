@@ -81,8 +81,7 @@ const sanitizeOllamaUrl = (customUrl?: unknown): string => {
   }
 };
 
-// ── Status probe cache (TTL: 15s) ────────────────────────────────────────────
-// Prevents triple-probe (Gemini + Ollama + Vertex) on every /generate request.
+// cache status probes for 15s so /generate doesn't ping Gemini + Ollama + Vertex on every turn
 const STATUS_CACHE_TTL_MS = 15_000;
 type CachedStatus = Awaited<ReturnType<typeof _getAvailableMode>>;
 const statusCache = new Map<string, { ts: number; value: CachedStatus }>();

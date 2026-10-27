@@ -1,31 +1,27 @@
-# 🚀 Trido v1.1.0 — Official Desktop (`.exe`), 120 FPS Smartboard & Self-Healing Mermaid Release
+# Catatan Rilis Trido v1.1.0
 
-Welcome to **Trido v1.1.0**! This release packages the complete voice-first AI Smartboard into a standalone Windows desktop installer (`Trido-Setup-1.0.0.exe`), introduces the 5-Layer Self-Healing Mermaid Mindmap Engine, and completes a comprehensive 54-point security and performance audit.
-
----
-
-## ⬇️ Direct Downloads
-
-| Platform | Asset | Description |
-|----------|-------|-------------|
-| **🪟 Windows Desktop Installer** | [**`Trido-Setup-1.0.0.exe`**](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe) | **Recommended (168 MB):** 1-click Windows x64 installer. Compatible with Windows 11 Smart App Control. No Node.js or terminal required. |
-| **🪟 Windows 1-Click Localhost** | `start.bat` (in repo) | Fast local launcher for source checkouts — auto-detects running server and opens `http://localhost:3000/?app=true`. |
+Rilis `v1.1.0` fokus ke tiga hal praktis buat pemakaian nyata di kelas: installer desktop Windows `.exe` yg langsung jalan tanpa setup rumit, perbaikan *parse error* di diagram Mermaid, sama optimasi memori buat model AI lokal di laptop spesifikasi rendah (RAM 4GB–8GB).
 
 ---
 
-## ✨ What's New in v1.1.0
+## Unduhan Langsung
 
-1. **5-Layer Zero-Syntax-Error Mermaid Mindmap Engine (`utils/mermaidSanitizer.ts`)**
-   - Automatically sanitizes LLM syntax quirks (parentheses inside child nodes, colons, quotes, Markdown bullets, duplicate roots, and indentation jumps) and includes a 2-stage self-healing renderer fallback in `MermaidTool.tsx`.
-2. **120 FPS Tactile IKEA Minimalism & Smooth Animations**
-   - GPU-composited `translate3d` widget transforms with `transition: none` during RAF dragging/resizing, plus a 3-step horizontal progress HUD with rotating pedagogical tips.
-3. **Unified Voice Mode & `Asisten` Sidebar Synchronization**
-   - Spoken number normalization (`"lima belas menit"` -> `15 menit`), conversational prefix stripping, accurate intent classification (`navigation` vs `modification` vs `question` vs `creation`), and live voice recording inside both the Canvas Voice Island and the `Asisten` sidebar.
-4. **11-Language Localization & Offline Faster-Whisper STT**
-   - Full UI, STT, and TTS support across Indonesian, English, Arabic, Chinese, French, Russian, Spanish, Japanese, Korean, German, and Portuguese.
-5. **1-Click Local Trido Model Downloader & API Key Reminder**
-   - Built-in `gemma4good` Cloud Demo is supported for evaluation (with clear in-app reminders that it will not be free forever), alongside 1-click local Ollama model downloading (`trido-model:latest` & `trido-gemma:2b`) and personal `GEMINI_API_KEY` support.
+| Platform | File | Keterangan |
+|----------|------|------------|
+| **Windows Desktop (`.exe`)** | [**`Trido-Setup-1.0.0.exe`**](https://github.com/Ardelyo/trido/releases/latest/download/Trido-Setup-1.0.0.exe) | Installer mandiri (~168 MB). Ga butuh Node.js atau terminal. Aman buat Windows 11 Smart App Control. |
+| **Localhost (Source)** | `start.bat` | Klik 2x dari folder repo buat nyalain server lokal di `http://localhost:3000/?app=true`. |
 
 ---
 
-See [**`CHANGELOG.md`**](./CHANGELOG.md) for the full list of security and engineering fixes.
+## Ringkasan Pembaruan v1.1.0
+
+1. **Perbaikan Sintaks Mermaid Mindmap & Flowchart (`utils/mermaidSanitizer.ts`)**
+   - Bersihin otomatis tanda kurung `()`, titik dua `:`, dan bullet Markdown di dalem teks cabang mindmap yg sering bikin Mermaid v11 gagal render, lengkap sama *self-healing fallback* di `MermaidTool.tsx`.
+2. **Optimasi RAM/VRAM Model Lokal Ollama (`trido-gemma:2b` & `trido-model:latest`)**
+   - Kalibrasi konteks ke `4096` token dan pemangkasan prompt JSON buat model kecil supaya `trido-gemma:2b` (1.6 GB) cuma makan ~2.0 GB RAM total (aman buat laptop guru RAM 4GB–8GB).
+3. **Sinkronisasi Multi-Halaman, Mode Suara & Panel `Asisten`**
+   - Widget DOM ga lagi ke-reset waktu pindah halaman kanvas, dan input suara di bawah layar nyambung langsung sama drawer **Asisten**.
+4. **Pengingat Penggunaan Model Lokal & API Key Pribadi**
+   - Cloud demo bawaan (`gemma4good`) tetep aktif buat keperluan uji coba/evaluasi juri, tapi buat pemakaian harian jangka panjang disaranin unduh model lokal lewat menu **Pengaturan -> Kecerdasan AI** atau pake `GEMINI_API_KEY` pribadi.
+
+Detail perubahan teknis lainnya ada di [`CHANGELOG.md`](./CHANGELOG.md).

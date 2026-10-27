@@ -566,9 +566,6 @@ STEM_SIMULATION or INTERACTIVE_APP: {"title":"string","html":"HTML string with c
   }
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SYSTEM INSTRUCTION BUILDER
-// ─────────────────────────────────────────────────────────────────────────────
 export const buildSystemInstruction = (
   canvasObjects: CanvasObjectData[],
   viewport: ViewportBounds,
@@ -897,39 +894,119 @@ export const validateFunctionCalls = (
       }
     }
 
+    // If model called update_component on an empty canvas (no domElements), automatically convert to add_component or render_mermaid
+    if (call.name === 'update_component' && Object.keys(domElements).length === 0) {
+      let parsedCfg: any = {};
+      if (typeof call.args.configJson === 'object' && call.args.configJson) {
+        parsedCfg = call.args.configJson;
+      } else if (typeof call.args.configJson === 'string') {
+        try { parsedCfg = JSON.parse(call.args.configJson); } catch {}
+      }
+      const code = call.args.code || parsedCfg.code;
+      if (code && /^\s*(mindmap|flowchart|graph)\b/i.test(String(code))) {
+        call.name = 'render_mermaid';
+        call.args = {
+          title: call.args.title || call.args.componentTitle || parsedCfg.title || 'Peta Konsep',
+          code: sanitizeMermaidCode(String(code), call.args.title || parsedCfg.title || 'Peta Konsep'),
+          gridPosition: call.args.gridPosition || 'CENTER'
+        };
+      } else {
+        call.name = 'add_component';
+        const inferredType = call.args.componentType || parsedCfg.componentType ||
+          ((call.args.seconds !== undefined || parsedCfg.seconds !== undefined || /timer|waktu|menit/i.test(JSON.stringify(call.args))) ? 'TIMER' :
+           (call.args.students || parsedCfg.students) ? 'ATTENDANCE' :
+           (call.args.question || parsedCfg.question) ? 'QUIZ_MULTIPLE_CHOICE' : 'DOCUMENT_PAGE');
+        call.args.componentType = inferredType;
+        call.args.gridPosition = call.args.gridPosition || (inferredType === 'TIMER' ? 'TOP_RIGHT' : inferredType === 'ATTENDANCE' ? 'TOP_LEFT' : 'CENTER');
+        if (!call.args.configJson) {
+          if (inferredType === 'TIMER') {
+            call.args.configJson = JSON.stringify({ mode: 'TIMER', seconds: Number(call.args.seconds || parsedCfg.seconds || 600), isRunning: true });
+          } else {
+            call.args.configJson = JSON.stringify(parsedCfg);
+          }
+        } else if (typeof call.args.configJson === 'object') {
+          call.args.configJson = JSON.stringify(call.args.configJson);
+        }
+      }
+    }
+
     if (call.name === 'update_component') {
-      let id = call.args.objectId;
+      let id = call.args.objectId || call.args.targetId;
       const validIds = Object.keys(domElements);
 
       // Auto-resolution: if objectId is missing or needs resolution, resolve by componentTitle or sole active element
       if (!id || (validIds.length > 0 && !validIds.includes(id))) {
         if (call.args.componentTitle) {
           const matchedKey = validIds.find(k => 
-            domElements[k]?.title?.toLowerCase().includes(call.args.componentTitle.toLowerCase()) ||
-            call.args.componentTitle.toLowerCase().includes((domElements[k]?.title || '').toLowerCase())
+            domElements[k]?.title?.toLowerCase().includes(String(call.args.componentTitle).toLowerCase()) ||
+            String(call.args.componentTitle).toLowerCase().includes((domElements[k]?.title || '').toLowerCase())
           );
           if (matchedKey) {
             id = matchedKey;
             call.args.objectId = matchedKey;
           }
         }
-        if (!call.args.objectId && validIds.length === 1) {
-          id = validIds[0];
-          call.args.objectId = validIds[0];
+        if ((!id || !validIds.includes(id)) && validIds.length > 0) {
+          // Prefer matching diagram element if updating code/markdown, otherwise first element
+          const diagramKey = validIds.find(k => {
+            const t = domElements[k]?.componentType || domElements[k]?.type || '';
+            return t === 'MERMAID_DIAGRAM' || t === 'MARKMAP_MINDMAP';
+          });
+          id = diagramKey || validIds[0];
+          call.args.objectId = id;
         }
+      } else {
+        call.args.objectId = id;
       }
 
-      if (id && validIds.length > 0 && !validIds.includes(id)) {
-        errors.push(`Call ${index}: update_component ID "${id}" not in DOM elements`);
-        continue;
+      if (!call.args.action) {
+        call.args.action = 'REPLACE';
       }
-      // Safely parse configJson
-      if (call.args.configJson && typeof call.args.configJson === 'string') {
+
+      // Normalize configJson if model passed object or top-level code/markdown/seconds/students
+      if (!call.args.configJson) {
+        const synthesized: Record<string, any> = {};
+        if (call.args.code) synthesized.code = sanitizeMermaidCode(String(call.args.code), call.args.title || call.args.componentTitle || 'Peta Konsep');
+        if (call.args.markdown) synthesized.markdown = String(call.args.markdown);
+        if (call.args.title) synthesized.title = String(call.args.title);
+        if (call.args.seconds !== undefined) synthesized.seconds = Number(call.args.seconds);
+        if (call.args.students) synthesized.students = call.args.students;
+        if (Object.keys(synthesized).length > 0) {
+          call.args.configJson = JSON.stringify(synthesized);
+        }
+      } else if (typeof call.args.configJson === 'object') {
+        if (call.args.configJson.code) {
+          call.args.configJson.code = sanitizeMermaidCode(String(call.args.configJson.code), call.args.configJson.title || 'Peta Konsep');
+        }
+        call.args.configJson = JSON.stringify(call.args.configJson);
+      } else if (typeof call.args.configJson === 'string') {
         try {
-          JSON.parse(call.args.configJson);
+          const parsed = JSON.parse(call.args.configJson);
+          if (parsed && typeof parsed.code === 'string') {
+            parsed.code = sanitizeMermaidCode(parsed.code, parsed.title || 'Peta Konsep');
+            call.args.configJson = JSON.stringify(parsed);
+          }
         } catch {
-          errors.push(`Call ${index}: update_component.configJson is not valid JSON`);
-          continue;
+          // Repair raw newlines inside stringified JSON from small SLMs
+          const NL = String.fromCharCode(10);
+          const CR = String.fromCharCode(13);
+          const BS_N = String.fromCharCode(92) + 'n';
+          const repaired = call.args.configJson.split(CR).join('').split(NL).join(BS_N);
+          try {
+            const parsed = JSON.parse(repaired);
+            if (parsed && typeof parsed.code === 'string') {
+              parsed.code = sanitizeMermaidCode(parsed.code, parsed.title || 'Peta Konsep');
+            }
+            call.args.configJson = JSON.stringify(parsed);
+          } catch {
+            // Last resort: treat raw string as mermaid code if it starts with mindmap/flowchart
+            if (/^\s*(mindmap|flowchart|graph)\b/i.test(call.args.configJson)) {
+              call.args.configJson = JSON.stringify({ code: sanitizeMermaidCode(call.args.configJson, 'Peta Konsep') });
+            } else {
+              errors.push(`Call ${index}: update_component.configJson is not valid JSON`);
+              continue;
+            }
+          }
         }
       }
     }
@@ -938,13 +1015,35 @@ export const validateFunctionCalls = (
       call.args.code = sanitizeMermaidCode(call.args.code, call.args.title || 'Peta Konsep');
     }
 
-    if (call.name === 'add_component' && call.args.configJson) {
-      if (typeof call.args.configJson === 'string') {
+    if (call.name === 'add_component') {
+      if (!call.args.gridPosition) {
+        call.args.gridPosition = 'CENTER';
+      }
+      if (!call.args.configJson) {
+        const synthesized: Record<string, any> = {};
+        for (const k of ['title', 'code', 'markdown', 'seconds', 'mode', 'isRunning', 'students', 'className', 'question', 'options', 'correctIndex', 'statement', 'isTrue', 'pairs', 'tasks', 'html', 'css', 'js']) {
+          if (call.args[k] !== undefined) synthesized[k] = call.args[k];
+        }
+        if (Object.keys(synthesized).length > 0) {
+          call.args.configJson = JSON.stringify(synthesized);
+        }
+      } else if (typeof call.args.configJson === 'object') {
+        call.args.configJson = JSON.stringify(call.args.configJson);
+      } else if (typeof call.args.configJson === 'string') {
         try {
           JSON.parse(call.args.configJson);
         } catch {
-          errors.push(`Call ${index}: add_component.configJson is not valid JSON`);
-          continue;
+          const NL = String.fromCharCode(10);
+          const CR = String.fromCharCode(13);
+          const BS_N = String.fromCharCode(92) + 'n';
+          const repaired = call.args.configJson.split(CR).join('').split(NL).join(BS_N);
+          try {
+            JSON.parse(repaired);
+            call.args.configJson = repaired;
+          } catch {
+            errors.push(`Call ${index}: add_component.configJson is not valid JSON`);
+            continue;
+          }
         }
       }
     }
@@ -955,9 +1054,6 @@ export const validateFunctionCalls = (
   return { isValid: errors.length === 0, errors, fixedCalls };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// THINKING EXTRACTION
-// ─────────────────────────────────────────────────────────────────────────────
 export const extractThinking = (response: any): string => {
   if (response?.thought) return response.thought;
 

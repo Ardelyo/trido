@@ -6,15 +6,15 @@ import {
   DEFAULT_MINDMAP
 } from '../components/MermaidTool';
 
-describe('Mermaid Mindmap Engine, Sanitizer & Self-Healing Converter', () => {
-  it('has valid default mindmap syntax starting with mindmap and root', () => {
+describe('Mermaid Mindmap Engine & Sanitizer', () => {
+  it('punya default mindmap yg valid dgn header mindmap dan root', () => {
     expect(DEFAULT_MINDMAP).toContain('mindmap');
     expect(DEFAULT_MINDMAP).toContain('root((Sistem Peredaran Darah))');
     expect(DEFAULT_MINDMAP).toContain('Jantung');
     expect(DEFAULT_MINDMAP).toContain('Pembuluh Darah');
   });
 
-  it('converts markdown headings and bullet lists into hierarchical Mermaid mindmap syntax', () => {
+  it('konversi heading dan bullet markdown jadi hirarki mindmap mermaid', () => {
     const markdown = `# Fotosintesis
 ## Reaksi Terang
 - Tempat: Tilakoid
@@ -37,7 +37,7 @@ describe('Mermaid Mindmap Engine, Sanitizer & Self-Healing Converter', () => {
     expect(result).toContain('Fiksasi CO2');
   });
 
-  it('handles flat bullet lists with a fallback title', () => {
+  it('bisa handle list bullet datar pake judul fallback', () => {
     const markdown = `- Poin 1
 - Poin 2
   - Subpoin 2.1
@@ -51,7 +51,7 @@ describe('Mermaid Mindmap Engine, Sanitizer & Self-Healing Converter', () => {
     expect(result).toContain('Subpoin 2.1');
   });
 
-  it('sanitizes special characters that conflict with Mermaid node syntax', () => {
+  it('bersihin karakter kurung dan kutip yg suka bikin parser mermaid crash', () => {
     const markdown = `# Topik (Utama) [Penting]
 ## Cabang "Satu" {Kunci}
 - Detail (A) & (B)
@@ -65,7 +65,7 @@ describe('Mermaid Mindmap Engine, Sanitizer & Self-Healing Converter', () => {
     expect(result).toContain('Detail - A & - B');
   });
 
-  it('sanitizes broken LLM mindmap code with inner parentheses, colons, bullets, and code fences', () => {
+  it('rapihin output mindmap LLM yg berantakan (ada kurung di tengah, titik dua, bullet, sama code fence)', () => {
     const brokenLlmCode = `\`\`\`mermaid
 mindmap
   root((Sistem Peredaran Darah (Manusia)))
@@ -82,11 +82,10 @@ mindmap
 
     expect(lines[0]).toBe('mindmap');
     expect(lines[1]).toBe('  root((Sistem Peredaran Darah - Manusia))');
-    // No child node may have parentheses, brackets, colons, or leading bullets
+    // node anak ga boleh nyisain kurung, titik dua, atau bullet markdown
     for (const line of lines.slice(2)) {
       expect(line).not.toMatch(/[()\[\]{}:]/);
       expect(line.trim()).not.toMatch(/^[-*+•]|\d+\./);
-      // Every child must be indented at least 4 spaces (>= 4)
       const indent = line.match(/^(\s*)/)?.[1].length || 0;
       expect(indent).toBeGreaterThanOrEqual(4);
     }
@@ -94,7 +93,7 @@ mindmap
     expect(sanitized).toContain('Vena - Pembuluh Balik');
   });
 
-  it('prevents "There can be only one root" error when LLM outputs multiple top-level nodes or indentation jumps', () => {
+  it('cegah error "There can be only one root" kalo LLM ngasih banyak baris level atas atau indentasi loncat', () => {
     const multiRootBroken = `mindmap
   Cabang Satu
           Loncatan Jauh
@@ -106,13 +105,13 @@ mindmap
 
     expect(lines[0]).toBe('mindmap');
     expect(lines[1]).toBe('  root((Topik Utama))');
-    // Child 1 is at 4 spaces, and the jumped child is clamped to 6 spaces (max +2 from parent)
+    // cabang 1 di 4 spasi, yg loncat kejauhan ditahan maksimal naik 2 spasi (jadi 6 spasi)
     expect(lines[2]).toBe('    Cabang Satu');
     expect(lines[3]).toBe('      Loncatan Jauh');
     expect(lines[4]).toBe('    Cabang Dua');
   });
 
-  it('automatically quotes flowchart labels containing parentheses or colons', () => {
+  it('otomatis bungkus label flowchart pake tanda kutip kalo ada kurung atau titik dua', () => {
     const brokenFlowchart = `flowchart TD
   A[Fase 1 (Inisiasi): Glikolisis] --> B[Fase 2 (Siklus Krebs)]`;
 
@@ -121,7 +120,7 @@ mindmap
     expect(sanitized).toContain('B["Fase 2 (Siklus Krebs)"]');
   });
 
-  it('self-heals arbitrary corrupted diagram text via buildSafeMindmapFromRawText', () => {
+  it('bisa bangun ulang mindmap aman dari teks diagram yg rusak parah lewat buildSafeMindmapFromRawText', () => {
     const corrupted = `graph ???
   A((Rusak [Total])) --> B{Cabang Kedua ( Penting )}
   - Baris Lepas: Nilai 100%`;

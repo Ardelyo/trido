@@ -1,8 +1,6 @@
 import "dotenv/config";
 
-// Suppress @google/genai SDK internal warning about non-text function-call parts.
-// The SDK logs this unconditionally at response construction — we extract parts
-// directly from candidates[0].content.parts so this warning is a false positive.
+// bungkam warning bawaan @google/genai soal non-text functionCall parts yg ganggu log terminal
 const _consoleWarn = console.warn.bind(console);
 console.warn = (...args: any[]) => {
   const msg = typeof args[0] === 'string' ? args[0] : '';
@@ -23,9 +21,7 @@ import { ClientToServerEvents, RoomState, ServerToClientEvents, SocketData, Sock
 import { createLogger } from "./utils/logger";
 
 const logger = createLogger('server');
-// Rooms file: configurable via env, defaults to cwd.
-// On ephemeral hosts (Render, Railway) this resets on deploy — that is expected
-// for a demo environment. Point ROOMS_FILE_PATH to a mounted volume for persistence.
+// di host cloud ephemeral (Render/Railway) file ini bakal ke-reset tiap deploy, kecuali diarahkan ke volume lewat ROOMS_FILE_PATH
 const ROOMS_FILE = process.env.ROOMS_FILE_PATH ||
   path.join(process.cwd(), CONFIG.server.roomsPersistenceFile);
 
@@ -59,7 +55,7 @@ function saveRooms(rooms: Map<string, RoomState>) {
         saveRooms(rooms);
       }
     }
-  }, 2000); // 2-second write coalescing debounce
+  }, 2000); // tahan 2 dtk biar ga spam write ke disk pas lg gambar cepet
 }
 
 function loadRooms(): Map<string, RoomState> {

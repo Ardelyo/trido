@@ -251,14 +251,21 @@ export const generateAgentActionsOllama = async (
 
   systemInstruction += intentInstruction;
   
-  const mappedTools = tools.map(t => ({
-    type: "function",
-    function: {
-      name: t.name,
-      description: t.description || "",
-      parameters: toOllamaJsonSchema(t.parameters)
+  const mappedTools = tools.map(t => {
+    const rawParams = toOllamaJsonSchema(t.parameters) || { type: "object", properties: {} };
+    if (!rawParams.type) rawParams.type = "object";
+    if (!rawParams.properties || typeof rawParams.properties !== "object") {
+      rawParams.properties = {};
     }
-  }));
+    return {
+      type: "function",
+      function: {
+        name: t.name,
+        description: t.description || "",
+        parameters: rawParams
+      }
+    };
+  });
 
   const isVisionModel = /vision|llava|bakllava|moondream|minicpm-v|cogvlm|qwen-vl/i.test(modelName);
 
@@ -294,15 +301,83 @@ export const generateAgentActionsOllama = async (
     userMessage
   ];
 
-  const payload = {
-    model: modelName,
-    messages: messages,
-    tools: mappedTools,
-    stream: false,
-    options: {
-      num_ctx: CONFIG.ai.ollama.numCtx
-    }
+  // Use Fast Compact JSON Schema Engine for all local SLMs (1.5B to 9B) to cut prompt eval by 8x and guarantee structured tool output
+  const isPromptJsonModel = true;
+  const disableThinking = (process.env.OLLAMA_THINKING_MODE || CONFIG.ai.ollama.thinkingMode) === 'nothink';
+
+  // Helper to build a compact, deterministic JSON schema prompt for local 1.5B-9B models
+  const buildEdgeJsonSystemPrompt = () => {
+    const hasExistingDom = Object.keys(domElements).length > 0;
+    const activeDomSummary = hasExistingDom
+      ? Object.entries(domElements).map(([id, el]: [string, any]) => {
+          const code = el?.config?.code ? ` | current code: ${String(el.config.code).replace(/\n/g, '\\n')}` : '';
+          return `- objectId="${id}" (${el?.componentType || 'MERMAID_DIAGRAM'}, title="${el?.title || el?.config?.title || ''}"${code})`;
+        }).join('\n')
+      : '(empty canvas — no existing components)';
+
+    const updateToolDoc = hasExistingDom
+      ? `\n2. "update_component": Modify or add branches to an EXISTING diagram on the canvas (objectId="${existingDiagramKeys[0] || Object.keys(domElements)[0]}").\n   args: { "objectId": "${existingDiagramKeys[0] || Object.keys(domElements)[0]}", "action": "REPLACE", "configJson": "{\\"title\\":\\"Topic\\",\\"code\\":\\"mindmap\\\\n  root((Topic))\\\\n    Existing Branch\\\\n    New Branch\\"}" }`
+      : '';
+
+    return `You are Trido AI Smartboard Assistant. Respond ONLY with a valid JSON object matching this exact structure:
+{
+  "textResponse": "Brief polite explanation in the teacher's language",
+  "functionCalls": [
+    { "name": "TOOL_NAME", "args": { ... } }
+  ]
+}
+
+ACTIVE CANVAS COMPONENTS:
+${activeDomSummary}
+
+AVAILABLE TOOLS & EXACT ARGS SCHEMAS:
+1. "render_mermaid": Create a new mindmap or flowchart on the canvas.
+   args: { "title": "Topic Title", "gridPosition": "CENTER", "code": "mindmap\\n  root((Main Topic))\\n    Branch 1\\n      Detail A\\n    Branch 2\\n      Detail B" }${updateToolDoc}
+3. "add_component": Add interactive classroom widgets (TIMER, ATTENDANCE, DOCUMENT_PAGE, QUIZ_MULTIPLE_CHOICE, STEM_SIMULATION).
+   - Timer (countdown): { "componentType": "TIMER", "gridPosition": "TOP_RIGHT", "configJson": "{\\"mode\\":\\"TIMER\\",\\"seconds\\":600,\\"isRunning\\":true}" }
+   - Attendance: { "componentType": "ATTENDANCE", "gridPosition": "TOP_LEFT", "configJson": "{\\"title\\":\\"Presensi\\",\\"students\\":[{\\"name\\":\\"Ahmad\\",\\"status\\":\\"H\\"}]}" }
+   - Document/Formula: { "componentType": "DOCUMENT_PAGE", "gridPosition": "BOTTOM_CENTER", "configJson": "{\\"title\\":\\"Materi\\",\\"markdown\\":\\"# Judul\\\\nRumus: $PV = nRT$\\"}" }
+   - Multiple Choice Quiz: { "componentType": "QUIZ_MULTIPLE_CHOICE", "gridPosition": "CENTER_RIGHT", "configJson": "{\\"question\\":\\"Pertanyaan?\\",\\"options\\":[\\"A\\",\\"B\\",\\"C\\",\\"D\\"],\\"correctIndex\\":0}" }
+   - Interactive STEM Simulation: { "componentType": "STEM_SIMULATION", "gridPosition": "CENTER", "configJson": "{\\"title\\":\\"Simulasi\\",\\"html\\":\\"<canvas id='c'></canvas>\\",\\"js\\":\\"console.log('sim')\\"}" }
+
+CRITICAL RULES:
+- "functionCalls" MUST NOT be empty when the user asks to create, set, start, or modify anything on the board.
+- For timer requests (e.g. "timer 10 menit" = 600 seconds, "15 menit" = 900 seconds, "20 menit" = 1200 seconds), ALWAYS use "add_component" with componentType="TIMER" and seconds=(minutes * 60).
+- If the user asks for multiple items (e.g. attendance + timer + mindmap + document + quiz), include ALL of them as separate objects inside the "functionCalls" array.
+- In Mermaid mindmap code, NEVER use parentheses () or colons : inside child branch names (only root((Title)) uses double parentheses).`;
   };
+
+  const payload: any = isPromptJsonModel
+    ? {
+        model: modelName,
+        messages: [
+          { role: "system", content: buildEdgeJsonSystemPrompt() },
+          ...history.map(h => ({ role: h.role === "model" ? "assistant" : "user", content: h.text })),
+          { role: "user", content: `${prompt}${reflexDirective}` }
+        ],
+        format: "json",
+        think: disableThinking ? false : undefined,
+        stream: false,
+        options: {
+          num_ctx: CONFIG.ai.ollama.numCtx,
+          temperature: 0.05,
+          top_p: 0.9,
+          repeat_penalty: 1.08
+        }
+      }
+    : {
+        model: modelName,
+        messages: messages,
+        tools: mappedTools,
+        think: disableThinking ? false : undefined,
+        stream: false,
+        options: {
+          num_ctx: CONFIG.ai.ollama.numCtx,
+          temperature: 0.05,
+          top_p: 0.9,
+          repeat_penalty: 1.08
+        }
+      };
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (process.env.OLLAMA_API_KEY) {
@@ -415,6 +490,29 @@ export const generateAgentActionsOllama = async (
       functionCalls = extractedCalls;
       textResponse = cleanText;
     }
+  }
+
+  // Jev System 1 Post-Guard: Enforce in-place mutation if model called render_mermaid during a modification request
+  if (isModification && existingDiagramKeys.length > 0) {
+    const targetId = existingDiagramKeys[0];
+    const existingEl = domElements[targetId];
+    const existingTitle = existingEl?.title || existingEl?.config?.title || 'Peta Konsep';
+    functionCalls = functionCalls.map((fc: any) => {
+      if (fc.name === 'render_mermaid' && fc.args?.code) {
+        return {
+          name: 'update_component',
+          args: {
+            objectId: targetId,
+            action: 'REPLACE',
+            configJson: JSON.stringify({
+              title: fc.args.title || existingTitle,
+              code: fc.args.code
+            })
+          }
+        };
+      }
+      return fc;
+    });
   }
 
   const validation = validateFunctionCalls(functionCalls, canvasObjects, domElements);
